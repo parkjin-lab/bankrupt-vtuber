@@ -210,25 +210,27 @@ namespace BankruptVtuber
         {
             if (run == null || w5 == null)
                 return EndingKind.Nameless;
-            // Priority: 파산 > 번아웃 > 솔로 전설 > 에이전시 제국 > 은퇴 프로듀서.
+            // Auto priority: 파산 > 번아웃 > 솔로 전설 > 에이전시 제국 > 은퇴 프로듀서.
+            // Player pick 후배에게 메인 양도 forces 은퇴 프로듀서 unless 파산/번아웃.
             if (run.debt >= w5.bankruptDebt)
                 return EndingKind.Bankrupt;
             if (run.zeroMentalDays >= w5.burnoutZeroMentalDays)
                 return EndingKind.Burnout;
+            if (retirePicked && run.agencyFounded && run.juniorScouted)
+                return EndingKind.RetireProducer;
             if (!run.agencyFounded && run.finalRank == 1 && run.debt <= 0 && run.mental >= w5.endingSoloMental)
                 return EndingKind.SoloLegend;
             if (run.agencyFounded && run.juniorScouted && run.cash >= w5.endingEmpireCash)
                 return EndingKind.AgencyEmpire;
-            if (run.agencyFounded && retirePicked)
-                return EndingKind.RetireProducer;
             return EndingKind.Nameless;
         }
 
         public static bool CanOfferRetire(GameRunState run, Week5Balance w5)
         {
-            if (run == null || w5 == null || !run.agencyFounded)
+            if (run == null || w5 == null || !run.agencyFounded || !run.juniorScouted)
                 return false;
-            return ResolveEnding(run, w5, false) == EndingKind.Nameless;
+            var auto = ResolveEnding(run, w5, false);
+            return auto != EndingKind.Bankrupt && auto != EndingKind.Burnout;
         }
 
         public static string EndingTitle(EndingKind kind) => kind switch

@@ -857,14 +857,28 @@ def check_project() -> None:
         fail("named endings missing")
     else:
         ok("endings resolve after day 25 or earlier bankrupt/burnout")
-    if "파산 > 번아웃 > 솔로 전설 > 에이전시 제국 > 은퇴 프로듀서" not in w5r_cs:
+    if "파산 > 번아웃 > 솔로 전설 > 에이전시 제국" not in w5r_cs:
         fail("ending priority missing")
     else:
-        ok("ending priority is 파산 > 번아웃 > 솔로 전설 > 에이전시 제국 > 은퇴 프로듀서")
+        ok("auto ending priority is 파산 > 번아웃 > 솔로 전설 > 에이전시 제국")
     if "후배에게 메인 양도" not in settle_cs or "CanOfferRetire" not in w5r_cs:
         fail("retire producer choice missing")
     else:
         ok("settlement/ending can pick 후배에게 메인 양도")
+    offer = w5r_cs.split("public static bool CanOfferRetire", 1)[-1].split("public static string EndingTitle", 1)[0]
+    if "juniorScouted" not in offer:
+        fail("retire offer does not require junior scouted")
+    elif "Nameless" in offer:
+        fail("retire is still only offered when auto-end is 무명")
+    elif "Bankrupt" not in offer or "Burnout" not in offer:
+        fail("retire offer does not hide on 파산/번아웃")
+    else:
+        ok("retire is offered whenever agency and junior are set, unless 파산/번아웃")
+    resolve = w5r_cs.split("public static EndingKind ResolveEnding", 1)[-1].split("public static bool CanOfferRetire", 1)[0]
+    if "retirePicked" not in resolve or resolve.find("retirePicked") > resolve.find("AgencyEmpire"):
+        fail("retire pick does not override 에이전시 제국")
+    else:
+        ok("후배에게 메인 양도 forces 은퇴 프로듀서 over 에이전시 제국")
     if "EndingRoot" not in settle_cs or "EndingTitle" not in w5r_cs:
         fail("dedicated ending screen missing")
     else:
