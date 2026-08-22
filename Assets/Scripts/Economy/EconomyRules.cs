@@ -4,14 +4,14 @@ namespace BankruptVtuber
 {
     public static class EconomyRules
     {
-        public static int ApplyDailyBills(GameRunState state, Week1Balance b, Week2Balance w2 = null)
+        public static int ApplyDailyBills(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null)
         {
             if (state.billsAppliedThisDay)
                 return 0;
 
-            ExtraThreatRules.EnsureRolled(state, b, w2);
+            ExtraThreatRules.EnsureRolled(state, b, w2, w3);
             int extra = Math.Max(0, state.extraThreatAmount);
-            int fixedBills = WeekSchedule.TotalFixedBills(state, b, w2);
+            int fixedBills = WeekSchedule.TotalFixedBills(state, b, w2, w3);
             int total = fixedBills + extra;
             state.cash -= total;
             state.lastBills = fixedBills;
@@ -54,13 +54,27 @@ namespace BankruptVtuber
             return amount;
         }
 
-        public static WeekOutcome Evaluate(GameRunState state, Week1Balance b, Week2Balance w2 = null)
+        public static WeekOutcome Evaluate(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null)
         {
             int bankrupt = b.bankruptDebt;
-            if (w2 != null && WeekSchedule.InWeek2(state))
+            if (w3 != null && WeekSchedule.InWeek3(state))
+                bankrupt = w3.bankruptDebt;
+            else if (w2 != null && WeekSchedule.InWeek2(state))
                 bankrupt = w2.bankruptDebt;
             if (state.debt >= bankrupt)
                 return WeekOutcome.Bankrupt;
+
+            if (WeekSchedule.InWeek3(state))
+            {
+                int last3 = w3 != null ? w3.lastDay : WeekSchedule.Week3LastDay;
+                if (state.day < last3)
+                    return WeekOutcome.Continue;
+                if (w3 != null &&
+                    state.goodsUnlocked &&
+                    (state.debt <= w3.winDebtMax || state.cash >= w3.winCashMin))
+                    return WeekOutcome.Week3Win;
+                return WeekOutcome.WeekFailed;
+            }
 
             if (!WeekSchedule.InWeek2(state))
             {

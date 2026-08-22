@@ -11,6 +11,7 @@ namespace BankruptVtuber
         RectTransform _lane;
         RectTransform _hit;
         Text _viewers;
+        Text _rival;
         Text _income;
         Text _mental;
         Text _timer;
@@ -23,6 +24,10 @@ namespace BankruptVtuber
         Text _eventTitle;
         Text _eventBody;
         Text _eventTimer;
+        RectTransform _promoRoot;
+        Text _promoTitle;
+        Text _promoBody;
+        Text _promoTimer;
         readonly Image[] _eventKeys = new Image[4];
         readonly Text[] _eventKeyLabels = new Text[4];
         Image _tensionFill;
@@ -56,8 +61,16 @@ namespace BankruptVtuber
         {
             var gm = GameManager.Instance;
             if (!gm.Run.billsAppliedThisDay)
-                EconomyRules.ApplyDailyBills(gm.Run, gm.Balance, gm.Week2);
+                EconomyRules.ApplyDailyBills(gm.Run, gm.Balance, gm.Week2, gm.Week3);
+            Week3Rules.TryUnlockGoods(gm.Run, gm.Week3);
             _session = new StreamSession(gm.Balance, gm.Catalog, gm.Run.mental, gm.Run.viewerBonus);
+            if (Week3Rules.ShouldStartRival(gm.Run, gm.Week3))
+            {
+                Week3Rules.MarkRivalStarted(gm.Run);
+                _session.EnableRival(gm.Week3);
+            }
+            if (gm.Run.goodsUnlocked)
+                _session.EnablePromo(gm.Week3);
         }
 
         void Update()
@@ -72,6 +85,13 @@ namespace BankruptVtuber
             {
                 if (StreamBindings.EventKeyPressed(out int idx))
                     _session.TryEventKey(idx);
+            }
+            else if (_session.PromoActive)
+            {
+                if (StreamBindings.PromoConfirmDown())
+                    _session.TryPromo(true);
+                else if (StreamBindings.PromoSkipDown())
+                    _session.TryPromo(false);
             }
             else if (StreamBindings.TryConsumeKind(out var kind, out var hold))
                 _session.TryHit(kind, _session.Elapsed, hold);
@@ -106,6 +126,7 @@ namespace BankruptVtuber
 
             SyncNotes();
             RefreshEventOverlay();
+            RefreshPromoOverlay();
             RefreshHud();
             _avatar.Tick(dt);
 
@@ -145,6 +166,8 @@ namespace BankruptVtuber
             gm.Run.lastStreamEventHappened = _session.Event.Fired;
             gm.Run.lastStreamEventName = StreamEventState.DisplayName(_session.Event.Kind);
             gm.Run.lastStreamEventSuccess = _session.Event.Success;
+            gm.Run.lastStreamPeakViewers = _session.PeakViewers;
+            gm.Run.lastGoodsPromoSuccess = _session.Promo.Success;
             Week2Rules.AfterStream(
                 gm.Run,
                 _session.PeakViewers,
@@ -152,6 +175,13 @@ namespace BankruptVtuber
                 _session.HadHype,
                 _session.Misses,
                 gm.Week2);
+            Week3Rules.ApplyRivalResult(
+                gm.Run,
+                gm.Balance,
+                gm.Week3,
+                _session.Viewers,
+                _session.RivalViewers,
+                _session.RivalActive);
             _judge.text = _session.ForceEnded ? "멘탈 붕괴 — 강제 종료" : "방송 종료";
             _judge.color = Color.white;
             _judgeFlash = 1f;
@@ -174,10 +204,12 @@ namespace BankruptVtuber
             var top = UiKit.Panel(root, "Top", new Color(0.08f, 0.04f, 0.1f, 0.78f));
             UiKit.Layout(top, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(0, 86));
 
-            _viewers = Chip(top, "Viewers", "시청자", new Vector2(40, -16));
-            _income = Chip(top, "Income", "실시간 수익", new Vector2(360, -16));
-            _mental = Chip(top, "Mental", "멘탈", new Vector2(760, -16));
-            _timer = Chip(top, "Timer", "남은 시간", new Vector2(1100, -16));
+            _viewers = Chip(top, "Viewers", "시청자", new Vector2(20, -16));
+            _rival = Chip(top, "Rival", "라이벌", new Vector2(300, -16));
+            _income = Chip(top, "Income", "실시간 수익", new Vector2(580, -16));
+            _mental = Chip(top, "Mental", "멘탈", new Vector2(860, -16));
+            _timer = Chip(top, "Timer", "남은 시간", new Vector2(1140, -16));
+            _rival.transform.parent.gameObject.SetActive(false);
 
             _avatar = new AvatarView(root as RectTransform);
 
@@ -209,7 +241,7 @@ namespace BankruptVtuber
             var tlab = UiKit.Label(bottom, "TensionL", "텐션 (미스 스트릭)", 14, Palette.Muted, TextAnchor.LowerLeft);
             UiKit.Layout(tlab.rectTransform, new Vector2(0, 0), new Vector2(0.38f, 0.22f), new Vector2(0, 0), new Vector2(28, 4), Vector2.zero);
 
-            var keys = UiKit.Label(bottom, "Keys", "A 긍정   S 공감   D 웃음   F 감사   Space 슈퍼챗   이벤트 1–4", 18, Palette.PastelDim, TextAnchor.MiddleRight);
+            var keys = UiKit.Label(bottom, "Keys", "A 긍정   S 공감   D 웃음   F 감사   Space 슈퍼챗   이벤트 1–4   홍보 A/S·D/F", 18, Palette.PastelDim, TextAnchor.MiddleRight);
             UiKit.Layout(keys.rectTransform, new Vector2(0.38f, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-24, 8), Vector2.zero);
 
             _judge = UiKit.Label(root, "Judge", "", 64, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -244,6 +276,16 @@ namespace BankruptVtuber
             }
             _eventRoot.gameObject.SetActive(false);
             _eventDim.gameObject.SetActive(false);
+
+            _promoRoot = UiKit.Panel(root, "PromoCard", new Color(0.12f, 0.08f, 0.18f, 0.96f));
+            UiKit.Layout(_promoRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(560, 220));
+            _promoTitle = UiKit.Label(_promoRoot, "PTitle", "굿즈 홍보 타이밍", 34, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
+            UiKit.Layout(_promoTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -16), new Vector2(-24, 44));
+            _promoBody = UiKit.Label(_promoRoot, "PBody", "A / S  지금 아크릴 스탠드 홍보\nD / F  넘어가기", 20, Palette.Pastel, TextAnchor.MiddleCenter);
+            UiKit.Layout(_promoBody.rectTransform, new Vector2(0, 0.28f), new Vector2(1, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-28, 0));
+            _promoTimer = UiKit.Label(_promoRoot, "PTimer", "", 18, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_promoTimer.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 16), new Vector2(0, 24));
+            _promoRoot.gameObject.SetActive(false);
         }
 
         Text Chip(Transform parent, string name, string label, Vector2 pos)
@@ -262,6 +304,13 @@ namespace BankruptVtuber
         {
             _viewers.text = $"{_session.Viewers:0.0}";
             _viewers.color = Palette.Pastel;
+            bool vs = _session.RivalActive;
+            _rival.transform.parent.gameObject.SetActive(vs);
+            if (vs)
+            {
+                _rival.text = $"{_session.RivalViewers:0.0}";
+                _rival.color = Palette.Troll;
+            }
             int shown = _session.ForceEnded ? _session.PayoutIncome : _session.LiveIncome;
             _income.text = EconomyRules.FormatWon(shown);
             _income.color = Palette.CashGreen;
@@ -309,9 +358,20 @@ namespace BankruptVtuber
                 if (img != null)
                 {
                     var c = img.color;
-                    c.a = _session.EventActive ? 0.22f : 0.18f;
+                    c.a = _session.EventActive || _session.PromoActive ? 0.22f : 0.18f;
                     img.color = c;
                 }
+            }
+        }
+
+        void RefreshPromoOverlay()
+        {
+            bool on = _session.PromoActive;
+            _promoRoot.gameObject.SetActive(on);
+            if (on)
+            {
+                _eventDim.gameObject.SetActive(true);
+                _promoTimer.text = $"{_session.Promo.TimeLeft:0.00}s";
             }
         }
 
@@ -319,8 +379,8 @@ namespace BankruptVtuber
         {
             bool on = _session.EventActive;
             _eventRoot.gameObject.SetActive(on);
-            _eventDim.gameObject.SetActive(on);
-            _charge.gameObject.SetActive(!on && StreamBindings.SuperchatCharging);
+            _eventDim.gameObject.SetActive(on || _session.PromoActive);
+            _charge.gameObject.SetActive(!on && !_session.PromoActive && StreamBindings.SuperchatCharging);
             if (!on)
                 return;
 

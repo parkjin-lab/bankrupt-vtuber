@@ -103,7 +103,8 @@ namespace BankruptVtuber
             int week = WeekSchedule.WeekNumber(run);
             int last = WeekSchedule.LastDayOfCurrentWeek(run);
             string members = run.membershipUnlocked ? $"   ·   멤버십 {run.membershipCount}" : "";
-            _day.text = $"{week}주차  ·  {run.day}일차   /   {last}일{members}";
+            string goods = run.goodsUnlocked ? $"   ·   아크릴 {run.goodsStock}" : "";
+            _day.text = $"{week}주차  ·  {run.day}일차   /   {last}일{members}{goods}";
             _cash.text = EconomyRules.FormatWon(run.cash);
             _debt.text = EconomyRules.FormatWon(run.debt);
             _mental.text = $"{run.mental}/100";
@@ -112,9 +113,10 @@ namespace BankruptVtuber
         IEnumerator BillWave(GameManager gm)
         {
             var b = gm.Balance;
-            ExtraThreatRules.EnsureRolled(gm.Run, b, gm.Week2);
+            ExtraThreatRules.EnsureRolled(gm.Run, b, gm.Week2, gm.Week3);
+            Week3Rules.TryUnlockGoods(gm.Run, gm.Week3);
 
-            var fixedBills = WeekSchedule.FixedBills(gm.Run, b, gm.Week2);
+            var fixedBills = WeekSchedule.FixedBills(gm.Run, b, gm.Week2, gm.Week3);
             var bills = new System.Collections.Generic.List<Bill>
             {
                 new Bill { Name = "월세", Art = ArtSprites.BillRent, Amount = fixedBills.Rent },
@@ -148,10 +150,10 @@ namespace BankruptVtuber
             }
 
             yield return new WaitForSeconds(0.35f);
-            EconomyRules.ApplyDailyBills(gm.Run, b, gm.Week2);
+            EconomyRules.ApplyDailyBills(gm.Run, b, gm.Week2, gm.Week3);
             RefreshHud();
             _cash.color = Palette.MoneyRed;
-            int today = WeekSchedule.TotalFixedBills(gm.Run, b, gm.Week2) + gm.Run.extraThreatAmount;
+            int today = WeekSchedule.TotalFixedBills(gm.Run, b, gm.Week2, gm.Week3) + gm.Run.extraThreatAmount;
             _log.text = gm.Run.extraRolls.Count == 0
                 ? $"오늘 고정비 {EconomyRules.FormatWon(today)} 차감. 방송으로 메우세요."
                 : $"{gm.Run.extraThreatName} 때문에 오늘 {EconomyRules.FormatWon(today)} 차감. 방송으로 메우세요.";

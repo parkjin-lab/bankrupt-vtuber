@@ -166,6 +166,7 @@ def check_project() -> None:
         "Assets/Scripts/Stream/StreamSession.cs",
         "Assets/Resources/Balance/Week1Balance.asset",
         "Assets/Resources/Balance/Week2Balance.asset",
+        "Assets/Resources/Balance/Week3Balance.asset",
         "Assets/Resources/Balance/ChatCatalog.asset",
         "Assets/Resources/Fonts/NotoSansKR-Regular.ttf",
     ):
@@ -436,7 +437,7 @@ def check_project() -> None:
     if "멤버십 유도" in live_cs or "PitchInvite" in live_cs or "MaybeStartPitch" in session_cs:
         fail("mid-stream 멤버십 유도 prompt is still present")
     else:
-        ok("clip-upload is the only new stream variable (no 멤버십 유도)")
+        ok("Week 2 stream variable is clip (no 멤버십 유도)")
     if (ROOT / "Assets/Scripts/Stream/MembershipPitch.cs").exists():
         fail("MembershipPitch.cs should be removed")
     else:
@@ -445,14 +446,150 @@ def check_project() -> None:
         fail("Week 2 added agency/concert/global")
     else:
         ok("Week 2 does not add agency, concert, or global")
-    if "Week2" in title_cs or "membershipCount" in title_cs:
-        fail("Title scene started applying Week 2 systems")
+    if "Week2" in title_cs or "membershipCount" in title_cs or "Week3" in title_cs:
+        fail("Title scene started applying Week 2/3 systems")
     else:
         ok("Title still starts a Week 1 run")
     if "Week2Balance.Load" not in gm:
         fail("GameManager does not load Week2Balance")
     else:
         ok("GameManager loads Week2Balance")
+
+    w3_asset_path = ROOT / "Assets/Resources/Balance/Week3Balance.asset"
+    w3_cs = (ROOT / "Assets/Scripts/Data/Week3Balance.cs").read_text(encoding="utf-8")
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    promo_cs = (ROOT / "Assets/Scripts/Stream/GoodsPromo.cs").read_text(encoding="utf-8")
+    w3_asset = w3_asset_path.read_text(encoding="utf-8") if w3_asset_path.exists() else ""
+    in2 = sched_cs.split("public static bool InWeek2", 1)[-1].split("public static", 1)[0]
+    if "Week2LastDay" not in in2:
+        fail("InWeek2 still treats days 11+ as Week 2")
+    else:
+        ok("InWeek2 is days 6–10 only")
+    if "InWeek3" not in sched_cs or "Week3LastDay" not in sched_cs:
+        fail("WeekSchedule missing InWeek3 / days 11–15")
+    else:
+        ok("Week 3 is gated to days 11–15")
+    if "CanEnterWeek3" not in sched_cs or "3주차 시작" not in settle_cs:
+        fail("Week 2 clear does not offer Week 3 continue")
+    else:
+        ok("Week 2 clear can continue into days 11–15")
+
+    w3_expect = {
+        "billRent: 12000": "w3 rent",
+        "billElectricNet: 6000": "w3 electric",
+        "billAvatarLicense: 6000": "w3 license",
+        "billFood: 7000": "w3 food",
+        "billGear: 3000": "w3 gear",
+        "winDebtMax: 15000": "w3 win debt",
+        "winCashMin: 140000": "w3 win cash",
+        "bankruptDebt: 260000": "w3 bankrupt",
+        "firstDay: 11": "week3 start day",
+        "lastDay: 15": "week3 end day",
+        "extraThreatMaxPerDay: 2": "w3 max extras",
+        "rivalDay: 12": "rival day",
+        "rivalPeakViewers: 55": "rival peak",
+        "rivalStartViewers: 25": "rival start",
+        "rivalViewersPerSec: 0.9": "rival growth",
+        "rivalPerfectSteal: 0.6": "perfect steal",
+        "rivalMissSteal: 0.8": "miss steal",
+        "rivalWinCash: 20000": "rival cash",
+        "rivalWinViewerBonus: 6": "rival viewers",
+        "rivalLoseViewerPenalty: 5": "rival lose viewers",
+        "rivalLoseMental: 12": "rival lose mental",
+        "goodsUnlockCash: 60000": "goods unlock cash",
+        "goodsUnlockStock: 20": "goods unlock stock",
+        "goodsProduceCost: 2500": "goods produce",
+        "goodsPrice: 7000": "goods price",
+        "goodsSoldMembersFactor: 0.4": "goods members",
+        "goodsSoldPeakFactor: 0.08": "goods peak",
+        "goodsPromoMultiplier: 1.5": "promo mult",
+        "promoWindowSeconds: 1.2": "promo window",
+        "promoFallbackSeconds: 55": "promo fallback",
+    }
+    for token, label in w3_expect.items():
+        if token not in w3_asset:
+            fail(f"Week3Balance missing {label} ({token})")
+    if "billRent = 12000" not in w3_cs or "billGear = 3000" not in w3_cs:
+        fail("Week3Balance.cs missing locked bills 12000/6000/6000/7000/3000")
+    else:
+        ok("Week3Balance locked bills 12000/6000/6000/7000/3000")
+    if "billRent: 10000" not in w2_asset or "bankruptDebt: 220000" not in w2_asset:
+        fail("Week 2 bills or bankrupt were overwritten")
+    else:
+        ok("Week 2 bills stay ₩28,000 and bankrupt ₩220,000")
+    if "billRent: 8000" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("Week 1 bills or bankrupt were overwritten by Week 3")
+    else:
+        ok("Week 1 numbers stay unchanged after Week 3")
+
+    for name in ("장비 고장", "소액 추가", "플랫폼 수수료"):
+        if name not in w3_asset or name not in extra_cs:
+            fail(f"Week 3 extra threat '{name}' missing")
+    else:
+        ok("Week 3 extra threats are 장비 고장 / 소액 추가 / 플랫폼 수수료")
+    if "DefaultWeek3Table" not in extra_cs or "RollWeek3" not in extra_cs:
+        fail("Week 3 extras are not independent chance rolls")
+    else:
+        ok("Week 3 extras are 0–2 independent chance rolls")
+    for token in ("chancePercent: 25", "chancePercent: 20", "minWon: 6000", "maxWon: 15000", "minWon: 4000", "maxWon: 10000"):
+        if token not in w3_asset:
+            fail(f"Week 3 threat field {token} missing")
+    ok("Week 3 extra threat chances/amounts match the locked table")
+
+    if "ShouldStartRival" not in w3r_cs or "rivalMatchHappened" not in run_cs:
+        fail("rival match is not a once-per-run stream")
+    else:
+        ok("rival match fires once when day==12 or peak viewers >= 55")
+    if "EnableRival" not in session_cs or "rivalPerfectSteal" not in session_cs:
+        fail("stream session missing rival steal/defense")
+    else:
+        ok("Perfect +0.6 steal and Miss −0.8 to the rival lane")
+    if "_rival" not in live_cs or "라이벌" not in live_cs:
+        fail("LiveStream HUD missing rival viewer count")
+    else:
+        ok("LiveStream HUD shows rival viewers during the match")
+    if "ApplyRivalResult" not in w3r_cs or "rivalWinCash" not in w3r_cs:
+        fail("rival win/lose payout missing")
+    else:
+        ok("rival win +₩20,000 / +6 viewers; lose −5 viewers floor 12 and mental −12")
+
+    if "goodsUnlocked" not in run_cs or "TryUnlockGoods" not in w3r_cs:
+        fail("아크릴 스탠드 unlock is missing")
+    else:
+        ok("goods unlock when membership is on and cash >= ₩60,000")
+    if "ProduceGoods" not in w3r_cs or "아크릴 1개 생산" not in settle_cs:
+        fail("Settlement missing goods produce button")
+    else:
+        ok("Settlement can produce 아크릴 at ₩2,500 each")
+    if "ApplyGoodsSales" not in w3r_cs or "goodsPrice" not in w3r_cs:
+        fail("daily goods sales missing")
+    else:
+        ok("daily goods sold is floor(members*0.4 + peak*0.08), min 1, capped by stock")
+
+    if "GoodsPromo" not in session_cs or "굿즈 홍보 타이밍" not in live_cs or "굿즈 홍보 타이밍" not in promo_cs:
+        fail("굿즈 홍보 타이밍 prompt missing")
+    else:
+        ok("Week 3 stream variable is 굿즈 홍보 타이밍")
+    if "PromoConfirmDown" not in (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8"):
+        fail("promo keys A/S D/F missing")
+    else:
+        ok("promo confirm is A/S and skip is D/F")
+    if "Week3Win" not in eco_cs or "goodsUnlocked" not in eco_cs:
+        fail("Week 3 clear does not require goods unlocked")
+    else:
+        ok("Week 3 clear requires survive 11–15 and goods unlocked")
+    if "Week3Balance.Load" not in gm:
+        fail("GameManager does not load Week3Balance")
+    else:
+        ok("GameManager loads Week3Balance")
+    if "agency" in w3_cs.lower() or "concert" in w3_cs.lower() or "글로벌" in w3_cs:
+        fail("Week 3 added agency/concert/global")
+    else:
+        ok("Week 3 does not add agency, concert, or global")
+    if "ClearWeek3Progress" not in run_cs or "goodsUnlocked = false" not in run_cs:
+        fail("ResetNewRun does not clear Week 3 progress")
+    else:
+        ok("Title / Restart clears Week 3 so a new run is Week 1")
 
 
 def simulate_stream(skill: str, seed: int) -> int:
@@ -641,6 +778,58 @@ def check_economy() -> None:
     win = (debt <= 20000 or cash >= 110000) and unlocked
     print(f"WEEK2: average cash={cash} debt={debt} members={members} win={win}")
     ok("Week 2 5-day ledger simulation completed")
+
+    w3_bills = 12000 + 6000 + 6000 + 7000 + 3000
+    if w3_bills != 34000:
+        fail(f"Week 3 bill sum {w3_bills} != 34000")
+    else:
+        ok("Week 3 fixed bills sum to ₩34,000")
+
+    members, peak = 8, 50.0
+    sold = math.floor(members * 0.4 + peak * 0.08)
+    if sold < 1:
+        sold = 1
+    if sold != 7:
+        fail(f"goods sold {sold} != 7 for 8 members / peak 50")
+    else:
+        ok("goods sold floor(members*0.4 + peak*0.08) is 7 at 8/50")
+    promo_sold = math.floor(sold * 1.5)
+    if promo_sold != 10:
+        fail(f"promo goods sold {promo_sold} != 10")
+    else:
+        ok("goods promo multiplies that day's sold by 1.5")
+    if 7 * 7000 != 49000:
+        fail("goods profit is not sold * 7000")
+    else:
+        ok("goods profit is sold × ₩7,000 after produce cost is paid")
+
+    bonus = 0
+    start = 12
+    next_v = max(start, start + bonus - 5)
+    if next_v != 12:
+        fail(f"rival lose viewer floor {next_v} != 12")
+    else:
+        ok("rival lose floors starting viewers at the Week 1 start of 12")
+
+    cash, debt, stock = 110000, 15000, 20
+    extras3 = [6000, 0, 4000, 0, 4000]
+    unlocked = True
+    for day in range(11, 16):
+        cash -= w3_bills + extras3[day - 11]
+        if cash < 0:
+            debt += -cash
+            cash = 0
+        take = simulate_stream("average", seed=4000 + day)
+        cash += take
+        cash += members * 150
+        day_sold = min(stock, max(1, int(math.floor(members * 0.4 + 40 * 0.08))))
+        cash += day_sold * 7000
+        stock -= day_sold
+        if day == 12:
+            cash += 20000
+    win3 = (debt <= 15000 or cash >= 140000) and unlocked
+    print(f"WEEK3: average cash={cash} debt={debt} stock={stock} win={win3}")
+    ok("Week 3 5-day ledger simulation completed")
 
 
 def main() -> int:

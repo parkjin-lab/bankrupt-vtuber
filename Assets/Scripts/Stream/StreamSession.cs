@@ -40,6 +40,9 @@ namespace BankruptVtuber
         public bool Finished;
         public bool HadHype;
         public readonly StreamEventState Event = new StreamEventState();
+        public readonly GoodsPromoState Promo = new GoodsPromoState();
+        public bool RivalActive;
+        public float RivalViewers;
         public float PeakViewers;
         public float IncomeShieldLeft;
         public float IncomeFreezeLeft;
@@ -55,6 +58,8 @@ namespace BankruptVtuber
         int _userSerial;
         bool _pendingHypeEvent;
         bool _pendingMissEvent;
+        Week3Balance _week3;
+        bool _promoEnabled;
 
         static readonly string[] FakeUsers =
         {
@@ -84,7 +89,28 @@ namespace BankruptVtuber
 
         public bool EventActive => Event.Active;
 
+        public bool PromoActive => Promo.Active;
+
         public bool HypeActive => HypeLeft > 0f;
+
+        public void EnableRival(Week3Balance w3)
+        {
+            if (w3 == null)
+                return;
+            _week3 = w3;
+            RivalActive = true;
+            RivalViewers = w3.rivalStartViewers;
+        }
+
+        public void EnablePromo(Week3Balance w3)
+        {
+            if (w3 == null)
+                return;
+            _week3 = w3;
+            _promoEnabled = true;
+            Promo.Reset();
+            Promo.Window = w3.promoWindowSeconds > 0.2f ? w3.promoWindowSeconds : 1.2f;
+        }
 
         public float IncomeMultiplier => StreamRules.IncomeMultiplier(PerfectCombo, HypeActive, Balance);
 
@@ -117,6 +143,21 @@ namespace BankruptVtuber
                     ResolveEvent(false);
             }
 
+            if (Promo.Active)
+            {
+                FreezeNotes(dt);
+                Promo.TimeLeft -= dt;
+                if (Promo.TimeLeft <= 0f)
+                    ResolvePromo(false);
+            }
+
+            if (RivalActive && _week3 != null)
+            {
+                RivalViewers += _week3.rivalViewersPerSec * dt;
+                if (RivalViewers < 0f)
+                    RivalViewers = 0f;
+            }
+
             if (HypeActive)
             {
                 HypeLeft -= dt;
@@ -142,12 +183,13 @@ namespace BankruptVtuber
                 }
             }
 
-            if (!Event.Active)
+            if (!Event.Active && !Promo.Active)
             {
                 MaybeSpawnRegular();
                 MaybeSpawnSuperchat();
                 ExpireMisses();
                 MaybeStartEvent();
+                MaybeStartPromo();
             }
 
             if (Mental <= 0)
@@ -163,6 +205,8 @@ namespace BankruptVtuber
                 TimeLeft = 0f;
                 if (Event.Active)
                     ResolveEvent(false);
+                if (Promo.Active)
+                    ResolvePromo(false);
                 ExpireAllRemaining();
                 Finished = true;
             }
@@ -173,7 +217,7 @@ namespace BankruptVtuber
 
         public bool TryHit(ChatKind kind, float now, bool hold)
         {
-            if (Finished || Event.Active)
+            if (Finished || Event.Active || Promo.Active)
                 return false;
 
             ChatNote best = null;
@@ -290,6 +334,7 @@ namespace BankruptVtuber
                 Balance);
 
             Viewers = StreamRules.ClampViewers(Viewers + result.ViewerDelta - result.ExtraViewerLoss, Balance);
+            ApplyRivalSteal(judgement);
             Mental += result.MentalDelta;
             if (Mental < 0)
                 Mental = 0;
@@ -328,6 +373,32 @@ namespace BankruptVtuber
 
             LastJudgement = judgement;
             LastResolved = note;
+        }
+
+        void ApplyRivalSteal(Judgement judgement)
+        {
+            if (!RivalActive || _week3 == null)
+                return;
+            if (judgement == Judgement.Perfect)
+            {
+                Viewers = StreamRules.ClampViewers(Viewers + _week3.rivalPerfectSteal, Balance);
+                RivalViewers -= _week3.rivalPerfectSteal;
+                if (RivalViewers < 0f)
+                    RivalViewers = 0f;
+            }
+            else if (judgement == Judgement.Miss)
+            {
+                Viewers = StreamRules.ClampViewers(Viewers - _week3.rivalMissSteal, Balance);
+                RivalViewers += _week3.rivalMissSteal;
+            }
+        }
+
+        public bool TryPromo(bool success)
+        {
+            if (!Promo.Active || Finished)
+                return false;
+            ResolvePromo(success);
+            return true;
         }
 
         public bool TryEventKey(int key)
@@ -409,6 +480,35 @@ namespace BankruptVtuber
                 else
                     IncomeFreezeLeft = Balance.eventLagFailFreezeSeconds;
             }
+        }
+
+        void MaybeStartPromo()
+        {
+            if (!_promoEnabled || Promo.Fired || Promo.Active || Event.Active || Finished)
+                return;
+            float fallback = _week3 != null ? _week3.promoFallbackSeconds : 55f;
+            if (!HypeActive && Elapsed < fallback)
+                return;
+            StartPromo();
+        }
+
+        void StartPromo()
+        {
+            Promo.Fired = true;
+            Promo.Active = true;
+            Promo.Resolved = false;
+            Promo.Success = false;
+            Promo.TimeLeft = Promo.Window;
+        }
+
+        void ResolvePromo(bool success)
+        {
+            if (!Promo.Active)
+                return;
+            Promo.Active = false;
+            Promo.Resolved = true;
+            Promo.Success = success;
+            Promo.TimeLeft = 0f;
         }
 
         void FreezeNotes(float dt)

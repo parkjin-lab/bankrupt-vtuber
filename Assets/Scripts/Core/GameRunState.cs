@@ -53,6 +53,18 @@ namespace BankruptVtuber
         public bool lastClipSuccess;
         public int lastClipCash;
 
+        public bool rivalMatchHappened;
+        public bool lastRivalMatch;
+        public bool lastRivalWon;
+        public int lastRivalCash;
+        public bool goodsUnlocked;
+        public int goodsStock;
+        public bool goodsSoldAppliedThisDay;
+        public int lastGoodsSold;
+        public int lastGoodsRevenue;
+        public bool lastGoodsPromoSuccess;
+        public float lastStreamPeakViewers;
+
         public void ResetNewRun(Week1Balance b, int? seed = null)
         {
             day = 1;
@@ -77,6 +89,7 @@ namespace BankruptVtuber
             lastRepaid = 0;
             lastOutcome = WeekOutcome.Continue;
             ClearWeek2Progress();
+            ClearWeek3Progress();
         }
 
         void ClearWeek2Progress()
@@ -96,6 +109,21 @@ namespace BankruptVtuber
             lastClipAttempted = false;
             lastClipSuccess = false;
             lastClipCash = 0;
+        }
+
+        void ClearWeek3Progress()
+        {
+            rivalMatchHappened = false;
+            lastRivalMatch = false;
+            lastRivalWon = false;
+            lastRivalCash = 0;
+            goodsUnlocked = false;
+            goodsStock = 0;
+            goodsSoldAppliedThisDay = false;
+            lastGoodsSold = 0;
+            lastGoodsRevenue = 0;
+            lastGoodsPromoSuccess = false;
+            lastStreamPeakViewers = 0f;
         }
 
         public void ApplyExtraThreat(ExtraThreatRoll roll)
@@ -140,7 +168,7 @@ namespace BankruptVtuber
             extraRolls.Clear();
         }
 
-        public void BeginNextDay(Week1Balance b, Week2Balance w2 = null)
+        public void BeginNextDay(Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null)
         {
             day += 1;
             mental += b.mentalRestoreEachMorning;
@@ -170,9 +198,18 @@ namespace BankruptVtuber
             lastClipAttempted = false;
             lastClipSuccess = false;
             lastClipCash = 0;
+            lastRivalMatch = false;
+            lastRivalWon = false;
+            lastRivalCash = 0;
+            goodsSoldAppliedThisDay = false;
+            lastGoodsSold = 0;
+            lastGoodsRevenue = 0;
+            lastGoodsPromoSuccess = false;
+            lastStreamPeakViewers = 0f;
             ClearExtraThreat();
             Week2Rules.ApplyWeek2Entry(this, w2);
             WeekSchedule.TryUnlockMembership(this, w2);
+            Week3Rules.TryUnlockGoods(this, w3);
         }
     }
 }

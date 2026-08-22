@@ -195,12 +195,67 @@ namespace BankruptVtuber
             return new ExtraThreatRoll(def.id, def.displayName, amount, art, def.Tint);
         }
 
+        public static ExtraThreatDef[] DefaultWeek3Table()
+        {
+            return new[]
+            {
+                new ExtraThreatDef
+                {
+                    id = "gear_break",
+                    displayName = "장비 고장",
+                    minWon = 6000,
+                    maxWon = 15000,
+                    chancePercent = 25,
+                    artPath = ArtSprites.BillGear,
+                    tintHex = "FF6A6A"
+                },
+                new ExtraThreatDef
+                {
+                    id = "petty_bill",
+                    displayName = "소액 추가",
+                    minWon = 4000,
+                    maxWon = 10000,
+                    chancePercent = 25,
+                    artPath = ArtSprites.BillFood,
+                    tintHex = "FFB020"
+                },
+                new ExtraThreatDef
+                {
+                    id = "platform_fee",
+                    displayName = "플랫폼 수수료",
+                    minWon = 4000,
+                    maxWon = 4000,
+                    chancePercent = 20,
+                    artPath = ArtSprites.Superchat,
+                    tintHex = "FFB020"
+                }
+            };
+        }
+
         public static ExtraThreatRoll[] RollWeek2(Week2Balance w2, int runSeed, int day)
         {
             var table = ExtraThreatRules.TableOrDefault(
                 w2 != null ? w2.extraThreats : null,
                 DefaultWeek2Table());
             int cap = w2 != null && w2.extraThreatMaxPerDay > 0 ? w2.extraThreatMaxPerDay : 2;
+            return RollChanceExtras(table, cap, runSeed, day);
+        }
+
+        public static ExtraThreatRoll[] RollWeek3(Week3Balance w3, int runSeed, int day)
+        {
+            var table = ExtraThreatRules.TableOrDefault(
+                w3 != null ? w3.extraThreats : null,
+                DefaultWeek3Table());
+            int cap = w3 != null && w3.extraThreatMaxPerDay > 0 ? w3.extraThreatMaxPerDay : 2;
+            return RollChanceExtras(table, cap, runSeed, day);
+        }
+
+        public static ExtraThreatRoll[] RollChanceExtras(ExtraThreatDef[] table, int cap, int runSeed, int day)
+        {
+            if (table == null || table.Length == 0)
+                table = DefaultWeek2Table();
+            if (cap <= 0)
+                cap = 2;
             var rng = new System.Random(MixSeed(runSeed, day));
             var hits = new System.Collections.Generic.List<ExtraThreatDef>(table.Length);
             for (int i = 0; i < table.Length; i++)
@@ -241,12 +296,17 @@ namespace BankruptVtuber
             return rolls;
         }
 
-        public static void EnsureRolled(GameRunState state, Week1Balance b, Week2Balance w2 = null)
+        public static void EnsureRolled(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null)
         {
             if (state == null || b == null)
                 return;
             if (state.extraThreatRolled)
                 return;
+            if (WeekSchedule.InWeek3(state))
+            {
+                state.ApplyExtraRolls(RollWeek3(w3, state.runSeed, state.day));
+                return;
+            }
             if (WeekSchedule.InWeek2(state))
             {
                 state.ApplyExtraRolls(RollWeek2(w2, state.runSeed, state.day));

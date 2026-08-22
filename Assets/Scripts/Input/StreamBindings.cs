@@ -75,5 +75,17 @@ namespace BankruptVtuber
         public static bool Confirm =>
             UnityEngine.Input.GetKeyDown(KeyCode.Space) ||
             UnityEngine.Input.GetKeyDown(KeyCode.Return);
+
+        /// <summary>굿즈 홍보 타이밍 confirm (A / S). Distinct from judgement while the prompt is up.</summary>
+        public static bool PromoConfirmDown()
+        {
+            return UnityEngine.Input.GetKeyDown(KeyCode.A) || UnityEngine.Input.GetKeyDown(KeyCode.S);
+        }
+
+        /// <summary>굿즈 홍보 타이밍 skip (D / F).</summary>
+        public static bool PromoSkipDown()
+        {
+            return UnityEngine.Input.GetKeyDown(KeyCode.D) || UnityEngine.Input.GetKeyDown(KeyCode.F);
+        }
     }
 }
