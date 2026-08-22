@@ -82,6 +82,30 @@ namespace BankruptVtuber
         public bool lastSponsorLineSuccess;
         public bool lastSponsorBroke;
 
+        public int playerRankingScore;
+        public int[] npcRankingScore = new int[3];
+        public int[] lastNpcScore = new int[3];
+        public int lastRankingScore;
+        public int lastDailyRank;
+        public int finalRank;
+        public int lastRankingFirstPay;
+        public bool rankingAppliedThisDay;
+
+        public bool concertBooked;
+        public bool concertPending;
+        public bool concertPlayed;
+        public bool lastStreamWasConcert;
+        public int lastConcertCost;
+        public int lastConcertPayout;
+        public bool lastConcertFailed;
+        public bool lastConcertPerformanceSuccess;
+        public bool concertResultApplied;
+
+        public int zeroMentalDays;
+        public bool zeroMentalCountedThisDay;
+        public EndingKind lastEnding;
+        public bool retirePicked;
+
         public void ResetNewRun(Week1Balance b, int? seed = null)
         {
             day = 1;
@@ -108,6 +132,7 @@ namespace BankruptVtuber
             ClearWeek2Progress();
             ClearWeek3Progress();
             ClearWeek4Progress();
+            ClearWeek5Progress();
         }
 
         void ClearWeek2Progress()
@@ -164,6 +189,31 @@ namespace BankruptVtuber
             lastSponsorBroke = false;
         }
 
+        void ClearWeek5Progress()
+        {
+            playerRankingScore = 0;
+            npcRankingScore = new int[3];
+            lastNpcScore = new int[3];
+            lastRankingScore = 0;
+            lastDailyRank = 0;
+            finalRank = 0;
+            lastRankingFirstPay = 0;
+            rankingAppliedThisDay = false;
+            concertBooked = false;
+            concertPending = false;
+            concertPlayed = false;
+            lastStreamWasConcert = false;
+            lastConcertCost = 0;
+            lastConcertPayout = 0;
+            lastConcertFailed = false;
+            lastConcertPerformanceSuccess = false;
+            concertResultApplied = false;
+            zeroMentalDays = 0;
+            zeroMentalCountedThisDay = false;
+            lastEnding = EndingKind.None;
+            retirePicked = false;
+        }
+
         public void ApplyExtraThreat(ExtraThreatRoll roll)
         {
             ApplyExtraRolls(new[] { roll });
@@ -206,7 +256,7 @@ namespace BankruptVtuber
             extraRolls.Clear();
         }
 
-        public void BeginNextDay(Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null, Week4Balance w4 = null)
+        public void BeginNextDay(Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null, Week4Balance w4 = null, Week5Balance w5 = null)
         {
             day += 1;
             mental += b.mentalRestoreEachMorning;
@@ -255,6 +305,17 @@ namespace BankruptVtuber
             lastSponsorLineBonus = 0;
             lastSponsorLineSuccess = false;
             lastSponsorBroke = false;
+            lastRankingScore = 0;
+            lastDailyRank = 0;
+            lastRankingFirstPay = 0;
+            rankingAppliedThisDay = false;
+            lastStreamWasConcert = false;
+            lastConcertPayout = 0;
+            lastConcertFailed = false;
+            lastConcertPerformanceSuccess = false;
+            concertResultApplied = false;
+            zeroMentalCountedThisDay = false;
+            retirePicked = false;
             ClearExtraThreat();
             Week2Rules.ApplyWeek2Entry(this, w2);
             WeekSchedule.TryUnlockMembership(this, w2);

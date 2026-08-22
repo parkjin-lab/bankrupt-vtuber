@@ -17,6 +17,14 @@ namespace BankruptVtuber
         Button _foundAgency;
         Button _scout;
         Button _signSponsor;
+        Button _bookConcert;
+        Button _concertLive;
+        Button _retire;
+        RectTransform _rankBox;
+        Text _rankPanel;
+        GameObject _endingRoot;
+        Text _endingTitle;
+        Text _endingBody;
 
         void Awake()
         {
@@ -35,6 +43,9 @@ namespace BankruptVtuber
                 Week3Rules.ApplyGoodsSales(gm.Run, gm.Week3);
                 Week4Rules.ApplyJuniorDaily(gm.Run, gm.Week4);
                 Week4Rules.ApplySponsorDaily(gm.Run, gm.Week4);
+                Week5Rules.ApplyRanking(gm.Run, gm.Week5);
+                Week5Rules.ApplyConcertResult(gm.Run, gm.Balance, gm.Week5);
+                Week5Rules.NoteZeroMentalDay(gm.Run);
             }
             Render();
         }
@@ -52,7 +63,8 @@ namespace BankruptVtuber
             run.lastOutcome == WeekOutcome.Continue ||
             WeekSchedule.CanEnterWeek2(run) ||
             WeekSchedule.CanEnterWeek3(run) ||
-            WeekSchedule.CanEnterWeek4(run);
+            WeekSchedule.CanEnterWeek4(run) ||
+            WeekSchedule.CanEnterWeek5(run);
 
         void Build()
         {
@@ -96,6 +108,20 @@ namespace BankruptVtuber
             UiKit.Layout(_signSponsor.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(360, 118), new Vector2(300, 56));
             _signSponsor.gameObject.SetActive(false);
 
+            _bookConcert = UiKit.Button(root, "BookConcert", "콘서트 개최  ₩80,000", OnBookConcert, Palette.Gold, Palette.Ink);
+            UiKit.Layout(_bookConcert.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-210, 184), new Vector2(360, 56));
+            _bookConcert.gameObject.SetActive(false);
+            _concertLive = UiKit.Button(root, "ConcertLive", "콘서트 방송", OnConcertLive, Palette.PinkDeep, Color.white);
+            UiKit.Layout(_concertLive.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(210, 184), new Vector2(360, 56));
+            _concertLive.gameObject.SetActive(false);
+
+            _rankBox = UiKit.Panel(root, "RankPanel", new Color(0.10f, 0.05f, 0.12f, 0.92f));
+            UiKit.Layout(_rankBox, new Vector2(1, 0.55f), new Vector2(1, 0.55f), new Vector2(1, 0.5f), new Vector2(-20, 0), new Vector2(280, 220));
+            _rankPanel = UiKit.Label(_rankBox, "RankBody", "", 18, Palette.Pastel, TextAnchor.UpperLeft);
+            UiKit.Stretch(_rankPanel.rectTransform, 16, 16, 14, 14);
+            _rankPanel.lineSpacing = 1.15f;
+            _rankBox.gameObject.SetActive(false);
+
             _repay = UiKit.Button(root, "Repay", "남은 현금으로 빚 갚기", OnRepay, Palette.Gold, Palette.Ink);
             UiKit.Layout(_repay.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-210, 52), new Vector2(360, 60));
 
@@ -104,6 +130,25 @@ namespace BankruptVtuber
 
             _restart = UiKit.Button(root, "Restart", "처음부터", () => GameManager.Instance.RestartRun(), Palette.Troll, Color.white);
             UiKit.Layout(_restart.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 52), new Vector2(360, 60));
+
+            _endingRoot = new GameObject("EndingRoot", typeof(RectTransform));
+            _endingRoot.transform.SetParent(root, false);
+            UiKit.Stretch(_endingRoot.GetComponent<RectTransform>());
+            var endingWash = UiKit.Image(_endingRoot.transform, "EndingWash", new Color(0.06f, 0.03f, 0.08f, 0.94f));
+            UiKit.Stretch(endingWash.rectTransform);
+            var endingCard = UiKit.Panel(_endingRoot.transform, "EndingCard", new Color(0.14f, 0.07f, 0.12f, 0.98f));
+            UiKit.Layout(endingCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760, 360));
+            _endingTitle = UiKit.Label(endingCard, "ETitle", "", 48, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
+            UiKit.Layout(_endingTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 64));
+            _endingBody = UiKit.Label(endingCard, "EBody", "", 24, Palette.Pastel, TextAnchor.MiddleCenter);
+            UiKit.Layout(_endingBody.rectTransform, new Vector2(0, 0.28f), new Vector2(1, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-48, 0));
+            _endingBody.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _endingBody.lineSpacing = 1.2f;
+            _retire = UiKit.Button(endingCard, "Retire", "후배에게 메인 양도", OnRetire, Palette.Gold, Palette.Ink);
+            UiKit.Layout(_retire.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-190, 28), new Vector2(320, 56));
+            var endingRestart = UiKit.Button(endingCard, "EndingRestart", "처음부터", () => GameManager.Instance.RestartRun(), Palette.PinkDeep, Color.white);
+            UiKit.Layout(endingRestart.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(190, 28), new Vector2(320, 56));
+            _endingRoot.SetActive(false);
         }
 
         void Render()
@@ -114,6 +159,7 @@ namespace BankruptVtuber
             var w2 = gm.Week2;
             var w3 = gm.Week3;
             var w4 = gm.Week4;
+            var w5 = gm.Week5;
 
             string extras = "";
             if (run.extraRolls.Count > 0)
@@ -180,6 +226,17 @@ namespace BankruptVtuber
                     ? $"스폰서 멘트         {EconomyRules.FormatWon(run.lastSponsorLineBonus)}\n"
                     : "") +
                 (run.lastSponsorBroke ? "스폰서 계약 종료   −₩15,000 · 멘탈 −12\n" : "") +
+                (run.lastRankingFirstPay > 0
+                    ? $"랭킹 1위            {EconomyRules.FormatWon(run.lastRankingFirstPay)}\n"
+                    : "") +
+                (run.lastConcertCost > 0 && run.concertBooked
+                    ? $"콘서트 개최        -{EconomyRules.FormatWon(run.lastConcertCost)}\n"
+                    : "") +
+                (run.lastConcertFailed ? "콘서트 실패         개최비 소멸 · 멘탈 −25 · 시작 시청자 −10\n" : "") +
+                (run.lastConcertPayout > 0
+                    ? $"콘서트 정산         {EconomyRules.FormatWon(run.lastConcertPayout)}" +
+                      (run.lastConcertPerformanceSuccess ? "  · 퍼포먼스 1.3x\n" : "\n")
+                    : "") +
                 (run.lastRepaid > 0 ? $"부채 상환           -{EconomyRules.FormatWon(run.lastRepaid)}\n" : "") +
                 $"\n판정  P {run.lastPerfects}  G {run.lastGreats}  Good {run.lastGoods}  Miss {run.lastMisses}" +
                 (run.lastHadHype ? "   · 하이프 달성" : "") +
@@ -194,18 +251,32 @@ namespace BankruptVtuber
                 (run.sponsorActive ? $"   ·   스폰서 남은 {run.sponsorDaysLeft}일" : "") +
                 $"\n\n현금 {EconomyRules.FormatWon(run.cash)}     부채 {EconomyRules.FormatWon(run.debt)}     멘탈 {run.mental}";
 
-            run.lastOutcome = EconomyRules.Evaluate(run, b, w2, w3, w4);
+            run.lastOutcome = EconomyRules.Evaluate(run, b, w2, w3, w4, w5);
             bool offerClip = Week2Rules.CanOfferClip(run, w2);
             bool offerFound = Week4Rules.CanFoundAgency(run, w4);
             bool offerScout = Week4Rules.CanScoutJunior(run, w4);
             bool offerSponsor = Week4Rules.CanOfferSponsor(run, w4);
+            bool offerConcert = Week5Rules.CanBookConcert(run, w5);
+            bool concertReady = Week5Rules.ConcertStreamReady(run);
             bool week4Offer = offerFound || offerScout || offerSponsor;
+            bool week5Offer = offerConcert || concertReady;
             _clipYes.gameObject.SetActive(offerClip);
             _clipNo.gameObject.SetActive(offerClip);
             _foundAgency.gameObject.SetActive(offerFound);
             _scout.gameObject.SetActive(offerScout);
             _signSponsor.gameObject.SetActive(offerSponsor);
-            _produce.gameObject.SetActive(run.goodsUnlocked && !offerClip && !week4Offer && run.cash >= (w3 != null ? w3.goodsProduceCost : 2500));
+            _bookConcert.gameObject.SetActive(offerConcert);
+            _concertLive.gameObject.SetActive(concertReady);
+            _produce.gameObject.SetActive(run.goodsUnlocked && !offerClip && !week4Offer && !week5Offer && run.cash >= (w3 != null ? w3.goodsProduceCost : 2500));
+            bool rankOn = Week5Rules.RankingUnlocked(run, w5);
+            _rankBox.gameObject.SetActive(rankOn);
+            if (rankOn)
+            {
+                string daily = run.lastDailyRank > 0
+                    ? $"오늘 {run.lastDailyRank}위  {run.lastRankingScore}\n누적 {run.finalRank}위\n\n"
+                    : "누적\n\n";
+                _rankPanel.text = "챌린지 랭킹\n" + daily + Week5Rules.RankingBoard(run);
+            }
             if (run.lastClipAttempted)
                 _clipNote.text = run.lastClipSuccess
                     ? "클립 성공 — ₩30,000 · 시작 시청자 +10"
@@ -217,7 +288,9 @@ namespace BankruptVtuber
             switch (run.lastOutcome)
             {
                 case WeekOutcome.Bankrupt:
-                    _result.text = WeekSchedule.InWeek4(run)
+                    _result.text = WeekSchedule.InWeek5(run)
+                        ? "파산. 부채가 ₩350,000을 넘었습니다."
+                        : WeekSchedule.InWeek4(run)
                         ? "파산. 부채가 ₩300,000을 넘었습니다."
                         : WeekSchedule.InWeek3(run)
                         ? "파산. 부채가 ₩260,000을 넘었습니다."
@@ -259,9 +332,18 @@ namespace BankruptVtuber
                 case WeekOutcome.Week4Win:
                     _result.text = "4주차 클리어. 에이전시 설립, 그리고 빚 ≤ 1만 또는 현금 ≥ 18만.";
                     _result.color = Palette.CashGreen;
-                    _next.gameObject.SetActive(false);
+                    _next.GetComponentInChildren<Text>().text = "5주차 시작  (Space)";
+                    _next.gameObject.SetActive(true);
                     _repay.gameObject.SetActive(run.cash > 0 && run.debt > 0);
                     _restart.gameObject.SetActive(true);
+                    PlaceTripleButtons();
+                    break;
+                case WeekOutcome.Ending:
+                    _result.text = "5주차 정산. 엔딩이 열립니다.";
+                    _result.color = Palette.Gold;
+                    _next.gameObject.SetActive(false);
+                    _repay.gameObject.SetActive(run.cash > 0 && run.debt > 0 && !ShouldShowEnding(run, w5));
+                    _restart.gameObject.SetActive(!ShouldShowEnding(run, w5));
                     break;
                 case WeekOutcome.WeekFailed:
                     _result.text = WeekSchedule.InWeek4(run)
@@ -285,6 +367,8 @@ namespace BankruptVtuber
                     _restart.gameObject.SetActive(false);
                     break;
             }
+
+            ApplyEndingOverlay(run, w5);
         }
 
         void PlaceTripleButtons()
@@ -349,6 +433,71 @@ namespace BankruptVtuber
             var gm = GameManager.Instance;
             Week4Rules.SignSponsor(gm.Run, gm.Week4);
             Render();
+        }
+
+        void OnBookConcert()
+        {
+            var gm = GameManager.Instance;
+            Week5Rules.BookConcert(gm.Run, gm.Week5);
+            Render();
+        }
+
+        void OnConcertLive()
+        {
+            GameManager.Instance.GoLive();
+        }
+
+        void OnRetire()
+        {
+            var gm = GameManager.Instance;
+            gm.Run.retirePicked = true;
+            gm.Run.lastEnding = Week5Rules.ResolveEnding(gm.Run, gm.Week5, true);
+            gm.Run.lastOutcome = WeekOutcome.Ending;
+            Render();
+        }
+
+        static bool ShouldShowEnding(GameRunState run, Week5Balance w5)
+        {
+            if (run == null || !WeekSchedule.InWeek5(run))
+                return false;
+            bool fatal = run.lastOutcome == WeekOutcome.Bankrupt
+                || run.lastEnding == EndingKind.Bankrupt
+                || run.lastEnding == EndingKind.Burnout;
+            if (fatal)
+                return true;
+            if (run.lastOutcome != WeekOutcome.Ending)
+                return false;
+            return !Week5Rules.CanBookConcert(run, w5) && !Week5Rules.ConcertStreamReady(run);
+        }
+
+        void ApplyEndingOverlay(GameRunState run, Week5Balance w5)
+        {
+            bool show = ShouldShowEnding(run, w5);
+            _endingRoot.SetActive(show);
+            if (!show)
+            {
+                _retire.gameObject.SetActive(false);
+                return;
+            }
+
+            var kind = run.lastEnding == EndingKind.None
+                ? Week5Rules.ResolveEnding(run, w5, run.retirePicked)
+                : run.lastEnding;
+            _endingTitle.text = Week5Rules.EndingTitle(kind);
+            _endingBody.text = Week5Rules.EndingBody(kind);
+            bool offerRetire = Week5Rules.CanOfferRetire(run, w5) && !run.retirePicked;
+            _retire.gameObject.SetActive(offerRetire);
+            _next.gameObject.SetActive(false);
+            _repay.gameObject.SetActive(false);
+            _restart.gameObject.SetActive(false);
+            _bookConcert.gameObject.SetActive(false);
+            _concertLive.gameObject.SetActive(false);
+            _foundAgency.gameObject.SetActive(false);
+            _scout.gameObject.SetActive(false);
+            _signSponsor.gameObject.SetActive(false);
+            _produce.gameObject.SetActive(false);
+            _clipYes.gameObject.SetActive(false);
+            _clipNo.gameObject.SetActive(false);
         }
     }
 }

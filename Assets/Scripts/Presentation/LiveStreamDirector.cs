@@ -33,6 +33,10 @@ namespace BankruptVtuber
         Text _lineBody;
         Text _lineTimer;
         bool _lineSettled;
+        RectTransform _concertRoot;
+        Text _concertTitle;
+        Text _concertBody;
+        Text _concertTimer;
         readonly Image[] _eventKeys = new Image[4];
         readonly Text[] _eventKeyLabels = new Text[4];
         Image _tensionFill;
@@ -66,7 +70,7 @@ namespace BankruptVtuber
         {
             var gm = GameManager.Instance;
             if (!gm.Run.billsAppliedThisDay)
-                EconomyRules.ApplyDailyBills(gm.Run, gm.Balance, gm.Week2, gm.Week3, gm.Week4);
+                EconomyRules.ApplyDailyBills(gm.Run, gm.Balance, gm.Week2, gm.Week3, gm.Week4, gm.Week5);
             Week3Rules.TryUnlockGoods(gm.Run, gm.Week3);
             _session = new StreamSession(gm.Balance, gm.Catalog, gm.Run.mental, gm.Run.viewerBonus);
             if (Week3Rules.ShouldStartRival(gm.Run, gm.Week3))
@@ -76,8 +80,13 @@ namespace BankruptVtuber
             }
             if (WeekSchedule.InWeek3(gm.Run) && gm.Run.goodsUnlocked)
                 _session.EnablePromo(gm.Week3);
-            if (gm.Run.sponsorActive)
+            if (gm.Run.sponsorActive && !WeekSchedule.InWeek5(gm.Run))
                 _session.EnableSponsorLine(gm.Week4);
+            if (Week5Rules.ConcertStreamReady(gm.Run))
+            {
+                Week5Rules.MarkConcertStarted(gm.Run);
+                _session.EnableConcert(gm.Week5);
+            }
         }
 
         void Update()
@@ -106,6 +115,13 @@ namespace BankruptVtuber
                     _session.TryLine(true);
                 else if (StreamBindings.PromoSkipDown())
                     _session.TryLine(false);
+            }
+            else if (_session.ConcertActive)
+            {
+                if (StreamBindings.PromoConfirmDown())
+                    _session.TryConcert(true);
+                else if (StreamBindings.PromoSkipDown())
+                    _session.TryConcert(false);
             }
             else if (StreamBindings.TryConsumeKind(out var kind, out var hold))
                 _session.TryHit(kind, _session.Elapsed, hold);
@@ -144,6 +160,7 @@ namespace BankruptVtuber
             RefreshEventOverlay();
             RefreshPromoOverlay();
             RefreshLineOverlay();
+            RefreshConcertOverlay();
             RefreshHud();
             _avatar.Tick(dt);
 
@@ -185,7 +202,9 @@ namespace BankruptVtuber
             gm.Run.lastStreamEventSuccess = _session.Event.Success;
             gm.Run.lastStreamPeakViewers = _session.PeakViewers;
             gm.Run.lastGoodsPromoSuccess = _session.Promo.Success;
+            gm.Run.lastConcertPerformanceSuccess = _session.Concert.Success;
             MaybeSettleSponsorLine();
+            Week5Rules.NoteZeroMentalDay(gm.Run);
             Week2Rules.AfterStream(
                 gm.Run,
                 _session.PeakViewers,
@@ -259,7 +278,7 @@ namespace BankruptVtuber
             var tlab = UiKit.Label(bottom, "TensionL", "텐션 (미스 스트릭)", 14, Palette.Muted, TextAnchor.LowerLeft);
             UiKit.Layout(tlab.rectTransform, new Vector2(0, 0), new Vector2(0.38f, 0.22f), new Vector2(0, 0), new Vector2(28, 4), Vector2.zero);
 
-            var keys = UiKit.Label(bottom, "Keys", "A 긍정   S 공감   D 웃음   F 감사   Space 슈퍼챗   이벤트 1–4   홍보/멘트 A/S·D/F", 18, Palette.PastelDim, TextAnchor.MiddleRight);
+            var keys = UiKit.Label(bottom, "Keys", "A 긍정   S 공감   D 웃음   F 감사   Space 슈퍼챗   이벤트 1–4   홍보/멘트/콘서트 A/S·D/F", 18, Palette.PastelDim, TextAnchor.MiddleRight);
             UiKit.Layout(keys.rectTransform, new Vector2(0.38f, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-24, 8), Vector2.zero);
 
             _judge = UiKit.Label(root, "Judge", "", 64, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -314,6 +333,16 @@ namespace BankruptVtuber
             _lineTimer = UiKit.Label(_lineRoot, "LTimer", "", 18, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_lineTimer.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 16), new Vector2(0, 24));
             _lineRoot.gameObject.SetActive(false);
+
+            _concertRoot = UiKit.Panel(root, "ConcertCard", new Color(0.16f, 0.07f, 0.18f, 0.96f));
+            UiKit.Layout(_concertRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(560, 220));
+            _concertTitle = UiKit.Label(_concertRoot, "CTitle", "콘서트 퍼포먼스 타이밍", 34, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
+            UiKit.Layout(_concertTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -16), new Vector2(-24, 44));
+            _concertBody = UiKit.Label(_concertRoot, "CBody", "A / S  성공 — 정산 배율 1.3x\nD / F  놓치면 배율 없음", 20, Palette.Pastel, TextAnchor.MiddleCenter);
+            UiKit.Layout(_concertBody.rectTransform, new Vector2(0, 0.28f), new Vector2(1, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-28, 0));
+            _concertTimer = UiKit.Label(_concertRoot, "CTimer", "", 18, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_concertTimer.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 16), new Vector2(0, 24));
+            _concertRoot.gameObject.SetActive(false);
         }
 
         void MaybeSettleSponsorLine()
@@ -396,7 +425,7 @@ namespace BankruptVtuber
                 if (img != null)
                 {
                     var c = img.color;
-                    c.a = _session.EventActive || _session.PromoActive || _session.LineActive ? 0.22f : 0.18f;
+                    c.a = _session.EventActive || _session.PromoActive || _session.LineActive || _session.ConcertActive ? 0.22f : 0.18f;
                     img.color = c;
                 }
             }
@@ -424,12 +453,23 @@ namespace BankruptVtuber
             }
         }
 
+        void RefreshConcertOverlay()
+        {
+            bool on = _session.ConcertActive;
+            _concertRoot.gameObject.SetActive(on);
+            if (on)
+            {
+                _eventDim.gameObject.SetActive(true);
+                _concertTimer.text = $"{_session.Concert.TimeLeft:0.00}s";
+            }
+        }
+
         void RefreshEventOverlay()
         {
             bool on = _session.EventActive;
             _eventRoot.gameObject.SetActive(on);
-            _eventDim.gameObject.SetActive(on || _session.PromoActive || _session.LineActive);
-            _charge.gameObject.SetActive(!on && !_session.PromoActive && !_session.LineActive && StreamBindings.SuperchatCharging);
+            _eventDim.gameObject.SetActive(on || _session.PromoActive || _session.LineActive || _session.ConcertActive);
+            _charge.gameObject.SetActive(!on && !_session.PromoActive && !_session.LineActive && !_session.ConcertActive && StreamBindings.SuperchatCharging);
             if (!on)
                 return;
 

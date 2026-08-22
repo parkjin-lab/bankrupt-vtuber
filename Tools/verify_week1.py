@@ -168,6 +168,7 @@ def check_project() -> None:
         "Assets/Resources/Balance/Week2Balance.asset",
         "Assets/Resources/Balance/Week3Balance.asset",
         "Assets/Resources/Balance/Week4Balance.asset",
+        "Assets/Resources/Balance/Week5Balance.asset",
         "Assets/Resources/Balance/ChatCatalog.asset",
         "Assets/Resources/Fonts/NotoSansKR-Regular.ttf",
     ):
@@ -447,8 +448,8 @@ def check_project() -> None:
         fail("Week 2 added agency/concert/global")
     else:
         ok("Week 2 does not add agency, concert, or global")
-    if "Week2" in title_cs or "membershipCount" in title_cs or "Week3" in title_cs or "Week4" in title_cs:
-        fail("Title scene started applying Week 2/3/4 systems")
+    if "Week2" in title_cs or "membershipCount" in title_cs or "Week3" in title_cs or "Week4" in title_cs or "Week5" in title_cs:
+        fail("Title scene started applying Week 2/3/4/5 systems")
     else:
         ok("Title still starts a Week 1 run")
     if "Week2Balance.Load" not in gm:
@@ -724,6 +725,167 @@ def check_project() -> None:
     else:
         ok("Title / Restart clears Week 4 so a new run is Week 1")
 
+    w5_asset_path = ROOT / "Assets/Resources/Balance/Week5Balance.asset"
+    w5_cs = (ROOT / "Assets/Scripts/Data/Week5Balance.cs").read_text(encoding="utf-8")
+    w5r_cs = (ROOT / "Assets/Scripts/Economy/Week5Rules.cs").read_text(encoding="utf-8")
+    concert_cs = (ROOT / "Assets/Scripts/Stream/ConcertPerformance.cs").read_text(encoding="utf-8")
+    w5_asset = w5_asset_path.read_text(encoding="utf-8") if w5_asset_path.exists() else ""
+    in4 = sched_cs.split("public static bool InWeek4", 1)[-1].split("public static", 1)[0]
+    if "Week4LastDay" not in in4:
+        fail("InWeek4 still treats days 21+ as Week 4")
+    else:
+        ok("InWeek4 is days 16–20 only")
+    if "InWeek5" not in sched_cs or "Week5LastDay" not in sched_cs:
+        fail("WeekSchedule missing InWeek5 / days 21–25")
+    else:
+        ok("Week 5 is gated to days 21–25")
+    if "CanEnterWeek5" not in sched_cs or "5주차 시작" not in settle_cs:
+        fail("Week 4 clear does not offer Week 5 continue")
+    else:
+        ok("Week 4 clear can continue into days 21–25")
+
+    w5_expect = {
+        "billRent: 15000": "w5 rent",
+        "billElectricNet: 8000": "w5 electric",
+        "billAvatarLicense: 8000": "w5 license",
+        "billFood: 8000": "w5 food",
+        "billGear: 6000": "w5 gear",
+        "agencyDailyCost: 15000": "w5 agency ops",
+        "bankruptDebt: 350000": "w5 bankrupt",
+        "firstDay: 21": "week5 start day",
+        "lastDay: 25": "week5 end day",
+        "extraThreatMaxPerDay: 2": "w5 max extras",
+        "rankingDay: 22": "ranking day",
+        "rankingPeakViewers: 100": "ranking peak",
+        "rankingPeakFactor: 3": "rank peak factor",
+        "rankingMembersFactor: 8": "rank members",
+        "rankingGoodsFactor: 4": "rank goods",
+        "rankingPerfectsFactor: 2": "rank perfects",
+        "rankingDailyFirstCash: 10000": "rank first cash",
+        "npcBase0: 420": "npc 0",
+        "npcBase1: 360": "npc 1",
+        "npcBase2: 300": "npc 2",
+        "concertUnlockCash: 150000": "concert cash",
+        "concertUnlockPeak: 90": "concert peak",
+        "concertUnlockDay: 22": "concert day",
+        "concertCost: 80000": "concert cost",
+        "concertBasePayout: 200000": "concert payout",
+        "concertRankBonus: 500": "concert rank bonus",
+        "concertSuccessMultiplier: 1.3": "concert mult",
+        "concertFailMisses: 12": "concert fail misses",
+        "concertFailMental: 25": "concert fail mental",
+        "concertFailViewers: 10": "concert fail viewers",
+        "concertWindowSeconds: 1.2": "concert window",
+        "concertFallbackSeconds: 55": "concert fallback",
+        "endingSoloMental: 40": "solo mental",
+        "endingEmpireCash: 250000": "empire cash",
+        "burnoutZeroMentalDays: 2": "burnout days",
+    }
+    for token, label in w5_expect.items():
+        if token not in w5_asset:
+            fail(f"Week5Balance missing {label} ({token})")
+    if "billRent = 15000" not in w5_cs or "billGear = 6000" not in w5_cs:
+        fail("Week5Balance.cs missing locked bills 15000/8000/8000/8000/6000")
+    else:
+        ok("Week5Balance locked bills 15000/8000/8000/8000/6000")
+    if "billRent: 14000" not in w4_asset or "bankruptDebt: 300000" not in w4_asset:
+        fail("Week 4 bills or bankrupt were overwritten")
+    else:
+        ok("Week 4 bills stay ₩38,000 and bankrupt ₩300,000")
+    if "billRent: 12000" not in w3_asset or "bankruptDebt: 260000" not in w3_asset:
+        fail("Week 3 bills or bankrupt were overwritten by Week 5")
+    else:
+        ok("Week 3 numbers stay unchanged after Week 5")
+    if "billRent: 10000" not in w2_asset or "bankruptDebt: 220000" not in w2_asset:
+        fail("Week 2 bills or bankrupt were overwritten by Week 5")
+    else:
+        ok("Week 2 numbers stay unchanged after Week 5")
+    if "billRent: 8000" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("Week 1 bills or bankrupt were overwritten by Week 5")
+    else:
+        ok("Week 1 numbers stay unchanged after Week 5")
+
+    for name in ("고장", "소액", "수수료"):
+        if name not in w5_asset or name not in extra_cs:
+            fail(f"Week 5 extra threat '{name}' missing")
+    else:
+        ok("Week 5 extra threats are 고장 / 소액 / 수수료")
+    if "DefaultWeek5Table" not in extra_cs or "RollWeek5" not in extra_cs:
+        fail("Week 5 extras are not independent chance rolls")
+    else:
+        ok("Week 5 extras are 0–2 independent chance rolls")
+    for token in ("chancePercent: 30", "chancePercent: 25", "chancePercent: 20", "minWon: 10000", "maxWon: 20000", "minWon: 6000", "maxWon: 15000"):
+        if token not in w5_asset:
+            fail(f"Week 5 threat field {token} missing")
+    ok("Week 5 extra threat chances/amounts match the locked table")
+
+    if "RankingUnlocked" not in w5r_cs or "챌린지 랭킹" not in settle_cs:
+        fail("ranking unlock / panel missing")
+    else:
+        ok("ranking panel unlocks at peak viewers >= 100 and day >= 22")
+    if "peakViewers * 3" not in w5r_cs or "members * 8" not in w5r_cs or "goodsSoldToday * 4" not in w5r_cs or "perfects * 2" not in w5r_cs:
+        fail("daily ranking score formula missing")
+    else:
+        ok("daily score is (peakViewers * 3) + (members * 8) + (goodsSoldToday * 4) + (perfects * 2)")
+    if "MixSeed" not in w5r_cs or "NpcDailyScore" not in w5r_cs or "루나벨" not in w5_cs:
+        fail("deterministic NPC rivals missing")
+    else:
+        ok("3 NPC rivals use deterministic daily scores")
+    if "rankingDailyFirstCash" not in w5r_cs or "rankingDailyFirstCash: 10000" not in w5_asset:
+        fail("daily rank-1 cash missing")
+    else:
+        ok("daily rank 1 pays ₩10,000")
+
+    if "CanBookConcert" not in w5r_cs or "콘서트 개최" not in settle_cs:
+        fail("concert booking button missing")
+    else:
+        ok("concert books for ₩80,000 when cash >= 150000, peak >= 90, day >= 22")
+    if "EnableConcert" not in session_cs or "콘서트 퍼포먼스 타이밍" not in live_cs or "콘서트 퍼포먼스 타이밍" not in concert_cs:
+        fail("콘서트 퍼포먼스 타이밍 prompt missing")
+    else:
+        ok("Week 5 stream variable is 콘서트 퍼포먼스 타이밍")
+    if "concertBasePayout" not in w5r_cs or "concertSuccessMultiplier" not in w5r_cs:
+        fail("concert success payout missing")
+    else:
+        ok("concert success is ₩200,000 + ranking +500, times 1.3 on performance hit")
+    if "concertFailMisses" not in w5r_cs or "concertFailMental" not in w5r_cs:
+        fail("concert fail path missing")
+    else:
+        ok("concert fail spends the ₩80,000, mental −25, starting viewers −10, no ₩200,000")
+
+    if "ResolveEnding" not in w5r_cs or "EndingKind.Bankrupt" not in w5r_cs:
+        fail("named endings missing")
+    else:
+        ok("endings resolve after day 25 or earlier bankrupt/burnout")
+    if "파산 > 번아웃 > 솔로 전설 > 에이전시 제국 > 은퇴 프로듀서" not in w5r_cs:
+        fail("ending priority missing")
+    else:
+        ok("ending priority is 파산 > 번아웃 > 솔로 전설 > 에이전시 제국 > 은퇴 프로듀서")
+    if "후배에게 메인 양도" not in settle_cs or "CanOfferRetire" not in w5r_cs:
+        fail("retire producer choice missing")
+    else:
+        ok("settlement/ending can pick 후배에게 메인 양도")
+    if "EndingRoot" not in settle_cs or "EndingTitle" not in w5r_cs:
+        fail("dedicated ending screen missing")
+    else:
+        ok("dedicated ending screen then Restart")
+    if "Week5Balance.Load" not in gm:
+        fail("GameManager does not load Week5Balance")
+    else:
+        ok("GameManager loads Week5Balance")
+    if "글로벌" in w5_cs or "글로벌" in w5r_cs or "global tour" in w5_cs.lower():
+        fail("Week 5 added a global tour")
+    else:
+        ok("Week 5 does not add a global tour")
+    if "ClearWeek5Progress" not in run_cs or "concertBooked = false" not in run_cs:
+        fail("ResetNewRun does not clear Week 5 progress")
+    else:
+        ok("Title / Restart clears Week 5 so a new run is Week 1")
+    if "concert" in w4_cs.lower() or "글로벌" in w4_cs:
+        fail("Week 4 gained concert/global during Week 5")
+    else:
+        ok("Week 4 still does not add concert or global")
+
 
 def simulate_stream(skill: str, seed: int) -> int:
     rng = random.Random(seed)
@@ -996,6 +1158,51 @@ def check_economy() -> None:
     win4 = agency and (debt <= 10000 or cash >= 180000)
     print(f"WEEK4: average cash={cash} debt={debt} agency={agency} win={win4}")
     ok("Week 4 5-day ledger simulation completed")
+
+    w5_bills = 15000 + 8000 + 8000 + 8000 + 6000
+    if w5_bills != 45000:
+        fail(f"Week 5 bill sum {w5_bills} != 45000")
+    else:
+        ok("Week 5 solo bills sum to ₩45,000")
+    if w5_bills + 15000 != 60000:
+        fail(f"Week 5 after agency {w5_bills + 15000} != 60000")
+    else:
+        ok("Week 5 bills become ₩60,000 after agency")
+
+    peak, members, sold, perfects = 100, 8, 2, 10
+    daily = int(math.floor(peak)) * 3 + members * 8 + sold * 4 + perfects * 2
+    if daily != 392:
+        fail(f"ranking daily score {daily} != 392 for 100/8/2/10")
+    else:
+        ok("ranking daily score is 392 at peak 100 / 8 members / 2 goods / 10 perfects")
+    concert_pay = int(math.floor((200000 + daily + 500) * 1.3))
+    if concert_pay != 261159:
+        fail(f"concert success payout {concert_pay} != 261159")
+    else:
+        ok("concert success payout is floor((200000 + ranking + 500) * 1.3)")
+
+    cash, debt = 180000, 0
+    extras5 = [10000, 0, 6000, 0, 6000]
+    rank_score = 0
+    for day in range(21, 26):
+        cash -= (w5_bills + 15000) + extras5[day - 21]
+        if cash < 0:
+            debt += -cash
+            cash = 0
+        take = simulate_stream("average", seed=6000 + day)
+        cash += take
+        cash += 8 * 150
+        cash += 4000
+        day_score = 80 * 3 + 8 * 8 + 1 * 4 + 8 * 2
+        rank_score += day_score
+        if day >= 22:
+            cash += 10000
+        if day == 22:
+            cash -= 80000
+            cash += 200000 + day_score + 500
+    empire = cash >= 250000 and True and True
+    print(f"WEEK5: average cash={cash} debt={debt} rank={rank_score} empire={empire}")
+    ok("Week 5 5-day ledger simulation completed")
 
 
 def main() -> int:

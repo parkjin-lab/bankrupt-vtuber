@@ -4,14 +4,14 @@ namespace BankruptVtuber
 {
     public static class EconomyRules
     {
-        public static int ApplyDailyBills(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null, Week4Balance w4 = null)
+        public static int ApplyDailyBills(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null, Week4Balance w4 = null, Week5Balance w5 = null)
         {
             if (state.billsAppliedThisDay)
                 return 0;
 
-            ExtraThreatRules.EnsureRolled(state, b, w2, w3, w4);
+            ExtraThreatRules.EnsureRolled(state, b, w2, w3, w4, w5);
             int extra = Math.Max(0, state.extraThreatAmount);
-            int fixedBills = WeekSchedule.TotalFixedBills(state, b, w2, w3, w4);
+            int fixedBills = WeekSchedule.TotalFixedBills(state, b, w2, w3, w4, w5);
             int total = fixedBills + extra;
             state.cash -= total;
             state.lastBills = fixedBills;
@@ -54,17 +54,43 @@ namespace BankruptVtuber
             return amount;
         }
 
-        public static WeekOutcome Evaluate(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null, Week4Balance w4 = null)
+        public static WeekOutcome Evaluate(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null, Week4Balance w4 = null, Week5Balance w5 = null)
         {
             int bankrupt = b.bankruptDebt;
-            if (w4 != null && WeekSchedule.InWeek4(state))
+            if (w5 != null && WeekSchedule.InWeek5(state))
+                bankrupt = w5.bankruptDebt;
+            else if (w4 != null && WeekSchedule.InWeek4(state))
                 bankrupt = w4.bankruptDebt;
             else if (w3 != null && WeekSchedule.InWeek3(state))
                 bankrupt = w3.bankruptDebt;
             else if (w2 != null && WeekSchedule.InWeek2(state))
                 bankrupt = w2.bankruptDebt;
             if (state.debt >= bankrupt)
+            {
+                if (WeekSchedule.InWeek5(state) && w5 != null)
+                    state.lastEnding = EndingKind.Bankrupt;
                 return WeekOutcome.Bankrupt;
+            }
+
+            if (WeekSchedule.InWeek5(state))
+            {
+                Week5Rules.NoteZeroMentalDay(state);
+                if (w5 != null && state.zeroMentalDays >= w5.burnoutZeroMentalDays)
+                {
+                    state.lastEnding = EndingKind.Burnout;
+                    return WeekOutcome.Ending;
+                }
+
+                int last5 = w5 != null ? w5.lastDay : WeekSchedule.Week5LastDay;
+                if (state.day < last5)
+                {
+                    state.lastEnding = EndingKind.None;
+                    return WeekOutcome.Continue;
+                }
+
+                state.lastEnding = Week5Rules.ResolveEnding(state, w5, state.retirePicked);
+                return WeekOutcome.Ending;
+            }
 
             if (WeekSchedule.InWeek4(state))
             {

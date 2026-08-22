@@ -24,7 +24,19 @@ namespace BankruptVtuber
         Week2Win,
         Week3Win,
         Week4Win,
+        Ending,
         Bankrupt,
         WeekFailed
+    }
+
+    public enum EndingKind
+    {
+        None,
+        Bankrupt,
+        Burnout,
+        SoloLegend,
+        AgencyEmpire,
+        RetireProducer,
+        Nameless
     }
 }

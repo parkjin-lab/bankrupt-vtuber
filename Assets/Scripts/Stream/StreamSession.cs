@@ -42,6 +42,7 @@ namespace BankruptVtuber
         public readonly StreamEventState Event = new StreamEventState();
         public readonly GoodsPromoState Promo = new GoodsPromoState();
         public readonly SponsorLineState Line = new SponsorLineState();
+        public readonly ConcertPerformanceState Concert = new ConcertPerformanceState();
         public bool RivalActive;
         public float RivalViewers;
         public float PeakViewers;
@@ -61,8 +62,10 @@ namespace BankruptVtuber
         bool _pendingMissEvent;
         Week3Balance _week3;
         Week4Balance _week4;
+        Week5Balance _week5;
         bool _promoEnabled;
         bool _lineEnabled;
+        bool _concertEnabled;
 
         static readonly string[] FakeUsers =
         {
@@ -96,6 +99,8 @@ namespace BankruptVtuber
 
         public bool LineActive => Line.Active;
 
+        public bool ConcertActive => Concert.Active;
+
         public bool HypeActive => HypeLeft > 0f;
 
         public void EnableRival(Week3Balance w3)
@@ -125,6 +130,16 @@ namespace BankruptVtuber
             _lineEnabled = true;
             Line.Reset();
             Line.Window = w4.lineWindowSeconds > 0.2f ? w4.lineWindowSeconds : 1.2f;
+        }
+
+        public void EnableConcert(Week5Balance w5)
+        {
+            if (w5 == null)
+                return;
+            _week5 = w5;
+            _concertEnabled = true;
+            Concert.Reset();
+            Concert.Window = w5.concertWindowSeconds > 0.2f ? w5.concertWindowSeconds : 1.2f;
         }
 
         public float IncomeMultiplier => StreamRules.IncomeMultiplier(PerfectCombo, HypeActive, Balance);
@@ -174,6 +189,14 @@ namespace BankruptVtuber
                     ResolveLine(false);
             }
 
+            if (Concert.Active)
+            {
+                FreezeNotes(dt);
+                Concert.TimeLeft -= dt;
+                if (Concert.TimeLeft <= 0f)
+                    ResolveConcert(false);
+            }
+
             if (RivalActive && _week3 != null)
             {
                 RivalViewers += _week3.rivalViewersPerSec * dt;
@@ -206,7 +229,7 @@ namespace BankruptVtuber
                 }
             }
 
-            if (!Event.Active && !Promo.Active && !Line.Active)
+            if (!Event.Active && !Promo.Active && !Line.Active && !Concert.Active)
             {
                 MaybeSpawnRegular();
                 MaybeSpawnSuperchat();
@@ -214,6 +237,7 @@ namespace BankruptVtuber
                 MaybeStartEvent();
                 MaybeStartPromo();
                 MaybeStartLine();
+                MaybeStartConcert();
             }
 
             if (Mental <= 0)
@@ -233,6 +257,8 @@ namespace BankruptVtuber
                     ResolvePromo(false);
                 if (Line.Active)
                     ResolveLine(false);
+                if (Concert.Active)
+                    ResolveConcert(false);
                 ExpireAllRemaining();
                 Finished = true;
             }
@@ -243,7 +269,7 @@ namespace BankruptVtuber
 
         public bool TryHit(ChatKind kind, float now, bool hold)
         {
-            if (Finished || Event.Active || Promo.Active || Line.Active)
+            if (Finished || Event.Active || Promo.Active || Line.Active || Concert.Active)
                 return false;
 
             ChatNote best = null;
@@ -516,9 +542,17 @@ namespace BankruptVtuber
             return true;
         }
 
+        public bool TryConcert(bool success)
+        {
+            if (!Concert.Active || Finished)
+                return false;
+            ResolveConcert(success);
+            return true;
+        }
+
         void MaybeStartPromo()
         {
-            if (!_promoEnabled || Promo.Fired || Promo.Active || Event.Active || Line.Active || Finished)
+            if (!_promoEnabled || Promo.Fired || Promo.Active || Event.Active || Line.Active || Concert.Active || Finished)
                 return;
             float fallback = _week3 != null ? _week3.promoFallbackSeconds : 55f;
             if (!HypeActive && Elapsed < fallback)
@@ -547,7 +581,7 @@ namespace BankruptVtuber
 
         void MaybeStartLine()
         {
-            if (!_lineEnabled || Line.Fired || Line.Active || Event.Active || Promo.Active || Finished)
+            if (!_lineEnabled || Line.Fired || Line.Active || Event.Active || Promo.Active || Concert.Active || Finished)
                 return;
             float fallback = _week4 != null ? _week4.lineFallbackSeconds : 55f;
             if (!HypeActive && Elapsed < fallback)
@@ -572,6 +606,35 @@ namespace BankruptVtuber
             Line.Resolved = true;
             Line.Success = success;
             Line.TimeLeft = 0f;
+        }
+
+        void MaybeStartConcert()
+        {
+            if (!_concertEnabled || Concert.Fired || Concert.Active || Event.Active || Promo.Active || Line.Active || Finished)
+                return;
+            float fallback = _week5 != null ? _week5.concertFallbackSeconds : 55f;
+            if (!HypeActive && Elapsed < fallback)
+                return;
+            StartConcert();
+        }
+
+        void StartConcert()
+        {
+            Concert.Fired = true;
+            Concert.Active = true;
+            Concert.Resolved = false;
+            Concert.Success = false;
+            Concert.TimeLeft = Concert.Window;
+        }
+
+        void ResolveConcert(bool success)
+        {
+            if (!Concert.Active)
+                return;
+            Concert.Active = false;
+            Concert.Resolved = true;
+            Concert.Success = success;
+            Concert.TimeLeft = 0f;
         }
 
         void FreezeNotes(float dt)
