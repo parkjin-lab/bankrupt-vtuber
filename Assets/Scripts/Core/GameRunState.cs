@@ -34,6 +34,20 @@ namespace BankruptVtuber
         public int extraThreatAmount;
         public string extraThreatArt;
 
+        public bool membershipUnlocked;
+        public int membershipCount;
+        public int viewerBonus;
+        public int lastMembershipFromPerfects;
+        public int lastMembershipFromPitch;
+        public bool lastMembershipPitchHappened;
+        public bool lastMembershipPitchSuccess;
+        public int lastMembershipPassive;
+        public bool membershipPassiveAppliedThisDay;
+        public bool clipAttemptedThisDay;
+        public bool lastClipAttempted;
+        public bool lastClipSuccess;
+        public int lastClipCash;
+
         public void ResetNewRun(Week1Balance b, int? seed = null)
         {
             day = 1;
@@ -57,6 +71,24 @@ namespace BankruptVtuber
             lastBills = 0;
             lastRepaid = 0;
             lastOutcome = WeekOutcome.Continue;
+            ClearWeek2Progress();
+        }
+
+        void ClearWeek2Progress()
+        {
+            membershipUnlocked = false;
+            membershipCount = 0;
+            viewerBonus = 0;
+            lastMembershipFromPerfects = 0;
+            lastMembershipFromPitch = 0;
+            lastMembershipPitchHappened = false;
+            lastMembershipPitchSuccess = false;
+            lastMembershipPassive = 0;
+            membershipPassiveAppliedThisDay = false;
+            clipAttemptedThisDay = false;
+            lastClipAttempted = false;
+            lastClipSuccess = false;
+            lastClipCash = 0;
         }
 
         public void ApplyExtraThreat(ExtraThreatRoll roll)
@@ -77,7 +109,7 @@ namespace BankruptVtuber
             extraThreatArt = "";
         }
 
-        public void BeginNextDay(Week1Balance b)
+        public void BeginNextDay(Week1Balance b, Week2Balance w2 = null)
         {
             day += 1;
             mental += b.mentalRestoreEachMorning;
@@ -98,7 +130,18 @@ namespace BankruptVtuber
             lastBills = 0;
             lastRepaid = 0;
             lastOutcome = WeekOutcome.Continue;
+            lastMembershipFromPerfects = 0;
+            lastMembershipFromPitch = 0;
+            lastMembershipPitchHappened = false;
+            lastMembershipPitchSuccess = false;
+            lastMembershipPassive = 0;
+            membershipPassiveAppliedThisDay = false;
+            clipAttemptedThisDay = false;
+            lastClipAttempted = false;
+            lastClipSuccess = false;
+            lastClipCash = 0;
             ClearExtraThreat();
+            WeekSchedule.TryUnlockMembership(this, w2);
         }
     }
 }

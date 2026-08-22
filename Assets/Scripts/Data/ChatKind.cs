@@ -21,6 +21,7 @@ namespace BankruptVtuber
     {
         Continue,
         Win,
+        Week2Win,
         Bankrupt,
         WeekFailed
     }

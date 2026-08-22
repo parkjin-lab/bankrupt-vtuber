@@ -40,6 +40,8 @@ namespace BankruptVtuber
         public bool Finished;
         public bool HadHype;
         public readonly StreamEventState Event = new StreamEventState();
+        public readonly MembershipPitchState Pitch = new MembershipPitchState();
+        public bool PitchEnabled;
         public float IncomeShieldLeft;
         public float IncomeFreezeLeft;
         public float ShieldViewers;
@@ -49,6 +51,7 @@ namespace BankruptVtuber
         float _nextChatAt;
         float _nextSuperchatAt;
         float _eventAt;
+        float _pitchAt;
         int _superchatsSpawned;
         int _superchatTarget;
         int _userSerial;
@@ -61,14 +64,18 @@ namespace BankruptVtuber
             "트롤킹", "질문봇", "달콤이", "초롱이", "빚쟁이아님", "월세공포", "이모트창"
         };
 
-        public StreamSession(Week1Balance balance, ChatCatalog catalog, int mental, int? seed = null)
+        public StreamSession(Week1Balance balance, ChatCatalog catalog, int mental, float extraViewers = 0f, bool pitchEnabled = false, float pitchWindow = 1.2f, float pitchAt = 60f, int? seed = null)
         {
             Balance = balance;
             Catalog = catalog;
             Rng = seed.HasValue ? new Random(seed.Value) : new Random();
             TimeLeft = balance.streamSeconds;
-            Viewers = balance.startingViewers;
+            Viewers = balance.startingViewers + extraViewers;
             Mental = mental;
+            PitchEnabled = pitchEnabled;
+            Pitch.Reset();
+            Pitch.Window = pitchWindow > 0.2f ? pitchWindow : 1.2f;
+            _pitchAt = pitchAt > 0f ? pitchAt : 60f;
             _nextChatAt = 0.4f;
             _superchatTarget = Rng.Next(balance.superchatMinCount, balance.superchatMaxCount + 1);
             _nextSuperchatAt = NextSuperchatDelay();
@@ -81,6 +88,7 @@ namespace BankruptVtuber
         }
 
         public bool EventActive => Event.Active;
+        public bool PitchActive => Pitch.Active;
 
         public bool HypeActive => HypeLeft > 0f;
 
@@ -107,12 +115,21 @@ namespace BankruptVtuber
             Elapsed += dt;
             TimeLeft -= dt;
 
-            if (Event.Active)
+            if (Event.Active || Pitch.Active)
             {
                 FreezeNotes(dt);
-                Event.TimeLeft -= dt;
-                if (Event.TimeLeft <= 0f)
-                    ResolveEvent(false);
+                if (Event.Active)
+                {
+                    Event.TimeLeft -= dt;
+                    if (Event.TimeLeft <= 0f)
+                        ResolveEvent(false);
+                }
+                if (Pitch.Active)
+                {
+                    Pitch.TimeLeft -= dt;
+                    if (Pitch.TimeLeft <= 0f)
+                        ResolvePitch(false);
+                }
             }
 
             if (HypeActive)
@@ -140,12 +157,13 @@ namespace BankruptVtuber
                 }
             }
 
-            if (!Event.Active)
+            if (!Event.Active && !Pitch.Active)
             {
                 MaybeSpawnRegular();
                 MaybeSpawnSuperchat();
                 ExpireMisses();
                 MaybeStartEvent();
+                MaybeStartPitch();
             }
 
             if (Mental <= 0)
@@ -161,6 +179,8 @@ namespace BankruptVtuber
                 TimeLeft = 0f;
                 if (Event.Active)
                     ResolveEvent(false);
+                if (Pitch.Active)
+                    ResolvePitch(false);
                 ExpireAllRemaining();
                 Finished = true;
             }
@@ -168,7 +188,7 @@ namespace BankruptVtuber
 
         public bool TryHit(ChatKind kind, float now, bool hold)
         {
-            if (Finished || Event.Active)
+            if (Finished || Event.Active || Pitch.Active)
                 return false;
 
             ChatNote best = null;
@@ -323,6 +343,52 @@ namespace BankruptVtuber
 
             LastJudgement = judgement;
             LastResolved = note;
+        }
+
+        public bool TryPitchInvite()
+        {
+            if (!Pitch.Active || Finished)
+                return false;
+            ResolvePitch(true);
+            return true;
+        }
+
+        public bool TryPitchSkip()
+        {
+            if (!Pitch.Active || Finished)
+                return false;
+            ResolvePitch(false);
+            return true;
+        }
+
+        void MaybeStartPitch()
+        {
+            if (!PitchEnabled || Pitch.Fired || Pitch.Active || Finished || Event.Active)
+                return;
+            bool afterEvent = Event.Fired && Event.Resolved;
+            bool fallback = !Event.Fired && Elapsed >= _pitchAt;
+            if (!afterEvent && !fallback)
+                return;
+            StartPitch();
+        }
+
+        void StartPitch()
+        {
+            Pitch.Fired = true;
+            Pitch.Active = true;
+            Pitch.Resolved = false;
+            Pitch.Success = false;
+            Pitch.TimeLeft = Pitch.Window;
+        }
+
+        void ResolvePitch(bool success)
+        {
+            if (!Pitch.Active)
+                return;
+            Pitch.Active = false;
+            Pitch.Resolved = true;
+            Pitch.Success = success;
+            Pitch.TimeLeft = 0f;
         }
 
         public bool TryEventKey(int key)

@@ -100,7 +100,10 @@ namespace BankruptVtuber
         void RefreshHud()
         {
             var run = GameManager.Instance.Run;
-            _day.text = $"1주차  ·  {run.day}일차   /   5일 생존";
+            int week = WeekSchedule.WeekNumber(run);
+            int last = WeekSchedule.LastDayOfCurrentWeek(run);
+            string members = run.membershipUnlocked ? $"   ·   멤버십 {run.membershipCount}" : "";
+            _day.text = $"{week}주차  ·  {run.day}일차   /   {last}일{members}";
             _cash.text = EconomyRules.FormatWon(run.cash);
             _debt.text = EconomyRules.FormatWon(run.debt);
             _mental.text = $"{run.mental}/100";
@@ -109,18 +112,19 @@ namespace BankruptVtuber
         IEnumerator BillWave(GameManager gm)
         {
             var b = gm.Balance;
-            ExtraThreatRules.EnsureRolled(gm.Run, b);
-            var extra = ExtraThreatRules.Roll(b, gm.Run.runSeed, gm.Run.day);
+            ExtraThreatRules.EnsureRolled(gm.Run, b, gm.Week2);
+            var extra = ExtraThreatRules.Roll(WeekSchedule.ThreatTable(gm.Run, b, gm.Week2), gm.Run.runSeed, gm.Run.day);
             if (!gm.Run.extraThreatRolled)
                 gm.Run.ApplyExtraThreat(extra);
 
+            var fixedBills = WeekSchedule.FixedBills(gm.Run, b, gm.Week2);
             var bills = new[]
             {
-                new Bill { Name = "월세", Art = ArtSprites.BillRent, Amount = b.billRent },
-                new Bill { Name = "전기+인터넷", Art = ArtSprites.BillElectric, Amount = b.billElectricNet },
-                new Bill { Name = "아바타 라이선스", Art = ArtSprites.BillLicense, Amount = b.billAvatarLicense },
-                new Bill { Name = "식비", Art = ArtSprites.BillFood, Amount = b.billFood },
-                new Bill { Name = "장비 할부", Art = ArtSprites.BillGear, Amount = b.billGear },
+                new Bill { Name = "월세", Art = ArtSprites.BillRent, Amount = fixedBills.Rent },
+                new Bill { Name = "전기+인터넷", Art = ArtSprites.BillElectric, Amount = fixedBills.Electric },
+                new Bill { Name = "아바타 라이선스", Art = ArtSprites.BillLicense, Amount = fixedBills.License },
+                new Bill { Name = "식비", Art = ArtSprites.BillFood, Amount = fixedBills.Food },
+                new Bill { Name = "장비 할부", Art = ArtSprites.BillGear, Amount = fixedBills.Gear },
                 new Bill
                 {
                     Name = gm.Run.extraThreatName,
@@ -141,10 +145,10 @@ namespace BankruptVtuber
             }
 
             yield return new WaitForSeconds(0.35f);
-            EconomyRules.ApplyDailyBills(gm.Run, b);
+            EconomyRules.ApplyDailyBills(gm.Run, b, gm.Week2);
             RefreshHud();
             _cash.color = Palette.MoneyRed;
-            int today = b.TotalDailyBills + gm.Run.extraThreatAmount;
+            int today = WeekSchedule.TotalFixedBills(gm.Run, b, gm.Week2) + gm.Run.extraThreatAmount;
             _log.text = $"{gm.Run.extraThreatName} 때문에 오늘 {EconomyRules.FormatWon(today)} 차감. 방송으로 메우세요.";
             yield return new WaitForSeconds(0.2f);
             _ready = true;

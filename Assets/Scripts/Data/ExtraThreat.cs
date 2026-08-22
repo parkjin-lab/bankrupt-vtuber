@@ -99,11 +99,70 @@ namespace BankruptVtuber
             };
         }
 
+        public static ExtraThreatDef[] DefaultWeek2Table()
+        {
+            return new[]
+            {
+                new ExtraThreatDef
+                {
+                    id = "gear_break",
+                    displayName = "장비 고장",
+                    minWon = 10000,
+                    maxWon = 14000,
+                    artPath = ArtSprites.BillGear,
+                    tintHex = "FF6A6A"
+                },
+                new ExtraThreatDef
+                {
+                    id = "rival",
+                    displayName = "라이벌 견제",
+                    minWon = 8000,
+                    maxWon = 12000,
+                    artPath = ArtSprites.Troll,
+                    tintHex = "C47BFF"
+                },
+                new ExtraThreatDef
+                {
+                    id = "platform_fee",
+                    displayName = "플랫폼 수수료",
+                    minWon = 6000,
+                    maxWon = 10000,
+                    artPath = ArtSprites.Superchat,
+                    tintHex = "FFB020"
+                },
+                new ExtraThreatDef
+                {
+                    id = "scandal",
+                    displayName = "스캔들 루머",
+                    minWon = 11000,
+                    maxWon = 16000,
+                    artPath = ArtSprites.Troll,
+                    tintHex = "FF3355"
+                },
+                new ExtraThreatDef
+                {
+                    id = "net_drop",
+                    displayName = "인터넷 끊김",
+                    minWon = 6000,
+                    maxWon = 9000,
+                    artPath = ArtSprites.BillElectric,
+                    tintHex = "4EC8FF"
+                }
+            };
+        }
+
         public static ExtraThreatDef[] TableOrDefault(Week1Balance b)
         {
             if (b != null && b.extraThreats != null && b.extraThreats.Length > 0)
                 return b.extraThreats;
             return DefaultTable();
+        }
+
+        public static ExtraThreatDef[] TableOrDefault(ExtraThreatDef[] table, ExtraThreatDef[] fallback)
+        {
+            if (table != null && table.Length > 0)
+                return table;
+            return fallback ?? DefaultTable();
         }
 
         public static int MixSeed(int runSeed, int day) =>
@@ -114,9 +173,13 @@ namespace BankruptVtuber
         /// is not the same five ₩22,000 days, and Restart is not identical.
         /// Amount uses day + runSeed so it is debug-reproducible.
         /// </summary>
-        public static ExtraThreatRoll Roll(Week1Balance b, int runSeed, int day)
+        public static ExtraThreatRoll Roll(Week1Balance b, int runSeed, int day) =>
+            Roll(TableOrDefault(b), runSeed, day);
+
+        public static ExtraThreatRoll Roll(ExtraThreatDef[] table, int runSeed, int day)
         {
-            var table = TableOrDefault(b);
+            if (table == null || table.Length == 0)
+                table = DefaultTable();
             int[] order = new int[table.Length];
             for (int i = 0; i < order.Length; i++)
                 order[i] = i;
@@ -146,13 +209,14 @@ namespace BankruptVtuber
             return new ExtraThreatRoll(def.id, def.displayName, amount, art, def.Tint);
         }
 
-        public static void EnsureRolled(GameRunState state, Week1Balance b)
+        public static void EnsureRolled(GameRunState state, Week1Balance b, Week2Balance w2 = null)
         {
             if (state == null || b == null)
                 return;
             if (state.extraThreatRolled && state.extraThreatAmount > 0)
                 return;
-            var roll = Roll(b, state.runSeed, state.day);
+            var table = WeekSchedule.ThreatTable(state, b, w2);
+            var roll = Roll(table, state.runSeed, state.day);
             state.ApplyExtraThreat(roll);
         }
     }

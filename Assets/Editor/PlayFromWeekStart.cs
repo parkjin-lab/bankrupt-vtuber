@@ -52,6 +52,12 @@ namespace BankruptVtuber.Editor
                 missing = true;
             }
 
+            if (Resources.Load<BankruptVtuber.Week2Balance>("Balance/Week2Balance") == null)
+            {
+                Debug.LogError("[파산 버튜버] missing Resources/Balance/Week2Balance");
+                missing = true;
+            }
+
             if (!missing)
                 Debug.Log("[파산 버튜버] Week 1 scenes + balance hooked. Start scene = Title.");
         }

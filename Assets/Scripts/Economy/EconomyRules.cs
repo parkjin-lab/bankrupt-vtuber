@@ -4,16 +4,17 @@ namespace BankruptVtuber
 {
     public static class EconomyRules
     {
-        public static int ApplyDailyBills(GameRunState state, Week1Balance b)
+        public static int ApplyDailyBills(GameRunState state, Week1Balance b, Week2Balance w2 = null)
         {
             if (state.billsAppliedThisDay)
                 return 0;
 
-            ExtraThreatRules.EnsureRolled(state, b);
+            ExtraThreatRules.EnsureRolled(state, b, w2);
             int extra = Math.Max(0, state.extraThreatAmount);
-            int total = b.TotalDailyBills + extra;
+            int fixedBills = WeekSchedule.TotalFixedBills(state, b, w2);
+            int total = fixedBills + extra;
             state.cash -= total;
-            state.lastBills = b.TotalDailyBills;
+            state.lastBills = fixedBills;
             state.billsAppliedThisDay = true;
             ConvertNegativeCashToDebt(state);
             return total;
@@ -53,14 +54,31 @@ namespace BankruptVtuber
             return amount;
         }
 
-        public static WeekOutcome Evaluate(GameRunState state, Week1Balance b)
+        public static WeekOutcome Evaluate(GameRunState state, Week1Balance b, Week2Balance w2 = null)
         {
-            if (state.debt >= b.bankruptDebt)
+            int bankrupt = b.bankruptDebt;
+            if (w2 != null && WeekSchedule.InWeek2(state))
+                bankrupt = w2.bankruptDebt;
+            if (state.debt >= bankrupt)
                 return WeekOutcome.Bankrupt;
-            if (state.day < b.daysInWeek)
+
+            if (!WeekSchedule.InWeek2(state))
+            {
+                if (state.day < WeekSchedule.Week1LastDay)
+                    return WeekOutcome.Continue;
+                if (state.debt <= b.winDebtMax || state.cash >= b.winCashMin)
+                    return WeekOutcome.Win;
+                return WeekOutcome.WeekFailed;
+            }
+
+            int last = w2 != null ? w2.lastDay : WeekSchedule.Week2LastDay;
+            if (state.day < last)
                 return WeekOutcome.Continue;
-            if (state.debt <= b.winDebtMax || state.cash >= b.winCashMin)
-                return WeekOutcome.Win;
+            if (w2 != null &&
+                (state.debt <= w2.winDebtMax ||
+                 state.cash >= w2.winCashMin ||
+                 state.membershipCount >= w2.winMembershipMin))
+                return WeekOutcome.Week2Win;
             return WeekOutcome.WeekFailed;
         }
 

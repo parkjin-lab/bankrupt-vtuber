@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a3d3e221824256f198bf1016492135b, type: 3}
+  m_Name: Week2Balance
+  m_EditorClassIdentifier: BankruptVtuber.Week2Balance
+  firstDay: 6
+  lastDay: 10
+  bankruptDebt: 180000
+  winDebtMax: 20000
+  winCashMin: 120000
+  winMembershipMin: 15
+  billRent: 10000
+  billElectricNet: 5000
+  billAvatarLicense: 4000
+  billFood: 6000
+  billGear: 3000
+  startingMembers: 8
+  membersHighPerfects: 8
+  membersHighGain: 2
+  membersLowPerfects: 4
+  membersLowGain: 1
+  membershipPassivePerMember: 400
+  membershipPitchSeconds: 1.2
+  membershipPitchAtSeconds: 60
+  pitchMemberBonus: 3
+  clipChanceWithHype: 35
+  clipChanceNoHype: 15
+  clipCash: 25000
+  clipViewerBonus: 8
+  extraThreats:
+  - id: gear_break
+    displayName: 장비 고장
+    minWon: 10000
+    maxWon: 14000
+    artPath: Art/bill_gear
+    tintHex: FF6A6A
+  - id: rival
+    displayName: 라이벌 견제
+    minWon: 8000
+    maxWon: 12000
+    artPath: Art/badge_troll
+    tintHex: C47BFF
+  - id: platform_fee
+    displayName: 플랫폼 수수료
+    minWon: 6000
+    maxWon: 10000
+    artPath: Art/badge_superchat
+    tintHex: FFB020
+  - id: scandal
+    displayName: 스캔들 루머
+    minWon: 11000
+    maxWon: 16000
+    artPath: Art/badge_troll
+    tintHex: FF3355
+  - id: net_drop
+    displayName: 인터넷 끊김
+    minWon: 6000
+    maxWon: 9000
+    artPath: Art/bill_electric
+    tintHex: 4EC8FF

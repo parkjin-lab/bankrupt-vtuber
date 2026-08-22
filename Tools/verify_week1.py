@@ -165,6 +165,7 @@ def check_project() -> None:
         "Assets/Scripts/Economy/EconomyRules.cs",
         "Assets/Scripts/Stream/StreamSession.cs",
         "Assets/Resources/Balance/Week1Balance.asset",
+        "Assets/Resources/Balance/Week2Balance.asset",
         "Assets/Resources/Balance/ChatCatalog.asset",
         "Assets/Resources/Fonts/NotoSansKR-Regular.ttf",
     ):
@@ -266,10 +267,14 @@ def check_project() -> None:
         fail("WeekStart does not slam a sixth named extra bill")
     else:
         ok("WeekStart slams a sixth extra-threat bill")
-    if "extraThreatAmount" not in eco_cs or "TotalDailyBills + extra" not in eco_cs:
-        fail("ApplyDailyBills does not add extra on top of ₩22,000")
+    if "extraThreatAmount" not in eco_cs or "fixedBills + extra" not in eco_cs:
+        fail("ApplyDailyBills does not add extra on top of the week's fixed bills")
     else:
-        ok("economy keeps ₩22,000 fixed bills and adds extra")
+        ok("economy adds extra on top of the week's fixed bills")
+    if "InWeek2" not in (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8"):
+        fail("WeekSchedule missing InWeek2 gate")
+    else:
+        ok("Week 2 numbers are gated behind InWeek2")
     if "위협" not in settle_cs or "extraThreatName" not in settle_cs:
         fail("Settlement does not list the rolled extra threat")
     else:
@@ -300,7 +305,7 @@ def check_project() -> None:
         fail("stream event does not fire-once")
     else:
         ok("stream event is armed once per session")
-    if "if (Finished || Event.Active)" not in session_cs:
+    if "Event.Active" not in session_cs.split("TryHit", 1)[-1].split("ChatNote best", 1)[0]:
         fail("A/S/D/F can still hit chat during the event")
     else:
         ok("regular chat keys are ignored while the event is up")
@@ -314,6 +319,133 @@ def check_project() -> None:
         if token not in balance:
             fail(f"Week1Balance missing event field {token}")
     ok("event numbers live on Week1Balance")
+
+    w2_asset = (ROOT / "Assets/Resources/Balance/Week2Balance.asset").read_text(encoding="utf-8")
+    w2_cs = (ROOT / "Assets/Scripts/Data/Week2Balance.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    w2r_cs = (ROOT / "Assets/Scripts/Economy/Week2Rules.cs").read_text(encoding="utf-8")
+    pitch_cs = (ROOT / "Assets/Scripts/Stream/MembershipPitch.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    run_cs = (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8")
+    extra_cs = (ROOT / "Assets/Scripts/Data/ExtraThreat.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+
+    w2_expect = {
+        "billRent: 10000": "w2 rent",
+        "billElectricNet: 5000": "w2 electric",
+        "billAvatarLicense: 4000": "w2 license",
+        "billFood: 6000": "w2 food",
+        "billGear: 3000": "w2 gear",
+        "winDebtMax: 20000": "w2 win debt",
+        "winCashMin: 120000": "w2 win cash",
+        "winMembershipMin: 15": "w2 members",
+        "bankruptDebt: 180000": "w2 bankrupt",
+        "startingMembers: 8": "start members",
+        "membershipPassivePerMember: 400": "member passive",
+        "clipChanceWithHype: 35": "clip hype %",
+        "clipChanceNoHype: 15": "clip no-hype %",
+        "clipCash: 25000": "clip cash",
+        "clipViewerBonus: 8": "clip viewers",
+        "membershipPitchSeconds: 1.2": "pitch window",
+        "membershipPitchAtSeconds: 60": "pitch at 60s",
+        "pitchMemberBonus: 3": "pitch +3",
+        "firstDay: 6": "week2 start day",
+        "lastDay: 10": "week2 end day",
+    }
+    for token, label in w2_expect.items():
+        if token not in w2_asset:
+            fail(f"Week2Balance missing {label} ({token})")
+    if "10000" in w2_cs and "5000" in w2_cs and "4000" in w2_cs and "6000" in w2_cs and "3000" in w2_cs:
+        ok("Week2Balance locked bills 10000/5000/4000/6000/3000")
+    else:
+        fail("Week2Balance.cs missing scaled bill defaults")
+    if "billRent: 8000" not in balance or "billGear: 2000" not in balance:
+        fail("Week 1 bills were overwritten")
+    else:
+        ok("Week 1 bills stay ₩22,000 on Week1Balance")
+
+    threats = ("장비 고장", "라이벌 견제", "플랫폼 수수료", "스캔들 루머", "인터넷 끊김")
+    for name in threats:
+        if name not in w2_asset or name not in extra_cs:
+            fail(f"Week 2 extra threat '{name}' missing")
+    else:
+        ok("Week 2 extra threat table reuses the same 5 names")
+    if "DefaultWeek2Table" not in extra_cs:
+        fail("DefaultWeek2Table missing")
+    else:
+        ok("Week 2 extra threat table exists")
+    for token in ("minWon: 6000", "maxWon: 16000", "minWon: 10000", "maxWon: 14000"):
+        if token not in w2_asset:
+            fail(f"Week 2 threat amount {token} missing")
+    ok("Week 2 extra threats stay in ₩6,000–₩16,000")
+
+    if "membershipCount" not in run_cs or "viewerBonus" not in run_cs:
+        fail("GameRunState missing membership / viewerBonus")
+    else:
+        ok("run state persists membershipCount and viewerBonus")
+    if "ClearWeek2Progress" not in run_cs or "membershipUnlocked = false" not in run_cs:
+        fail("ResetNewRun does not clear Week 2 progress")
+    else:
+        ok("Title / Restart clears Week 2 so a new run is Week 1")
+    if "TryUnlockMembership" not in run_cs or "firstDay" not in sched_cs:
+        fail("membership does not unlock on morning of day 6")
+    else:
+        ok("membership unlocks on the morning of day 6")
+    if "MembersFromPerfects" not in w2r_cs or "membersHighPerfects" not in w2r_cs:
+        fail("stream membership gain from Perfects missing")
+    else:
+        ok("stream membership: Perfects >=8 → +2, 4–7 → +1")
+    if "membershipPassivePerMember" not in w2r_cs or "ApplyMembershipPassive" not in w2r_cs:
+        fail("settlement membership passive missing")
+    else:
+        ok("membership passive is settlement-only (count * 400)")
+    if "클립 업로드" not in settle_cs or "AttemptClip" not in w2r_cs:
+        fail("Settlement missing 클립 업로드")
+    else:
+        ok("Settlement offers 클립 업로드")
+    if "clipAttemptedThisDay" not in run_cs or "CanOfferClip" not in w2r_cs:
+        fail("clip is not capped at one attempt per day")
+    else:
+        ok("viral clip is one attempt per day")
+    if "2주차 시작" not in settle_cs or "CanEnterWeek2" not in sched_cs:
+        fail("Week 1 win does not offer Week 2 continue")
+    else:
+        ok("Week 1 win can continue into days 6–10")
+    if "Week2Win" not in eco_cs:
+        fail("Evaluate missing Week 2 clear")
+    else:
+        ok("Evaluate has a Week 2 clear")
+    if "멤버십 유도" not in live_cs or "PitchInvite" not in live_cs:
+        fail("LiveStream missing 멤버십 유도 prompt")
+    else:
+        ok("LiveStream has 멤버십 유도 (A/S 권유, D/F 스킵)")
+    if "MaybeStartPitch" not in session_cs or "_pitchAt" not in session_cs:
+        fail("membership pitch does not fire once after the 1–4 event / 60s")
+    else:
+        ok("membership pitch fires once after the 1–4 event or at 60s")
+    if "Pitch.Active" not in session_cs:
+        fail("chat keys not blocked during membership pitch")
+    else:
+        ok("A/S/D/F chat is ignored while the pitch is up")
+    if "agency" in w2_cs.lower() or "concert" in w2_cs.lower() or "글로벌" in settle_cs:
+        fail("Week 2 added agency/concert/global")
+    else:
+        ok("Week 2 does not add agency, concert, or global")
+    if "Week2" in title_cs or "membershipCount" in title_cs:
+        fail("Title scene started applying Week 2 systems")
+    else:
+        ok("Title still starts a Week 1 run")
+    if "Week2Balance.Load" not in gm:
+        fail("GameManager does not load Week2Balance")
+    else:
+        ok("GameManager loads Week2Balance")
+    if "pitchMemberBonus" not in pitch_cs and "멤버십 유도" not in pitch_cs:
+        fail("MembershipPitch type missing")
+    else:
+        ok("MembershipPitch is a separate prompt, not 1–4")
 
 
 def simulate_stream(skill: str, seed: int) -> int:
@@ -464,6 +596,52 @@ def check_economy() -> None:
     else:
         ok("week extras differ so days are not a flat ₩22,000")
     ok("5-day ledger simulation completed")
+
+    # Week 2 numbers must not leak into days 1–5.
+    w1_bills = 8000 + 4000 + 3000 + 5000 + 2000
+    w2_bills = 10000 + 5000 + 4000 + 6000 + 3000
+    if w1_bills != 22000:
+        fail(f"Week 1 bill sum {w1_bills} != 22000")
+    if w2_bills != 28000:
+        fail(f"Week 2 bill sum {w2_bills} != 28000")
+    else:
+        ok("Week 2 fixed bills sum to ₩28,000")
+
+    def members_from_perfects(perfects: int) -> int:
+        if perfects >= 8:
+            return 2
+        if perfects >= 4:
+            return 1
+        return 0
+
+    members = 8
+    members += members_from_perfects(9)
+    members += 3  # pitch success
+    if members != 13:
+        fail(f"membership gain math {members} != 13")
+    else:
+        ok("membership +2 (8+ Perfects) and +3 pitch stack")
+    passive = members * 400
+    if passive != 5200:
+        fail(f"membership passive {passive} != 5200")
+    else:
+        ok("settlement membership passive is count * ₩400")
+
+    # 5 more days at ₩28,000 + extra 6–16k, plus membership passive.
+    cash, debt, members = 70000, 30000, 8
+    extras2 = [8000, 10000, 6000, 14000, 9000]
+    for day in range(6, 11):
+        cash -= w2_bills + extras2[day - 6]
+        if cash < 0:
+            debt += -cash
+            cash = 0
+        take = simulate_stream("average", seed=3000 + day)
+        cash += take
+        members += members_from_perfects(6)
+        cash += members * 400
+    win = debt <= 20000 or cash >= 120000 or members >= 15
+    print(f"WEEK2: average cash={cash} debt={debt} members={members} win={win}")
+    ok("Week 2 5-day ledger simulation completed")
 
 
 def main() -> int:
