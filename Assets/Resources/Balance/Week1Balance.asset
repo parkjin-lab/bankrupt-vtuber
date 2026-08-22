@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aeb69a131b224cb59ce40a709af9ca6c, type: 3}
+  m_Name: Week1Balance
+  m_EditorClassIdentifier: BankruptVtuber.Week1Balance
+  startingCash: 45000
+  startingDebt: 50000
+  startingMental: 100
+  maxMental: 100
+  startingViewers: 12
+  daysInWeek: 5
+  winDebtMax: 30000
+  winCashMin: 70000
+  bankruptDebt: 180000
+  billRent: 8000
+  billElectricNet: 4000
+  billAvatarLicense: 3000
+  billFood: 5000
+  billGear: 2000
+  streamSeconds: 90
+  incomePerViewerPerSec: 3
+  minViewers: 1
+  perfectViewerDelta: 0.5
+  greatViewerDelta: 0.2
+  goodViewerDelta: 0
+  missViewerDelta: -1.2
+  perfectWindow: 0.07
+  greatWindow: 0.13
+  goodWindow: 0.22
+  approachSeconds: 1.35
+  chatSpawnStart: 1.55
+  chatSpawnEnd: 1.05
+  superchatMinInterval: 9
+  superchatMaxInterval: 11
+  superchatMinCount: 8
+  superchatMaxCount: 10
+  superchatMinWon: 1000
+  superchatMaxWon: 6000
+  hypeSuperchatMinWon: 2000
+  hypeSuperchatMaxWon: 12000
+  comboIncomeThreshold: 5
+  comboIncomeMultiplier: 1.5
+  hypePerfectCombo: 9
+  hypeSeconds: 12
+  hypeIncomeMultiplier: 2.5
+  hypeSuperchatMultiplier: 2
+  hypeViewersPerSec: 1
+  missStreakMental: 3
+  missStreakMentalPenalty: 12
+  missStreakViewerPenalty: 4
+  totalMissMentalTrigger: 10
+  totalMissMentalPenalty: 20
+  forceEndIncomeNumerator: 1
+  forceEndIncomeDenominator: 2
+  mentalRestoreEachMorning: 100
