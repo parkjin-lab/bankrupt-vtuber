@@ -480,7 +480,7 @@ MonoBehaviour:
   totalMissMentalPenalty: 20
   forceEndIncomeNumerator: 1
   forceEndIncomeDenominator: 2
-  mentalRestoreEachMorning: 100
+  mentalRestoreEachMorning: 15
 """,
     )
     write(

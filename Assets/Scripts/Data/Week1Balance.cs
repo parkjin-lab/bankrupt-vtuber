@@ -75,7 +75,7 @@ namespace BankruptVtuber
         public int totalMissMentalPenalty = 20;
         public int forceEndIncomeNumerator = 1;
         public int forceEndIncomeDenominator = 2;
-        public int mentalRestoreEachMorning = 100;
+        public int mentalRestoreEachMorning = 15;
 
         public int TotalDailyBills =>
             billRent + billElectricNet + billAvatarLicense + billFood + billGear;
@@ -142,7 +142,7 @@ namespace BankruptVtuber
             totalMissMentalPenalty = 20;
             forceEndIncomeNumerator = 1;
             forceEndIncomeDenominator = 2;
-            mentalRestoreEachMorning = 100;
+            mentalRestoreEachMorning = 15;
         }
     }
 }

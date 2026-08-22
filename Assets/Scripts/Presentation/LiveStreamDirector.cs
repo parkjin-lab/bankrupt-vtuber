@@ -17,6 +17,7 @@ namespace BankruptVtuber
         Text _combo;
         Text _judge;
         Text _stub;
+        Text _charge;
         Image _tensionFill;
         Image _hypeFlash;
         AudioSource _audio;
@@ -95,6 +96,7 @@ namespace BankruptVtuber
             var sc = _stub.color;
             sc.a = Mathf.MoveTowards(sc.a, 0f, dt * 0.7f);
             _stub.color = sc;
+            _charge.gameObject.SetActive(StreamBindings.SuperchatCharging);
 
             var hype = _hypeFlash.color;
             hype.a = _session.HypeActive ? 0.16f + Mathf.Sin(Time.time * 8f) * 0.05f : 0f;
@@ -178,7 +180,7 @@ namespace BankruptVtuber
             var tlab = UiKit.Label(bottom, "TensionL", "텐션 (미스 스트릭)", 14, Palette.Muted, TextAnchor.LowerLeft);
             UiKit.Layout(tlab.rectTransform, new Vector2(0, 0), new Vector2(0.38f, 0.22f), new Vector2(0, 0), new Vector2(28, 4), Vector2.zero);
 
-            var keys = UiKit.Label(bottom, "Keys", "A 긍정(파랑)   S 공감(초록)   D 웃음(빨강)   F 감사(골드)   Space 슈퍼챗 홀드", 18, Palette.PastelDim, TextAnchor.MiddleRight);
+            var keys = UiKit.Label(bottom, "Keys", "A 긍정   S 공감   D 웃음   F 감사   Space 슈퍼챗(떼면 판정)", 18, Palette.PastelDim, TextAnchor.MiddleRight);
             UiKit.Layout(keys.rectTransform, new Vector2(0.38f, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-24, 8), Vector2.zero);
 
             _judge = UiKit.Label(root, "Judge", "", 64, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -186,6 +188,9 @@ namespace BankruptVtuber
 
             _stub = UiKit.Label(root, "Stub", "", 22, Palette.Gold, TextAnchor.MiddleCenter);
             UiKit.Layout(_stub.rectTransform, new Vector2(0.5f, 0.22f), new Vector2(0.5f, 0.22f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(520, 36));
+            _charge = UiKit.Label(root, "Charge", "슈퍼챗 차지… 떼면 한 번만 판정", 22, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_charge.rectTransform, new Vector2(0.5f, 0.18f), new Vector2(0.5f, 0.18f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(560, 36));
+            _charge.gameObject.SetActive(false);
         }
 
         Text Chip(Transform parent, string name, string label, Vector2 pos)
@@ -254,14 +259,24 @@ namespace BankruptVtuber
             UiKit.Layout(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(380, h));
             var stripe = UiKit.Image(card, "Stripe", color);
             UiKit.Layout(stripe.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 0.5f), Vector2.zero, new Vector2(8, 0));
+
+            var badge = UiKit.Image(card, "Badge", color);
+            UiKit.Layout(badge.rectTransform, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(44, 0), new Vector2(44, 44));
+            if (note.IsSuperchat)
+                ArtSprites.Apply(badge, ArtSprites.Superchat, Palette.Gold);
+            else if (note.Kind == ChatKind.Laugh)
+                ArtSprites.Apply(badge, ArtSprites.Troll, Palette.Troll);
+            else
+                badge.color = color;
+
             string key = note.IsSuperchat ? "SPACE" : Palette.KeyFor(note.Kind);
-            var keyT = UiKit.Label(card, "Key", key, 16, color, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(keyT.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(48, 0), new Vector2(70, 0));
+            var keyT = UiKit.Label(card, "Key", key, 14, color, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(keyT.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(86, 0), new Vector2(52, 0));
             string body = note.IsSuperchat
                 ? $"{note.User}  {EconomyRules.FormatWon(note.SuperchatWon)}\n{note.Text}"
                 : $"{note.User}  {note.Text}";
             var msg = UiKit.Label(card, "Msg", body, note.IsSuperchat ? 16 : 17, Palette.Pastel, TextAnchor.MiddleLeft);
-            UiKit.Layout(msg.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0.5f), new Vector2(120, 0), new Vector2(-130, 0));
+            UiKit.Layout(msg.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0.5f), new Vector2(142, 0), new Vector2(-150, 0));
             msg.horizontalOverflow = HorizontalWrapMode.Wrap;
             return card;
         }

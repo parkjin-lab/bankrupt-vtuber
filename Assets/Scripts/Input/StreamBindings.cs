@@ -4,6 +4,10 @@ namespace BankruptVtuber
 {
     public static class StreamBindings
     {
+        /// <summary>
+        /// A/S/D/F tap once. Space superchat commits once on release (hold-to-charge).
+        /// Holding Space must not poll Thanks every frame.
+        /// </summary>
         public static bool TryConsumeKind(out ChatKind kind, out bool hold)
         {
             hold = false;
@@ -27,16 +31,20 @@ namespace BankruptVtuber
                 kind = ChatKind.Thanks;
                 return true;
             }
-            if (UnityEngine.Input.GetKey(KeyCode.Space))
+
+            // One resolve per press: charge while held, commit on release.
+            if (UnityEngine.Input.GetKeyUp(KeyCode.Space))
             {
                 kind = ChatKind.Thanks;
-                hold = true;
                 return true;
             }
 
             kind = default;
             return false;
         }
+
+        public static bool SuperchatCharging =>
+            UnityEngine.Input.GetKey(KeyCode.Space);
 
         public static bool EventStubPressed(out int index)
         {

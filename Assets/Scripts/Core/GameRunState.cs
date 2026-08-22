@@ -47,7 +47,9 @@ namespace BankruptVtuber
         public void BeginNextDay(Week1Balance b)
         {
             day += 1;
-            mental = b.mentalRestoreEachMorning;
+            mental += b.mentalRestoreEachMorning;
+            if (mental < 0)
+                mental = 0;
             if (mental > b.maxMental)
                 mental = b.maxMental;
             billsAppliedThisDay = false;

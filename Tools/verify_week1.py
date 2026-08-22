@@ -92,6 +92,74 @@ def check_project() -> None:
             fail(f"StreamBindings missing {key}")
     ok("A/S/D/F/Space/1-4 bindings present")
 
+    consume = bindings.split("TryConsumeKind", 1)[-1]
+    consume = consume.split("public static bool SuperchatCharging", 1)[0]
+    consume = consume.split("public static bool EventStubPressed", 1)[0]
+    if "GetKey(KeyCode.Space)" in consume:
+        fail("TryConsumeKind still polls GetKey(Space) — hold would farm superchats")
+    else:
+        ok("TryConsumeKind does not poll GetKey(Space)")
+    if "GetKeyUp(KeyCode.Space)" not in consume and "GetKeyDown(KeyCode.Space)" not in consume:
+        fail("Space superchat is not a one-shot GetKeyDown/GetKeyUp")
+    else:
+        ok("Space superchat commits once (GetKeyUp/GetKeyDown)")
+    for tap in ("GetKeyDown(KeyCode.A)", "GetKeyDown(KeyCode.S)", "GetKeyDown(KeyCode.D)", "GetKeyDown(KeyCode.F)"):
+        if tap not in consume:
+            fail(f"regular lane missing {tap}")
+    ok("A/S/D/F stay GetKeyDown")
+
+    run_cs = (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8")
+    begin = run_cs.split("BeginNextDay", 1)[-1]
+    if "mental = b.mentalRestoreEachMorning" in begin.split("billsAppliedThisDay", 1)[0]:
+        fail("BeginNextDay overwrites mental instead of keeping leftover")
+    elif "mental += b.mentalRestoreEachMorning" not in begin:
+        fail("BeginNextDay does not add morning restore onto leftover mental")
+    else:
+        ok("mental leftover persists; morning restore is additive")
+
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    if "mentalRestoreEachMorning: 15" not in balance:
+        fail("Week1Balance morning restore is not +15")
+    else:
+        ok("morning restore is +15 on Week1Balance")
+    defaults = (ROOT / "Assets/Scripts/Data/Week1Balance.cs").read_text(encoding="utf-8")
+    if "mentalRestoreEachMorning = 15" not in defaults:
+        fail("Week1Balance.cs default morning restore is not 15")
+    else:
+        ok("Week1Balance.cs default morning restore is +15")
+
+    art = {
+        "pasan_nyang.png": "avatar",
+        "bill_rent.png": "월세",
+        "bill_electric.png": "전기",
+        "bill_license.png": "라이선스",
+        "bill_food.png": "식비",
+        "bill_gear.png": "장비",
+        "badge_superchat.png": "superchat",
+        "badge_troll.png": "troll",
+    }
+    for name, label in art.items():
+        path = ROOT / "Assets/Resources/Art" / name
+        if not path.exists() or path.stat().st_size < 1000:
+            fail(f"missing/empty art {name} ({label})")
+        else:
+            ok(f"art {name} ({label})")
+    if (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").exists() and "Sprite.Create" in (
+        ROOT / "Assets/Scripts/Presentation/ArtSprites.cs"
+    ).read_text(encoding="utf-8"):
+        ok("ArtSprites builds sprites at runtime")
+    else:
+        fail("ArtSprites runtime Sprite.Create missing")
+    directors = (
+        (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+        + (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+        + (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    )
+    if "ArtSprites.Apply" not in directors:
+        fail("directors do not hook ArtSprites")
+    else:
+        ok("directors hook ArtSprites at runtime")
+
     for rel in (
         "Assets/Scripts/Core/GameManager.cs",
         "Assets/Scripts/Economy/EconomyRules.cs",
