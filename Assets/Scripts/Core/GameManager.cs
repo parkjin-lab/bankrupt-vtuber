@@ -56,6 +56,9 @@ namespace BankruptVtuber
                 Catalog.ApplyDefaults();
             Run = new GameRunState();
             Run.ResetNewRun(Balance);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            PlaytestDebug.Attach(this);
+#endif
             Debug.Log("[파산 버튜버] Week 1 boot seed=" + Run.runSeed + " cash=" + Run.cash + " debt=" + Run.debt + " mental=" + Run.mental);
         }
 

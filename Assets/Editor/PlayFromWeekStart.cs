@@ -79,6 +79,32 @@ namespace BankruptVtuber.Editor
             if (!missing)
                 Debug.Log("[파산 버튜버] Week 1 scenes + balance hooked. Start scene = Title.");
         }
+
+        [MenuItem("파산 버튜버/DEBUG 오늘 스킵 (F10)")]
+        public static void DebugSkipDay()
+        {
+            if (!Application.isPlaying)
+            {
+                Debug.LogWarning("[파산 버튜버] DEBUG skip needs Play Mode.");
+                return;
+            }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            BankruptVtuber.PlaytestDebug.SkipRestOfDay();
+#endif
+        }
+
+        [MenuItem("파산 버튜버/DEBUG 다음 주 점프 (F9)")]
+        public static void DebugSkipWeek()
+        {
+            if (!Application.isPlaying)
+            {
+                Debug.LogWarning("[파산 버튜버] DEBUG skip needs Play Mode.");
+                return;
+            }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            BankruptVtuber.PlaytestDebug.SkipToNextWeek();
+#endif
+        }
     }
 }
 #endif

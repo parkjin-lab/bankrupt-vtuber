@@ -900,6 +900,44 @@ def check_project() -> None:
     else:
         ok("Week 4 still does not add concert or global")
 
+    debug_path = ROOT / "Assets/Scripts/Core/PlaytestDebug.cs"
+    debug_cs = debug_path.read_text(encoding="utf-8") if debug_path.exists() else ""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    if not debug_path.exists():
+        fail("PlaytestDebug helper missing")
+    if "UNITY_EDITOR" not in debug_cs or "DEVELOPMENT_BUILD" not in debug_cs:
+        fail("playtest skip is not editor/DEVELOPMENT gated")
+    else:
+        ok("playtest skip is UNITY_EDITOR / DEVELOPMENT_BUILD only")
+    if "AverageStreamTake = 28000" not in debug_cs or "24000" not in debug_cs or "32000" not in debug_cs:
+        fail("F10 average take is not the documented ₩28,000 mid band")
+    else:
+        ok("F10 uses documented average mid take ₩28,000")
+    if "lastHadHype = false" not in debug_cs:
+        fail("F10 average skip still marks hype")
+    else:
+        ok("F10 average skip is not a hype exploit")
+    if 'text = "DEBUG' not in debug_cs and "DEBUG  F9" not in debug_cs:
+        fail("DEBUG on-screen label missing")
+    else:
+        ok("DEBUG badge is visible when skip is armed")
+    if "KeyCode.F10" not in debug_cs or "KeyCode.F9" not in debug_cs:
+        fail("F9/F10 skip bindings missing")
+    else:
+        ok("F9 skips to next week, F10 skips the current day")
+    if "DEBUG 오늘 스킵" not in editor or "DEBUG 다음 주 점프" not in editor:
+        fail("파산 버튜버 DEBUG menu items missing")
+    else:
+        ok("파산 버튜버 menu exposes F9/F10 skips")
+    if "F9" not in readme or "F10" not in readme:
+        fail("README missing F9/F10 playtest keys")
+    else:
+        ok("README documents F9/F10")
+    if "F9" in title_cs or "F10" in title_cs or "PlaytestDebug" in title_cs:
+        fail("Title started advertising the playtest skip")
+    else:
+        ok("Title still starts a Week 1 run without debug keys")
+
 
 def simulate_stream(skill: str, seed: int) -> int:
     rng = random.Random(seed)
