@@ -72,14 +72,6 @@ namespace BankruptVtuber
             return false;
         }
 
-        public static bool PitchInvite =>
-            UnityEngine.Input.GetKeyDown(KeyCode.A) ||
-            UnityEngine.Input.GetKeyDown(KeyCode.S);
-
-        public static bool PitchSkip =>
-            UnityEngine.Input.GetKeyDown(KeyCode.D) ||
-            UnityEngine.Input.GetKeyDown(KeyCode.F);
-
         public static bool Confirm =>
             UnityEngine.Input.GetKeyDown(KeyCode.Space) ||
             UnityEngine.Input.GetKeyDown(KeyCode.Return);

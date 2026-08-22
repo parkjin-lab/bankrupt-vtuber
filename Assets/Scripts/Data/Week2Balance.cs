@@ -12,38 +12,42 @@ namespace BankruptVtuber
         public int firstDay = 6;
         public int lastDay = 10;
 
+        [Header("Week 2 entry (after Week 1 clear)")]
+        public int entryCash = 15000;
+        public int entryDebtRelief = 10000;
+        public int entryMental = 100;
+
         [Header("Win / lose (KRW)")]
-        public int bankruptDebt = 180000;
+        public int bankruptDebt = 220000;
         public int winDebtMax = 20000;
-        public int winCashMin = 120000;
-        public int winMembershipMin = 15;
+        public int winCashMin = 110000;
 
         [Header("Daily bills (KRW) — ₩28,000")]
         public int billRent = 10000;
         public int billElectricNet = 5000;
-        public int billAvatarLicense = 4000;
+        public int billAvatarLicense = 5000;
         public int billFood = 6000;
-        public int billGear = 3000;
+        public int billGear = 2000;
 
-        [Header("Daily extra threat (₩6,000–₩16,000)")]
+        [Header("Daily extra threats (0–2 independent rolls)")]
         public ExtraThreatDef[] extraThreats;
+        public int extraThreatMaxPerDay = 2;
 
         [Header("Membership")]
         public int startingMembers = 8;
-        public int membersHighPerfects = 8;
-        public int membersHighGain = 2;
-        public int membersLowPerfects = 4;
-        public int membersLowGain = 1;
-        public int membershipPassivePerMember = 400;
-        public float membershipPitchSeconds = 1.2f;
-        public float membershipPitchAtSeconds = 60f;
-        public int pitchMemberBonus = 3;
+        public float unlockPeakViewers = 40f;
+        public int unlockSuccessfulStreams = 4;
+        public int membersFromHype = 1;
+        public int membersFromHypeDayMax = 2;
+        public int membersMissPenaltyAt = 10;
+        public int membersMissLoss = 1;
+        public int membershipPassivePerMember = 150;
 
-        [Header("Viral clip")]
-        public int clipChanceWithHype = 35;
-        public int clipChanceNoHype = 15;
-        public int clipCash = 25000;
-        public int clipViewerBonus = 8;
+        [Header("Viral clip (the one new stream variable)")]
+        public int clipPerfectsRequired = 25;
+        public int clipChance = 30;
+        public int clipCash = 30000;
+        public int clipViewerBonus = 10;
 
         public int TotalDailyBills =>
             billRent + billElectricNet + billAvatarLicense + billFood + billGear;
@@ -63,28 +67,30 @@ namespace BankruptVtuber
         {
             firstDay = 6;
             lastDay = 10;
-            bankruptDebt = 180000;
+            entryCash = 15000;
+            entryDebtRelief = 10000;
+            entryMental = 100;
+            bankruptDebt = 220000;
             winDebtMax = 20000;
-            winCashMin = 120000;
-            winMembershipMin = 15;
+            winCashMin = 110000;
             billRent = 10000;
             billElectricNet = 5000;
-            billAvatarLicense = 4000;
+            billAvatarLicense = 5000;
             billFood = 6000;
-            billGear = 3000;
+            billGear = 2000;
+            extraThreatMaxPerDay = 2;
             startingMembers = 8;
-            membersHighPerfects = 8;
-            membersHighGain = 2;
-            membersLowPerfects = 4;
-            membersLowGain = 1;
-            membershipPassivePerMember = 400;
-            membershipPitchSeconds = 1.2f;
-            membershipPitchAtSeconds = 60f;
-            pitchMemberBonus = 3;
-            clipChanceWithHype = 35;
-            clipChanceNoHype = 15;
-            clipCash = 25000;
-            clipViewerBonus = 8;
+            unlockPeakViewers = 40f;
+            unlockSuccessfulStreams = 4;
+            membersFromHype = 1;
+            membersFromHypeDayMax = 2;
+            membersMissPenaltyAt = 10;
+            membersMissLoss = 1;
+            membershipPassivePerMember = 150;
+            clipPerfectsRequired = 25;
+            clipChance = 30;
+            clipCash = 30000;
+            clipViewerBonus = 10;
             extraThreats = ExtraThreatRules.DefaultWeek2Table();
         }
     }

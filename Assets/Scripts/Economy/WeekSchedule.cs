@@ -62,9 +62,10 @@ namespace BankruptVtuber
 
         public static void TryUnlockMembership(GameRunState run, Week2Balance w2)
         {
-            if (run == null || w2 == null || run.membershipUnlocked)
+            if (run == null || w2 == null || run.membershipUnlocked || !InWeek2(run))
                 return;
-            if (run.day >= w2.firstDay)
+            if (run.peakViewersEver >= w2.unlockPeakViewers ||
+                run.successfulStreams >= w2.unlockSuccessfulStreams)
                 UnlockMembership(run, w2);
         }
 

@@ -10,6 +10,7 @@ namespace BankruptVtuber
         public string displayName;
         public int minWon = 4000;
         public int maxWon = 12000;
+        public int chancePercent;
         public string artPath;
         public string tintHex = "FF6A6A";
 
@@ -107,46 +108,31 @@ namespace BankruptVtuber
                 {
                     id = "gear_break",
                     displayName = "장비 고장",
-                    minWon = 10000,
-                    maxWon = 14000,
+                    minWon = 5000,
+                    maxWon = 12000,
+                    chancePercent = 20,
                     artPath = ArtSprites.BillGear,
                     tintHex = "FF6A6A"
                 },
                 new ExtraThreatDef
                 {
-                    id = "rival",
-                    displayName = "라이벌 견제",
-                    minWon = 8000,
-                    maxWon = 12000,
-                    artPath = ArtSprites.Troll,
-                    tintHex = "C47BFF"
+                    id = "petty_bill",
+                    displayName = "소액 추가 청구",
+                    minWon = 3000,
+                    maxWon = 8000,
+                    chancePercent = 25,
+                    artPath = ArtSprites.BillFood,
+                    tintHex = "FFB020"
                 },
                 new ExtraThreatDef
                 {
                     id = "platform_fee",
                     displayName = "플랫폼 수수료",
-                    minWon = 6000,
-                    maxWon = 10000,
+                    minWon = 3000,
+                    maxWon = 3000,
+                    chancePercent = 15,
                     artPath = ArtSprites.Superchat,
                     tintHex = "FFB020"
-                },
-                new ExtraThreatDef
-                {
-                    id = "scandal",
-                    displayName = "스캔들 루머",
-                    minWon = 11000,
-                    maxWon = 16000,
-                    artPath = ArtSprites.Troll,
-                    tintHex = "FF3355"
-                },
-                new ExtraThreatDef
-                {
-                    id = "net_drop",
-                    displayName = "인터넷 끊김",
-                    minWon = 6000,
-                    maxWon = 9000,
-                    artPath = ArtSprites.BillElectric,
-                    tintHex = "4EC8FF"
                 }
             };
         }
@@ -209,14 +195,65 @@ namespace BankruptVtuber
             return new ExtraThreatRoll(def.id, def.displayName, amount, art, def.Tint);
         }
 
+        public static ExtraThreatRoll[] RollWeek2(Week2Balance w2, int runSeed, int day)
+        {
+            var table = ExtraThreatRules.TableOrDefault(
+                w2 != null ? w2.extraThreats : null,
+                DefaultWeek2Table());
+            int cap = w2 != null && w2.extraThreatMaxPerDay > 0 ? w2.extraThreatMaxPerDay : 2;
+            var rng = new System.Random(MixSeed(runSeed, day));
+            var hits = new System.Collections.Generic.List<ExtraThreatDef>(table.Length);
+            for (int i = 0; i < table.Length; i++)
+            {
+                int chance = table[i].chancePercent;
+                if (chance > 0 && rng.Next(100) < chance)
+                    hits.Add(table[i]);
+            }
+
+            if (hits.Count > cap)
+            {
+                for (int i = hits.Count - 1; i > 0; i--)
+                {
+                    int j = rng.Next(i + 1);
+                    var tmp = hits[i];
+                    hits[i] = hits[j];
+                    hits[j] = tmp;
+                }
+                hits.RemoveRange(cap, hits.Count - cap);
+            }
+
+            var rolls = new ExtraThreatRoll[hits.Count];
+            for (int i = 0; i < hits.Count; i++)
+            {
+                var def = hits[i];
+                int lo = System.Math.Min(def.minWon, def.maxWon);
+                int hi = System.Math.Max(def.minWon, def.maxWon);
+                int amount = lo == hi ? lo : rng.Next(lo, hi + 1);
+                amount = amount / 100 * 100;
+                if (amount < lo)
+                    amount = lo;
+                if (amount > hi)
+                    amount = hi;
+                string art = string.IsNullOrEmpty(def.artPath) ? ArtSprites.Troll : def.artPath;
+                rolls[i] = new ExtraThreatRoll(def.id, def.displayName, amount, art, def.Tint);
+            }
+
+            return rolls;
+        }
+
         public static void EnsureRolled(GameRunState state, Week1Balance b, Week2Balance w2 = null)
         {
             if (state == null || b == null)
                 return;
-            if (state.extraThreatRolled && state.extraThreatAmount > 0)
+            if (state.extraThreatRolled)
                 return;
-            var table = WeekSchedule.ThreatTable(state, b, w2);
-            var roll = Roll(table, state.runSeed, state.day);
+            if (WeekSchedule.InWeek2(state))
+            {
+                state.ApplyExtraRolls(RollWeek2(w2, state.runSeed, state.day));
+                return;
+            }
+
+            var roll = Roll(TableOrDefault(b), state.runSeed, state.day);
             state.ApplyExtraThreat(roll);
         }
     }

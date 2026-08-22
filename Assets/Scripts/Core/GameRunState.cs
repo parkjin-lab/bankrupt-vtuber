@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace BankruptVtuber
 {
     public class GameRunState
@@ -33,16 +35,19 @@ namespace BankruptVtuber
         public string extraThreatName;
         public int extraThreatAmount;
         public string extraThreatArt;
+        public readonly List<ExtraThreatRoll> extraRolls = new List<ExtraThreatRoll>();
 
         public bool membershipUnlocked;
         public int membershipCount;
         public int viewerBonus;
-        public int lastMembershipFromPerfects;
-        public int lastMembershipFromPitch;
-        public bool lastMembershipPitchHappened;
-        public bool lastMembershipPitchSuccess;
+        public float peakViewersEver;
+        public int successfulStreams;
+        public int membershipHypeGainedToday;
+        public int lastMembershipFromHype;
+        public int lastMembershipFromMiss;
         public int lastMembershipPassive;
         public bool membershipPassiveAppliedThisDay;
+        public bool week2EntryApplied;
         public bool clipAttemptedThisDay;
         public bool lastClipAttempted;
         public bool lastClipSuccess;
@@ -79,12 +84,14 @@ namespace BankruptVtuber
             membershipUnlocked = false;
             membershipCount = 0;
             viewerBonus = 0;
-            lastMembershipFromPerfects = 0;
-            lastMembershipFromPitch = 0;
-            lastMembershipPitchHappened = false;
-            lastMembershipPitchSuccess = false;
+            peakViewersEver = 0f;
+            successfulStreams = 0;
+            membershipHypeGainedToday = 0;
+            lastMembershipFromHype = 0;
+            lastMembershipFromMiss = 0;
             lastMembershipPassive = 0;
             membershipPassiveAppliedThisDay = false;
+            week2EntryApplied = false;
             clipAttemptedThisDay = false;
             lastClipAttempted = false;
             lastClipSuccess = false;
@@ -93,11 +100,34 @@ namespace BankruptVtuber
 
         public void ApplyExtraThreat(ExtraThreatRoll roll)
         {
+            ApplyExtraRolls(new[] { roll });
+        }
+
+        public void ApplyExtraRolls(IList<ExtraThreatRoll> rolls)
+        {
             extraThreatRolled = true;
-            extraThreatId = roll.Id;
-            extraThreatName = roll.DisplayName;
-            extraThreatAmount = roll.Amount;
-            extraThreatArt = roll.ArtPath;
+            extraRolls.Clear();
+            extraThreatAmount = 0;
+            extraThreatId = "";
+            extraThreatName = "";
+            extraThreatArt = "";
+            if (rolls == null || rolls.Count == 0)
+            {
+                extraThreatName = "없음";
+                return;
+            }
+
+            var names = new List<string>(rolls.Count);
+            for (int i = 0; i < rolls.Count; i++)
+            {
+                extraRolls.Add(rolls[i]);
+                extraThreatAmount += rolls[i].Amount;
+                names.Add(rolls[i].DisplayName);
+            }
+
+            extraThreatId = extraRolls[0].Id;
+            extraThreatArt = extraRolls[0].ArtPath;
+            extraThreatName = string.Join(" · ", names);
         }
 
         public void ClearExtraThreat()
@@ -107,6 +137,7 @@ namespace BankruptVtuber
             extraThreatName = "";
             extraThreatAmount = 0;
             extraThreatArt = "";
+            extraRolls.Clear();
         }
 
         public void BeginNextDay(Week1Balance b, Week2Balance w2 = null)
@@ -130,17 +161,17 @@ namespace BankruptVtuber
             lastBills = 0;
             lastRepaid = 0;
             lastOutcome = WeekOutcome.Continue;
-            lastMembershipFromPerfects = 0;
-            lastMembershipFromPitch = 0;
-            lastMembershipPitchHappened = false;
-            lastMembershipPitchSuccess = false;
+            lastMembershipFromHype = 0;
+            lastMembershipFromMiss = 0;
             lastMembershipPassive = 0;
             membershipPassiveAppliedThisDay = false;
+            membershipHypeGainedToday = 0;
             clipAttemptedThisDay = false;
             lastClipAttempted = false;
             lastClipSuccess = false;
             lastClipCash = 0;
             ClearExtraThreat();
+            Week2Rules.ApplyWeek2Entry(this, w2);
             WeekSchedule.TryUnlockMembership(this, w2);
         }
     }

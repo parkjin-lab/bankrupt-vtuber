@@ -10,7 +10,8 @@ namespace BankruptVtuber
         Button _next;
         Button _repay;
         Button _restart;
-        Button _clip;
+        Button _clipYes;
+        Button _clipNo;
         Text _clipNote;
 
         void Awake()
@@ -61,8 +62,10 @@ namespace BankruptVtuber
             _result = UiKit.Label(root, "Result", "", 30, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_result.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 168), new Vector2(1200, 50));
 
-            _clip = UiKit.Button(root, "Clip", "클립 업로드", OnClip, Palette.Gold, Palette.Ink);
-            UiKit.Layout(_clip.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 118), new Vector2(360, 56));
+            _clipYes = UiKit.Button(root, "ClipYes", "클립 업로드", OnClipYes, Palette.Gold, Palette.Ink);
+            UiKit.Layout(_clipYes.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-190, 118), new Vector2(320, 56));
+            _clipNo = UiKit.Button(root, "ClipNo", "올리지 않기", OnClipNo, Palette.StudioHi, Palette.Pastel);
+            UiKit.Layout(_clipNo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(190, 118), new Vector2(320, 56));
             _clipNote = UiKit.Label(root, "ClipNote", "", 18, Palette.Gold, TextAnchor.MiddleCenter);
             UiKit.Layout(_clipNote.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 118), new Vector2(720, 28));
 
@@ -83,6 +86,21 @@ namespace BankruptVtuber
             var b = gm.Balance;
             var w2 = gm.Week2;
 
+            string extras = "";
+            if (run.extraRolls.Count > 0)
+            {
+                for (int i = 0; i < run.extraRolls.Count; i++)
+                    extras += $"위협 {run.extraRolls[i].DisplayName,-10} -{EconomyRules.FormatWon(run.extraRolls[i].Amount)}\n";
+            }
+            else if (run.extraThreatAmount > 0)
+                extras = $"위협 {run.extraThreatName,-10} -{EconomyRules.FormatWon(run.extraThreatAmount)}\n";
+
+            string memberDelta = "";
+            if (run.lastMembershipFromHype > 0)
+                memberDelta += $"   (+{run.lastMembershipFromHype} 하이프)";
+            if (run.lastMembershipFromMiss > 0)
+                memberDelta += $"   (-{run.lastMembershipFromMiss} 미스)";
+
             string force = run.lastStreamForceEnded ? "멘탈 붕괴로 강제 종료 · 수입 50%\n" : "";
             string weekTag = WeekSchedule.InWeek2(run) ? "2주차" : "1주차";
             _body.text =
@@ -92,9 +110,7 @@ namespace BankruptVtuber
                 $"슈퍼챗              {EconomyRules.FormatWon(run.lastSuperchatIncome)}\n" +
                 $"실지급              {EconomyRules.FormatWon(run.lastStreamIncome)}\n" +
                 $"오늘 고정비         -{EconomyRules.FormatWon(run.lastBills)}\n" +
-                (run.extraThreatAmount > 0
-                    ? $"위협 {run.extraThreatName,-10} -{EconomyRules.FormatWon(run.extraThreatAmount)}\n"
-                    : "") +
+                extras +
                 (run.lastMembershipPassive > 0
                     ? $"멤버십 수익         {EconomyRules.FormatWon(run.lastMembershipPassive)}\n"
                     : "") +
@@ -107,34 +123,29 @@ namespace BankruptVtuber
                 (run.lastStreamEventHappened
                     ? $"\n이벤트 {run.lastStreamEventName}   {(run.lastStreamEventSuccess ? "성공" : "실패")}"
                     : "") +
-                (run.lastMembershipPitchHappened
-                    ? $"\n멤버십 유도   {(run.lastMembershipPitchSuccess ? "권유 성공" : "스킵")}"
-                    : "") +
                 (run.membershipUnlocked
-                    ? $"\n멤버십 {run.membershipCount}" +
-                      (run.lastMembershipFromPerfects + run.lastMembershipFromPitch > 0
-                          ? $"   (+{run.lastMembershipFromPerfects + run.lastMembershipFromPitch})"
-                          : "")
+                    ? $"\n멤버십 {run.membershipCount}{memberDelta}"
                     : "") +
                 $"\n\n현금 {EconomyRules.FormatWon(run.cash)}     부채 {EconomyRules.FormatWon(run.debt)}     멘탈 {run.mental}";
 
             run.lastOutcome = EconomyRules.Evaluate(run, b, w2);
-            bool offerClip = Week2Rules.CanOfferClip(run);
-            _clip.gameObject.SetActive(offerClip);
+            bool offerClip = Week2Rules.CanOfferClip(run, w2);
+            _clipYes.gameObject.SetActive(offerClip);
+            _clipNo.gameObject.SetActive(offerClip);
             if (run.lastClipAttempted)
                 _clipNote.text = run.lastClipSuccess
-                    ? "클립 성공 — ₩25,000 · 다음 방송 시청자 +8"
-                    : "클립 업로드 실패";
-            else if (offerClip)
-                _clipNote.text = "";
+                    ? "클립 성공 — ₩30,000 · 시작 시청자 +10"
+                    : "클립 없음";
             else
                 _clipNote.text = "";
-            _clipNote.gameObject.SetActive(run.lastClipAttempted);
+            _clipNote.gameObject.SetActive(run.lastClipAttempted && !offerClip);
 
             switch (run.lastOutcome)
             {
                 case WeekOutcome.Bankrupt:
-                    _result.text = "파산. 부채가 ₩180,000을 넘었습니다.";
+                    _result.text = WeekSchedule.InWeek2(run)
+                        ? "파산. 부채가 ₩220,000을 넘었습니다."
+                        : "파산. 부채가 ₩180,000을 넘었습니다.";
                     _result.color = Palette.MoneyRed;
                     _next.gameObject.SetActive(false);
                     _repay.gameObject.SetActive(false);
@@ -150,7 +161,7 @@ namespace BankruptVtuber
                     PlaceTripleButtons();
                     break;
                 case WeekOutcome.Week2Win:
-                    _result.text = "2주차 클리어. 빚 ≤ 2만 또는 현금 ≥ 12만 또는 멤버 15.";
+                    _result.text = "2주차 클리어. 빚 ≤ 2만 또는 현금 ≥ 11만, 그리고 멤버십 해금.";
                     _result.color = Palette.CashGreen;
                     _next.gameObject.SetActive(false);
                     _repay.gameObject.SetActive(run.cash > 0 && run.debt > 0);
@@ -158,7 +169,7 @@ namespace BankruptVtuber
                     break;
                 case WeekOutcome.WeekFailed:
                     _result.text = WeekSchedule.InWeek2(run)
-                        ? "2주차 목표 미달 (부채 2만 이하 또는 현금 12만 또는 멤버 15)."
+                        ? "2주차 목표 미달 (부채 2만 이하 또는 현금 11만, 그리고 멤버십 해금)."
                         : "5일은 버텼지만 목표 미달 (부채 3만 이하 또는 현금 7만). 남은 현금으로 빚을 갚을 수 있습니다.";
                     _result.color = Palette.Gold;
                     _next.gameObject.SetActive(false);
@@ -199,10 +210,16 @@ namespace BankruptVtuber
             Render();
         }
 
-        void OnClip()
+        void OnClipYes()
         {
             var gm = GameManager.Instance;
             Week2Rules.AttemptClip(gm.Run, gm.Week2);
+            Render();
+        }
+
+        void OnClipNo()
+        {
+            Week2Rules.DeclineClip(GameManager.Instance.Run);
             Render();
         }
     }

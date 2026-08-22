@@ -25,11 +25,6 @@ namespace BankruptVtuber
         Text _eventTimer;
         readonly Image[] _eventKeys = new Image[4];
         readonly Text[] _eventKeyLabels = new Text[4];
-        RectTransform _pitchRoot;
-        Text _pitchTitle;
-        Text _pitchBody;
-        Text _pitchTimer;
-        bool _pitchWasActive;
         Image _tensionFill;
         Image _hypeFlash;
         AudioSource _audio;
@@ -62,15 +57,7 @@ namespace BankruptVtuber
             var gm = GameManager.Instance;
             if (!gm.Run.billsAppliedThisDay)
                 EconomyRules.ApplyDailyBills(gm.Run, gm.Balance, gm.Week2);
-            var w2 = gm.Week2;
-            _session = new StreamSession(
-                gm.Balance,
-                gm.Catalog,
-                gm.Run.mental,
-                gm.Run.viewerBonus,
-                gm.Run.membershipUnlocked,
-                w2 != null ? w2.membershipPitchSeconds : 1.2f,
-                w2 != null ? w2.membershipPitchAtSeconds : 60f);
+            _session = new StreamSession(gm.Balance, gm.Catalog, gm.Run.mental, gm.Run.viewerBonus);
         }
 
         void Update()
@@ -86,13 +73,6 @@ namespace BankruptVtuber
                 if (StreamBindings.EventKeyPressed(out int idx))
                     _session.TryEventKey(idx);
             }
-            else if (_session.PitchActive)
-            {
-                if (StreamBindings.PitchInvite)
-                    _session.TryPitchInvite();
-                else if (StreamBindings.PitchSkip)
-                    _session.TryPitchSkip();
-            }
             else if (StreamBindings.TryConsumeKind(out var kind, out var hold))
                 _session.TryHit(kind, _session.Elapsed, hold);
 
@@ -107,16 +87,6 @@ namespace BankruptVtuber
                 _audio.PlayOneShot(okHit ? _ok : _bad, 0.5f);
             }
             _eventWasActive = _session.EventActive;
-
-            if (_pitchWasActive && !_session.PitchActive && _session.Pitch.Resolved)
-            {
-                bool okHit = _session.Pitch.Success;
-                _judge.text = okHit ? "멤버십 권유 성공  +3" : "멤버십 권유 패스";
-                _judge.color = okHit ? Palette.CashGreen : Palette.Muted;
-                _judgeFlash = 1f;
-                _audio.PlayOneShot(okHit ? _ok : _bad, 0.5f);
-            }
-            _pitchWasActive = _session.PitchActive;
 
             if (_session.LastJudgement.HasValue && _session.LastResolved != null)
             {
@@ -136,7 +106,6 @@ namespace BankruptVtuber
 
             SyncNotes();
             RefreshEventOverlay();
-            RefreshPitchOverlay();
             RefreshHud();
             _avatar.Tick(dt);
 
@@ -176,11 +145,12 @@ namespace BankruptVtuber
             gm.Run.lastStreamEventHappened = _session.Event.Fired;
             gm.Run.lastStreamEventName = StreamEventState.DisplayName(_session.Event.Kind);
             gm.Run.lastStreamEventSuccess = _session.Event.Success;
-            Week2Rules.ApplyStreamMembership(
+            Week2Rules.AfterStream(
                 gm.Run,
-                _session.Perfects,
-                _session.Pitch.Fired,
-                _session.Pitch.Success,
+                _session.PeakViewers,
+                _session.ForceEnded,
+                _session.HadHype,
+                _session.Misses,
                 gm.Week2);
             _judge.text = _session.ForceEnded ? "멘탈 붕괴 — 강제 종료" : "방송 종료";
             _judge.color = Color.white;
@@ -239,7 +209,7 @@ namespace BankruptVtuber
             var tlab = UiKit.Label(bottom, "TensionL", "텐션 (미스 스트릭)", 14, Palette.Muted, TextAnchor.LowerLeft);
             UiKit.Layout(tlab.rectTransform, new Vector2(0, 0), new Vector2(0.38f, 0.22f), new Vector2(0, 0), new Vector2(28, 4), Vector2.zero);
 
-            var keys = UiKit.Label(bottom, "Keys", "A 긍정   S 공감   D 웃음   F 감사   Space 슈퍼챗   1–4 이벤트   A/S 멤버십", 18, Palette.PastelDim, TextAnchor.MiddleRight);
+            var keys = UiKit.Label(bottom, "Keys", "A 긍정   S 공감   D 웃음   F 감사   Space 슈퍼챗   이벤트 1–4", 18, Palette.PastelDim, TextAnchor.MiddleRight);
             UiKit.Layout(keys.rectTransform, new Vector2(0.38f, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-24, 8), Vector2.zero);
 
             _judge = UiKit.Label(root, "Judge", "", 64, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -274,16 +244,6 @@ namespace BankruptVtuber
             }
             _eventRoot.gameObject.SetActive(false);
             _eventDim.gameObject.SetActive(false);
-
-            _pitchRoot = UiKit.Panel(root, "PitchCard", new Color(0.12f, 0.08f, 0.18f, 0.96f));
-            UiKit.Layout(_pitchRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(560, 220));
-            _pitchTitle = UiKit.Label(_pitchRoot, "PTitle", "멤버십 유도", 34, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
-            UiKit.Layout(_pitchTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -16), new Vector2(-24, 44));
-            _pitchBody = UiKit.Label(_pitchRoot, "PBody", "멤버십 가입을 권유할까요?\nA / S  권유     D / F  스킵", 22, Palette.Pastel, TextAnchor.UpperCenter);
-            UiKit.Layout(_pitchBody.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -70), new Vector2(-28, 80));
-            _pitchTimer = UiKit.Label(_pitchRoot, "PTimer", "", 20, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_pitchTimer.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 18), new Vector2(0, 28));
-            _pitchRoot.gameObject.SetActive(false);
         }
 
         Text Chip(Transform parent, string name, string label, Vector2 pos)
@@ -349,7 +309,7 @@ namespace BankruptVtuber
                 if (img != null)
                 {
                     var c = img.color;
-                    c.a = (_session.EventActive || _session.PitchActive) ? 0.22f : 0.18f;
+                    c.a = _session.EventActive ? 0.22f : 0.18f;
                     img.color = c;
                 }
             }
@@ -359,8 +319,8 @@ namespace BankruptVtuber
         {
             bool on = _session.EventActive;
             _eventRoot.gameObject.SetActive(on);
-            _eventDim.gameObject.SetActive(on || _session.PitchActive);
-            _charge.gameObject.SetActive(!on && !_session.PitchActive && StreamBindings.SuperchatCharging);
+            _eventDim.gameObject.SetActive(on);
+            _charge.gameObject.SetActive(!on && StreamBindings.SuperchatCharging);
             if (!on)
                 return;
 
@@ -375,17 +335,6 @@ namespace BankruptVtuber
                 _eventKeys[i].color = hot ? new Color(1f, 0.82f, 0.25f, pulse) : new Color(1f, 1f, 1f, 0.12f);
                 _eventKeyLabels[i].color = hot ? Palette.Ink : Palette.Pastel;
             }
-        }
-
-        void RefreshPitchOverlay()
-        {
-            bool on = _session.PitchActive;
-            _pitchRoot.gameObject.SetActive(on);
-            if (!on)
-                return;
-            _pitchTitle.text = "멤버십 유도";
-            _pitchBody.text = "멤버십 가입을 권유할까요?\nA / S  권유     D / F  스킵";
-            _pitchTimer.text = $"{_session.Pitch.TimeLeft:0.00}s";
         }
 
         RectTransform MakeBubble(ChatNote note)

@@ -113,34 +113,37 @@ namespace BankruptVtuber
         {
             var b = gm.Balance;
             ExtraThreatRules.EnsureRolled(gm.Run, b, gm.Week2);
-            var extra = ExtraThreatRules.Roll(WeekSchedule.ThreatTable(gm.Run, b, gm.Week2), gm.Run.runSeed, gm.Run.day);
-            if (!gm.Run.extraThreatRolled)
-                gm.Run.ApplyExtraThreat(extra);
 
             var fixedBills = WeekSchedule.FixedBills(gm.Run, b, gm.Week2);
-            var bills = new[]
+            var bills = new System.Collections.Generic.List<Bill>
             {
                 new Bill { Name = "월세", Art = ArtSprites.BillRent, Amount = fixedBills.Rent },
                 new Bill { Name = "전기+인터넷", Art = ArtSprites.BillElectric, Amount = fixedBills.Electric },
                 new Bill { Name = "아바타 라이선스", Art = ArtSprites.BillLicense, Amount = fixedBills.License },
                 new Bill { Name = "식비", Art = ArtSprites.BillFood, Amount = fixedBills.Food },
-                new Bill { Name = "장비 할부", Art = ArtSprites.BillGear, Amount = fixedBills.Gear },
-                new Bill
+                new Bill { Name = "장비 할부", Art = ArtSprites.BillGear, Amount = fixedBills.Gear }
+            };
+            for (int e = 0; e < gm.Run.extraRolls.Count; e++)
+            {
+                var extra = gm.Run.extraRolls[e];
+                bills.Add(new Bill
                 {
-                    Name = gm.Run.extraThreatName,
-                    Art = string.IsNullOrEmpty(gm.Run.extraThreatArt) ? extra.ArtPath : gm.Run.extraThreatArt,
-                    Amount = gm.Run.extraThreatAmount,
+                    Name = extra.DisplayName,
+                    Art = extra.ArtPath,
+                    Amount = extra.Amount,
                     Extra = true,
                     Tint = extra.Tint
-                }
-            };
+                });
+            }
 
-            _log.text = $"오늘의 위협 — {gm.Run.extraThreatName}  {EconomyRules.FormatWon(gm.Run.extraThreatAmount)}";
+            _log.text = gm.Run.extraRolls.Count == 0
+                ? "오늘은 추가 위협이 없습니다."
+                : $"오늘의 위협 — {gm.Run.extraThreatName}  {EconomyRules.FormatWon(gm.Run.extraThreatAmount)}";
             yield return new WaitForSeconds(0.45f);
 
-            for (int i = 0; i < bills.Length; i++)
+            for (int i = 0; i < bills.Count; i++)
             {
-                SpawnIncoming(bills[i], i, bills.Length);
+                SpawnIncoming(bills[i], i, bills.Count);
                 yield return new WaitForSeconds(0.28f);
             }
 
@@ -149,7 +152,9 @@ namespace BankruptVtuber
             RefreshHud();
             _cash.color = Palette.MoneyRed;
             int today = WeekSchedule.TotalFixedBills(gm.Run, b, gm.Week2) + gm.Run.extraThreatAmount;
-            _log.text = $"{gm.Run.extraThreatName} 때문에 오늘 {EconomyRules.FormatWon(today)} 차감. 방송으로 메우세요.";
+            _log.text = gm.Run.extraRolls.Count == 0
+                ? $"오늘 고정비 {EconomyRules.FormatWon(today)} 차감. 방송으로 메우세요."
+                : $"{gm.Run.extraThreatName} 때문에 오늘 {EconomyRules.FormatWon(today)} 차감. 방송으로 메우세요.";
             yield return new WaitForSeconds(0.2f);
             _ready = true;
             _goLive.gameObject.SetActive(true);
@@ -157,7 +162,8 @@ namespace BankruptVtuber
 
         void SpawnIncoming(Bill bill, int index, int total)
         {
-            float x = (index - (total - 1) * 0.5f) * 168f;
+            float step = total > 6 ? 148f : 168f;
+            float x = (index - (total - 1) * 0.5f) * step;
             var bg = bill.Extra ? new Color(1f, 0.86f, 0.88f, 0.98f) : new Color(0.95f, 0.93f, 0.96f, 0.96f);
             var card = UiKit.Panel(_stack, "Bill" + index, bg);
             UiKit.Layout(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 220), new Vector2(156, 210));

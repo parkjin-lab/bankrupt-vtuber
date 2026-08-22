@@ -4,33 +4,60 @@ namespace BankruptVtuber
 {
     public static class Week2Rules
     {
-        public static int MembersFromPerfects(int perfects, Week2Balance w2)
+        public static void ApplyWeek2Entry(GameRunState run, Week2Balance w2)
         {
-            if (w2 == null)
-                return 0;
-            if (perfects >= w2.membersHighPerfects)
-                return w2.membersHighGain;
-            if (perfects >= w2.membersLowPerfects)
-                return w2.membersLowGain;
-            return 0;
+            if (run == null || w2 == null || run.week2EntryApplied)
+                return;
+            if (run.day < w2.firstDay)
+                return;
+
+            run.week2EntryApplied = true;
+            run.cash += w2.entryCash;
+            run.debt -= w2.entryDebtRelief;
+            if (run.debt < 0)
+                run.debt = 0;
+            run.mental = w2.entryMental;
         }
 
-        public static void ApplyStreamMembership(GameRunState run, int perfects, bool pitchFired, bool pitchSuccess, Week2Balance w2)
+        public static void AfterStream(GameRunState run, float peakViewers, bool forceEnded, bool hadHype, int misses, Week2Balance w2)
         {
             if (run == null)
                 return;
-            run.lastMembershipFromPerfects = 0;
-            run.lastMembershipFromPitch = 0;
-            run.lastMembershipPitchHappened = pitchFired;
-            run.lastMembershipPitchSuccess = pitchSuccess;
+
+            if (peakViewers > run.peakViewersEver)
+                run.peakViewersEver = peakViewers;
+            if (!forceEnded)
+                run.successfulStreams += 1;
+
+            WeekSchedule.TryUnlockMembership(run, w2);
+
+            run.lastMembershipFromHype = 0;
+            run.lastMembershipFromMiss = 0;
             if (!run.membershipUnlocked || w2 == null)
                 return;
 
-            int fromPerfects = MembersFromPerfects(perfects, w2);
-            int fromPitch = pitchSuccess ? w2.pitchMemberBonus : 0;
-            run.lastMembershipFromPerfects = fromPerfects;
-            run.lastMembershipFromPitch = fromPitch;
-            run.membershipCount += fromPerfects + fromPitch;
+            if (hadHype && run.membershipHypeGainedToday < w2.membersFromHypeDayMax)
+            {
+                int gain = w2.membersFromHype;
+                int room = w2.membersFromHypeDayMax - run.membershipHypeGainedToday;
+                if (gain > room)
+                    gain = room;
+                if (gain > 0)
+                {
+                    run.membershipCount += gain;
+                    run.membershipHypeGainedToday += gain;
+                    run.lastMembershipFromHype = gain;
+                }
+            }
+
+            if (misses >= w2.membersMissPenaltyAt)
+            {
+                int loss = w2.membersMissLoss;
+                if (loss > run.membershipCount)
+                    loss = run.membershipCount;
+                run.membershipCount -= loss;
+                run.lastMembershipFromMiss = loss;
+            }
         }
 
         public static int ApplyMembershipPassive(GameRunState run, Week2Balance w2)
@@ -51,23 +78,22 @@ namespace BankruptVtuber
             return pay;
         }
 
-        public static bool CanOfferClip(GameRunState run)
+        public static bool CanOfferClip(GameRunState run, Week2Balance w2)
         {
-            if (run == null || !WeekSchedule.InWeek2(run) || run.clipAttemptedThisDay)
+            if (run == null || w2 == null || !WeekSchedule.InWeek2(run) || run.clipAttemptedThisDay)
                 return false;
-            return run.lastHadHype || run.lastPerfects >= 8;
+            return run.lastHadHype && run.lastPerfects >= w2.clipPerfectsRequired;
         }
 
         public static bool AttemptClip(GameRunState run, Week2Balance w2)
         {
-            if (!CanOfferClip(run) || w2 == null)
+            if (!CanOfferClip(run, w2))
                 return false;
 
             run.clipAttemptedThisDay = true;
-            int chance = run.lastHadHype ? w2.clipChanceWithHype : w2.clipChanceNoHype;
-            var rng = new Random(ExtraThreatRules.MixSeed(run.runSeed, run.day + 4241));
-            bool success = rng.Next(100) < chance;
             run.lastClipAttempted = true;
+            var rng = new Random(ExtraThreatRules.MixSeed(run.runSeed, run.day + 4241));
+            bool success = rng.Next(100) < w2.clipChance;
             run.lastClipSuccess = success;
             run.lastClipCash = 0;
             if (!success)
@@ -76,9 +102,18 @@ namespace BankruptVtuber
             run.lastClipCash = w2.clipCash;
             run.cash += w2.clipCash;
             run.viewerBonus += w2.clipViewerBonus;
-            WeekSchedule.UnlockMembership(run, w2);
             EconomyRules.ConvertNegativeCashToDebt(run);
             return true;
+        }
+
+        public static void DeclineClip(GameRunState run)
+        {
+            if (run == null || run.clipAttemptedThisDay)
+                return;
+            run.clipAttemptedThisDay = true;
+            run.lastClipAttempted = true;
+            run.lastClipSuccess = false;
+            run.lastClipCash = 0;
         }
     }
 }

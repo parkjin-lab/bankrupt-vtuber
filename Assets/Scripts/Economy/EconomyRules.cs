@@ -75,9 +75,8 @@ namespace BankruptVtuber
             if (state.day < last)
                 return WeekOutcome.Continue;
             if (w2 != null &&
-                (state.debt <= w2.winDebtMax ||
-                 state.cash >= w2.winCashMin ||
-                 state.membershipCount >= w2.winMembershipMin))
+                state.membershipUnlocked &&
+                (state.debt <= w2.winDebtMax || state.cash >= w2.winCashMin))
                 return WeekOutcome.Week2Win;
             return WeekOutcome.WeekFailed;
         }
