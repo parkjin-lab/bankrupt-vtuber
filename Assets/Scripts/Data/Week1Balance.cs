@@ -29,6 +29,9 @@ namespace BankruptVtuber
         public int billFood = 5000;
         public int billGear = 2000;
 
+        [Header("Daily extra threat (one roll / morning)")]
+        public ExtraThreatDef[] extraThreats;
+
         [Header("Stream clock")]
         public float streamSeconds = 90f;
         public int incomePerViewerPerSec = 3;
@@ -143,6 +146,7 @@ namespace BankruptVtuber
             forceEndIncomeNumerator = 1;
             forceEndIncomeDenominator = 2;
             mentalRestoreEachMorning = 15;
+            extraThreats = ExtraThreatRules.DefaultTable();
         }
     }
 }

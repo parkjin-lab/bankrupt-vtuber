@@ -45,17 +45,19 @@ namespace BankruptVtuber
                 Catalog.ApplyDefaults();
             Run = new GameRunState();
             Run.ResetNewRun(Balance);
-            Debug.Log("[파산 버튜버] Week 1 boot — cash=" + Run.cash + " debt=" + Run.debt + " mental=" + Run.mental);
+            Debug.Log("[파산 버튜버] Week 1 boot seed=" + Run.runSeed + " cash=" + Run.cash + " debt=" + Run.debt + " mental=" + Run.mental);
         }
 
         public void RestartRun()
         {
             Run.ResetNewRun(Balance);
+            Debug.Log("[파산 버튜버] new run seed=" + Run.runSeed);
             Load(SceneFlow.WeekStart);
         }
 
         public void GoLive()
         {
+            ExtraThreatRules.EnsureRolled(Run, Balance);
             if (!Run.billsAppliedThisDay)
                 EconomyRules.ApplyDailyBills(Run, Balance);
             Load(SceneFlow.LiveStream);

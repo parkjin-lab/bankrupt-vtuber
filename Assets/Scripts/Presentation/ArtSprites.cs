@@ -45,7 +45,7 @@ namespace BankruptVtuber
             return sprite;
         }
 
-        public static void Apply(UnityEngine.UI.Image image, string resourcePath, Color? fallbackTint = null)
+        public static void Apply(UnityEngine.UI.Image image, string resourcePath, Color? fallbackTint = null, Color? multiply = null)
         {
             if (image == null)
                 return;
@@ -59,7 +59,7 @@ namespace BankruptVtuber
 
             image.sprite = sprite;
             image.preserveAspect = true;
-            image.color = Color.white;
+            image.color = multiply ?? Color.white;
             image.type = UnityEngine.UI.Image.Type.Simple;
         }
     }

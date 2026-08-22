@@ -20,6 +20,8 @@ namespace BankruptVtuber
             public string Name;
             public string Art;
             public int Amount;
+            public bool Extra;
+            public Color Tint;
         }
 
         void Awake()
@@ -62,13 +64,13 @@ namespace BankruptVtuber
             _mental = MoneyChip(root, "MentalChip", "멘탈", Palette.Pink, new Vector2(160, 250));
 
             var wavePanel = UiKit.Panel(root, "WavePanel", new Color(1, 1, 1, 0.06f));
-            UiKit.Layout(wavePanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -20), new Vector2(1100, 420));
-            UiKit.Label(wavePanel, "WaveTitle", "오늘의 고정비 — 방어 웨이브", 26, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
+            UiKit.Layout(wavePanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -20), new Vector2(1240, 420));
+            UiKit.Label(wavePanel, "WaveTitle", "오늘의 고정비 + 위협 — 방어 웨이브", 26, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
             var wt = wavePanel.Find("WaveTitle") as RectTransform;
             UiKit.Layout(wt, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -12), new Vector2(0, 36));
 
             _stack = UiKit.Panel(wavePanel, "Stack", new Color(0, 0, 0, 0));
-            UiKit.Layout(_stack, new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1000, 220));
+            UiKit.Layout(_stack, new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1180, 220));
 
             _log = UiKit.Label(wavePanel, "Log", "청구서가 몰려옵니다…", 24, Palette.PastelDim, TextAnchor.LowerLeft);
             UiKit.Layout(_log.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 16), new Vector2(-40, 48));
@@ -107,16 +109,29 @@ namespace BankruptVtuber
         IEnumerator BillWave(GameManager gm)
         {
             var b = gm.Balance;
+            ExtraThreatRules.EnsureRolled(gm.Run, b);
+            var extra = ExtraThreatRules.Roll(b, gm.Run.runSeed, gm.Run.day);
+            if (!gm.Run.extraThreatRolled)
+                gm.Run.ApplyExtraThreat(extra);
+
             var bills = new[]
             {
                 new Bill { Name = "월세", Art = ArtSprites.BillRent, Amount = b.billRent },
                 new Bill { Name = "전기+인터넷", Art = ArtSprites.BillElectric, Amount = b.billElectricNet },
                 new Bill { Name = "아바타 라이선스", Art = ArtSprites.BillLicense, Amount = b.billAvatarLicense },
                 new Bill { Name = "식비", Art = ArtSprites.BillFood, Amount = b.billFood },
-                new Bill { Name = "장비 할부", Art = ArtSprites.BillGear, Amount = b.billGear }
+                new Bill { Name = "장비 할부", Art = ArtSprites.BillGear, Amount = b.billGear },
+                new Bill
+                {
+                    Name = gm.Run.extraThreatName,
+                    Art = string.IsNullOrEmpty(gm.Run.extraThreatArt) ? extra.ArtPath : gm.Run.extraThreatArt,
+                    Amount = gm.Run.extraThreatAmount,
+                    Extra = true,
+                    Tint = extra.Tint
+                }
             };
 
-            _log.text = "오늘의 고정비가 한꺼번에 들이닥칩니다.";
+            _log.text = $"오늘의 위협 — {gm.Run.extraThreatName}  {EconomyRules.FormatWon(gm.Run.extraThreatAmount)}";
             yield return new WaitForSeconds(0.45f);
 
             for (int i = 0; i < bills.Length; i++)
@@ -129,7 +144,8 @@ namespace BankruptVtuber
             EconomyRules.ApplyDailyBills(gm.Run, b);
             RefreshHud();
             _cash.color = Palette.MoneyRed;
-            _log.text = $"오늘 청구 {EconomyRules.FormatWon(b.TotalDailyBills)} 차감. 방송으로 메우세요.";
+            int today = b.TotalDailyBills + gm.Run.extraThreatAmount;
+            _log.text = $"{gm.Run.extraThreatName} 때문에 오늘 {EconomyRules.FormatWon(today)} 차감. 방송으로 메우세요.";
             yield return new WaitForSeconds(0.2f);
             _ready = true;
             _goLive.gameObject.SetActive(true);
@@ -137,17 +153,23 @@ namespace BankruptVtuber
 
         void SpawnIncoming(Bill bill, int index, int total)
         {
-            float x = (index - (total - 1) * 0.5f) * 190f;
-            var card = UiKit.Panel(_stack, "Bill" + index, new Color(0.95f, 0.93f, 0.96f, 0.96f));
-            UiKit.Layout(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 220), new Vector2(176, 210));
+            float x = (index - (total - 1) * 0.5f) * 168f;
+            var bg = bill.Extra ? new Color(1f, 0.86f, 0.88f, 0.98f) : new Color(0.95f, 0.93f, 0.96f, 0.96f);
+            var card = UiKit.Panel(_stack, "Bill" + index, bg);
+            UiKit.Layout(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 220), new Vector2(156, 210));
+            if (bill.Extra)
+            {
+                var tag = UiKit.Label(card, "Tag", "오늘의 위협", 13, Palette.MoneyRed, TextAnchor.UpperCenter, FontStyle.Bold);
+                UiKit.Layout(tag.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -4), new Vector2(0, 18));
+            }
             var icon = UiKit.Image(card, "Icon", Color.white);
-            UiKit.Layout(icon.rectTransform, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -10), new Vector2(108, 108));
-            ArtSprites.Apply(icon, bill.Art, Palette.PinkDeep);
-            UiKit.Label(card, "N", bill.Name, 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(icon.rectTransform, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, bill.Extra ? -24 : -10), new Vector2(96, 96));
+            ArtSprites.Apply(icon, bill.Art, bill.Extra ? bill.Tint : Palette.PinkDeep, bill.Extra ? bill.Tint : (Color?)null);
+            UiKit.Label(card, "N", bill.Name, 16, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
             var n = card.Find("N") as RectTransform;
-            UiKit.Layout(n, new Vector2(0, 0.22f), new Vector2(1, 0.40f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-            var amt = UiKit.Label(card, "A", "-" + EconomyRules.FormatWon(bill.Amount), 20, Palette.MoneyRed, TextAnchor.LowerCenter, FontStyle.Bold);
-            UiKit.Layout(amt.rectTransform, new Vector2(0, 0), new Vector2(1, 0.24f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            UiKit.Layout(n, new Vector2(0, 0.20f), new Vector2(1, 0.38f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            var amt = UiKit.Label(card, "A", "-" + EconomyRules.FormatWon(bill.Amount), 18, Palette.MoneyRed, TextAnchor.LowerCenter, FontStyle.Bold);
+            UiKit.Layout(amt.rectTransform, new Vector2(0, 0), new Vector2(1, 0.22f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             StartCoroutine(Slam(card, x));
         }
 

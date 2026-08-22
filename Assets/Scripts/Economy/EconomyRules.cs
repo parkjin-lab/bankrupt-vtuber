@@ -9,9 +9,11 @@ namespace BankruptVtuber
             if (state.billsAppliedThisDay)
                 return 0;
 
-            int total = b.TotalDailyBills;
+            ExtraThreatRules.EnsureRolled(state, b);
+            int extra = Math.Max(0, state.extraThreatAmount);
+            int total = b.TotalDailyBills + extra;
             state.cash -= total;
-            state.lastBills = total;
+            state.lastBills = b.TotalDailyBills;
             state.billsAppliedThisDay = true;
             ConvertNegativeCashToDebt(state);
             return total;

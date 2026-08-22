@@ -62,3 +62,34 @@ MonoBehaviour:
   forceEndIncomeNumerator: 1
   forceEndIncomeDenominator: 2
   mentalRestoreEachMorning: 15
+  extraThreats:
+  - id: gear_break
+    displayName: 장비 고장
+    minWon: 7000
+    maxWon: 11000
+    artPath: Art/bill_gear
+    tintHex: FF6A6A
+  - id: rival
+    displayName: 라이벌 견제
+    minWon: 5000
+    maxWon: 9000
+    artPath: Art/badge_troll
+    tintHex: C47BFF
+  - id: platform_fee
+    displayName: 플랫폼 수수료
+    minWon: 4000
+    maxWon: 7000
+    artPath: Art/badge_superchat
+    tintHex: FFB020
+  - id: scandal
+    displayName: 스캔들 루머
+    minWon: 8000
+    maxWon: 12000
+    artPath: Art/badge_troll
+    tintHex: FF3355
+  - id: net_drop
+    displayName: 인터넷 끊김
+    minWon: 4000
+    maxWon: 6000
+    artPath: Art/bill_electric
+    tintHex: 4EC8FF

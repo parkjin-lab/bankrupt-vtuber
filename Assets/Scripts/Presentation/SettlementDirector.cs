@@ -77,6 +77,9 @@ namespace BankruptVtuber
                 $"슈퍼챗              {EconomyRules.FormatWon(run.lastSuperchatIncome)}\n" +
                 $"실지급              {EconomyRules.FormatWon(run.lastStreamIncome)}\n" +
                 $"오늘 고정비         -{EconomyRules.FormatWon(run.lastBills)}\n" +
+                (run.extraThreatAmount > 0
+                    ? $"위협 {run.extraThreatName,-10} -{EconomyRules.FormatWon(run.extraThreatAmount)}\n"
+                    : "") +
                 (run.lastRepaid > 0 ? $"부채 상환           -{EconomyRules.FormatWon(run.lastRepaid)}\n" : "") +
                 $"\n판정  P {run.lastPerfects}  G {run.lastGreats}  Good {run.lastGoods}  Miss {run.lastMisses}" +
                 (run.lastHadHype ? "   · 하이프 달성" : "") +

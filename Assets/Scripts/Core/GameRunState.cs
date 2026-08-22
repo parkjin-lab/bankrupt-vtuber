@@ -24,14 +24,23 @@ namespace BankruptVtuber
         public int lastRepaid;
         public WeekOutcome lastOutcome = WeekOutcome.Continue;
 
-        public void ResetNewRun(Week1Balance b)
+        public int runSeed;
+        public bool extraThreatRolled;
+        public string extraThreatId;
+        public string extraThreatName;
+        public int extraThreatAmount;
+        public string extraThreatArt;
+
+        public void ResetNewRun(Week1Balance b, int? seed = null)
         {
             day = 1;
+            runSeed = seed ?? unchecked((int)(System.DateTime.UtcNow.Ticks & 0x7fffffff));
             cash = b.startingCash;
             debt = b.startingDebt;
             mental = b.startingMental;
             billsAppliedThisDay = false;
             streamDoneThisDay = false;
+            ClearExtraThreat();
             lastStreamIncome = 0;
             lastSuperchatIncome = 0;
             lastTickIncome = 0;
@@ -42,6 +51,24 @@ namespace BankruptVtuber
             lastBills = 0;
             lastRepaid = 0;
             lastOutcome = WeekOutcome.Continue;
+        }
+
+        public void ApplyExtraThreat(ExtraThreatRoll roll)
+        {
+            extraThreatRolled = true;
+            extraThreatId = roll.Id;
+            extraThreatName = roll.DisplayName;
+            extraThreatAmount = roll.Amount;
+            extraThreatArt = roll.ArtPath;
+        }
+
+        public void ClearExtraThreat()
+        {
+            extraThreatRolled = false;
+            extraThreatId = "";
+            extraThreatName = "";
+            extraThreatAmount = 0;
+            extraThreatArt = "";
         }
 
         public void BeginNextDay(Week1Balance b)
@@ -62,6 +89,7 @@ namespace BankruptVtuber
             lastBills = 0;
             lastRepaid = 0;
             lastOutcome = WeekOutcome.Continue;
+            ClearExtraThreat();
         }
     }
 }

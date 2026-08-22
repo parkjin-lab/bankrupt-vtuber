@@ -202,6 +202,42 @@ def check_project() -> None:
     else:
         ok("GameManager loads WeekStart → LiveStream → Settlement")
 
+    threats = ("장비 고장", "라이벌 견제", "플랫폼 수수료", "스캔들 루머", "인터넷 끊김")
+    extra_cs = (ROOT / "Assets/Scripts/Data/ExtraThreat.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    run_cs = (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8")
+    for name in threats:
+        if name not in extra_cs or name not in balance:
+            fail(f"extra threat '{name}' missing from table")
+    else:
+        ok("extra threat table has 5 named KRW threats")
+    if "runSeed" not in run_cs or "MixSeed" not in extra_cs:
+        fail("extra threat is not seeded by runSeed + day")
+    else:
+        ok("extra threat seed is runSeed + day")
+    if "Extra = true" not in week_cs or "오늘의 위협" not in week_cs:
+        fail("WeekStart does not slam a sixth named extra bill")
+    else:
+        ok("WeekStart slams a sixth extra-threat bill")
+    if "extraThreatAmount" not in eco_cs or "TotalDailyBills + extra" not in eco_cs:
+        fail("ApplyDailyBills does not add extra on top of ₩22,000")
+    else:
+        ok("economy keeps ₩22,000 fixed bills and adds extra")
+    if "위협" not in settle_cs or "extraThreatName" not in settle_cs:
+        fail("Settlement does not list the rolled extra threat")
+    else:
+        ok("Settlement lists the persisted extra threat")
+    for token, lo, hi in (
+        ("minWon: 7000", 4000, 12000),
+        ("maxWon: 12000", 4000, 12000),
+        ("minWon: 4000", 4000, 12000),
+    ):
+        if token not in balance:
+            fail(f"extra threat amount {token} missing")
+    ok("extra threat amounts stay in ₩4,000–₩12,000")
+
 
 def simulate_stream(skill: str, seed: int) -> int:
     rng = random.Random(seed)
@@ -332,19 +368,24 @@ def check_economy() -> None:
     else:
         ok(f"AFK cannot farm the newbie band (median {afk_med})")
 
-    # 5-day ledger sanity
+    # 5-day ledger sanity (fixed 22000 + extra 4000-12000)
     cash, debt = 45000, 50000
     bills = 22000
+    extras = [7000, 5000, 4000, 10000, 5000]
     for skill in ("newbie", "average", "skilled"):
         c, d = cash, debt
-        for _ in range(5):
-            c -= bills
+        for day in range(5):
+            c -= bills + extras[day]
             if c < 0:
                 d += -c
                 c = 0
-            take = simulate_stream(skill, seed=hash(skill) % 10000 + _)
+            take = simulate_stream(skill, seed=hash(skill) % 10000 + day)
             c += take
         print(f"WEEK: {skill:8s} cash={c} debt={d} win={d <= 30000 or c >= 70000}")
+    if extras[0] == extras[1] == extras[2]:
+        fail("week extra amounts are identical — days should not all be ₩22,000")
+    else:
+        ok("week extras differ so days are not a flat ₩22,000")
     ok("5-day ledger simulation completed")
 
 
