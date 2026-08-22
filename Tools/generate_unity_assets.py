@@ -401,16 +401,20 @@ def main() -> None:
 
     week_guid = guid_for("Assets/Scripts/Data/Week1Balance.cs")
     chat_guid = guid_for("Assets/Scripts/Data/ChatCatalog.cs")
+    title_script = guid_for("Assets/Scripts/Presentation/TitleDirector.cs")
     week_start_script = guid_for("Assets/Scripts/Presentation/WeekStartDirector.cs")
     live_script = guid_for("Assets/Scripts/Presentation/LiveStreamDirector.cs")
     settle_script = guid_for("Assets/Scripts/Presentation/SettlementDirector.cs")
+    title_scene_guid = guid_for("Assets/Scenes/Title.unity")
     week_scene_guid = guid_for("Assets/Scenes/WeekStart.unity")
     live_scene_guid = guid_for("Assets/Scenes/LiveStream.unity")
     settle_scene_guid = guid_for("Assets/Scenes/Settlement.unity")
 
+    write(ROOT / "Assets/Scenes/Title.unity", scene_body("Title", title_script))
     write(ROOT / "Assets/Scenes/WeekStart.unity", scene_body("WeekStart", week_start_script))
     write(ROOT / "Assets/Scenes/LiveStream.unity", scene_body("LiveStream", live_script))
     write(ROOT / "Assets/Scenes/Settlement.unity", scene_body("Settlement", settle_script))
+    write(ROOT / "Assets/Scenes/Title.unity.meta", default_meta(title_scene_guid))
     write(ROOT / "Assets/Scenes/WeekStart.unity.meta", default_meta(week_scene_guid))
     write(ROOT / "Assets/Scenes/LiveStream.unity.meta", default_meta(live_scene_guid))
     write(ROOT / "Assets/Scenes/Settlement.unity.meta", default_meta(settle_scene_guid))
@@ -595,6 +599,9 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/Title.unity
+    guid: {title_scene_guid}
   - enabled: 1
     path: Assets/Scenes/WeekStart.unity
     guid: {week_scene_guid}

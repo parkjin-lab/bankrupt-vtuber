@@ -8,6 +8,7 @@ namespace BankruptVtuber.Editor
     [InitializeOnLoad]
     public static class PlayFromWeekStart
     {
+        const string TitlePath = "Assets/Scenes/Title.unity";
         const string WeekStartPath = "Assets/Scenes/WeekStart.unity";
         const string LivePath = "Assets/Scenes/LiveStream.unity";
         const string SettlePath = "Assets/Scenes/Settlement.unity";
@@ -19,12 +20,13 @@ namespace BankruptVtuber.Editor
 
         static void Apply()
         {
-            var week = AssetDatabase.LoadAssetAtPath<SceneAsset>(WeekStartPath);
-            if (week != null)
-                EditorSceneManager.playModeStartScene = week;
+            var title = AssetDatabase.LoadAssetAtPath<SceneAsset>(TitlePath);
+            if (title != null)
+                EditorSceneManager.playModeStartScene = title;
 
             EditorBuildSettings.scenes = new[]
             {
+                new EditorBuildSettingsScene(TitlePath, true),
                 new EditorBuildSettingsScene(WeekStartPath, true),
                 new EditorBuildSettingsScene(LivePath, true),
                 new EditorBuildSettingsScene(SettlePath, true)
@@ -35,7 +37,7 @@ namespace BankruptVtuber.Editor
         public static void Verify()
         {
             var missing = false;
-            foreach (var path in new[] { WeekStartPath, LivePath, SettlePath })
+            foreach (var path in new[] { TitlePath, WeekStartPath, LivePath, SettlePath })
             {
                 if (AssetDatabase.LoadAssetAtPath<SceneAsset>(path) == null)
                 {
@@ -51,7 +53,7 @@ namespace BankruptVtuber.Editor
             }
 
             if (!missing)
-                Debug.Log("[파산 버튜버] Week 1 scenes + balance hooked. Start scene = WeekStart.");
+                Debug.Log("[파산 버튜버] Week 1 scenes + balance hooked. Start scene = Title.");
         }
     }
 }

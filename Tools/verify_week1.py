@@ -32,11 +32,13 @@ def guid_of(meta: Path) -> str:
 
 def check_project() -> None:
     scenes = {
+        "Title": ROOT / "Assets/Scenes/Title.unity",
         "WeekStart": ROOT / "Assets/Scenes/WeekStart.unity",
         "LiveStream": ROOT / "Assets/Scenes/LiveStream.unity",
         "Settlement": ROOT / "Assets/Scenes/Settlement.unity",
     }
     scripts = {
+        "Title": ROOT / "Assets/Scripts/Presentation/TitleDirector.cs",
         "WeekStart": ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs",
         "LiveStream": ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs",
         "Settlement": ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs",
@@ -64,15 +66,11 @@ def check_project() -> None:
         guid = guid_of(Path(str(path) + ".meta"))
         if guid and guid not in ebs:
             fail(f"EditorBuildSettings missing guid for {rel}")
-    if "Assets/Scenes/WeekStart.unity" not in ebs.split("m_Scenes:")[1].split("guid")[0]:
-        # first scene should be WeekStart
-        first = ebs.split("path: ")[1].split("\n")[0].strip() if "path: " in ebs else ""
-        if first != "Assets/Scenes/WeekStart.unity":
-            fail(f"first build scene is {first}, expected WeekStart")
-        else:
-            ok("first build scene is WeekStart")
+    first = ebs.split("path: ")[1].split("\n")[0].strip() if "path: " in ebs else ""
+    if first != "Assets/Scenes/Title.unity":
+        fail(f"first build scene is {first}, expected Title")
     else:
-        ok("WeekStart is listed first in EditorBuildSettings")
+        ok("first build scene is Title")
 
     version = (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8")
     if "6000.3" not in version:
@@ -153,6 +151,7 @@ def check_project() -> None:
         fail("ArtSprites runtime Sprite.Create missing")
     directors = (
         (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+        + (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
         + (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
         + (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
     )
@@ -198,10 +197,55 @@ def check_project() -> None:
     ok("Week1Balance locked numbers present")
 
     gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
-    if "SceneFlow.WeekStart" not in gm or "SceneFlow.LiveStream" not in gm or "SceneFlow.Settlement" not in gm:
-        fail("GameManager does not load all three scenes")
+    if "SceneFlow.Title" not in gm or "SceneFlow.WeekStart" not in gm or "SceneFlow.LiveStream" not in gm or "SceneFlow.Settlement" not in gm:
+        fail("GameManager does not load Title + Week 1 scenes")
     else:
-        ok("GameManager loads WeekStart → LiveStream → Settlement")
+        ok("GameManager loads Title → WeekStart → LiveStream → Settlement")
+    restart = gm.split("RestartRun", 1)[-1].split("public void", 1)[0]
+    if "SceneFlow.Title" not in restart:
+        fail("RestartRun does not return to Title")
+    else:
+        ok("RestartRun returns to Title")
+    next_morning = gm.split("NextMorning", 1)[-1]
+    if "SceneFlow.Title" in next_morning.split("public void", 1)[0]:
+        fail("NextMorning must stay on WeekStart, not Title")
+    else:
+        ok("NextMorning stays on WeekStart")
+    if "ShouldPlayPrologue" not in gm or "PrologueSeenThisSession" not in gm:
+        fail("GameManager missing prologue session skip")
+    else:
+        ok("prologue is skipped after seen once this session")
+
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    for token in ("「파산 버튜버」", "빚더미에서 최고의 버튜버가 되어라.", "방송 시작", "조작 설명"):
+        if token not in title_cs:
+            fail(f"TitleDirector missing {token}")
+    else:
+        ok("Title has Korean title, tagline, 방송 시작 / 조작 설명")
+    if "A     긍정" not in title_cs or "1–4" not in title_cs or "Space" not in title_cs:
+        fail("조작 설명 does not list A S D F Space, 1–4")
+    else:
+        ok("조작 설명 lists A S D F Space, 1–4")
+    if "ArtSprites.Avatar" not in title_cs or "BillRent" not in title_cs:
+        fail("Title/prologue does not show 파산냥 + a bill stack")
+    else:
+        ok("Title/prologue uses 파산냥 + one red bill stack")
+    if "PlayPrologue" not in title_cs or "WaitForSeconds(5.65f)" not in title_cs:
+        fail("prologue beat is not a short 5–8s hold")
+    else:
+        ok("prologue is a short 5–8s beat")
+
+    editor = (ROOT / "Assets/Editor/PlayFromWeekStart.cs").read_text(encoding="utf-8")
+    if "Assets/Scenes/Title.unity" not in editor or "playModeStartScene" not in editor:
+        fail("editor bootstrap does not pin Title as Play start")
+    else:
+        ok("editor bootstrap pins Title as Play / Build start")
+    title_idx = editor.find("TitlePath")
+    week_idx = editor.find("WeekStartPath")
+    if title_idx < 0 or week_idx < 0 or editor.find("new EditorBuildSettingsScene(TitlePath") < 0:
+        fail("editor Build Settings does not list Title first")
+    else:
+        ok("editor Build Settings lists Title first")
 
     threats = ("장비 고장", "라이벌 견제", "플랫폼 수수료", "스캔들 루머", "인터넷 끊김")
     extra_cs = (ROOT / "Assets/Scripts/Data/ExtraThreat.cs").read_text(encoding="utf-8")

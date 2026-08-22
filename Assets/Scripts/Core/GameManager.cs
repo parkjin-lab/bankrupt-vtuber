@@ -11,6 +11,9 @@ namespace BankruptVtuber
         public ChatCatalog Catalog { get; private set; }
         public GameRunState Run { get; private set; }
 
+        /// <summary>Play-session flag. Survives Restart so the prologue is once per Play.</summary>
+        public bool PrologueSeenThisSession { get; private set; }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Boot()
         {
@@ -48,11 +51,31 @@ namespace BankruptVtuber
             Debug.Log("[파산 버튜버] Week 1 boot seed=" + Run.runSeed + " cash=" + Run.cash + " debt=" + Run.debt + " mental=" + Run.mental);
         }
 
+        public bool ShouldPlayPrologue()
+        {
+            return Run != null && Run.day == 1 && !Run.billsAppliedThisDay && !PrologueSeenThisSession;
+        }
+
+        public void MarkPrologueSeen()
+        {
+            PrologueSeenThisSession = true;
+        }
+
+        public void GoTitle()
+        {
+            Load(SceneFlow.Title);
+        }
+
+        public void GoWeekStart()
+        {
+            Load(SceneFlow.WeekStart);
+        }
+
         public void RestartRun()
         {
             Run.ResetNewRun(Balance);
             Debug.Log("[파산 버튜버] new run seed=" + Run.runSeed);
-            Load(SceneFlow.WeekStart);
+            Load(SceneFlow.Title);
         }
 
         public void GoLive()
