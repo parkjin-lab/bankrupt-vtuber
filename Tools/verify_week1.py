@@ -94,6 +94,7 @@ def check_project() -> None:
 
     consume = bindings.split("TryConsumeKind", 1)[-1]
     consume = consume.split("public static bool SuperchatCharging", 1)[0]
+    consume = consume.split("public static bool EventKeyPressed", 1)[0]
     consume = consume.split("public static bool EventStubPressed", 1)[0]
     if "GetKey(KeyCode.Space)" in consume:
         fail("TryConsumeKind still polls GetKey(Space) — hold would farm superchats")
@@ -237,6 +238,38 @@ def check_project() -> None:
         if token not in balance:
             fail(f"extra threat amount {token} missing")
     ok("extra threat amounts stay in ₩4,000–₩12,000")
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    if "2주차 예정" in live_cs:
+        fail("LiveStream still shows the 1–4 stub toast")
+    if "EventKeyPressed" not in live_cs or "TryEventKey" not in live_cs:
+        fail("LiveStream does not consume 1–4 as a real event QTE")
+    else:
+        ok("LiveStream 1–4 is a real event QTE")
+    if "안티 웨이브" not in event_cs or "장비 렉" not in event_cs:
+        fail("Week 1 event types missing")
+    else:
+        ok("event types 안티 웨이브 / 장비 렉 exist")
+    if "Event.Fired" not in session_cs or "void StartEvent" not in session_cs:
+        fail("stream event does not fire-once")
+    else:
+        ok("stream event is armed once per session")
+    if "if (Finished || Event.Active)" not in session_cs:
+        fail("A/S/D/F can still hit chat during the event")
+    else:
+        ok("regular chat keys are ignored while the event is up")
+    for token in (
+        "eventEarliestSeconds: 35",
+        "eventLatestSeconds: 55",
+        "eventAntiFailMental: 8",
+        "eventAntiFailViewers: 4",
+        "eventLagFailFreezeSeconds: 3",
+    ):
+        if token not in balance:
+            fail(f"Week1Balance missing event field {token}")
+    ok("event numbers live on Week1Balance")
 
 
 def simulate_stream(skill: str, seed: int) -> int:

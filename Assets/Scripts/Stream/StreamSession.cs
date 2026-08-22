@@ -39,14 +39,21 @@ namespace BankruptVtuber
         public bool ForceEnded;
         public bool Finished;
         public bool HadHype;
+        public readonly StreamEventState Event = new StreamEventState();
+        public float IncomeShieldLeft;
+        public float IncomeFreezeLeft;
+        public float ShieldViewers;
 
         public readonly List<ChatNote> Notes = new List<ChatNote>(64);
 
         float _nextChatAt;
         float _nextSuperchatAt;
+        float _eventAt;
         int _superchatsSpawned;
         int _superchatTarget;
         int _userSerial;
+        bool _pendingHypeEvent;
+        bool _pendingMissEvent;
 
         static readonly string[] FakeUsers =
         {
@@ -65,7 +72,15 @@ namespace BankruptVtuber
             _nextChatAt = 0.4f;
             _superchatTarget = Rng.Next(balance.superchatMinCount, balance.superchatMaxCount + 1);
             _nextSuperchatAt = NextSuperchatDelay();
+            float earliest = balance.eventEarliestSeconds;
+            float latest = balance.eventLatestSeconds;
+            if (latest < earliest)
+                latest = earliest;
+            _eventAt = earliest + (float)Rng.NextDouble() * (latest - earliest);
+            Event.Reset();
         }
+
+        public bool EventActive => Event.Active;
 
         public bool HypeActive => HypeLeft > 0f;
 
@@ -92,25 +107,46 @@ namespace BankruptVtuber
             Elapsed += dt;
             TimeLeft -= dt;
 
+            if (Event.Active)
+            {
+                FreezeNotes(dt);
+                Event.TimeLeft -= dt;
+                if (Event.TimeLeft <= 0f)
+                    ResolveEvent(false);
+            }
+
             if (HypeActive)
             {
                 HypeLeft -= dt;
                 Viewers += Balance.hypeViewersPerSec * dt;
             }
 
-            float mul = IncomeMultiplier;
-            IncomeRemainder += Math.Floor(Viewers) * Balance.incomePerViewerPerSec * mul * dt;
-            int gained = (int)Math.Floor(IncomeRemainder);
-            if (gained > 0)
+            if (IncomeShieldLeft > 0f)
+                IncomeShieldLeft -= dt;
+            if (IncomeFreezeLeft > 0f)
+                IncomeFreezeLeft -= dt;
+            else
             {
-                TickIncome += gained;
-                IncomeRemainder -= gained;
+                float viewersForIncome = Viewers;
+                if (IncomeShieldLeft > 0f && ShieldViewers > viewersForIncome)
+                    viewersForIncome = ShieldViewers;
+                float mul = IncomeMultiplier;
+                IncomeRemainder += Math.Floor(viewersForIncome) * Balance.incomePerViewerPerSec * mul * dt;
+                int gained = (int)Math.Floor(IncomeRemainder);
+                if (gained > 0)
+                {
+                    TickIncome += gained;
+                    IncomeRemainder -= gained;
+                }
             }
 
-            MaybeSpawnRegular();
-            MaybeSpawnSuperchat();
-
-            ExpireMisses();
+            if (!Event.Active)
+            {
+                MaybeSpawnRegular();
+                MaybeSpawnSuperchat();
+                ExpireMisses();
+                MaybeStartEvent();
+            }
 
             if (Mental <= 0)
             {
@@ -123,6 +159,8 @@ namespace BankruptVtuber
             if (TimeLeft <= 0f)
             {
                 TimeLeft = 0f;
+                if (Event.Active)
+                    ResolveEvent(false);
                 ExpireAllRemaining();
                 Finished = true;
             }
@@ -130,7 +168,7 @@ namespace BankruptVtuber
 
         public bool TryHit(ChatKind kind, float now, bool hold)
         {
-            if (Finished)
+            if (Finished || Event.Active)
                 return false;
 
             ChatNote best = null;
@@ -266,7 +304,11 @@ namespace BankruptVtuber
             {
                 HypeLeft = Balance.hypeSeconds;
                 HadHype = true;
+                _pendingHypeEvent = true;
             }
+
+            if (result.ExtraViewerLoss > 0)
+                _pendingMissEvent = true;
 
             switch (judgement)
             {
@@ -281,6 +323,99 @@ namespace BankruptVtuber
 
             LastJudgement = judgement;
             LastResolved = note;
+        }
+
+        public bool TryEventKey(int key)
+        {
+            if (!Event.Active || Finished)
+                return false;
+            if (key < 1 || key > 4)
+                return false;
+            ResolveEvent(key == Event.TargetKey);
+            return true;
+        }
+
+        void MaybeStartEvent()
+        {
+            if (Event.Fired || Event.Active || Finished)
+                return;
+
+            StreamEventTrigger trigger;
+            if (_pendingMissEvent)
+                trigger = StreamEventTrigger.FirstMissStreak;
+            else if (_pendingHypeEvent)
+                trigger = StreamEventTrigger.FirstHype;
+            else if (Elapsed >= _eventAt)
+                trigger = StreamEventTrigger.Scheduled;
+            else
+                return;
+
+            _pendingHypeEvent = false;
+            _pendingMissEvent = false;
+            StartEvent(trigger);
+        }
+
+        void StartEvent(StreamEventTrigger trigger)
+        {
+            Event.Fired = true;
+            Event.Active = true;
+            Event.Resolved = false;
+            Event.Trigger = trigger;
+            Event.Window = Balance.eventWindowSeconds > 0.2f ? Balance.eventWindowSeconds : 1.15f;
+            Event.TimeLeft = Event.Window;
+            Event.TargetKey = Rng.Next(1, 5);
+            if (trigger == StreamEventTrigger.FirstHype)
+                Event.Kind = StreamEventKind.GearLag;
+            else if (trigger == StreamEventTrigger.FirstMissStreak)
+                Event.Kind = StreamEventKind.AntiWave;
+            else
+                Event.Kind = Rng.Next(0, 2) == 0 ? StreamEventKind.AntiWave : StreamEventKind.GearLag;
+        }
+
+        void ResolveEvent(bool success)
+        {
+            if (!Event.Active)
+                return;
+
+            Event.Active = false;
+            Event.Resolved = true;
+            Event.Success = success;
+            Event.TimeLeft = 0f;
+
+            if (Event.Kind == StreamEventKind.AntiWave)
+            {
+                if (success)
+                    Viewers = StreamRules.ClampViewers(Viewers + Balance.eventAntiSuccessViewers, Balance);
+                else
+                {
+                    Viewers = StreamRules.ClampViewers(Viewers - Balance.eventAntiFailViewers, Balance);
+                    Mental -= Balance.eventAntiFailMental;
+                    if (Mental < 0)
+                        Mental = 0;
+                }
+            }
+            else if (Event.Kind == StreamEventKind.GearLag)
+            {
+                if (success)
+                {
+                    IncomeShieldLeft = Balance.eventLagShieldSeconds;
+                    ShieldViewers = Viewers;
+                }
+                else
+                    IncomeFreezeLeft = Balance.eventLagFailFreezeSeconds;
+            }
+        }
+
+        void FreezeNotes(float dt)
+        {
+            for (int i = 0; i < Notes.Count; i++)
+            {
+                var n = Notes[i];
+                if (n.Consumed)
+                    continue;
+                n.SpawnTime += dt;
+                n.HitTime += dt;
+            }
         }
 
         public Judgement? LastJudgement;

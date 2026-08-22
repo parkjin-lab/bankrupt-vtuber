@@ -19,6 +19,9 @@ namespace BankruptVtuber
         public int lastMisses;
         public int lastPeakCombo;
         public bool lastHadHype;
+        public bool lastStreamEventHappened;
+        public string lastStreamEventName;
+        public bool lastStreamEventSuccess;
 
         public int lastBills;
         public int lastRepaid;
@@ -48,6 +51,9 @@ namespace BankruptVtuber
             lastPerfects = lastGreats = lastGoods = lastMisses = 0;
             lastPeakCombo = 0;
             lastHadHype = false;
+            lastStreamEventHappened = false;
+            lastStreamEventName = "";
+            lastStreamEventSuccess = false;
             lastBills = 0;
             lastRepaid = 0;
             lastOutcome = WeekOutcome.Continue;
@@ -86,6 +92,9 @@ namespace BankruptVtuber
             lastPerfects = lastGreats = lastGoods = lastMisses = 0;
             lastPeakCombo = 0;
             lastHadHype = false;
+            lastStreamEventHappened = false;
+            lastStreamEventName = "";
+            lastStreamEventSuccess = false;
             lastBills = 0;
             lastRepaid = 0;
             lastOutcome = WeekOutcome.Continue;

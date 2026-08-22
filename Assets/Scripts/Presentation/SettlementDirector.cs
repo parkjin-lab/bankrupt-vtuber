@@ -83,6 +83,9 @@ namespace BankruptVtuber
                 (run.lastRepaid > 0 ? $"부채 상환           -{EconomyRules.FormatWon(run.lastRepaid)}\n" : "") +
                 $"\n판정  P {run.lastPerfects}  G {run.lastGreats}  Good {run.lastGoods}  Miss {run.lastMisses}" +
                 (run.lastHadHype ? "   · 하이프 달성" : "") +
+                (run.lastStreamEventHappened
+                    ? $"\n이벤트 {run.lastStreamEventName}   {(run.lastStreamEventSuccess ? "성공" : "실패")}"
+                    : "") +
                 $"\n\n현금 {EconomyRules.FormatWon(run.cash)}     부채 {EconomyRules.FormatWon(run.debt)}     멘탈 {run.mental}";
 
             run.lastOutcome = EconomyRules.Evaluate(run, b);

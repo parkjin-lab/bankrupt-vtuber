@@ -62,6 +62,14 @@ MonoBehaviour:
   forceEndIncomeNumerator: 1
   forceEndIncomeDenominator: 2
   mentalRestoreEachMorning: 15
+  eventEarliestSeconds: 35
+  eventLatestSeconds: 55
+  eventWindowSeconds: 1.15
+  eventAntiSuccessViewers: 3
+  eventAntiFailViewers: 4
+  eventAntiFailMental: 8
+  eventLagShieldSeconds: 5
+  eventLagFailFreezeSeconds: 3
   extraThreats:
   - id: gear_break
     displayName: 장비 고장

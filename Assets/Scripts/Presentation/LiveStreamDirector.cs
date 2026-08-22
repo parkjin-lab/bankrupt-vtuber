@@ -18,6 +18,13 @@ namespace BankruptVtuber
         Text _judge;
         Text _stub;
         Text _charge;
+        RectTransform _eventRoot;
+        Image _eventDim;
+        Text _eventTitle;
+        Text _eventBody;
+        Text _eventTimer;
+        readonly Image[] _eventKeys = new Image[4];
+        readonly Text[] _eventKeyLabels = new Text[4];
         Image _tensionFill;
         Image _hypeFlash;
         AudioSource _audio;
@@ -28,6 +35,7 @@ namespace BankruptVtuber
         readonly Dictionary<ChatNote, RectTransform> _views = new Dictionary<ChatNote, RectTransform>();
         float _judgeFlash;
         bool _ending;
+        bool _eventWasActive;
 
         const float LaneTop = 260f;
         const float LaneHit = -210f;
@@ -60,14 +68,25 @@ namespace BankruptVtuber
             float dt = Time.deltaTime;
             _session.Tick(dt);
 
-            if (StreamBindings.TryConsumeKind(out var kind, out var hold))
+            if (_session.EventActive)
+            {
+                if (StreamBindings.EventKeyPressed(out int idx))
+                    _session.TryEventKey(idx);
+            }
+            else if (StreamBindings.TryConsumeKind(out var kind, out var hold))
                 _session.TryHit(kind, _session.Elapsed, hold);
 
-            if (StreamBindings.EventStubPressed(out int idx))
+            if (_eventWasActive && !_session.EventActive && _session.Event.Resolved)
             {
-                _stub.text = $"이벤트 QTE {idx} · 2주차 예정";
-                _stub.color = new Color(1, 1, 1, 1);
+                bool okHit = _session.Event.Success;
+                _judge.text = okHit
+                    ? StreamEventState.SuccessCopy(_session.Event.Kind)
+                    : StreamEventState.FailCopy(_session.Event.Kind);
+                _judge.color = okHit ? Palette.CashGreen : Palette.MoneyRed;
+                _judgeFlash = 1f;
+                _audio.PlayOneShot(okHit ? _ok : _bad, 0.5f);
             }
+            _eventWasActive = _session.EventActive;
 
             if (_session.LastJudgement.HasValue && _session.LastResolved != null)
             {
@@ -86,6 +105,7 @@ namespace BankruptVtuber
             }
 
             SyncNotes();
+            RefreshEventOverlay();
             RefreshHud();
             _avatar.Tick(dt);
 
@@ -96,7 +116,6 @@ namespace BankruptVtuber
             var sc = _stub.color;
             sc.a = Mathf.MoveTowards(sc.a, 0f, dt * 0.7f);
             _stub.color = sc;
-            _charge.gameObject.SetActive(StreamBindings.SuperchatCharging);
 
             var hype = _hypeFlash.color;
             hype.a = _session.HypeActive ? 0.16f + Mathf.Sin(Time.time * 8f) * 0.05f : 0f;
@@ -123,6 +142,9 @@ namespace BankruptVtuber
             gm.Run.lastMisses = _session.Misses;
             gm.Run.lastPeakCombo = _session.PeakCombo;
             gm.Run.lastHadHype = _session.HadHype;
+            gm.Run.lastStreamEventHappened = _session.Event.Fired;
+            gm.Run.lastStreamEventName = StreamEventState.DisplayName(_session.Event.Kind);
+            gm.Run.lastStreamEventSuccess = _session.Event.Success;
             _judge.text = _session.ForceEnded ? "멘탈 붕괴 — 강제 종료" : "방송 종료";
             _judge.color = Color.white;
             _judgeFlash = 1f;
@@ -180,7 +202,7 @@ namespace BankruptVtuber
             var tlab = UiKit.Label(bottom, "TensionL", "텐션 (미스 스트릭)", 14, Palette.Muted, TextAnchor.LowerLeft);
             UiKit.Layout(tlab.rectTransform, new Vector2(0, 0), new Vector2(0.38f, 0.22f), new Vector2(0, 0), new Vector2(28, 4), Vector2.zero);
 
-            var keys = UiKit.Label(bottom, "Keys", "A 긍정   S 공감   D 웃음   F 감사   Space 슈퍼챗(떼면 판정)", 18, Palette.PastelDim, TextAnchor.MiddleRight);
+            var keys = UiKit.Label(bottom, "Keys", "A 긍정   S 공감   D 웃음   F 감사   Space 슈퍼챗   이벤트 1–4", 18, Palette.PastelDim, TextAnchor.MiddleRight);
             UiKit.Layout(keys.rectTransform, new Vector2(0.38f, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-24, 8), Vector2.zero);
 
             _judge = UiKit.Label(root, "Judge", "", 64, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -191,6 +213,30 @@ namespace BankruptVtuber
             _charge = UiKit.Label(root, "Charge", "슈퍼챗 차지… 떼면 한 번만 판정", 22, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_charge.rectTransform, new Vector2(0.5f, 0.18f), new Vector2(0.5f, 0.18f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(560, 36));
             _charge.gameObject.SetActive(false);
+
+            _eventDim = UiKit.Image(root, "EventDim", new Color(0.06f, 0.03f, 0.08f, 0.55f));
+            UiKit.Stretch(_eventDim.rectTransform);
+            _eventDim.raycastTarget = false;
+
+            _eventRoot = UiKit.Panel(root, "EventCard", new Color(0.16f, 0.07f, 0.12f, 0.96f));
+            UiKit.Layout(_eventRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(560, 280));
+            _eventTitle = UiKit.Label(_eventRoot, "ETitle", "", 34, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
+            UiKit.Layout(_eventTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -16), new Vector2(-24, 44));
+            _eventBody = UiKit.Label(_eventRoot, "EBody", "", 20, Palette.Pastel, TextAnchor.UpperCenter);
+            UiKit.Layout(_eventBody.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -64), new Vector2(-28, 52));
+            _eventTimer = UiKit.Label(_eventRoot, "ETimer", "", 18, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_eventTimer.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 16), new Vector2(0, 24));
+            for (int i = 0; i < 4; i++)
+            {
+                var keyImg = UiKit.Image(_eventRoot, "EKey" + (i + 1), new Color(1, 1, 1, 0.12f));
+                UiKit.Layout(keyImg.rectTransform, new Vector2(0.5f, 0.38f), new Vector2(0.5f, 0.38f), new Vector2(0.5f, 0.5f), new Vector2((i - 1.5f) * 110f, 0), new Vector2(88, 88));
+                var lab = UiKit.Label(keyImg.transform, "L", (i + 1).ToString(), 36, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
+                UiKit.Stretch(lab.rectTransform);
+                _eventKeys[i] = keyImg;
+                _eventKeyLabels[i] = lab;
+            }
+            _eventRoot.gameObject.SetActive(false);
+            _eventDim.gameObject.SetActive(false);
         }
 
         Text Chip(Transform parent, string name, string label, Vector2 pos)
@@ -215,7 +261,11 @@ namespace BankruptVtuber
             _mental.text = $"{_session.Mental}/{_session.Balance.maxMental}";
             _mental.color = _session.Mental <= 24 ? Palette.MoneyRed : Palette.Pink;
             _timer.text = $"{Mathf.CeilToInt(_session.TimeLeft)}s";
-            if (_session.HypeActive)
+            if (_session.IncomeFreezeLeft > 0f)
+                _combo.text = $"송출 끊김 {_session.IncomeFreezeLeft:0.0}s";
+            else if (_session.IncomeShieldLeft > 0f)
+                _combo.text = $"수익 보호막 {_session.IncomeShieldLeft:0.0}s";
+            else if (_session.HypeActive)
                 _combo.text = $"HYPE {_session.HypeLeft:0.0}s  ·  x{_session.IncomeMultiplier:0.0}";
             else
                 _combo.text = $"COMBO {_session.Combo}   PERFECT {_session.PerfectCombo}";
@@ -248,6 +298,35 @@ namespace BankruptVtuber
                 float u = span <= 0.001f ? 1f : (_session.Elapsed - note.SpawnTime) / span;
                 float y = Mathf.Lerp(LaneTop, LaneHit, Mathf.Clamp01(u));
                 rt.anchoredPosition = new Vector2(0, y);
+                var img = rt.GetComponent<UnityEngine.UI.Image>();
+                if (img != null)
+                {
+                    var c = img.color;
+                    c.a = _session.EventActive ? 0.22f : 0.18f;
+                    img.color = c;
+                }
+            }
+        }
+
+        void RefreshEventOverlay()
+        {
+            bool on = _session.EventActive;
+            _eventRoot.gameObject.SetActive(on);
+            _eventDim.gameObject.SetActive(on);
+            _charge.gameObject.SetActive(!on && StreamBindings.SuperchatCharging);
+            if (!on)
+                return;
+
+            _eventTitle.text = StreamEventState.DisplayName(_session.Event.Kind);
+            _eventBody.text = StreamEventState.Prompt(_session.Event.Kind);
+            _eventTimer.text = $"{_session.Event.TimeLeft:0.00}s";
+            int target = _session.Event.TargetKey;
+            for (int i = 0; i < 4; i++)
+            {
+                bool hot = i + 1 == target;
+                float pulse = hot ? 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(Time.time * 10f)) : 0.12f;
+                _eventKeys[i].color = hot ? new Color(1f, 0.82f, 0.25f, pulse) : new Color(1f, 1f, 1f, 0.12f);
+                _eventKeyLabels[i].color = hot ? Palette.Ink : Palette.Pastel;
             }
         }
 

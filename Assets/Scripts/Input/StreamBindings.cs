@@ -46,7 +46,7 @@ namespace BankruptVtuber
         public static bool SuperchatCharging =>
             UnityEngine.Input.GetKey(KeyCode.Space);
 
-        public static bool EventStubPressed(out int index)
+        public static bool EventKeyPressed(out int index)
         {
             if (UnityEngine.Input.GetKeyDown(KeyCode.Alpha1) || UnityEngine.Input.GetKeyDown(KeyCode.Keypad1))
             {

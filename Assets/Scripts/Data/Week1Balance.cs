@@ -70,6 +70,16 @@ namespace BankruptVtuber
         public float hypeSuperchatMultiplier = 2f;
         public float hypeViewersPerSec = 1f;
 
+        [Header("Mid-stream event QTE (1–4, once)")]
+        public float eventEarliestSeconds = 35f;
+        public float eventLatestSeconds = 55f;
+        public float eventWindowSeconds = 1.15f;
+        public float eventAntiSuccessViewers = 3f;
+        public float eventAntiFailViewers = 4f;
+        public int eventAntiFailMental = 8;
+        public float eventLagShieldSeconds = 5f;
+        public float eventLagFailFreezeSeconds = 3f;
+
         [Header("Mental")]
         public int missStreakMental = 3;
         public int missStreakMentalPenalty = 12;
@@ -147,6 +157,14 @@ namespace BankruptVtuber
             forceEndIncomeDenominator = 2;
             mentalRestoreEachMorning = 15;
             extraThreats = ExtraThreatRules.DefaultTable();
+            eventEarliestSeconds = 35f;
+            eventLatestSeconds = 55f;
+            eventWindowSeconds = 1.15f;
+            eventAntiSuccessViewers = 3f;
+            eventAntiFailViewers = 4f;
+            eventAntiFailMental = 8;
+            eventLagShieldSeconds = 5f;
+            eventLagFailFreezeSeconds = 3f;
         }
     }
 }
