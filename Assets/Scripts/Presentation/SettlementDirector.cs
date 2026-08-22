@@ -14,6 +14,9 @@ namespace BankruptVtuber
         Button _clipNo;
         Text _clipNote;
         Button _produce;
+        Button _foundAgency;
+        Button _scout;
+        Button _signSponsor;
 
         void Awake()
         {
@@ -30,6 +33,8 @@ namespace BankruptVtuber
                 Week2Rules.ApplyMembershipPassive(gm.Run, gm.Week2);
                 Week3Rules.TryUnlockGoods(gm.Run, gm.Week3);
                 Week3Rules.ApplyGoodsSales(gm.Run, gm.Week3);
+                Week4Rules.ApplyJuniorDaily(gm.Run, gm.Week4);
+                Week4Rules.ApplySponsorDaily(gm.Run, gm.Week4);
             }
             Render();
         }
@@ -46,7 +51,8 @@ namespace BankruptVtuber
         static bool CanAdvance(GameRunState run) =>
             run.lastOutcome == WeekOutcome.Continue ||
             WeekSchedule.CanEnterWeek2(run) ||
-            WeekSchedule.CanEnterWeek3(run);
+            WeekSchedule.CanEnterWeek3(run) ||
+            WeekSchedule.CanEnterWeek4(run);
 
         void Build()
         {
@@ -80,6 +86,16 @@ namespace BankruptVtuber
             UiKit.Layout(_produce.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 118), new Vector2(360, 56));
             _produce.gameObject.SetActive(false);
 
+            _foundAgency = UiKit.Button(root, "FoundAgency", "에이전시 설립  ₩40,000", OnFoundAgency, Palette.Gold, Palette.Ink);
+            UiKit.Layout(_foundAgency.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-360, 118), new Vector2(300, 56));
+            _foundAgency.gameObject.SetActive(false);
+            _scout = UiKit.Button(root, "Scout", "주니어 스카우트  ₩25,000", OnScout, Palette.PinkDeep, Color.white);
+            UiKit.Layout(_scout.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 118), new Vector2(300, 56));
+            _scout.gameObject.SetActive(false);
+            _signSponsor = UiKit.Button(root, "Sponsor", "스폰서 계약", OnSignSponsor, Palette.Gold, Palette.Ink);
+            UiKit.Layout(_signSponsor.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(360, 118), new Vector2(300, 56));
+            _signSponsor.gameObject.SetActive(false);
+
             _repay = UiKit.Button(root, "Repay", "남은 현금으로 빚 갚기", OnRepay, Palette.Gold, Palette.Ink);
             UiKit.Layout(_repay.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-210, 52), new Vector2(360, 60));
 
@@ -97,6 +113,7 @@ namespace BankruptVtuber
             var b = gm.Balance;
             var w2 = gm.Week2;
             var w3 = gm.Week3;
+            var w4 = gm.Week4;
 
             string extras = "";
             if (run.extraRolls.Count > 0)
@@ -146,6 +163,23 @@ namespace BankruptVtuber
                     : "") +
                 rivalLine +
                 goodsLine +
+                (run.lastAgencyFoundCost > 0
+                    ? $"에이전시 설립      -{EconomyRules.FormatWon(run.lastAgencyFoundCost)}\n"
+                    : "") +
+                (run.lastJuniorScoutCost > 0
+                    ? $"주니어 스카우트    -{EconomyRules.FormatWon(run.lastJuniorScoutCost)}\n"
+                    : "") +
+                (run.lastJuniorPay > 0
+                    ? $"주니어 수입         {EconomyRules.FormatWon(run.lastJuniorPay)}\n"
+                    : "") +
+                (run.lastJuniorTrainFail ? "주니어 훈련 실패   멘탈 −8\n" : "") +
+                (run.lastSponsorDaily > 0
+                    ? $"스폰서 일급         {EconomyRules.FormatWon(run.lastSponsorDaily)}\n"
+                    : "") +
+                (run.lastSponsorLineBonus > 0
+                    ? $"스폰서 멘트         {EconomyRules.FormatWon(run.lastSponsorLineBonus)}\n"
+                    : "") +
+                (run.lastSponsorBroke ? "스폰서 계약 종료   −₩15,000 · 멘탈 −12\n" : "") +
                 (run.lastRepaid > 0 ? $"부채 상환           -{EconomyRules.FormatWon(run.lastRepaid)}\n" : "") +
                 $"\n판정  P {run.lastPerfects}  G {run.lastGreats}  Good {run.lastGoods}  Miss {run.lastMisses}" +
                 (run.lastHadHype ? "   · 하이프 달성" : "") +
@@ -155,13 +189,23 @@ namespace BankruptVtuber
                 (run.membershipUnlocked
                     ? $"\n멤버십 {run.membershipCount}{memberDelta}"
                     : "") +
+                (run.agencyFounded ? "\n에이전시 설립됨" : "") +
+                (run.juniorScouted ? "   ·   주니어 1" : "") +
+                (run.sponsorActive ? $"   ·   스폰서 남은 {run.sponsorDaysLeft}일" : "") +
                 $"\n\n현금 {EconomyRules.FormatWon(run.cash)}     부채 {EconomyRules.FormatWon(run.debt)}     멘탈 {run.mental}";
 
-            run.lastOutcome = EconomyRules.Evaluate(run, b, w2, w3);
+            run.lastOutcome = EconomyRules.Evaluate(run, b, w2, w3, w4);
             bool offerClip = Week2Rules.CanOfferClip(run, w2);
+            bool offerFound = Week4Rules.CanFoundAgency(run, w4);
+            bool offerScout = Week4Rules.CanScoutJunior(run, w4);
+            bool offerSponsor = Week4Rules.CanOfferSponsor(run, w4);
+            bool week4Offer = offerFound || offerScout || offerSponsor;
             _clipYes.gameObject.SetActive(offerClip);
             _clipNo.gameObject.SetActive(offerClip);
-            _produce.gameObject.SetActive(run.goodsUnlocked && !offerClip && run.cash >= (w3 != null ? w3.goodsProduceCost : 2500));
+            _foundAgency.gameObject.SetActive(offerFound);
+            _scout.gameObject.SetActive(offerScout);
+            _signSponsor.gameObject.SetActive(offerSponsor);
+            _produce.gameObject.SetActive(run.goodsUnlocked && !offerClip && !week4Offer && run.cash >= (w3 != null ? w3.goodsProduceCost : 2500));
             if (run.lastClipAttempted)
                 _clipNote.text = run.lastClipSuccess
                     ? "클립 성공 — ₩30,000 · 시작 시청자 +10"
@@ -173,7 +217,9 @@ namespace BankruptVtuber
             switch (run.lastOutcome)
             {
                 case WeekOutcome.Bankrupt:
-                    _result.text = WeekSchedule.InWeek3(run)
+                    _result.text = WeekSchedule.InWeek4(run)
+                        ? "파산. 부채가 ₩300,000을 넘었습니다."
+                        : WeekSchedule.InWeek3(run)
                         ? "파산. 부채가 ₩260,000을 넘었습니다."
                         : WeekSchedule.InWeek2(run)
                         ? "파산. 부채가 ₩220,000을 넘었습니다."
@@ -204,12 +250,23 @@ namespace BankruptVtuber
                 case WeekOutcome.Week3Win:
                     _result.text = "3주차 클리어. 빚 ≤ 1.5만 또는 현금 ≥ 14만, 그리고 아크릴 스탠드 해금.";
                     _result.color = Palette.CashGreen;
+                    _next.GetComponentInChildren<Text>().text = "4주차 시작  (Space)";
+                    _next.gameObject.SetActive(true);
+                    _repay.gameObject.SetActive(run.cash > 0 && run.debt > 0);
+                    _restart.gameObject.SetActive(true);
+                    PlaceTripleButtons();
+                    break;
+                case WeekOutcome.Week4Win:
+                    _result.text = "4주차 클리어. 에이전시 설립, 그리고 빚 ≤ 1만 또는 현금 ≥ 18만.";
+                    _result.color = Palette.CashGreen;
                     _next.gameObject.SetActive(false);
                     _repay.gameObject.SetActive(run.cash > 0 && run.debt > 0);
                     _restart.gameObject.SetActive(true);
                     break;
                 case WeekOutcome.WeekFailed:
-                    _result.text = WeekSchedule.InWeek3(run)
+                    _result.text = WeekSchedule.InWeek4(run)
+                        ? "4주차 목표 미달 (에이전시 설립, 그리고 부채 1만 이하 또는 현금 18만)."
+                        : WeekSchedule.InWeek3(run)
                         ? "3주차 목표 미달 (부채 1.5만 이하 또는 현금 14만, 그리고 아크릴 스탠드 해금)."
                         : WeekSchedule.InWeek2(run)
                         ? "2주차 목표 미달 (부채 2만 이하 또는 현금 11만, 그리고 멤버십 해금)."
@@ -270,6 +327,27 @@ namespace BankruptVtuber
         {
             var gm = GameManager.Instance;
             Week3Rules.ProduceGoods(gm.Run, gm.Week3);
+            Render();
+        }
+
+        void OnFoundAgency()
+        {
+            var gm = GameManager.Instance;
+            Week4Rules.FoundAgency(gm.Run, gm.Week4);
+            Render();
+        }
+
+        void OnScout()
+        {
+            var gm = GameManager.Instance;
+            Week4Rules.ScoutJunior(gm.Run, gm.Week4);
+            Render();
+        }
+
+        void OnSignSponsor()
+        {
+            var gm = GameManager.Instance;
+            Week4Rules.SignSponsor(gm.Run, gm.Week4);
             Render();
         }
     }

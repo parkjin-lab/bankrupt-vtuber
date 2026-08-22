@@ -28,6 +28,11 @@ namespace BankruptVtuber
         Text _promoTitle;
         Text _promoBody;
         Text _promoTimer;
+        RectTransform _lineRoot;
+        Text _lineTitle;
+        Text _lineBody;
+        Text _lineTimer;
+        bool _lineSettled;
         readonly Image[] _eventKeys = new Image[4];
         readonly Text[] _eventKeyLabels = new Text[4];
         Image _tensionFill;
@@ -61,7 +66,7 @@ namespace BankruptVtuber
         {
             var gm = GameManager.Instance;
             if (!gm.Run.billsAppliedThisDay)
-                EconomyRules.ApplyDailyBills(gm.Run, gm.Balance, gm.Week2, gm.Week3);
+                EconomyRules.ApplyDailyBills(gm.Run, gm.Balance, gm.Week2, gm.Week3, gm.Week4);
             Week3Rules.TryUnlockGoods(gm.Run, gm.Week3);
             _session = new StreamSession(gm.Balance, gm.Catalog, gm.Run.mental, gm.Run.viewerBonus);
             if (Week3Rules.ShouldStartRival(gm.Run, gm.Week3))
@@ -69,8 +74,10 @@ namespace BankruptVtuber
                 Week3Rules.MarkRivalStarted(gm.Run);
                 _session.EnableRival(gm.Week3);
             }
-            if (gm.Run.goodsUnlocked)
+            if (WeekSchedule.InWeek3(gm.Run) && gm.Run.goodsUnlocked)
                 _session.EnablePromo(gm.Week3);
+            if (gm.Run.sponsorActive)
+                _session.EnableSponsorLine(gm.Week4);
         }
 
         void Update()
@@ -93,8 +100,17 @@ namespace BankruptVtuber
                 else if (StreamBindings.PromoSkipDown())
                     _session.TryPromo(false);
             }
+            else if (_session.LineActive)
+            {
+                if (StreamBindings.PromoConfirmDown())
+                    _session.TryLine(true);
+                else if (StreamBindings.PromoSkipDown())
+                    _session.TryLine(false);
+            }
             else if (StreamBindings.TryConsumeKind(out var kind, out var hold))
                 _session.TryHit(kind, _session.Elapsed, hold);
+
+            MaybeSettleSponsorLine();
 
             if (_eventWasActive && !_session.EventActive && _session.Event.Resolved)
             {
@@ -127,6 +143,7 @@ namespace BankruptVtuber
             SyncNotes();
             RefreshEventOverlay();
             RefreshPromoOverlay();
+            RefreshLineOverlay();
             RefreshHud();
             _avatar.Tick(dt);
 
@@ -168,6 +185,7 @@ namespace BankruptVtuber
             gm.Run.lastStreamEventSuccess = _session.Event.Success;
             gm.Run.lastStreamPeakViewers = _session.PeakViewers;
             gm.Run.lastGoodsPromoSuccess = _session.Promo.Success;
+            MaybeSettleSponsorLine();
             Week2Rules.AfterStream(
                 gm.Run,
                 _session.PeakViewers,
@@ -241,7 +259,7 @@ namespace BankruptVtuber
             var tlab = UiKit.Label(bottom, "TensionL", "텐션 (미스 스트릭)", 14, Palette.Muted, TextAnchor.LowerLeft);
             UiKit.Layout(tlab.rectTransform, new Vector2(0, 0), new Vector2(0.38f, 0.22f), new Vector2(0, 0), new Vector2(28, 4), Vector2.zero);
 
-            var keys = UiKit.Label(bottom, "Keys", "A 긍정   S 공감   D 웃음   F 감사   Space 슈퍼챗   이벤트 1–4   홍보 A/S·D/F", 18, Palette.PastelDim, TextAnchor.MiddleRight);
+            var keys = UiKit.Label(bottom, "Keys", "A 긍정   S 공감   D 웃음   F 감사   Space 슈퍼챗   이벤트 1–4   홍보/멘트 A/S·D/F", 18, Palette.PastelDim, TextAnchor.MiddleRight);
             UiKit.Layout(keys.rectTransform, new Vector2(0.38f, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-24, 8), Vector2.zero);
 
             _judge = UiKit.Label(root, "Judge", "", 64, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -286,6 +304,26 @@ namespace BankruptVtuber
             _promoTimer = UiKit.Label(_promoRoot, "PTimer", "", 18, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_promoTimer.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 16), new Vector2(0, 24));
             _promoRoot.gameObject.SetActive(false);
+
+            _lineRoot = UiKit.Panel(root, "LineCard", new Color(0.14f, 0.09f, 0.16f, 0.96f));
+            UiKit.Layout(_lineRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(560, 220));
+            _lineTitle = UiKit.Label(_lineRoot, "LTitle", "스폰서 멘트 타이밍", 34, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
+            UiKit.Layout(_lineTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -16), new Vector2(-24, 44));
+            _lineBody = UiKit.Label(_lineRoot, "LBody", "A / S  스폰서 멘트 넣기\nD / F  놓치면 계약 종료", 20, Palette.Pastel, TextAnchor.MiddleCenter);
+            UiKit.Layout(_lineBody.rectTransform, new Vector2(0, 0.28f), new Vector2(1, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-28, 0));
+            _lineTimer = UiKit.Label(_lineRoot, "LTimer", "", 18, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_lineTimer.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 16), new Vector2(0, 24));
+            _lineRoot.gameObject.SetActive(false);
+        }
+
+        void MaybeSettleSponsorLine()
+        {
+            if (_session == null || _lineSettled || !_session.Line.Resolved)
+                return;
+            _lineSettled = true;
+            var gm = GameManager.Instance;
+            Week4Rules.ApplySponsorLine(gm.Run, gm.Week4, _session.Line.Success);
+            _session.Mental = gm.Run.mental;
         }
 
         Text Chip(Transform parent, string name, string label, Vector2 pos)
@@ -358,7 +396,7 @@ namespace BankruptVtuber
                 if (img != null)
                 {
                     var c = img.color;
-                    c.a = _session.EventActive || _session.PromoActive ? 0.22f : 0.18f;
+                    c.a = _session.EventActive || _session.PromoActive || _session.LineActive ? 0.22f : 0.18f;
                     img.color = c;
                 }
             }
@@ -375,12 +413,23 @@ namespace BankruptVtuber
             }
         }
 
+        void RefreshLineOverlay()
+        {
+            bool on = _session.LineActive;
+            _lineRoot.gameObject.SetActive(on);
+            if (on)
+            {
+                _eventDim.gameObject.SetActive(true);
+                _lineTimer.text = $"{_session.Line.TimeLeft:0.00}s";
+            }
+        }
+
         void RefreshEventOverlay()
         {
             bool on = _session.EventActive;
             _eventRoot.gameObject.SetActive(on);
-            _eventDim.gameObject.SetActive(on || _session.PromoActive);
-            _charge.gameObject.SetActive(!on && !_session.PromoActive && StreamBindings.SuperchatCharging);
+            _eventDim.gameObject.SetActive(on || _session.PromoActive || _session.LineActive);
+            _charge.gameObject.SetActive(!on && !_session.PromoActive && !_session.LineActive && StreamBindings.SuperchatCharging);
             if (!on)
                 return;
 

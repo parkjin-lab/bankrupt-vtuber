@@ -21,13 +21,14 @@ namespace BankruptVtuber
     }
 
     /// <summary>
-    /// Week 1 is days 1–5. Week 2 is days 6–10. Week 3 is days 11–15.
+    /// Week 1 is days 1–5. Week 2 is days 6–10. Week 3 is days 11–15. Week 4 is days 16–20.
     /// </summary>
     public static class WeekSchedule
     {
         public const int Week1LastDay = 5;
         public const int Week2LastDay = 10;
         public const int Week3LastDay = 15;
+        public const int Week4LastDay = 20;
 
         public static bool InWeek2(GameRunState run) =>
             run != null && run.day > Week1LastDay && run.day <= Week2LastDay;
@@ -35,8 +36,13 @@ namespace BankruptVtuber
         public static bool InWeek3(GameRunState run) =>
             run != null && run.day > Week2LastDay && run.day <= Week3LastDay;
 
+        public static bool InWeek4(GameRunState run) =>
+            run != null && run.day > Week3LastDay && run.day <= Week4LastDay;
+
         public static int WeekNumber(GameRunState run)
         {
+            if (InWeek4(run))
+                return 4;
             if (InWeek3(run))
                 return 3;
             if (InWeek2(run))
@@ -46,6 +52,8 @@ namespace BankruptVtuber
 
         public static int LastDayOfCurrentWeek(GameRunState run)
         {
+            if (InWeek4(run))
+                return Week4LastDay;
             if (InWeek3(run))
                 return Week3LastDay;
             if (InWeek2(run))
@@ -64,8 +72,14 @@ namespace BankruptVtuber
             run != null && run.day == Week2LastDay &&
             (run.lastOutcome == WeekOutcome.Week2Win || run.lastOutcome == WeekOutcome.Continue);
 
-        public static DailyBillSet FixedBills(GameRunState run, Week1Balance w1, Week2Balance w2, Week3Balance w3 = null)
+        public static bool CanEnterWeek4(GameRunState run) =>
+            run != null && run.day == Week3LastDay &&
+            (run.lastOutcome == WeekOutcome.Week3Win || run.lastOutcome == WeekOutcome.Continue);
+
+        public static DailyBillSet FixedBills(GameRunState run, Week1Balance w1, Week2Balance w2, Week3Balance w3 = null, Week4Balance w4 = null)
         {
+            if (InWeek4(run) && w4 != null)
+                return new DailyBillSet(w4.billRent, w4.billElectricNet, w4.billAvatarLicense, w4.billFood, w4.billGear);
             if (InWeek3(run) && w3 != null)
                 return new DailyBillSet(w3.billRent, w3.billElectricNet, w3.billAvatarLicense, w3.billFood, w3.billGear);
             if (InWeek2(run) && w2 != null)
@@ -73,11 +87,13 @@ namespace BankruptVtuber
             return new DailyBillSet(w1.billRent, w1.billElectricNet, w1.billAvatarLicense, w1.billFood, w1.billGear);
         }
 
-        public static int TotalFixedBills(GameRunState run, Week1Balance w1, Week2Balance w2, Week3Balance w3 = null) =>
-            FixedBills(run, w1, w2, w3).Total;
+        public static int TotalFixedBills(GameRunState run, Week1Balance w1, Week2Balance w2, Week3Balance w3 = null, Week4Balance w4 = null) =>
+            FixedBills(run, w1, w2, w3, w4).Total + Week4Rules.AgencySurcharge(run, w4);
 
-        public static ExtraThreatDef[] ThreatTable(GameRunState run, Week1Balance w1, Week2Balance w2, Week3Balance w3 = null)
+        public static ExtraThreatDef[] ThreatTable(GameRunState run, Week1Balance w1, Week2Balance w2, Week3Balance w3 = null, Week4Balance w4 = null)
         {
+            if (InWeek4(run) && w4 != null)
+                return ExtraThreatRules.TableOrDefault(w4.extraThreats, ExtraThreatRules.DefaultWeek4Table());
             if (InWeek3(run) && w3 != null)
                 return ExtraThreatRules.TableOrDefault(w3.extraThreats, ExtraThreatRules.DefaultWeek3Table());
             if (InWeek2(run) && w2 != null)
@@ -89,7 +105,7 @@ namespace BankruptVtuber
         {
             if (run == null || w2 == null || run.membershipUnlocked)
                 return;
-            if (!InWeek2(run) && !InWeek3(run))
+            if (!InWeek2(run) && !InWeek3(run) && !InWeek4(run))
                 return;
             if (run.peakViewersEver >= w2.unlockPeakViewers ||
                 run.successfulStreams >= w2.unlockSuccessfulStreams)

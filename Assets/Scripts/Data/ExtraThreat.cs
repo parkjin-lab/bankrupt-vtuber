@@ -250,6 +250,52 @@ namespace BankruptVtuber
             return RollChanceExtras(table, cap, runSeed, day);
         }
 
+        public static ExtraThreatDef[] DefaultWeek4Table()
+        {
+            return new[]
+            {
+                new ExtraThreatDef
+                {
+                    id = "gear_break",
+                    displayName = "장비 고장",
+                    minWon = 8000,
+                    maxWon = 18000,
+                    chancePercent = 25,
+                    artPath = ArtSprites.BillGear,
+                    tintHex = "FF6A6A"
+                },
+                new ExtraThreatDef
+                {
+                    id = "petty_bill",
+                    displayName = "소액",
+                    minWon = 5000,
+                    maxWon = 12000,
+                    chancePercent = 25,
+                    artPath = ArtSprites.BillFood,
+                    tintHex = "FFB020"
+                },
+                new ExtraThreatDef
+                {
+                    id = "platform_fee",
+                    displayName = "수수료",
+                    minWon = 5000,
+                    maxWon = 5000,
+                    chancePercent = 20,
+                    artPath = ArtSprites.Superchat,
+                    tintHex = "FFB020"
+                }
+            };
+        }
+
+        public static ExtraThreatRoll[] RollWeek4(Week4Balance w4, int runSeed, int day)
+        {
+            var table = ExtraThreatRules.TableOrDefault(
+                w4 != null ? w4.extraThreats : null,
+                DefaultWeek4Table());
+            int cap = w4 != null && w4.extraThreatMaxPerDay > 0 ? w4.extraThreatMaxPerDay : 2;
+            return RollChanceExtras(table, cap, runSeed, day);
+        }
+
         public static ExtraThreatRoll[] RollChanceExtras(ExtraThreatDef[] table, int cap, int runSeed, int day)
         {
             if (table == null || table.Length == 0)
@@ -296,12 +342,17 @@ namespace BankruptVtuber
             return rolls;
         }
 
-        public static void EnsureRolled(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null)
+        public static void EnsureRolled(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null, Week4Balance w4 = null)
         {
             if (state == null || b == null)
                 return;
             if (state.extraThreatRolled)
                 return;
+            if (WeekSchedule.InWeek4(state))
+            {
+                state.ApplyExtraRolls(RollWeek4(w4, state.runSeed, state.day));
+                return;
+            }
             if (WeekSchedule.InWeek3(state))
             {
                 state.ApplyExtraRolls(RollWeek3(w3, state.runSeed, state.day));

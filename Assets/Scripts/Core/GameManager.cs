@@ -10,6 +10,7 @@ namespace BankruptVtuber
         public Week1Balance Balance { get; private set; }
         public Week2Balance Week2 { get; private set; }
         public Week3Balance Week3 { get; private set; }
+        public Week4Balance Week4 { get; private set; }
         public ChatCatalog Catalog { get; private set; }
         public GameRunState Run { get; private set; }
 
@@ -47,6 +48,7 @@ namespace BankruptVtuber
             Balance = Week1Balance.Load();
             Week2 = Week2Balance.Load();
             Week3 = Week3Balance.Load();
+            Week4 = Week4Balance.Load();
             Catalog = ChatCatalog.Load();
             if (Catalog.positive == null || Catalog.positive.Length == 0)
                 Catalog.ApplyDefaults();
@@ -84,10 +86,10 @@ namespace BankruptVtuber
 
         public void GoLive()
         {
-            ExtraThreatRules.EnsureRolled(Run, Balance, Week2, Week3);
+            ExtraThreatRules.EnsureRolled(Run, Balance, Week2, Week3, Week4);
             Week3Rules.TryUnlockGoods(Run, Week3);
             if (!Run.billsAppliedThisDay)
-                EconomyRules.ApplyDailyBills(Run, Balance, Week2, Week3);
+                EconomyRules.ApplyDailyBills(Run, Balance, Week2, Week3, Week4);
             Load(SceneFlow.LiveStream);
         }
 
@@ -98,7 +100,7 @@ namespace BankruptVtuber
 
         public void NextMorning()
         {
-            Run.BeginNextDay(Balance, Week2, Week3);
+            Run.BeginNextDay(Balance, Week2, Week3, Week4);
             Load(SceneFlow.WeekStart);
         }
 

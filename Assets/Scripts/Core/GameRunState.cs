@@ -65,6 +65,23 @@ namespace BankruptVtuber
         public bool lastGoodsPromoSuccess;
         public float lastStreamPeakViewers;
 
+        public bool agencyFounded;
+        public bool juniorScouted;
+        public bool sponsorEverSigned;
+        public bool sponsorActive;
+        public int sponsorDaysLeft;
+        public bool juniorAppliedThisDay;
+        public bool sponsorDailyAppliedThisDay;
+        public bool sponsorLineAppliedThisDay;
+        public int lastAgencyFoundCost;
+        public int lastJuniorScoutCost;
+        public int lastJuniorPay;
+        public bool lastJuniorTrainFail;
+        public int lastSponsorDaily;
+        public int lastSponsorLineBonus;
+        public bool lastSponsorLineSuccess;
+        public bool lastSponsorBroke;
+
         public void ResetNewRun(Week1Balance b, int? seed = null)
         {
             day = 1;
@@ -90,6 +107,7 @@ namespace BankruptVtuber
             lastOutcome = WeekOutcome.Continue;
             ClearWeek2Progress();
             ClearWeek3Progress();
+            ClearWeek4Progress();
         }
 
         void ClearWeek2Progress()
@@ -124,6 +142,26 @@ namespace BankruptVtuber
             lastGoodsRevenue = 0;
             lastGoodsPromoSuccess = false;
             lastStreamPeakViewers = 0f;
+        }
+
+        void ClearWeek4Progress()
+        {
+            agencyFounded = false;
+            juniorScouted = false;
+            sponsorEverSigned = false;
+            sponsorActive = false;
+            sponsorDaysLeft = 0;
+            juniorAppliedThisDay = false;
+            sponsorDailyAppliedThisDay = false;
+            sponsorLineAppliedThisDay = false;
+            lastAgencyFoundCost = 0;
+            lastJuniorScoutCost = 0;
+            lastJuniorPay = 0;
+            lastJuniorTrainFail = false;
+            lastSponsorDaily = 0;
+            lastSponsorLineBonus = 0;
+            lastSponsorLineSuccess = false;
+            lastSponsorBroke = false;
         }
 
         public void ApplyExtraThreat(ExtraThreatRoll roll)
@@ -168,7 +206,7 @@ namespace BankruptVtuber
             extraRolls.Clear();
         }
 
-        public void BeginNextDay(Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null)
+        public void BeginNextDay(Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null, Week4Balance w4 = null)
         {
             day += 1;
             mental += b.mentalRestoreEachMorning;
@@ -206,6 +244,17 @@ namespace BankruptVtuber
             lastGoodsRevenue = 0;
             lastGoodsPromoSuccess = false;
             lastStreamPeakViewers = 0f;
+            juniorAppliedThisDay = false;
+            sponsorDailyAppliedThisDay = false;
+            sponsorLineAppliedThisDay = false;
+            lastAgencyFoundCost = 0;
+            lastJuniorScoutCost = 0;
+            lastJuniorPay = 0;
+            lastJuniorTrainFail = false;
+            lastSponsorDaily = 0;
+            lastSponsorLineBonus = 0;
+            lastSponsorLineSuccess = false;
+            lastSponsorBroke = false;
             ClearExtraThreat();
             Week2Rules.ApplyWeek2Entry(this, w2);
             WeekSchedule.TryUnlockMembership(this, w2);

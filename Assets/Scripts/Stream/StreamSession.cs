@@ -41,6 +41,7 @@ namespace BankruptVtuber
         public bool HadHype;
         public readonly StreamEventState Event = new StreamEventState();
         public readonly GoodsPromoState Promo = new GoodsPromoState();
+        public readonly SponsorLineState Line = new SponsorLineState();
         public bool RivalActive;
         public float RivalViewers;
         public float PeakViewers;
@@ -59,7 +60,9 @@ namespace BankruptVtuber
         bool _pendingHypeEvent;
         bool _pendingMissEvent;
         Week3Balance _week3;
+        Week4Balance _week4;
         bool _promoEnabled;
+        bool _lineEnabled;
 
         static readonly string[] FakeUsers =
         {
@@ -91,6 +94,8 @@ namespace BankruptVtuber
 
         public bool PromoActive => Promo.Active;
 
+        public bool LineActive => Line.Active;
+
         public bool HypeActive => HypeLeft > 0f;
 
         public void EnableRival(Week3Balance w3)
@@ -110,6 +115,16 @@ namespace BankruptVtuber
             _promoEnabled = true;
             Promo.Reset();
             Promo.Window = w3.promoWindowSeconds > 0.2f ? w3.promoWindowSeconds : 1.2f;
+        }
+
+        public void EnableSponsorLine(Week4Balance w4)
+        {
+            if (w4 == null)
+                return;
+            _week4 = w4;
+            _lineEnabled = true;
+            Line.Reset();
+            Line.Window = w4.lineWindowSeconds > 0.2f ? w4.lineWindowSeconds : 1.2f;
         }
 
         public float IncomeMultiplier => StreamRules.IncomeMultiplier(PerfectCombo, HypeActive, Balance);
@@ -151,6 +166,14 @@ namespace BankruptVtuber
                     ResolvePromo(false);
             }
 
+            if (Line.Active)
+            {
+                FreezeNotes(dt);
+                Line.TimeLeft -= dt;
+                if (Line.TimeLeft <= 0f)
+                    ResolveLine(false);
+            }
+
             if (RivalActive && _week3 != null)
             {
                 RivalViewers += _week3.rivalViewersPerSec * dt;
@@ -183,13 +206,14 @@ namespace BankruptVtuber
                 }
             }
 
-            if (!Event.Active && !Promo.Active)
+            if (!Event.Active && !Promo.Active && !Line.Active)
             {
                 MaybeSpawnRegular();
                 MaybeSpawnSuperchat();
                 ExpireMisses();
                 MaybeStartEvent();
                 MaybeStartPromo();
+                MaybeStartLine();
             }
 
             if (Mental <= 0)
@@ -207,6 +231,8 @@ namespace BankruptVtuber
                     ResolveEvent(false);
                 if (Promo.Active)
                     ResolvePromo(false);
+                if (Line.Active)
+                    ResolveLine(false);
                 ExpireAllRemaining();
                 Finished = true;
             }
@@ -217,7 +243,7 @@ namespace BankruptVtuber
 
         public bool TryHit(ChatKind kind, float now, bool hold)
         {
-            if (Finished || Event.Active || Promo.Active)
+            if (Finished || Event.Active || Promo.Active || Line.Active)
                 return false;
 
             ChatNote best = null;
@@ -482,9 +508,17 @@ namespace BankruptVtuber
             }
         }
 
+        public bool TryLine(bool success)
+        {
+            if (!Line.Active || Finished)
+                return false;
+            ResolveLine(success);
+            return true;
+        }
+
         void MaybeStartPromo()
         {
-            if (!_promoEnabled || Promo.Fired || Promo.Active || Event.Active || Finished)
+            if (!_promoEnabled || Promo.Fired || Promo.Active || Event.Active || Line.Active || Finished)
                 return;
             float fallback = _week3 != null ? _week3.promoFallbackSeconds : 55f;
             if (!HypeActive && Elapsed < fallback)
@@ -509,6 +543,35 @@ namespace BankruptVtuber
             Promo.Resolved = true;
             Promo.Success = success;
             Promo.TimeLeft = 0f;
+        }
+
+        void MaybeStartLine()
+        {
+            if (!_lineEnabled || Line.Fired || Line.Active || Event.Active || Promo.Active || Finished)
+                return;
+            float fallback = _week4 != null ? _week4.lineFallbackSeconds : 55f;
+            if (!HypeActive && Elapsed < fallback)
+                return;
+            StartLine();
+        }
+
+        void StartLine()
+        {
+            Line.Fired = true;
+            Line.Active = true;
+            Line.Resolved = false;
+            Line.Success = false;
+            Line.TimeLeft = Line.Window;
+        }
+
+        void ResolveLine(bool success)
+        {
+            if (!Line.Active)
+                return;
+            Line.Active = false;
+            Line.Resolved = true;
+            Line.Success = success;
+            Line.TimeLeft = 0f;
         }
 
         void FreezeNotes(float dt)

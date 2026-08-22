@@ -4,14 +4,14 @@ namespace BankruptVtuber
 {
     public static class EconomyRules
     {
-        public static int ApplyDailyBills(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null)
+        public static int ApplyDailyBills(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null, Week4Balance w4 = null)
         {
             if (state.billsAppliedThisDay)
                 return 0;
 
-            ExtraThreatRules.EnsureRolled(state, b, w2, w3);
+            ExtraThreatRules.EnsureRolled(state, b, w2, w3, w4);
             int extra = Math.Max(0, state.extraThreatAmount);
-            int fixedBills = WeekSchedule.TotalFixedBills(state, b, w2, w3);
+            int fixedBills = WeekSchedule.TotalFixedBills(state, b, w2, w3, w4);
             int total = fixedBills + extra;
             state.cash -= total;
             state.lastBills = fixedBills;
@@ -54,15 +54,29 @@ namespace BankruptVtuber
             return amount;
         }
 
-        public static WeekOutcome Evaluate(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null)
+        public static WeekOutcome Evaluate(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null, Week4Balance w4 = null)
         {
             int bankrupt = b.bankruptDebt;
-            if (w3 != null && WeekSchedule.InWeek3(state))
+            if (w4 != null && WeekSchedule.InWeek4(state))
+                bankrupt = w4.bankruptDebt;
+            else if (w3 != null && WeekSchedule.InWeek3(state))
                 bankrupt = w3.bankruptDebt;
             else if (w2 != null && WeekSchedule.InWeek2(state))
                 bankrupt = w2.bankruptDebt;
             if (state.debt >= bankrupt)
                 return WeekOutcome.Bankrupt;
+
+            if (WeekSchedule.InWeek4(state))
+            {
+                int last4 = w4 != null ? w4.lastDay : WeekSchedule.Week4LastDay;
+                if (state.day < last4)
+                    return WeekOutcome.Continue;
+                if (w4 != null &&
+                    state.agencyFounded &&
+                    (state.debt <= w4.winDebtMax || state.cash >= w4.winCashMin))
+                    return WeekOutcome.Week4Win;
+                return WeekOutcome.WeekFailed;
+            }
 
             if (WeekSchedule.InWeek3(state))
             {

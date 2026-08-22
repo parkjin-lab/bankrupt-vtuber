@@ -104,7 +104,10 @@ namespace BankruptVtuber
             int last = WeekSchedule.LastDayOfCurrentWeek(run);
             string members = run.membershipUnlocked ? $"   ·   멤버십 {run.membershipCount}" : "";
             string goods = run.goodsUnlocked ? $"   ·   아크릴 {run.goodsStock}" : "";
-            _day.text = $"{week}주차  ·  {run.day}일차   /   {last}일{members}{goods}";
+            string agency = run.agencyFounded ? "   ·   에이전시" : "";
+            string junior = run.juniorScouted ? "   ·   주니어" : "";
+            string sponsor = run.sponsorActive ? $"   ·   스폰서 {run.sponsorDaysLeft}일" : "";
+            _day.text = $"{week}주차  ·  {run.day}일차   /   {last}일{members}{goods}{agency}{junior}{sponsor}";
             _cash.text = EconomyRules.FormatWon(run.cash);
             _debt.text = EconomyRules.FormatWon(run.debt);
             _mental.text = $"{run.mental}/100";
@@ -113,10 +116,10 @@ namespace BankruptVtuber
         IEnumerator BillWave(GameManager gm)
         {
             var b = gm.Balance;
-            ExtraThreatRules.EnsureRolled(gm.Run, b, gm.Week2, gm.Week3);
+            ExtraThreatRules.EnsureRolled(gm.Run, b, gm.Week2, gm.Week3, gm.Week4);
             Week3Rules.TryUnlockGoods(gm.Run, gm.Week3);
 
-            var fixedBills = WeekSchedule.FixedBills(gm.Run, b, gm.Week2, gm.Week3);
+            var fixedBills = WeekSchedule.FixedBills(gm.Run, b, gm.Week2, gm.Week3, gm.Week4);
             var bills = new System.Collections.Generic.List<Bill>
             {
                 new Bill { Name = "월세", Art = ArtSprites.BillRent, Amount = fixedBills.Rent },
@@ -125,6 +128,18 @@ namespace BankruptVtuber
                 new Bill { Name = "식비", Art = ArtSprites.BillFood, Amount = fixedBills.Food },
                 new Bill { Name = "장비 할부", Art = ArtSprites.BillGear, Amount = fixedBills.Gear }
             };
+            int agencyCost = Week4Rules.AgencySurcharge(gm.Run, gm.Week4);
+            if (agencyCost > 0)
+            {
+                bills.Add(new Bill
+                {
+                    Name = "에이전시 운영",
+                    Art = ArtSprites.BillLicense,
+                    Amount = agencyCost,
+                    Extra = true,
+                    Tint = Palette.Gold
+                });
+            }
             for (int e = 0; e < gm.Run.extraRolls.Count; e++)
             {
                 var extra = gm.Run.extraRolls[e];
@@ -150,10 +165,10 @@ namespace BankruptVtuber
             }
 
             yield return new WaitForSeconds(0.35f);
-            EconomyRules.ApplyDailyBills(gm.Run, b, gm.Week2, gm.Week3);
+            EconomyRules.ApplyDailyBills(gm.Run, b, gm.Week2, gm.Week3, gm.Week4);
             RefreshHud();
             _cash.color = Palette.MoneyRed;
-            int today = WeekSchedule.TotalFixedBills(gm.Run, b, gm.Week2, gm.Week3) + gm.Run.extraThreatAmount;
+            int today = WeekSchedule.TotalFixedBills(gm.Run, b, gm.Week2, gm.Week3, gm.Week4) + gm.Run.extraThreatAmount;
             _log.text = gm.Run.extraRolls.Count == 0
                 ? $"오늘 고정비 {EconomyRules.FormatWon(today)} 차감. 방송으로 메우세요."
                 : $"{gm.Run.extraThreatName} 때문에 오늘 {EconomyRules.FormatWon(today)} 차감. 방송으로 메우세요.";

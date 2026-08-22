@@ -23,6 +23,7 @@ namespace BankruptVtuber
         Win,
         Week2Win,
         Week3Win,
+        Week4Win,
         Bankrupt,
         WeekFailed
     }

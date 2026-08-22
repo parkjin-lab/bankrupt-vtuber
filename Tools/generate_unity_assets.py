@@ -680,6 +680,79 @@ MonoBehaviour:
         native_meta(guid_for("Assets/Resources/Balance/Week3Balance.asset")),
     )
 
+    week4_guid = guid_for("Assets/Scripts/Data/Week4Balance.cs")
+    write(
+        ROOT / "Assets/Resources/Balance/Week4Balance.asset",
+        f"""%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {{fileID: 0}}
+  m_PrefabInstance: {{fileID: 0}}
+  m_PrefabAsset: {{fileID: 0}}
+  m_GameObject: {{fileID: 0}}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {{fileID: 11500000, guid: {week4_guid}, type: 3}}
+  m_Name: Week4Balance
+  m_EditorClassIdentifier: BankruptVtuber.Week4Balance
+  firstDay: 16
+  lastDay: 20
+  bankruptDebt: 300000
+  winDebtMax: 10000
+  winCashMin: 180000
+  billRent: 14000
+  billElectricNet: 7000
+  billAvatarLicense: 7000
+  billFood: 7000
+  billGear: 3000
+  extraThreatMaxPerDay: 2
+  agencyUnlockCash: 100000
+  agencyUnlockDebtMax: 40000
+  agencyFoundCost: 40000
+  agencyDailyCost: 15000
+  juniorScoutCost: 25000
+  juniorDailySuccess: 4000
+  juniorTrainFailMental: 8
+  juniorTrainFailMisses: 10
+  sponsorPeakViewers: 70
+  sponsorDaily: 10000
+  sponsorDays: 5
+  sponsorLineBonus: 3000
+  sponsorFailCash: 15000
+  sponsorFailMental: 12
+  lineWindowSeconds: 1.2
+  lineFallbackSeconds: 55
+  extraThreats:
+  - id: gear_break
+    displayName: 장비 고장
+    minWon: 8000
+    maxWon: 18000
+    chancePercent: 25
+    artPath: Art/bill_gear
+    tintHex: FF6A6A
+  - id: petty_bill
+    displayName: 소액
+    minWon: 5000
+    maxWon: 12000
+    chancePercent: 25
+    artPath: Art/bill_food
+    tintHex: FFB020
+  - id: platform_fee
+    displayName: 수수료
+    minWon: 5000
+    maxWon: 5000
+    chancePercent: 20
+    artPath: Art/badge_superchat
+    tintHex: FFB020
+""",
+    )
+    write(
+        ROOT / "Assets/Resources/Balance/Week4Balance.asset.meta",
+        native_meta(guid_for("Assets/Resources/Balance/Week4Balance.asset")),
+    )
+
     write(
         ROOT / "Assets/Resources/Balance/ChatCatalog.asset",
         f"""%YAML 1.1

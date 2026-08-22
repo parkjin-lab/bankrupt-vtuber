@@ -167,6 +167,7 @@ def check_project() -> None:
         "Assets/Resources/Balance/Week1Balance.asset",
         "Assets/Resources/Balance/Week2Balance.asset",
         "Assets/Resources/Balance/Week3Balance.asset",
+        "Assets/Resources/Balance/Week4Balance.asset",
         "Assets/Resources/Balance/ChatCatalog.asset",
         "Assets/Resources/Fonts/NotoSansKR-Regular.ttf",
     ):
@@ -446,8 +447,8 @@ def check_project() -> None:
         fail("Week 2 added agency/concert/global")
     else:
         ok("Week 2 does not add agency, concert, or global")
-    if "Week2" in title_cs or "membershipCount" in title_cs or "Week3" in title_cs:
-        fail("Title scene started applying Week 2/3 systems")
+    if "Week2" in title_cs or "membershipCount" in title_cs or "Week3" in title_cs or "Week4" in title_cs:
+        fail("Title scene started applying Week 2/3/4 systems")
     else:
         ok("Title still starts a Week 1 run")
     if "Week2Balance.Load" not in gm:
@@ -590,6 +591,138 @@ def check_project() -> None:
         fail("ResetNewRun does not clear Week 3 progress")
     else:
         ok("Title / Restart clears Week 3 so a new run is Week 1")
+
+    w4_asset_path = ROOT / "Assets/Resources/Balance/Week4Balance.asset"
+    w4_cs = (ROOT / "Assets/Scripts/Data/Week4Balance.cs").read_text(encoding="utf-8")
+    w4r_cs = (ROOT / "Assets/Scripts/Economy/Week4Rules.cs").read_text(encoding="utf-8")
+    line_cs = (ROOT / "Assets/Scripts/Stream/SponsorLine.cs").read_text(encoding="utf-8")
+    w4_asset = w4_asset_path.read_text(encoding="utf-8") if w4_asset_path.exists() else ""
+    in3 = sched_cs.split("public static bool InWeek3", 1)[-1].split("public static", 1)[0]
+    if "Week3LastDay" not in in3:
+        fail("InWeek3 still treats days 16+ as Week 3")
+    else:
+        ok("InWeek3 is days 11–15 only")
+    if "InWeek4" not in sched_cs or "Week4LastDay" not in sched_cs:
+        fail("WeekSchedule missing InWeek4 / days 16–20")
+    else:
+        ok("Week 4 is gated to days 16–20")
+    if "CanEnterWeek4" not in sched_cs or "4주차 시작" not in settle_cs:
+        fail("Week 3 clear does not offer Week 4 continue")
+    else:
+        ok("Week 3 clear can continue into days 16–20")
+
+    w4_expect = {
+        "billRent: 14000": "w4 rent",
+        "billElectricNet: 7000": "w4 electric",
+        "billAvatarLicense: 7000": "w4 license",
+        "billFood: 7000": "w4 food",
+        "billGear: 3000": "w4 gear",
+        "winDebtMax: 10000": "w4 win debt",
+        "winCashMin: 180000": "w4 win cash",
+        "bankruptDebt: 300000": "w4 bankrupt",
+        "firstDay: 16": "week4 start day",
+        "lastDay: 20": "week4 end day",
+        "extraThreatMaxPerDay: 2": "w4 max extras",
+        "agencyUnlockCash: 100000": "agency cash",
+        "agencyUnlockDebtMax: 40000": "agency debt",
+        "agencyFoundCost: 40000": "agency found",
+        "agencyDailyCost: 15000": "agency daily",
+        "juniorScoutCost: 25000": "junior scout",
+        "juniorDailySuccess: 4000": "junior pay",
+        "juniorTrainFailMental: 8": "junior fail mental",
+        "juniorTrainFailMisses: 10": "junior fail misses",
+        "sponsorPeakViewers: 70": "sponsor peak",
+        "sponsorDaily: 10000": "sponsor daily",
+        "sponsorDays: 5": "sponsor days",
+        "sponsorLineBonus: 3000": "line bonus",
+        "sponsorFailCash: 15000": "line fail cash",
+        "sponsorFailMental: 12": "line fail mental",
+        "lineWindowSeconds: 1.2": "line window",
+        "lineFallbackSeconds: 55": "line fallback",
+    }
+    for token, label in w4_expect.items():
+        if token not in w4_asset:
+            fail(f"Week4Balance missing {label} ({token})")
+    if "billRent = 14000" not in w4_cs or "billGear = 3000" not in w4_cs:
+        fail("Week4Balance.cs missing locked bills 14000/7000/7000/7000/3000")
+    else:
+        ok("Week4Balance locked bills 14000/7000/7000/7000/3000")
+    if "billRent: 12000" not in w3_asset or "bankruptDebt: 260000" not in w3_asset:
+        fail("Week 3 bills or bankrupt were overwritten")
+    else:
+        ok("Week 3 bills stay ₩34,000 and bankrupt ₩260,000")
+    if "billRent: 10000" not in w2_asset or "bankruptDebt: 220000" not in w2_asset:
+        fail("Week 2 bills or bankrupt were overwritten by Week 4")
+    else:
+        ok("Week 2 numbers stay unchanged after Week 4")
+    if "billRent: 8000" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("Week 1 bills or bankrupt were overwritten by Week 4")
+    else:
+        ok("Week 1 numbers stay unchanged after Week 4")
+
+    for name in ("장비 고장", "소액", "수수료"):
+        if name not in w4_asset or name not in extra_cs:
+            fail(f"Week 4 extra threat '{name}' missing")
+    else:
+        ok("Week 4 extra threats are 장비 고장 / 소액 / 수수료")
+    if "DefaultWeek4Table" not in extra_cs or "RollWeek4" not in extra_cs:
+        fail("Week 4 extras are not independent chance rolls")
+    else:
+        ok("Week 4 extras are 0–2 independent chance rolls")
+    for token in ("chancePercent: 25", "chancePercent: 20", "minWon: 8000", "maxWon: 18000", "minWon: 5000", "maxWon: 12000"):
+        if token not in w4_asset:
+            fail(f"Week 4 threat field {token} missing")
+    ok("Week 4 extra threat chances/amounts match the locked table")
+
+    if "CanFoundAgency" not in w4r_cs or "에이전시 설립" not in settle_cs:
+        fail("agency founding offer/button missing")
+    else:
+        ok("agency founds for ₩40,000 when cash >= 100000, debt <= 40000, goods on, day >= 16")
+    if "agencyDailyCost" not in w4r_cs or "에이전시 운영" not in week_cs:
+        fail("agency daily +15000 missing from WeekStart")
+    else:
+        ok("founded agency adds ₩15,000 daily so bills become ₩53,000")
+    if "CanScoutJunior" not in w4r_cs or "주니어 스카우트" not in settle_cs:
+        fail("junior scout button missing")
+    else:
+        ok("junior slot 1 scouts once for ₩25,000")
+    if "juniorDailySuccess" not in w4r_cs or "juniorTrainFailMisses" not in w4r_cs:
+        fail("junior daily pay / train-fail missing")
+    else:
+        ok("junior +₩4,000 on a successful stream; train-fail is force-end or Misses >= 10")
+    if "CanOfferSponsor" not in w4r_cs or "스폰서 계약" not in settle_cs:
+        fail("sponsor offer/button missing")
+    else:
+        ok("one sponsor deal offers after agency and peak viewers >= 70")
+    if "sponsorDaily" not in w4r_cs or "sponsorDays" not in w4_cs:
+        fail("sponsor daily +10000 for 5 days missing")
+    else:
+        ok("active sponsor pays ₩10,000/day for 5 days")
+
+    if "EnableSponsorLine" not in session_cs or "스폰서 멘트 타이밍" not in live_cs or "스폰서 멘트 타이밍" not in line_cs:
+        fail("스폰서 멘트 타이밍 prompt missing")
+    else:
+        ok("Week 4 stream variable is 스폰서 멘트 타이밍")
+    if "ApplySponsorLine" not in w4r_cs or "sponsorLineBonus" not in w4r_cs:
+        fail("sponsor line success/fail payout missing")
+    else:
+        ok("멘트 success keeps the contract and +₩3,000; fail ends it (−₩15,000, mental −12)")
+    if "Week4Win" not in eco_cs or "agencyFounded" not in eco_cs:
+        fail("Week 4 clear does not require agency founded")
+    else:
+        ok("Week 4 clear requires survive 16–20 and agency founded")
+    if "Week4Balance.Load" not in gm:
+        fail("GameManager does not load Week4Balance")
+    else:
+        ok("GameManager loads Week4Balance")
+    if "concert" in w4_cs.lower() or "글로벌" in w4_cs:
+        fail("Week 4 added concert/global")
+    else:
+        ok("Week 4 does not add concert or global")
+    if "ClearWeek4Progress" not in run_cs or "agencyFounded = false" not in run_cs:
+        fail("ResetNewRun does not clear Week 4 progress")
+    else:
+        ok("Title / Restart clears Week 4 so a new run is Week 1")
 
 
 def simulate_stream(skill: str, seed: int) -> int:
@@ -830,6 +963,39 @@ def check_economy() -> None:
     win3 = (debt <= 15000 or cash >= 140000) and unlocked
     print(f"WEEK3: average cash={cash} debt={debt} stock={stock} win={win3}")
     ok("Week 3 5-day ledger simulation completed")
+
+    w4_bills = 14000 + 7000 + 7000 + 7000 + 3000
+    if w4_bills != 38000:
+        fail(f"Week 4 bill sum {w4_bills} != 38000")
+    else:
+        ok("Week 4 fixed bills sum to ₩38,000 before agency")
+    if w4_bills + 15000 != 53000:
+        fail(f"Week 4 after agency {w4_bills + 15000} != 53000")
+    else:
+        ok("Week 4 bills become ₩53,000 after agency")
+
+    cash, debt = 140000, 10000
+    cash -= 40000
+    cash -= 25000
+    agency = True
+    junior = True
+    extras4 = [8000, 0, 5000, 0, 5000]
+    for day in range(16, 21):
+        today = (w4_bills + 15000) if agency else w4_bills
+        cash -= today + extras4[day - 16]
+        if cash < 0:
+            debt += -cash
+            cash = 0
+        take = simulate_stream("average", seed=5000 + day)
+        cash += take
+        cash += 8 * 150
+        if junior:
+            cash += 4000
+        cash += 10000
+        cash += 3000
+    win4 = agency and (debt <= 10000 or cash >= 180000)
+    print(f"WEEK4: average cash={cash} debt={debt} agency={agency} win={win4}")
+    ok("Week 4 5-day ledger simulation completed")
 
 
 def main() -> int:
