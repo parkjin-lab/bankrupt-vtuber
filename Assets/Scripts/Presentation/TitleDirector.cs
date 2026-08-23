@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace BankruptVtuber
 {
@@ -12,16 +13,21 @@ namespace BankruptVtuber
         GameObject _howToRoot;
         GameObject _prologueRoot;
         RectTransform _billStack;
+        Button _start;
+        Button _continue;
+        Text _hint;
         bool _busy;
         bool _howToOpen;
         bool _prologuePlaying;
         bool _canSkipPrologue;
+        bool _hasSave;
 
         void Awake()
         {
             UiKit.EnsureCamera(Palette.Studio);
             UiKit.EnsureEventSystem();
             Build();
+            RefreshContinue();
         }
 
         void Update()
@@ -42,7 +48,12 @@ namespace BankruptVtuber
             }
 
             if (!_howToOpen && !_prologuePlaying && !_busy && StreamBindings.Confirm)
-                OnStartBroadcast();
+            {
+                if (_hasSave)
+                    OnContinue();
+                else
+                    OnStartBroadcast();
+            }
         }
 
         void Build()
@@ -76,14 +87,18 @@ namespace BankruptVtuber
             UiKit.Layout(line.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(76, -184), new Vector2(760, 44));
             line.horizontalOverflow = HorizontalWrapMode.Wrap;
 
-            var start = UiKit.Button(titleParent, "Start", "방송 시작", OnStartBroadcast, Palette.PinkDeep, Color.white);
-            UiKit.Layout(start.GetComponent<RectTransform>(), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(76, -20), new Vector2(320, 68));
+            _start = UiKit.Button(titleParent, "Start", "방송 시작", OnStartBroadcast, Palette.PinkDeep, Color.white);
+            UiKit.Layout(_start.GetComponent<RectTransform>(), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(76, -20), new Vector2(320, 68));
+
+            _continue = UiKit.Button(titleParent, "Continue", "이어서 하기", OnContinue, Palette.Gold, Palette.Ink);
+            UiKit.Layout(_continue.GetComponent<RectTransform>(), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(412, -20), new Vector2(320, 68));
+            _continue.gameObject.SetActive(false);
 
             var how = UiKit.Button(titleParent, "HowTo", "조작 설명", OpenHowTo, Palette.StudioHi, Palette.Pastel);
             UiKit.Layout(how.GetComponent<RectTransform>(), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(76, -104), new Vector2(320, 68));
 
-            var hint = UiKit.Label(titleParent, "Hint", "Space / Enter  방송 시작", 18, Palette.Muted, TextAnchor.LowerLeft);
-            UiKit.Layout(hint.rectTransform, new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0), new Vector2(76, 28), new Vector2(420, 28));
+            _hint = UiKit.Label(titleParent, "Hint", "Space / Enter  방송 시작", 18, Palette.Muted, TextAnchor.LowerLeft);
+            UiKit.Layout(_hint.rectTransform, new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0), new Vector2(76, 28), new Vector2(520, 28));
 
             BuildHowTo(root);
             BuildPrologue(root);
@@ -149,6 +164,36 @@ namespace BankruptVtuber
             _howToRoot.SetActive(false);
         }
 
+        void RefreshContinue()
+        {
+            _hasSave = RunSave.HasValidSave();
+            _continue.gameObject.SetActive(_hasSave);
+            var caption = _start.GetComponentInChildren<Text>();
+            if (caption != null)
+                caption.text = _hasSave ? "새 방송 시작" : "방송 시작";
+            if (_hint != null)
+                _hint.text = _hasSave ? "Space / Enter  이어서 하기" : "Space / Enter  방송 시작";
+        }
+
+        void OnContinue()
+        {
+            if (_busy || _prologuePlaying)
+                return;
+            if (_howToOpen)
+            {
+                CloseHowTo();
+                return;
+            }
+
+            var gm = GameManager.Instance;
+            if (gm == null)
+                return;
+            if (gm.ContinueRun())
+                return;
+            RefreshContinue();
+            OnStartBroadcast();
+        }
+
         void OnStartBroadcast()
         {
             if (_busy || _prologuePlaying)
@@ -163,6 +208,7 @@ namespace BankruptVtuber
             if (gm == null)
                 return;
 
+            gm.StartNewRun();
             if (gm.ShouldPlayPrologue())
                 StartCoroutine(PlayPrologue(gm));
             else

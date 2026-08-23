@@ -141,6 +141,7 @@ namespace BankruptVtuber
             WeekSchedule.TryUnlockMembership(gm.Run, gm.Week2);
             Week3Rules.TryUnlockGoods(gm.Run, gm.Week3);
             gm.MarkPrologueSeen();
+            gm.SaveRun();
             gm.GoWeekStart();
             Debug.Log("[파산 버튜버] DEBUG F9 → week " + next + " day " + gm.Run.day +
                       " cash=" + gm.Run.cash + " debt=" + gm.Run.debt);
@@ -257,7 +258,10 @@ namespace BankruptVtuber
             ExtraThreatRules.EnsureRolled(run, gm.Balance, gm.Week2, gm.Week3, gm.Week4, gm.Week5);
             Week3Rules.TryUnlockGoods(run, gm.Week3);
             if (!run.billsAppliedThisDay)
+            {
                 EconomyRules.ApplyDailyBills(run, gm.Balance, gm.Week2, gm.Week3, gm.Week4, gm.Week5, gm.Fandom);
+                gm.SaveRun();
+            }
 
             bool concert = Week5Rules.ConcertStreamReady(run);
             if (concert)

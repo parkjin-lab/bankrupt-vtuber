@@ -240,6 +240,7 @@ namespace BankruptVtuber
 
             yield return new WaitForSeconds(0.35f);
             EconomyRules.ApplyDailyBills(gm.Run, b, gm.Week2, gm.Week3, gm.Week4, gm.Week5, gm.Fandom);
+            gm.SaveRun();
             RefreshHud();
             _cash.color = Palette.MoneyRed;
             int today = gm.Run.lastBills + gm.Run.extraThreatAmount + gm.Run.lastConflictSurcharge + gm.Run.lastAutoCost;

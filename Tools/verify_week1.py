@@ -2,6 +2,7 @@
 """Read back scenes / input / economy and simulate Week 1 take bands."""
 from __future__ import annotations
 
+import json
 import math
 import random
 import re
@@ -162,6 +163,7 @@ def check_project() -> None:
 
     for rel in (
         "Assets/Scripts/Core/GameManager.cs",
+        "Assets/Scripts/Core/RunSave.cs",
         "Assets/Scripts/Economy/EconomyRules.cs",
         "Assets/Scripts/Stream/StreamSession.cs",
         "Assets/Resources/Balance/Week1Balance.asset",
@@ -1086,6 +1088,128 @@ def check_project() -> None:
         fail("Title or fandom files mention Week 6 / title fandom")
     else:
         ok("Title does not mention Fandom; no Week 6 high concept")
+
+    save_cs = (ROOT / "Assets/Scripts/Core/RunSave.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    if "Application.persistentDataPath" not in save_cs or "bankrupt-vtuber-run.json" not in save_cs:
+        fail("save is not JSON under Application.persistentDataPath")
+    else:
+        ok("run save is JSON in Application.persistentDataPath")
+    if ".tmp" not in save_cs or "File.Replace" not in save_cs:
+        fail("save write is not atomic (temp then replace)")
+    else:
+        ok("save write is temp file then replace")
+    if "이어서 하기" not in title_cs or "새 방송 시작" not in title_cs or "ContinueRun" not in title_cs:
+        fail("Title missing 이어서 하기 / 새 방송 시작")
+    else:
+        ok("Title shows 이어서 하기 next to 방송 시작")
+    if "StartNewRun" not in gm or "RunSave.Delete" not in gm:
+        fail("새 방송 시작 does not wipe the save")
+    else:
+        ok("새 방송 시작 / Restart wipes the save and starts Week 1")
+    if "streamDoneThisDay" not in gm.split("ResumeFromSave", 1)[-1].split("public void SaveRun", 1)[0]:
+        fail("resume does not route WeekStart vs Settlement")
+    else:
+        ok("resume goes to WeekStart before bills/stream, else Settlement")
+    if "SaveRun" not in week_cs or "SaveRun" not in gm.split("NextMorning", 1)[-1]:
+        fail("bill slam or NextMorning does not save")
+    else:
+        ok("saves after bill slam, settlement, and week-advance")
+    if "SaveRun" not in debug_cs:
+        fail("F9/F10 do not save after skip")
+    else:
+        ok("F9/F10 still work and then save")
+    if "SaveRun" in session_cs:
+        fail("stream session writes a save mid-QTE")
+    live_tick = live_cs.split("void Update", 1)[-1].split("EndRoutine", 1)[0]
+    if "SaveRun" in live_tick or "RunSave.Write" in live_tick:
+        fail("LiveStream Update saves mid-stream")
+    else:
+        ok("does not save during the 90s QTE")
+    if "DummyRoundTrip" not in save_cs or "MakeDummy" not in save_cs:
+        fail("RunSave missing dummy serialize roundtrip")
+    else:
+        ok("RunSave has a dummy-run serialize roundtrip")
+    if "try" not in save_cs.lower() or "FromJson" not in save_cs:
+        fail("corrupt save is not ignored")
+    else:
+        ok("corrupt save is ignored and does not crash")
+    check_save_roundtrip()
+
+
+def check_save_roundtrip() -> None:
+    dummy = {
+        "version": 1,
+        "day": 11,
+        "cash": 88000,
+        "debt": 21000,
+        "mental": 72,
+        "billsAppliedThisDay": False,
+        "streamDoneThisDay": False,
+        "runSeed": 4242,
+        "membershipUnlocked": True,
+        "membershipCount": 8,
+        "viewerBonus": 6,
+        "peakViewersEver": 48.0,
+        "successfulStreams": 7,
+        "week2EntryApplied": True,
+        "goodsUnlocked": True,
+        "goodsStock": 14,
+        "agencyFounded": False,
+        "juniorScouted": False,
+        "tier0": 18,
+        "tier1": 4,
+        "tier2": 2,
+        "tier3": 8,
+        "tier4": 2,
+        "loyalty": 62,
+        "minjunPresent": True,
+        "minjunEver": True,
+        "haeunPresent": True,
+        "haeunEver": True,
+        "conflictPending": True,
+        "conflictResolved": False,
+        "playerRankingScore": 0,
+        "npcRankingScore": [420, 360, 300],
+        "lastNpcScore": [0, 0, 0],
+        "concertPlayed": False,
+        "lastEnding": 0,
+        "lastOutcome": 0,
+        "extraRolls": [
+            {
+                "id": "gear_break",
+                "displayName": "장비 고장",
+                "amount": 7000,
+                "artPath": "Art/bill_gear",
+                "tintHex": "FF6B6B",
+            }
+        ],
+    }
+    text = json.dumps(dummy, ensure_ascii=False, separators=(",", ":"))
+    back = json.loads(text)
+    if back != dummy:
+        fail("dummy run JSON roundtrip mutated fields")
+        return
+    if back["day"] != 11 or back["loyalty"] != 62 or back["membershipCount"] != 8:
+        fail("dummy Week 3 run lost day/loyalty/membership")
+        return
+    if back["minjunPresent"] is not True or back["haeunPresent"] is not True:
+        fail("dummy run lost named superfans")
+        return
+    if back["extraRolls"][0]["amount"] != 7000 or back["npcRankingScore"][1] != 360:
+        fail("dummy run lost extra threat / ranking arrays")
+        return
+    save_cs = (ROOT / "Assets/Scripts/Core/RunSave.cs").read_text(encoding="utf-8")
+    for token in ("day = 11", "cash = 88000", "loyalty = 62", "membershipCount = 8", "goodsStock = 14"):
+        if token not in save_cs:
+            fail(f"MakeDummy missing {token}")
+            return
+    ok("dummy run JSON serialize roundtrip keeps Week 3 + fandom + ranking")
 
 
 def simulate_stream(skill: str, seed: int) -> int:

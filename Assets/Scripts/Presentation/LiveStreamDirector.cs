@@ -70,7 +70,10 @@ namespace BankruptVtuber
         {
             var gm = GameManager.Instance;
             if (!gm.Run.billsAppliedThisDay)
+            {
                 EconomyRules.ApplyDailyBills(gm.Run, gm.Balance, gm.Week2, gm.Week3, gm.Week4, gm.Week5, gm.Fandom);
+                gm.SaveRun();
+            }
             Week3Rules.TryUnlockGoods(gm.Run, gm.Week3);
             _session = new StreamSession(gm.Balance, gm.Catalog, gm.Run.mental, gm.Run.viewerBonus);
             if (Week3Rules.ShouldStartRival(gm.Run, gm.Week3))

@@ -82,6 +82,12 @@ namespace BankruptVtuber.Editor
                 missing = true;
             }
 
+            if (!BankruptVtuber.RunSave.DummyRoundTrip())
+            {
+                Debug.LogError("[파산 버튜버] save dummy roundtrip failed");
+                missing = true;
+            }
+
             if (!missing)
                 Debug.Log("[파산 버튜버] Week 1 scenes + balance hooked. Start scene = Title.");
         }
