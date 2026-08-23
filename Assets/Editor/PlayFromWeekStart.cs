@@ -76,6 +76,12 @@ namespace BankruptVtuber.Editor
                 missing = true;
             }
 
+            if (Resources.Load<BankruptVtuber.FandomBalance>("Balance/FandomBalance") == null)
+            {
+                Debug.LogError("[파산 버튜버] missing Resources/Balance/FandomBalance");
+                missing = true;
+            }
+
             if (!missing)
                 Debug.Log("[파산 버튜버] Week 1 scenes + balance hooked. Start scene = Title.");
         }

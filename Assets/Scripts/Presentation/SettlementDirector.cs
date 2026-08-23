@@ -19,6 +19,10 @@ namespace BankruptVtuber
         Button _signSponsor;
         Button _bookConcert;
         Button _concertLive;
+        Button _letter;
+        Button _auto;
+        Button _soothe;
+        Button _style;
         Button _retire;
         RectTransform _rankBox;
         Text _rankPanel;
@@ -60,11 +64,12 @@ namespace BankruptVtuber
         }
 
         static bool CanAdvance(GameRunState run) =>
-            run.lastOutcome == WeekOutcome.Continue ||
+            !FandomRules.MustResolveConflict(run) &&
+            (run.lastOutcome == WeekOutcome.Continue ||
             WeekSchedule.CanEnterWeek2(run) ||
             WeekSchedule.CanEnterWeek3(run) ||
             WeekSchedule.CanEnterWeek4(run) ||
-            WeekSchedule.CanEnterWeek5(run);
+            WeekSchedule.CanEnterWeek5(run));
 
         void Build()
         {
@@ -114,6 +119,15 @@ namespace BankruptVtuber
             _concertLive = UiKit.Button(root, "ConcertLive", "콘서트 방송", OnConcertLive, Palette.PinkDeep, Color.white);
             UiKit.Layout(_concertLive.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(210, 184), new Vector2(360, 56));
             _concertLive.gameObject.SetActive(false);
+
+            _letter = UiKit.Button(root, "FanLetter", "팬레터 답장", OnLetter, Palette.PinkDeep, Color.white);
+            UiKit.Layout(_letter.GetComponent<RectTransform>(), new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0), new Vector2(48, 52), new Vector2(240, 56));
+            _auto = UiKit.Button(root, "AutoReply", "기본 자동응답", OnToggleAuto, Palette.Gold, Palette.Ink);
+            UiKit.Layout(_auto.GetComponent<RectTransform>(), new Vector2(1, 0), new Vector2(1, 0), new Vector2(1, 0), new Vector2(-48, 52), new Vector2(240, 56));
+            _soothe = UiKit.Button(root, "Soothe", "특별방송으로 달래기", OnSootheConflict, Palette.PinkDeep, Color.white);
+            UiKit.Layout(_soothe.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-190, 184), new Vector2(320, 56));
+            _style = UiKit.Button(root, "Style", "내 스타일대로", OnStyleConflict, Palette.Troll, Color.white);
+            UiKit.Layout(_style.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(190, 184), new Vector2(320, 56));
 
             _rankBox = UiKit.Panel(root, "RankPanel", new Color(0.10f, 0.05f, 0.12f, 0.92f));
             UiKit.Layout(_rankBox, new Vector2(1, 0.55f), new Vector2(1, 0.55f), new Vector2(1, 0.5f), new Vector2(-20, 0), new Vector2(280, 220));
@@ -238,6 +252,19 @@ namespace BankruptVtuber
                       (run.lastConcertPerformanceSuccess ? "  · 퍼포먼스 1.3x\n" : "\n")
                     : "") +
                 (run.lastRepaid > 0 ? $"부채 상환           -{EconomyRules.FormatWon(run.lastRepaid)}\n" : "") +
+                (run.lastAutoCost > 0
+                    ? $"자동응답           -{EconomyRules.FormatWon(run.lastAutoCost)}\n"
+                    : "") +
+                (run.lastConflictSurcharge > 0
+                    ? $"갈등 할증           -{EconomyRules.FormatWon(run.lastConflictSurcharge)}\n"
+                    : "") +
+                (run.lastFanSupport > 0
+                    ? $"팬 지원금           {EconomyRules.FormatWon(run.lastFanSupport)}\n"
+                    : "") +
+                (run.lastFanLetter ? "팬레터 답장         충성 +4 · 멘탈 +8\n" : "") +
+                (run.lastMinjunLeft ? "민준이 떠났습니다   충성 −12\n" : "") +
+                (run.lastHaeunLeft ? "하은이 떠났습니다   충성 −15\n" : "") +
+                (run.lostSuperchatBonusDay ? "슈퍼챗 보너스 1일 소멸\n" : "") +
                 $"\n판정  P {run.lastPerfects}  G {run.lastGreats}  Good {run.lastGoods}  Miss {run.lastMisses}" +
                 (run.lastHadHype ? "   · 하이프 달성" : "") +
                 (run.lastStreamEventHappened
@@ -249,6 +276,11 @@ namespace BankruptVtuber
                 (run.agencyFounded ? "\n에이전시 설립됨" : "") +
                 (run.juniorScouted ? "   ·   주니어 1" : "") +
                 (run.sponsorActive ? $"   ·   스폰서 남은 {run.sponsorDaysLeft}일" : "") +
+                $"\n{FandomRules.HudLine(run)}" +
+                (string.IsNullOrEmpty(FandomRules.SuperfanLine(run, gm.Fandom))
+                    ? ""
+                    : $"\n{FandomRules.SuperfanLine(run, gm.Fandom)}") +
+                (FandomRules.MustResolveConflict(run) ? "\n콘텐츠 편중 갈등 — 오늘 안에 고르세요." : "") +
                 $"\n\n현금 {EconomyRules.FormatWon(run.cash)}     부채 {EconomyRules.FormatWon(run.debt)}     멘탈 {run.mental}";
 
             run.lastOutcome = EconomyRules.Evaluate(run, b, w2, w3, w4, w5);
@@ -285,6 +317,28 @@ namespace BankruptVtuber
                 _clipNote.text = "";
             _clipNote.gameObject.SetActive(run.lastClipAttempted && !offerClip);
 
+            bool ending = ShouldShowEnding(run, w5);
+            bool conflict = FandomRules.MustResolveConflict(run);
+            _letter.gameObject.SetActive(!ending);
+            _letter.interactable = FandomRules.CanSendLetter(run);
+            _letter.GetComponentInChildren<Text>().text = run.fanLetterSentThisDay ? "팬레터 완료" : "팬레터 답장";
+            _auto.gameObject.SetActive(!ending && FandomRules.CanToggleAuto(run));
+            if (_auto.gameObject.activeSelf)
+                _auto.GetComponentInChildren<Text>().text = run.autoReplyOn ? "기본 자동응답 끄기" : "기본 자동응답 켜기";
+            _soothe.gameObject.SetActive(!ending && conflict);
+            _style.gameObject.SetActive(!ending && conflict);
+            if (conflict)
+            {
+                _clipYes.gameObject.SetActive(false);
+                _clipNo.gameObject.SetActive(false);
+                _produce.gameObject.SetActive(false);
+                _foundAgency.gameObject.SetActive(false);
+                _scout.gameObject.SetActive(false);
+                _signSponsor.gameObject.SetActive(false);
+                _bookConcert.gameObject.SetActive(false);
+                _concertLive.gameObject.SetActive(false);
+            }
+
             switch (run.lastOutcome)
             {
                 case WeekOutcome.Bankrupt:
@@ -301,6 +355,10 @@ namespace BankruptVtuber
                     _next.gameObject.SetActive(false);
                     _repay.gameObject.SetActive(false);
                     _restart.gameObject.SetActive(true);
+                    _letter.gameObject.SetActive(false);
+                    _auto.gameObject.SetActive(false);
+                    _soothe.gameObject.SetActive(false);
+                    _style.gameObject.SetActive(false);
                     break;
                 case WeekOutcome.Win:
                     _result.text = "1주차 생존 성공. 2주차를 이어갈 수 있습니다.";
@@ -368,6 +426,9 @@ namespace BankruptVtuber
                     break;
             }
 
+            if (conflict)
+                _next.gameObject.SetActive(false);
+
             ApplyEndingOverlay(run, w5);
         }
 
@@ -385,6 +446,34 @@ namespace BankruptVtuber
                 UiKit.Layout(_next.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-210, 52), new Vector2(360, 60));
                 UiKit.Layout(_restart.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(210, 52), new Vector2(360, 60));
             }
+        }
+
+        void OnLetter()
+        {
+            var gm = GameManager.Instance;
+            FandomRules.SendLetter(gm.Run, gm.Balance, gm.Fandom);
+            Render();
+        }
+
+        void OnToggleAuto()
+        {
+            var gm = GameManager.Instance;
+            FandomRules.SetAutoReply(gm.Run, !gm.Run.autoReplyOn);
+            Render();
+        }
+
+        void OnSootheConflict()
+        {
+            var gm = GameManager.Instance;
+            FandomRules.SootheConflict(gm.Run, gm.Fandom);
+            Render();
+        }
+
+        void OnStyleConflict()
+        {
+            var gm = GameManager.Instance;
+            FandomRules.StyleConflict(gm.Run, gm.Fandom);
+            Render();
         }
 
         void OnRepay()
@@ -498,6 +587,10 @@ namespace BankruptVtuber
             _produce.gameObject.SetActive(false);
             _clipYes.gameObject.SetActive(false);
             _clipNo.gameObject.SetActive(false);
+            _letter.gameObject.SetActive(false);
+            _auto.gameObject.SetActive(false);
+            _soothe.gameObject.SetActive(false);
+            _style.gameObject.SetActive(false);
         }
     }
 }

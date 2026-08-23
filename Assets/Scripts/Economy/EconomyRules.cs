@@ -4,18 +4,26 @@ namespace BankruptVtuber
 {
     public static class EconomyRules
     {
-        public static int ApplyDailyBills(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null, Week4Balance w4 = null, Week5Balance w5 = null)
+        public static int ApplyDailyBills(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null, Week4Balance w4 = null, Week5Balance w5 = null, FandomBalance fandom = null)
         {
             if (state.billsAppliedThisDay)
                 return 0;
 
             ExtraThreatRules.EnsureRolled(state, b, w2, w3, w4, w5);
             int extra = Math.Max(0, state.extraThreatAmount);
+            int surcharge = FandomRules.ConsumeSurcharge(state);
+            extra += surcharge;
+            int auto = FandomRules.AutoCostToday(state, fandom);
+            state.lastAutoCost = auto;
             int fixedBills = WeekSchedule.TotalFixedBills(state, b, w2, w3, w4, w5);
-            int total = fixedBills + extra;
+            int total = fixedBills + extra + auto;
             state.cash -= total;
             state.lastBills = fixedBills;
             state.billsAppliedThisDay = true;
+            int support = FandomRules.RollSupport(state, fandom);
+            state.lastFanSupport = support;
+            if (support > 0)
+                state.cash += support;
             ConvertNegativeCashToDebt(state);
             return total;
         }

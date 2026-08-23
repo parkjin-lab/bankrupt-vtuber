@@ -12,6 +12,7 @@ namespace BankruptVtuber
         public Week3Balance Week3 { get; private set; }
         public Week4Balance Week4 { get; private set; }
         public Week5Balance Week5 { get; private set; }
+        public FandomBalance Fandom { get; private set; }
         public ChatCatalog Catalog { get; private set; }
         public GameRunState Run { get; private set; }
 
@@ -51,11 +52,13 @@ namespace BankruptVtuber
             Week3 = Week3Balance.Load();
             Week4 = Week4Balance.Load();
             Week5 = Week5Balance.Load();
+            Fandom = FandomBalance.Load();
             Catalog = ChatCatalog.Load();
             if (Catalog.positive == null || Catalog.positive.Length == 0)
                 Catalog.ApplyDefaults();
             Run = new GameRunState();
             Run.ResetNewRun(Balance);
+            FandomRules.Reset(Run, Balance, Fandom);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             PlaytestDebug.Attach(this);
 #endif
@@ -85,16 +88,19 @@ namespace BankruptVtuber
         public void RestartRun()
         {
             Run.ResetNewRun(Balance);
+            FandomRules.Reset(Run, Balance, Fandom);
             Debug.Log("[파산 버튜버] new run seed=" + Run.runSeed);
             Load(SceneFlow.Title);
         }
 
         public void GoLive()
         {
+            if (FandomRules.MustResolveConflict(Run))
+                return;
             ExtraThreatRules.EnsureRolled(Run, Balance, Week2, Week3, Week4, Week5);
             Week3Rules.TryUnlockGoods(Run, Week3);
             if (!Run.billsAppliedThisDay)
-                EconomyRules.ApplyDailyBills(Run, Balance, Week2, Week3, Week4, Week5);
+                EconomyRules.ApplyDailyBills(Run, Balance, Week2, Week3, Week4, Week5, Fandom);
             Load(SceneFlow.LiveStream);
         }
 
@@ -105,7 +111,10 @@ namespace BankruptVtuber
 
         public void NextMorning()
         {
-            Run.BeginNextDay(Balance, Week2, Week3, Week4, Week5);
+            if (FandomRules.MustResolveConflict(Run))
+                return;
+            FandomRules.ResolveEndOfDay(Run, Fandom);
+            Run.BeginNextDay(Balance, Week2, Week3, Week4, Week5, Fandom);
             Load(SceneFlow.WeekStart);
         }
 

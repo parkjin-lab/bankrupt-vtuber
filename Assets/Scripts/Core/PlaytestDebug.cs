@@ -71,6 +71,12 @@ namespace BankruptVtuber
             if (gm == null || gm.Run == null)
                 return;
 
+            if (FandomRules.MustResolveConflict(gm.Run))
+            {
+                Debug.Log("[파산 버튜버] DEBUG F10 ignored — 콘텐츠 편중 갈등 first.");
+                return;
+            }
+
             string scene = SceneManager.GetActiveScene().name;
             if (scene == SceneFlow.Settlement)
             {
@@ -142,6 +148,8 @@ namespace BankruptVtuber
 
         static bool CanAdvanceMorning(GameRunState run)
         {
+            if (FandomRules.MustResolveConflict(run))
+                return false;
             if (run.lastOutcome == WeekOutcome.Bankrupt || run.lastOutcome == WeekOutcome.Ending)
                 return false;
             if (WeekSchedule.InWeek5(run) && run.day >= WeekSchedule.Week5LastDay)
@@ -239,6 +247,8 @@ namespace BankruptVtuber
             run.zeroMentalCountedThisDay = false;
             run.retirePicked = false;
             run.ClearExtraThreat();
+            FandomRules.ResetDaily(run);
+            FandomRules.OnMorning(run, b, gm.Fandom);
         }
 
         static void ApplyAverageStream(GameManager gm)
@@ -247,7 +257,7 @@ namespace BankruptVtuber
             ExtraThreatRules.EnsureRolled(run, gm.Balance, gm.Week2, gm.Week3, gm.Week4, gm.Week5);
             Week3Rules.TryUnlockGoods(run, gm.Week3);
             if (!run.billsAppliedThisDay)
-                EconomyRules.ApplyDailyBills(run, gm.Balance, gm.Week2, gm.Week3, gm.Week4, gm.Week5);
+                EconomyRules.ApplyDailyBills(run, gm.Balance, gm.Week2, gm.Week3, gm.Week4, gm.Week5, gm.Fandom);
 
             bool concert = Week5Rules.ConcertStreamReady(run);
             if (concert)
@@ -266,7 +276,10 @@ namespace BankruptVtuber
             run.lastConcertPerformanceSuccess = concert;
             if (run.mental < 60)
                 run.mental = 60;
+            run.lastHadSuccessfulSuperchat = AverageSuperchat > 0;
+            run.lastMissStreak = 0;
             Week2Rules.AfterStream(run, AveragePeak, false, false, AverageMisses, gm.Week2);
+            FandomRules.AfterStream(run, gm.Balance, gm.Fandom);
         }
 
         void EnsureBadge()

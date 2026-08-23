@@ -29,6 +29,8 @@ namespace BankruptVtuber
         public int Combo;
         public int PeakCombo;
         public int MissStreak;
+        public int PeakMissStreak;
+        public bool HadSuccessfulSuperchat;
         public int TotalMiss;
         public bool TotalMissPenaltyUsed;
         public float HypeLeft;
@@ -420,8 +422,13 @@ namespace BankruptVtuber
                 default: Misses++; break;
             }
 
-            if (judgement != Judgement.Miss && note.IsSuperchat)
+            if (judgement == Judgement.Miss)
+                PeakMissStreak = Math.Max(PeakMissStreak, MissStreak);
+            else if (note.IsSuperchat)
+            {
                 SuperchatIncome += note.SuperchatWon;
+                HadSuccessfulSuperchat = true;
+            }
 
             LastJudgement = judgement;
             LastResolved = note;

@@ -106,6 +106,34 @@ namespace BankruptVtuber
         public EndingKind lastEnding;
         public bool retirePicked;
 
+        public int tier0;
+        public int tier1;
+        public int tier2;
+        public int tier3;
+        public int tier4;
+        public int loyalty;
+        public bool minjunPresent;
+        public bool minjunEver;
+        public int minjunIgnoreSettlements;
+        public bool minjunBonusPending;
+        public bool lostSuperchatBonusDay;
+        public bool haeunPresent;
+        public bool haeunEver;
+        public bool haeunHurtThisDay;
+        public bool fanLetterSentThisDay;
+        public bool lastFanLetter;
+        public int lastFanSupport;
+        public int lastAutoCost;
+        public int lastConflictSurcharge;
+        public int pendingExtraSurcharge;
+        public bool conflictResolved;
+        public bool conflictPending;
+        public bool autoReplyOn;
+        public bool lastMinjunLeft;
+        public bool lastHaeunLeft;
+        public bool lastHadSuccessfulSuperchat;
+        public int lastMissStreak;
+
         public void ResetNewRun(Week1Balance b, int? seed = null)
         {
             day = 1;
@@ -133,6 +161,7 @@ namespace BankruptVtuber
             ClearWeek3Progress();
             ClearWeek4Progress();
             ClearWeek5Progress();
+            FandomRules.Reset(this, b, null);
         }
 
         void ClearWeek2Progress()
@@ -256,7 +285,7 @@ namespace BankruptVtuber
             extraRolls.Clear();
         }
 
-        public void BeginNextDay(Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null, Week4Balance w4 = null, Week5Balance w5 = null)
+        public void BeginNextDay(Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null, Week4Balance w4 = null, Week5Balance w5 = null, FandomBalance fandom = null)
         {
             day += 1;
             mental += b.mentalRestoreEachMorning;
@@ -317,9 +346,11 @@ namespace BankruptVtuber
             zeroMentalCountedThisDay = false;
             retirePicked = false;
             ClearExtraThreat();
+            FandomRules.ResetDaily(this);
             Week2Rules.ApplyWeek2Entry(this, w2);
             WeekSchedule.TryUnlockMembership(this, w2);
             Week3Rules.TryUnlockGoods(this, w3);
+            FandomRules.OnMorning(this, b, fandom);
         }
     }
 }

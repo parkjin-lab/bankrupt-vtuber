@@ -11,7 +11,10 @@ namespace BankruptVtuber
         Text _mental;
         Text _log;
         Text _day;
+        Text _fandom;
+        Text _superfans;
         RectTransform _stack;
+        RectTransform _conflictRoot;
         Button _goLive;
         bool _ready;
 
@@ -21,6 +24,7 @@ namespace BankruptVtuber
             public string Art;
             public int Amount;
             public bool Extra;
+            public bool Gain;
             public Color Tint;
         }
 
@@ -42,7 +46,7 @@ namespace BankruptVtuber
 
         void Update()
         {
-            if (_ready && StreamBindings.Confirm)
+            if (_ready && !FandomRules.MustResolveConflict(GameManager.Instance.Run) && StreamBindings.Confirm)
                 GameManager.Instance.GoLive();
         }
 
@@ -58,6 +62,10 @@ namespace BankruptVtuber
             UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(48, -28), new Vector2(640, 70));
             _day = UiKit.Label(root, "DayLabel", "", 28, Palette.Pink, TextAnchor.UpperLeft);
             UiKit.Layout(_day.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(52, -96), new Vector2(720, 40));
+            _fandom = UiKit.Label(root, "FandomHud", "", 20, Palette.Pastel, TextAnchor.UpperLeft);
+            UiKit.Layout(_fandom.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(52, -132), new Vector2(1100, 28));
+            _superfans = UiKit.Label(root, "SuperfanHud", "", 18, Palette.Gold, TextAnchor.UpperLeft);
+            UiKit.Layout(_superfans.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(52, -158), new Vector2(920, 26));
 
             _cash = MoneyChip(root, "CashChip", "현금", Palette.CashGreen, new Vector2(-520, 250));
             _debt = MoneyChip(root, "DebtChip", "부채", Palette.MoneyRed, new Vector2(-180, 250));
@@ -78,6 +86,18 @@ namespace BankruptVtuber
             _goLive = UiKit.Button(root, "GoLive", "방송 켜기  (Space)", () => GameManager.Instance.GoLive(), Palette.PinkDeep, Color.white);
             UiKit.Layout(_goLive.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 36), new Vector2(360, 70));
             _goLive.gameObject.SetActive(false);
+
+            _conflictRoot = UiKit.Panel(root, "ConflictCard", new Color(0.16f, 0.07f, 0.12f, 0.97f));
+            UiKit.Layout(_conflictRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 280));
+            var cTitle = UiKit.Label(_conflictRoot, "CTitle", "콘텐츠 편중 갈등", 34, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
+            UiKit.Layout(cTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -20), new Vector2(-32, 48));
+            var cBody = UiKit.Label(_conflictRoot, "CBody", "오늘 안에 고르세요.", 22, Palette.Pastel, TextAnchor.MiddleCenter);
+            UiKit.Layout(cBody.rectTransform, new Vector2(0, 0.42f), new Vector2(1, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-40, 0));
+            var soothe = UiKit.Button(_conflictRoot, "Soothe", "특별방송으로 달래기", OnSootheConflict, Palette.PinkDeep, Color.white);
+            UiKit.Layout(soothe.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 56));
+            var style = UiKit.Button(_conflictRoot, "Style", "내 스타일대로", OnStyleConflict, Palette.Troll, Color.white);
+            UiKit.Layout(style.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 56));
+            _conflictRoot.gameObject.SetActive(false);
 
             var hint = UiKit.Label(root, "Hint", "A 긍정   S 공감   D 웃음   F 감사   Space 슈퍼챗(떼면 판정)", 18, Palette.Muted, TextAnchor.LowerRight);
             UiKit.Layout(hint.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 16), new Vector2(620, 28));
@@ -113,6 +133,24 @@ namespace BankruptVtuber
             _cash.text = EconomyRules.FormatWon(run.cash);
             _debt.text = EconomyRules.FormatWon(run.debt);
             _mental.text = $"{run.mental}/100";
+            _fandom.text = FandomRules.HudLine(run);
+            string fans = FandomRules.SuperfanLine(run, GameManager.Instance.Fandom);
+            _superfans.text = fans;
+            _superfans.gameObject.SetActive(!string.IsNullOrEmpty(fans));
+        }
+
+        void OnSootheConflict()
+        {
+            var gm = GameManager.Instance;
+            FandomRules.SootheConflict(gm.Run, gm.Fandom);
+            RefreshHud();
+        }
+
+        void OnStyleConflict()
+        {
+            var gm = GameManager.Instance;
+            FandomRules.StyleConflict(gm.Run, gm.Fandom);
+            RefreshHud();
         }
 
         IEnumerator BillWave(GameManager gm)
@@ -120,6 +158,17 @@ namespace BankruptVtuber
             var b = gm.Balance;
             ExtraThreatRules.EnsureRolled(gm.Run, b, gm.Week2, gm.Week3, gm.Week4, gm.Week5);
             Week3Rules.TryUnlockGoods(gm.Run, gm.Week3);
+
+            if (FandomRules.MustResolveConflict(gm.Run))
+            {
+                _conflictRoot.gameObject.SetActive(true);
+                _goLive.gameObject.SetActive(false);
+                _log.text = "콘텐츠 편중 갈등 — 오늘 안에 고르세요.";
+                while (FandomRules.MustResolveConflict(gm.Run))
+                    yield return null;
+                _conflictRoot.gameObject.SetActive(false);
+                RefreshHud();
+            }
 
             var fixedBills = WeekSchedule.FixedBills(gm.Run, b, gm.Week2, gm.Week3, gm.Week4, gm.Week5);
             var bills = new System.Collections.Generic.List<Bill>
@@ -154,6 +203,29 @@ namespace BankruptVtuber
                     Tint = extra.Tint
                 });
             }
+            if (gm.Run.pendingExtraSurcharge > 0)
+            {
+                bills.Add(new Bill
+                {
+                    Name = "갈등 할증",
+                    Art = ArtSprites.BillLicense,
+                    Amount = gm.Run.pendingExtraSurcharge,
+                    Extra = true,
+                    Tint = Palette.Troll
+                });
+            }
+            int autoCost = FandomRules.AutoCostToday(gm.Run, gm.Fandom);
+            if (autoCost > 0)
+            {
+                bills.Add(new Bill
+                {
+                    Name = "자동응답",
+                    Art = ArtSprites.BillElectric,
+                    Amount = autoCost,
+                    Extra = true,
+                    Tint = Palette.Gold
+                });
+            }
 
             _log.text = gm.Run.extraRolls.Count == 0
                 ? "오늘은 추가 위협이 없습니다."
@@ -167,13 +239,33 @@ namespace BankruptVtuber
             }
 
             yield return new WaitForSeconds(0.35f);
-            EconomyRules.ApplyDailyBills(gm.Run, b, gm.Week2, gm.Week3, gm.Week4, gm.Week5);
+            EconomyRules.ApplyDailyBills(gm.Run, b, gm.Week2, gm.Week3, gm.Week4, gm.Week5, gm.Fandom);
             RefreshHud();
             _cash.color = Palette.MoneyRed;
-            int today = WeekSchedule.TotalFixedBills(gm.Run, b, gm.Week2, gm.Week3, gm.Week4, gm.Week5) + gm.Run.extraThreatAmount;
+            int today = gm.Run.lastBills + gm.Run.extraThreatAmount + gm.Run.lastConflictSurcharge + gm.Run.lastAutoCost;
+            string support = gm.Run.lastFanSupport > 0
+                ? $"   ·   팬 지원금 {EconomyRules.FormatWon(gm.Run.lastFanSupport)}"
+                : "";
+            string left = "";
+            if (gm.Run.lastMinjunLeft)
+                left += "   ·   민준이 떠났습니다.";
+            if (gm.Run.lastHaeunLeft)
+                left += "   ·   하은이 떠났습니다.";
             _log.text = gm.Run.extraRolls.Count == 0
-                ? $"오늘 고정비 {EconomyRules.FormatWon(today)} 차감. 방송으로 메우세요."
-                : $"{gm.Run.extraThreatName} 때문에 오늘 {EconomyRules.FormatWon(today)} 차감. 방송으로 메우세요.";
+                ? $"오늘 고정비 {EconomyRules.FormatWon(today)} 차감.{support}{left} 방송으로 메우세요."
+                : $"{gm.Run.extraThreatName} 때문에 오늘 {EconomyRules.FormatWon(today)} 차감.{support}{left} 방송으로 메우세요.";
+            if (gm.Run.lastFanSupport > 0)
+            {
+                SpawnIncoming(new Bill
+                {
+                    Name = "팬 지원금",
+                    Art = ArtSprites.Superchat,
+                    Amount = gm.Run.lastFanSupport,
+                    Extra = true,
+                    Gain = true,
+                    Tint = Palette.CashGreen
+                }, bills.Count, bills.Count + 1);
+            }
             yield return new WaitForSeconds(0.2f);
             _ready = true;
             if (Week5Rules.ConcertStreamReady(gm.Run))
@@ -190,7 +282,8 @@ namespace BankruptVtuber
             UiKit.Layout(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 220), new Vector2(156, 210));
             if (bill.Extra)
             {
-                var tag = UiKit.Label(card, "Tag", "오늘의 위협", 13, Palette.MoneyRed, TextAnchor.UpperCenter, FontStyle.Bold);
+                string tagText = bill.Gain ? "팬 지원" : "오늘의 위협";
+                var tag = UiKit.Label(card, "Tag", tagText, 13, bill.Gain ? Palette.CashGreen : Palette.MoneyRed, TextAnchor.UpperCenter, FontStyle.Bold);
                 UiKit.Layout(tag.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -4), new Vector2(0, 18));
             }
             var icon = UiKit.Image(card, "Icon", Color.white);
@@ -199,7 +292,7 @@ namespace BankruptVtuber
             UiKit.Label(card, "N", bill.Name, 16, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
             var n = card.Find("N") as RectTransform;
             UiKit.Layout(n, new Vector2(0, 0.20f), new Vector2(1, 0.38f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-            var amt = UiKit.Label(card, "A", "-" + EconomyRules.FormatWon(bill.Amount), 18, Palette.MoneyRed, TextAnchor.LowerCenter, FontStyle.Bold);
+            var amt = UiKit.Label(card, "A", (bill.Gain ? "+" : "-") + EconomyRules.FormatWon(bill.Amount), 18, bill.Gain ? Palette.CashGreen : Palette.MoneyRed, TextAnchor.LowerCenter, FontStyle.Bold);
             UiKit.Layout(amt.rectTransform, new Vector2(0, 0), new Vector2(1, 0.22f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             StartCoroutine(Slam(card, x));
         }

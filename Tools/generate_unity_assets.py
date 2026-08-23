@@ -837,6 +837,67 @@ MonoBehaviour:
         native_meta(guid_for("Assets/Resources/Balance/Week5Balance.asset")),
     )
 
+    fandom_guid = guid_for("Assets/Scripts/Data/FandomBalance.cs")
+    write(
+        ROOT / "Assets/Resources/Balance/FandomBalance.asset",
+        f"""%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {{fileID: 0}}
+  m_PrefabInstance: {{fileID: 0}}
+  m_PrefabAsset: {{fileID: 0}}
+  m_GameObject: {{fileID: 0}}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {{fileID: 11500000, guid: {fandom_guid}, type: 3}}
+  m_Name: FandomBalance
+  m_EditorClassIdentifier: BankruptVtuber.FandomBalance
+  startT0: 12
+  startLoyalty: 40
+  maxLoyalty: 100
+  perfectHigh: 8
+  perfectHighT0toT1: 2
+  perfectHighT1toT2: 1
+  perfectHighLoyalty: 5
+  perfectMidLo: 4
+  perfectMidHi: 7
+  perfectMidT0toT1: 1
+  perfectMidLoyalty: 1
+  missCount: 10
+  missLoyalty: 8
+  missT2Loss: 1
+  minjunName: 민준
+  haeunName: 하은
+  minjunIgnoreSettlements: 3
+  minjunLeaveLoyalty: 12
+  haeunHurtStreak: 3
+  haeunLeaveLoyalty: 15
+  haeunAppearDay: 2
+  letterLoyalty: 4
+  letterMental: 8
+  supportLoyaltyMin: 60
+  supportBase: 3000
+  supportPerT3: 200
+  supportPerT4: 4000
+  supportMin: 3000
+  supportMax: 20000
+  conflictDay: 11
+  conflictSootheMental: 10
+  conflictSootheLoyalty: 8
+  conflictStyleT2: 2
+  conflictStyleLoyalty: 10
+  conflictExtraSurcharge: 2000
+  autoDailyCost: 8000
+  autoLoyaltyDrain: 1
+""",
+    )
+    write(
+        ROOT / "Assets/Resources/Balance/FandomBalance.asset.meta",
+        native_meta(guid_for("Assets/Resources/Balance/FandomBalance.asset")),
+    )
+
     write(
         ROOT / "Assets/Resources/Balance/ChatCatalog.asset",
         f"""%YAML 1.1

@@ -169,6 +169,7 @@ def check_project() -> None:
         "Assets/Resources/Balance/Week3Balance.asset",
         "Assets/Resources/Balance/Week4Balance.asset",
         "Assets/Resources/Balance/Week5Balance.asset",
+        "Assets/Resources/Balance/FandomBalance.asset",
         "Assets/Resources/Balance/ChatCatalog.asset",
         "Assets/Resources/Fonts/NotoSansKR-Regular.ttf",
     ):
@@ -448,8 +449,8 @@ def check_project() -> None:
         fail("Week 2 added agency/concert/global")
     else:
         ok("Week 2 does not add agency, concert, or global")
-    if "Week2" in title_cs or "membershipCount" in title_cs or "Week3" in title_cs or "Week4" in title_cs or "Week5" in title_cs:
-        fail("Title scene started applying Week 2/3/4/5 systems")
+    if "Week2" in title_cs or "membershipCount" in title_cs or "Week3" in title_cs or "Week4" in title_cs or "Week5" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "팬레터" in title_cs:
+        fail("Title scene started applying Week 2/3/4/5 or Fandom systems")
     else:
         ok("Title still starts a Week 1 run")
     if "Week2Balance.Load" not in gm:
@@ -937,6 +938,154 @@ def check_project() -> None:
         fail("Title started advertising the playtest skip")
     else:
         ok("Title still starts a Week 1 run without debug keys")
+
+    fandom_asset_path = ROOT / "Assets/Resources/Balance/FandomBalance.asset"
+    fandom_cs = (ROOT / "Assets/Scripts/Data/FandomBalance.cs").read_text(encoding="utf-8")
+    fandom_rules = (ROOT / "Assets/Scripts/Economy/FandomRules.cs").read_text(encoding="utf-8")
+    fandom_asset = fandom_asset_path.read_text(encoding="utf-8") if fandom_asset_path.exists() else ""
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    run_cs = (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    w2r_cs = (ROOT / "Assets/Scripts/Economy/Week2Rules.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+
+    if (ROOT / "Assets/Scripts/Data/Week6Balance.cs").exists() or (ROOT / "Assets/Resources/Balance/Week6Balance.asset").exists():
+        fail("Week 6 was added")
+    elif "InWeek6" in sched_cs or "Week6LastDay" in sched_cs:
+        fail("WeekSchedule gained a Week 6 gate")
+    else:
+        ok("no Week 6 — fandom is folded into Weeks 1–5")
+
+    fandom_expect = {
+        "startT0: 12": "start T0",
+        "startLoyalty: 40": "start loyalty",
+        "maxLoyalty: 100": "max loyalty",
+        "perfectHigh: 8": "perfect high",
+        "perfectHighT0toT1: 2": "T0→T1 high",
+        "perfectHighT1toT2: 1": "T1→T2 high",
+        "perfectHighLoyalty: 5": "loyalty high",
+        "perfectMidLo: 4": "perfect mid lo",
+        "perfectMidHi: 7": "perfect mid hi",
+        "perfectMidT0toT1: 1": "T0→T1 mid",
+        "perfectMidLoyalty: 1": "loyalty mid",
+        "missCount: 10": "miss count",
+        "missLoyalty: 8": "miss loyalty",
+        "missT2Loss: 1": "miss T2",
+        "minjunName: 민준": "민준",
+        "haeunName: 하은": "하은",
+        "minjunIgnoreSettlements: 3": "민준 ignore",
+        "minjunLeaveLoyalty: 12": "민준 leave",
+        "haeunHurtStreak: 3": "하은 streak",
+        "haeunLeaveLoyalty: 15": "하은 leave",
+        "haeunAppearDay: 2": "하은 day",
+        "letterLoyalty: 4": "letter loyalty",
+        "letterMental: 8": "letter mental",
+        "supportLoyaltyMin: 60": "support loyalty",
+        "supportBase: 3000": "support base",
+        "supportPerT3: 200": "support T3",
+        "supportPerT4: 4000": "support T4",
+        "supportMin: 3000": "support min",
+        "supportMax: 20000": "support max",
+        "conflictDay: 11": "conflict day",
+        "conflictSootheMental: 10": "soothe mental",
+        "conflictSootheLoyalty: 8": "soothe loyalty",
+        "conflictStyleT2: 2": "style T2",
+        "conflictStyleLoyalty: 10": "style loyalty",
+        "conflictExtraSurcharge: 2000": "style surcharge",
+        "autoDailyCost: 8000": "auto cost",
+        "autoLoyaltyDrain: 1": "auto drain",
+    }
+    for token, label in fandom_expect.items():
+        if token not in fandom_asset:
+            fail(f"FandomBalance missing {label} ({token})")
+    if "startT0 = 12" not in fandom_cs or "startLoyalty = 40" not in fandom_cs or "autoDailyCost = 8000" not in fandom_cs:
+        fail("FandomBalance.cs missing locked start / auto defaults")
+    else:
+        ok("FandomBalance locked numbers present")
+
+    t0, t1, t2 = 12, 0, 0
+    move0 = min(2, t0)
+    t0 -= move0
+    t1 += move0
+    move1 = min(1, t1)
+    t1 -= move1
+    t2 += move1
+    if (t0, t1, t2) != (10, 1, 1):
+        fail(f"Perfects>=8 convert {t0}/{t1}/{t2} != 10/1/1")
+    else:
+        ok("Perfects >= 8 converts 2 T0→T1 then 1 T1→T2")
+    if 40 + 5 != 45 or 40 + 1 != 41 or 40 - 8 != 32:
+        fail("loyalty after-stream deltas drifted")
+    else:
+        ok("after-stream loyalty is +5 / +1 / −8")
+    support = 3000 + 8 * 200 + 2 * 4000
+    if support != 12600 or support < 3000 or support > 20000:
+        fail(f"fan support formula {support} != 3000 + T3*200 + T4*4000")
+    else:
+        ok("팬 지원금 is 3000 + T3×200 + T4×4000 (min 3000, max 20000)")
+
+    if "FandomRules.AfterStream" not in live_cs or "HadSuccessfulSuperchat" not in session_cs:
+        fail("stream does not feed fandom AfterStream / superchat / miss streak")
+    else:
+        ok("live stream calls Fandom AfterStream after the first superchat / miss streak")
+    if "MaybeSpawnMinjun" not in fandom_rules or "MaybeSpawnHaeun" not in fandom_rules:
+        fail("named superfans 민준/하은 missing")
+    else:
+        ok("민준 appears after first superchat; 하은 on morning of day 2")
+    if "팬레터 답장" not in settle_cs or "SendLetter" not in fandom_rules or "letterLoyalty" not in fandom_rules:
+        fail("팬레터 settlement action missing")
+    else:
+        ok("팬레터 답장 is a free once-per-day settlement action")
+    if "HudLine" not in fandom_rules or "HudLine" not in week_cs or "HudLine" not in settle_cs:
+        fail("loyalty / tier HUD missing on WeekStart or Settlement")
+    elif "충성" not in fandom_rules or "시청자" not in fandom_rules or "슈퍼팬" not in fandom_rules:
+        fail("fandom HUD line is not Korean tier labels")
+    else:
+        ok("WeekStart and Settlement show 충성 + tier counts in Korean")
+    if "SuperfanLine" not in fandom_rules or "첫 도네" not in fandom_rules or "매일 오는 야간" not in fandom_rules:
+        fail("named superfan labels missing")
+    else:
+        ok("민준 (첫 도네) and 하은 (매일 오는 야간) show when present")
+    if "콘텐츠 편중 갈등" not in week_cs or "특별방송으로 달래기" not in week_cs or "내 스타일대로" not in week_cs:
+        fail("Week 3 conflict buttons missing on WeekStart")
+    else:
+        ok("day 11 WeekStart has 콘텐츠 편중 갈등")
+    if "특별방송으로 달래기" not in settle_cs or "MustResolveConflict" not in settle_cs:
+        fail("conflict is not also offered / blocking on Settlement")
+    else:
+        ok("conflict must be picked that day (WeekStart or Settlement)")
+    if "기본 자동응답" not in settle_cs or "autoDailyCost" not in fandom_rules or "8000" not in fandom_cs:
+        fail("Week 4 auto-reply toggle / ₩8,000 cost missing")
+    else:
+        ok("기본 자동응답 is Week 4+ agency only, ₩8,000/day")
+    if "RollSupport" not in fandom_rules or "lastFanSupport" not in eco_cs:
+        fail("fan support is not rolled on bill slam")
+    else:
+        apply = eco_cs.split("public static int ApplyDailyBills", 1)[-1].split("public static int ApplyStreamPayout", 1)[0]
+        if "RollSupport" not in apply or apply.find("RollSupport") > apply.find("ConvertNegativeCashToDebt"):
+            fail("팬 지원금 is not applied before convert-negative-cash-to-debt")
+        else:
+            ok("팬 지원금 applies on bill slam before convert-to-debt")
+    if "SyncT3" not in fandom_rules or "SyncT3" not in sched_cs or "SyncT3" not in w2r_cs:
+        fail("membershipCount is not kept in sync with T3")
+    else:
+        ok("membership unlock still uses Week 2 rules; membershipCount is T3")
+    if "FandomBalance.Load" not in gm or "FandomRules.AfterStream" not in debug_cs:
+        fail("GameManager / playtest skip do not load or apply fandom")
+    else:
+        ok("GameManager loads FandomBalance; F10 still runs AfterStream")
+    if "팬 지원금" not in week_cs:
+        fail("WeekStart does not show 팬 지원금")
+    else:
+        ok("WeekStart shows 팬 지원금 when it rolls")
+    if "Fandom" in title_cs or "6주차" in fandom_cs or "Week6" in fandom_rules:
+        fail("Title or fandom files mention Week 6 / title fandom")
+    else:
+        ok("Title does not mention Fandom; no Week 6 high concept")
 
 
 def simulate_stream(skill: str, seed: int) -> int:

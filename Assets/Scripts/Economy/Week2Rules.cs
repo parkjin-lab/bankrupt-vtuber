@@ -58,6 +58,8 @@ namespace BankruptVtuber
                 run.membershipCount -= loss;
                 run.lastMembershipFromMiss = loss;
             }
+
+            FandomRules.SyncT3(run);
         }
 
         public static int ApplyMembershipPassive(GameRunState run, Week2Balance w2)

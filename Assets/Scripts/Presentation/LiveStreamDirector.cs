@@ -70,7 +70,7 @@ namespace BankruptVtuber
         {
             var gm = GameManager.Instance;
             if (!gm.Run.billsAppliedThisDay)
-                EconomyRules.ApplyDailyBills(gm.Run, gm.Balance, gm.Week2, gm.Week3, gm.Week4, gm.Week5);
+                EconomyRules.ApplyDailyBills(gm.Run, gm.Balance, gm.Week2, gm.Week3, gm.Week4, gm.Week5, gm.Fandom);
             Week3Rules.TryUnlockGoods(gm.Run, gm.Week3);
             _session = new StreamSession(gm.Balance, gm.Catalog, gm.Run.mental, gm.Run.viewerBonus);
             if (Week3Rules.ShouldStartRival(gm.Run, gm.Week3))
@@ -212,6 +212,9 @@ namespace BankruptVtuber
                 _session.HadHype,
                 _session.Misses,
                 gm.Week2);
+            gm.Run.lastMissStreak = _session.PeakMissStreak;
+            gm.Run.lastHadSuccessfulSuperchat = _session.HadSuccessfulSuperchat;
+            FandomRules.AfterStream(gm.Run, gm.Balance, gm.Fandom);
             Week3Rules.ApplyRivalResult(
                 gm.Run,
                 gm.Balance,
