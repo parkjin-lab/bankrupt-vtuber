@@ -108,6 +108,18 @@ def check_project() -> None:
             fail(f"regular lane missing {tap}")
     ok("A/S/D/F stay GetKeyDown")
 
+    uikit_cs = (ROOT / "Assets/Scripts/Presentation/UiKit.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    live_awake = live_cs.split("void Awake()", 1)[-1].split("void Start()", 1)[0]
+    if "LockUiInputForStream" not in uikit_cs:
+        fail("UiKit missing LockUiInputForStream")
+    elif "sendNavigationEvents = false" not in uikit_cs or "SetSelectedGameObject(null)" not in uikit_cs or "StandaloneInputModule" not in uikit_cs.split("LockUiInputForStream", 1)[-1]:
+        fail("LockUiInputForStream does not disable EventSystem navigation / StandaloneInputModule")
+    elif "LockUiInputForStream" not in live_awake or live_awake.find("EnsureEventSystem") > live_awake.find("LockUiInputForStream"):
+        fail("LiveStreamDirector.Awake does not lock UI input after EnsureEventSystem")
+    else:
+        ok("LiveStream locks EventSystem so A/S/D/F/Space reach TryConsumeKind")
+
     run_cs = (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8")
     begin = run_cs.split("BeginNextDay", 1)[-1]
     if "mental = b.mentalRestoreEachMorning" in begin.split("billsAppliedThisDay", 1)[0]:

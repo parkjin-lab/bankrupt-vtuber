@@ -58,6 +58,7 @@ namespace BankruptVtuber
         {
             UiKit.EnsureCamera(Palette.Studio);
             UiKit.EnsureEventSystem();
+            UiKit.LockUiInputForStream();
             Build();
             _audio = gameObject.AddComponent<AudioSource>();
             _audio.playOnAwake = false;

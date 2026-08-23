@@ -181,6 +181,24 @@ namespace BankruptVtuber
             go.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
         }
 
+        /// <summary>
+        /// LiveStream QTE uses A/S/D/F/Space. Default Input Manager maps those to
+        /// Horizontal / Vertical / Submit, so a selected UI button swallows them.
+        /// </summary>
+        public static void LockUiInputForStream()
+        {
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (es == null)
+                es = UnityEngine.Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>();
+            if (es == null)
+                return;
+            es.sendNavigationEvents = false;
+            es.SetSelectedGameObject(null);
+            var module = es.GetComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+            if (module != null)
+                module.enabled = false;
+        }
+
         public static void EnsureCamera(Color bg)
         {
             var cam = Camera.main;
