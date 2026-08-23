@@ -4,36 +4,53 @@ namespace BankruptVtuber
 {
     public static class StreamBindings
     {
+        static ChatKind? _queuedKind;
+        static bool _queuedHold;
+        static int _queuedEvent;
+        static int _queuedPromo;
+        static bool _padCharging;
+
         /// <summary>
-        /// A/S/D/F tap once. Space superchat commits once on release (hold-to-charge).
-        /// Holding Space must not poll Thanks every frame.
+        /// Arrow tap once. Space/Enter superchat commits once on release (hold-to-charge).
+        /// Holding Space must not poll Thanks every frame. On-screen pad queues the same path.
         /// </summary>
         public static bool TryConsumeKind(out ChatKind kind, out bool hold)
         {
+            if (_queuedKind.HasValue)
+            {
+                kind = _queuedKind.Value;
+                hold = _queuedHold;
+                _queuedKind = null;
+                _queuedHold = false;
+                return true;
+            }
+
             hold = false;
-            if (UnityEngine.Input.GetKeyDown(KeyCode.A))
+            if (UnityEngine.Input.GetKeyDown(KeyCode.LeftArrow))
             {
                 kind = ChatKind.Positive;
                 return true;
             }
-            if (UnityEngine.Input.GetKeyDown(KeyCode.S))
+            if (UnityEngine.Input.GetKeyDown(KeyCode.DownArrow))
             {
                 kind = ChatKind.Empathy;
                 return true;
             }
-            if (UnityEngine.Input.GetKeyDown(KeyCode.D))
+            if (UnityEngine.Input.GetKeyDown(KeyCode.RightArrow))
             {
                 kind = ChatKind.Laugh;
                 return true;
             }
-            if (UnityEngine.Input.GetKeyDown(KeyCode.F))
+            if (UnityEngine.Input.GetKeyDown(KeyCode.UpArrow))
             {
                 kind = ChatKind.Thanks;
                 return true;
             }
 
             // One resolve per press: charge while held, commit on release.
-            if (UnityEngine.Input.GetKeyUp(KeyCode.Space))
+            if (UnityEngine.Input.GetKeyUp(KeyCode.Space)
+                || UnityEngine.Input.GetKeyUp(KeyCode.Return)
+                || UnityEngine.Input.GetKeyUp(KeyCode.KeypadEnter))
             {
                 kind = ChatKind.Thanks;
                 return true;
@@ -44,10 +61,19 @@ namespace BankruptVtuber
         }
 
         public static bool SuperchatCharging =>
-            UnityEngine.Input.GetKey(KeyCode.Space);
+            _padCharging
+            || UnityEngine.Input.GetKey(KeyCode.Space)
+            || UnityEngine.Input.GetKey(KeyCode.Return)
+            || UnityEngine.Input.GetKey(KeyCode.KeypadEnter);
 
         public static bool EventKeyPressed(out int index)
         {
+            if (_queuedEvent > 0)
+            {
+                index = _queuedEvent;
+                _queuedEvent = 0;
+                return true;
+            }
             if (UnityEngine.Input.GetKeyDown(KeyCode.Alpha1) || UnityEngine.Input.GetKeyDown(KeyCode.Keypad1))
             {
                 index = 1;
@@ -76,16 +102,66 @@ namespace BankruptVtuber
             UnityEngine.Input.GetKeyDown(KeyCode.Space) ||
             UnityEngine.Input.GetKeyDown(KeyCode.Return);
 
-        /// <summary>굿즈 홍보 타이밍 confirm (A / S). Distinct from judgement while the prompt is up.</summary>
+        /// <summary>굿즈/멘트/콘서트 confirm (Left / Up). Distinct from judgement while the prompt is up.</summary>
         public static bool PromoConfirmDown()
         {
-            return UnityEngine.Input.GetKeyDown(KeyCode.A) || UnityEngine.Input.GetKeyDown(KeyCode.S);
+            if (_queuedPromo > 0)
+            {
+                _queuedPromo = 0;
+                return true;
+            }
+            return UnityEngine.Input.GetKeyDown(KeyCode.LeftArrow)
+                || UnityEngine.Input.GetKeyDown(KeyCode.UpArrow);
         }
 
-        /// <summary>굿즈 홍보 타이밍 skip (D / F).</summary>
+        /// <summary>굿즈/멘트/콘서트 skip (Right / Down).</summary>
         public static bool PromoSkipDown()
         {
-            return UnityEngine.Input.GetKeyDown(KeyCode.D) || UnityEngine.Input.GetKeyDown(KeyCode.F);
+            if (_queuedPromo < 0)
+            {
+                _queuedPromo = 0;
+                return true;
+            }
+            return UnityEngine.Input.GetKeyDown(KeyCode.RightArrow)
+                || UnityEngine.Input.GetKeyDown(KeyCode.DownArrow);
+        }
+
+        public static void QueueKind(ChatKind kind, bool hold = false)
+        {
+            _queuedKind = kind;
+            _queuedHold = hold;
+        }
+
+        public static void QueueEvent(int index)
+        {
+            if (index >= 1 && index <= 4)
+                _queuedEvent = index;
+        }
+
+        public static void QueuePromo(bool confirm)
+        {
+            _queuedPromo = confirm ? 1 : -1;
+        }
+
+        public static void BeginSuperchatCharge()
+        {
+            _padCharging = true;
+        }
+
+        public static void EndSuperchatCharge()
+        {
+            if (!_padCharging)
+                return;
+            _padCharging = false;
+            _queuedKind = ChatKind.Thanks;
+            _queuedHold = false;
+        }
+
+        public static void DiscardLaneQueue()
+        {
+            _queuedKind = null;
+            _queuedHold = false;
+            _padCharging = false;
         }
     }
 }

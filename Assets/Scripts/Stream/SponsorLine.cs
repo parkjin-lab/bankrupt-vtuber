@@ -1,7 +1,7 @@
 namespace BankruptVtuber
 {
     /// <summary>
-    /// Mid-stream 스폰서 멘트 타이밍. A/S 성공, D/F 또는 시간초과는 실패.
+    /// Mid-stream 스폰서 멘트 타이밍. ←/↑ 성공, →/↓ 또는 시간초과는 실패.
     /// Week 4's one new stream variable.
     /// </summary>
     public class SponsorLineState

@@ -86,10 +86,12 @@ def check_project() -> None:
         ok("built-in 2D / no SRP asset")
 
     bindings = (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8")
-    for key in ("KeyCode.A", "KeyCode.S", "KeyCode.D", "KeyCode.F", "KeyCode.Space", "KeyCode.Alpha1"):
+    for key in ("KeyCode.LeftArrow", "KeyCode.DownArrow", "KeyCode.RightArrow", "KeyCode.UpArrow", "KeyCode.Space", "KeyCode.Return", "KeyCode.Alpha1"):
         if key not in bindings:
             fail(f"StreamBindings missing {key}")
-    ok("A/S/D/F/Space/1-4 bindings present")
+    if "GetKeyDown(KeyCode.A)" in bindings or "GetKeyDown(KeyCode.S)" in bindings or "GetKeyDown(KeyCode.D)" in bindings or "GetKeyDown(KeyCode.F)" in bindings:
+        fail("A/S/D/F is still the primary stream map")
+    ok("←↓→↑ / Space / Enter / 1–4 bindings present")
 
     consume = bindings.split("TryConsumeKind", 1)[-1]
     consume = consume.split("public static bool SuperchatCharging", 1)[0]
@@ -103,10 +105,10 @@ def check_project() -> None:
         fail("Space superchat is not a one-shot GetKeyDown/GetKeyUp")
     else:
         ok("Space superchat commits once (GetKeyUp/GetKeyDown)")
-    for tap in ("GetKeyDown(KeyCode.A)", "GetKeyDown(KeyCode.S)", "GetKeyDown(KeyCode.D)", "GetKeyDown(KeyCode.F)"):
+    for tap in ("GetKeyDown(KeyCode.LeftArrow)", "GetKeyDown(KeyCode.DownArrow)", "GetKeyDown(KeyCode.RightArrow)", "GetKeyDown(KeyCode.UpArrow)"):
         if tap not in consume:
             fail(f"regular lane missing {tap}")
-    ok("A/S/D/F stay GetKeyDown")
+    ok("arrow keys stay GetKeyDown")
 
     uikit_cs = (ROOT / "Assets/Scripts/Presentation/UiKit.cs").read_text(encoding="utf-8")
     live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
@@ -118,7 +120,20 @@ def check_project() -> None:
     elif "LockUiInputForStream" not in live_awake or live_awake.find("EnsureEventSystem") > live_awake.find("LockUiInputForStream"):
         fail("LiveStreamDirector.Awake does not lock UI input after EnsureEventSystem")
     else:
-        ok("LiveStream locks EventSystem so A/S/D/F/Space reach TryConsumeKind")
+        ok("LiveStream locks EventSystem so arrow keys / Space reach TryConsumeKind")
+
+    pad_cs = (ROOT / "Assets/Scripts/Input/StreamPadButton.cs").read_text(encoding="utf-8") if (ROOT / "Assets/Scripts/Input/StreamPadButton.cs").exists() else ""
+    relay_cs = (ROOT / "Assets/Scripts/Input/StreamPointerRelay.cs").read_text(encoding="utf-8") if (ROOT / "Assets/Scripts/Input/StreamPointerRelay.cs").exists() else ""
+    if "IPointerDownHandler" not in pad_cs or "QueueKind" not in pad_cs:
+        fail("StreamPadButton does not tap the same TryHit path")
+    elif "GraphicRaycaster" not in relay_cs or "StandaloneInputModule" not in relay_cs:
+        fail("StreamPointerRelay does not raycast without StandaloneInputModule")
+    elif "긍정" not in live_cs or "공감" not in live_cs or "웃음" not in live_cs or "감사" not in live_cs or "슈퍼챗" not in live_cs:
+        fail("LiveStream missing on-screen 긍정/공감/웃음/감사/슈퍼챗 pad")
+    elif "StreamPointerRelay" not in live_cs or "StreamPadButton" not in live_cs:
+        fail("LiveStream does not wire the touch pad")
+    else:
+        ok("LiveStream on-screen pad calls the same hit path without UI navigation")
 
     run_cs = (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8")
     begin = run_cs.split("BeginNextDay", 1)[-1]
@@ -242,10 +257,10 @@ def check_project() -> None:
             fail(f"TitleDirector missing {token}")
     else:
         ok("Title has Korean title, tagline, 방송 시작 / 조작 설명")
-    if "A     긍정" not in title_cs or "1–4" not in title_cs or "Space" not in title_cs:
-        fail("조작 설명 does not list A S D F Space, 1–4")
+    if "←     긍정" not in title_cs or "1–4" not in title_cs or "Space" not in title_cs:
+        fail("조작 설명 does not list ← ↓ → ↑ Space, 1–4")
     else:
-        ok("조작 설명 lists A S D F Space, 1–4")
+        ok("조작 설명 lists ← ↓ → ↑ Space, 1–4")
     if "ArtSprites.Avatar" not in title_cs or "BillRent" not in title_cs:
         fail("Title/prologue does not show 파산냥 + a bill stack")
     else:
@@ -588,10 +603,15 @@ def check_project() -> None:
         fail("굿즈 홍보 타이밍 prompt missing")
     else:
         ok("Week 3 stream variable is 굿즈 홍보 타이밍")
-    if "PromoConfirmDown" not in (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8"):
-        fail("promo keys A/S D/F missing")
+    promo_bind = (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8")
+    promo_fn = promo_bind.split("PromoConfirmDown", 1)[-1].split("PromoSkipDown", 1)[0]
+    skip_fn = promo_bind.split("PromoSkipDown", 1)[-1].split("public static void QueueKind", 1)[0]
+    if "KeyCode.LeftArrow" not in promo_fn or "KeyCode.UpArrow" not in promo_fn:
+        fail("promo confirm is not Left/Up")
+    elif "KeyCode.RightArrow" not in skip_fn or "KeyCode.DownArrow" not in skip_fn:
+        fail("promo skip is not Right/Down")
     else:
-        ok("promo confirm is A/S and skip is D/F")
+        ok("promo confirm is ←/↑ and skip is →/↓")
     if "Week3Win" not in eco_cs or "goodsUnlocked" not in eco_cs:
         fail("Week 3 clear does not require goods unlocked")
     else:
@@ -1201,7 +1221,7 @@ def check_content_types() -> None:
     if "Tuning.IncomeMul" not in session_cs or "PerfectWindowMul" not in session_cs or "RollRegularKind" not in session_cs:
         fail("StreamSession does not retune chat/income/windows from the pick")
     else:
-        ok("the existing A/S/D/F stream reads the picked type")
+        ok("the existing arrow-key stream reads the picked type")
     if "contentPicked" not in save_cs or "contentPicked" not in (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8"):
         fail("save/load does not persist today's content pick")
     else:
@@ -1220,8 +1240,8 @@ def check_content_types() -> None:
         fail("Week 1 bills were retuned by content types")
     else:
         ok("Week 1–5 locked bills stay unchanged after content types")
-    if "TryEventKey" not in live_cs or "KeyCode.A" not in (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8"):
-        fail("content types replaced the A/S/D/F QTE")
+    if "TryEventKey" not in live_cs or "KeyCode.LeftArrow" not in (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8"):
+        fail("content types replaced the arrow-key QTE")
     else:
         ok("content type only retunes the existing QTE")
 

@@ -33,10 +33,10 @@ namespace BankruptVtuber
 
         public static string KeyFor(ChatKind kind) => kind switch
         {
-            ChatKind.Positive => "A",
-            ChatKind.Empathy => "S",
-            ChatKind.Laugh => "D",
-            _ => "F / Space"
+            ChatKind.Positive => "←",
+            ChatKind.Empathy => "↓",
+            ChatKind.Laugh => "→",
+            _ => "↑ / Space"
         };
 
         public static string LabelFor(ChatKind kind) => kind switch
@@ -182,7 +182,7 @@ namespace BankruptVtuber
         }
 
         /// <summary>
-        /// LiveStream QTE uses A/S/D/F/Space. Default Input Manager maps those to
+        /// LiveStream QTE uses arrows / Space. Default Input Manager maps those to
         /// Horizontal / Vertical / Submit, so a selected UI button swallows them.
         /// </summary>
         public static void LockUiInputForStream()

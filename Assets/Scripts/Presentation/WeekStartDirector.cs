@@ -118,7 +118,7 @@ namespace BankruptVtuber
             AddContentButton(StreamContentType.Reaction, 435);
             _contentRoot.gameObject.SetActive(false);
 
-            var hint = UiKit.Label(root, "Hint", "A 긍정   S 공감   D 웃음   F 감사   Space 슈퍼챗(떼면 판정)", 18, Palette.Muted, TextAnchor.LowerRight);
+            var hint = UiKit.Label(root, "Hint", "← 긍정   ↓ 공감   → 웃음   ↑ 감사   Space 슈퍼챗(떼면 판정)", 18, Palette.Muted, TextAnchor.LowerRight);
             UiKit.Layout(hint.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 16), new Vector2(620, 28));
         }
 

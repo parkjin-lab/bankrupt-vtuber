@@ -1,7 +1,7 @@
 namespace BankruptVtuber
 {
     /// <summary>
-    /// Mid-stream 콘서트 퍼포먼스 타이밍. A/S 성공, D/F 또는 시간초과는 배율 없음.
+    /// Mid-stream 콘서트 퍼포먼스 타이밍. ←/↑ 성공, →/↓ 또는 시간초과는 배율 없음.
     /// Week 5's one new stream variable.
     /// </summary>
     public class ConcertPerformanceState
