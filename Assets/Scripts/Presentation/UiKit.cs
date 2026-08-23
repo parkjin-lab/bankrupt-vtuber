@@ -181,9 +181,18 @@ namespace BankruptVtuber
             go.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
         }
 
+        static UnityEngine.EventSystems.EventSystem _lockedEs;
+        static UnityEngine.EventSystems.StandaloneInputModule _lockedModule;
+        static string _lockedHorizontal = "Horizontal";
+        static string _lockedVertical = "Vertical";
+        static string _lockedSubmit = "Submit";
+        static string _lockedCancel = "Cancel";
+        static bool _lockedNav = true;
+        static bool _streamInputLocked;
+
         /// <summary>
-        /// LiveStream QTE uses arrows / Space. Default Input Manager maps those to
-        /// Horizontal / Vertical / Submit, so a selected UI button swallows them.
+        /// Keep StandaloneInputModule on so pad clicks work. Point its axes at unused
+        /// names and drop navigation so arrows / Space / A-D are not Submit/Horizontal.
         /// </summary>
         public static void LockUiInputForStream()
         {
@@ -192,11 +201,49 @@ namespace BankruptVtuber
                 es = UnityEngine.Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>();
             if (es == null)
                 return;
+            var module = es.GetComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+            if (!_streamInputLocked)
+            {
+                _lockedEs = es;
+                _lockedModule = module;
+                _lockedNav = es.sendNavigationEvents;
+                if (module != null)
+                {
+                    _lockedHorizontal = module.horizontalAxis;
+                    _lockedVertical = module.verticalAxis;
+                    _lockedSubmit = module.submitButton;
+                    _lockedCancel = module.cancelButton;
+                }
+                _streamInputLocked = true;
+            }
             es.sendNavigationEvents = false;
             es.SetSelectedGameObject(null);
-            var module = es.GetComponent<UnityEngine.EventSystems.StandaloneInputModule>();
-            if (module != null)
-                module.enabled = false;
+            if (module == null)
+                return;
+            module.horizontalAxis = "Disabled";
+            module.verticalAxis = "Disabled";
+            module.submitButton = "Disabled";
+            module.cancelButton = "Disabled";
+            module.enabled = true;
+        }
+
+        public static void UnlockUiInputForStream()
+        {
+            if (!_streamInputLocked)
+                return;
+            if (_lockedEs != null)
+                _lockedEs.sendNavigationEvents = _lockedNav;
+            if (_lockedModule != null)
+            {
+                _lockedModule.horizontalAxis = _lockedHorizontal;
+                _lockedModule.verticalAxis = _lockedVertical;
+                _lockedModule.submitButton = _lockedSubmit;
+                _lockedModule.cancelButton = _lockedCancel;
+                _lockedModule.enabled = true;
+            }
+            _lockedEs = null;
+            _lockedModule = null;
+            _streamInputLocked = false;
         }
 
         public static void EnsureCamera(Color bg)

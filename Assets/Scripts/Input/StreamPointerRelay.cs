@@ -6,8 +6,8 @@ using UnityEngine.UI;
 namespace BankruptVtuber
 {
     /// <summary>
-    /// Pointer/touch for LiveStream while StandaloneInputModule is disabled.
-    /// Uses this canvas GraphicRaycaster only — no UI navigation.
+    /// Fallback pointer/touch if StandaloneInputModule is off.
+    /// When the module is on, EventSystem delivers IPointerDownHandler instead.
     /// </summary>
     public class StreamPointerRelay : MonoBehaviour
     {
@@ -21,8 +21,20 @@ namespace BankruptVtuber
             _raycaster = GetComponent<GraphicRaycaster>();
         }
 
+        bool EventSystemOwnsPointer()
+        {
+            var es = EventSystem.current;
+            if (es == null)
+                return false;
+            var module = es.GetComponent<StandaloneInputModule>();
+            return module != null && module.enabled && module.IsActive();
+        }
+
         void Update()
         {
+            if (EventSystemOwnsPointer())
+                return;
+
             if (UnityEngine.Input.touchCount > 0)
             {
                 for (int i = 0; i < UnityEngine.Input.touchCount; i++)

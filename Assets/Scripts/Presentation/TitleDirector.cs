@@ -121,6 +121,7 @@ namespace BankruptVtuber
                 "↑     감사\n" +
                 "Space / Enter  슈퍼챗 (떼면 한 번 판정)\n" +
                 "1–4    방송 중 이벤트\n" +
+                "A/S/D/F · WASD  같은 판정\n" +
                 "화면 버튼   긍정/공감/웃음/감사";
             var keys = UiKit.Label(panel, "Keys", body, 28, Palette.PastelDim, TextAnchor.UpperLeft);
             UiKit.Layout(keys.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -20), new Vector2(-80, -90));

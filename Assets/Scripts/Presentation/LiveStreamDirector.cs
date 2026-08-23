@@ -39,6 +39,10 @@ namespace BankruptVtuber
         Text _concertTimer;
         readonly Image[] _eventKeys = new Image[4];
         readonly Text[] _eventKeyLabels = new Text[4];
+        readonly StreamPadButton[] _lanePads = new StreamPadButton[5];
+        readonly StreamPadButton[] _eventPads = new StreamPadButton[4];
+        Text _echo;
+        float _echoFlash;
         Image _tensionFill;
         Image _hypeFlash;
         AudioSource _audio;
@@ -65,6 +69,11 @@ namespace BankruptVtuber
             _ok = Beep(880, 0.07f);
             _bad = Beep(180, 0.11f);
             _sc = Beep(1320, 0.14f);
+        }
+
+        void OnDestroy()
+        {
+            UiKit.UnlockUiInputForStream();
         }
 
         void Start()
@@ -108,39 +117,65 @@ namespace BankruptVtuber
 
             float dt = Time.deltaTime;
             _session.Tick(dt);
+            if (UnityEngine.EventSystems.EventSystem.current != null)
+                UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null);
 
             if (_session.EventActive)
             {
                 if (StreamBindings.EventKeyPressed(out int idx))
+                {
+                    Echo($"입력됨 {idx}", EventPad(idx));
                     _session.TryEventKey(idx);
+                }
                 StreamBindings.DiscardLaneQueue();
             }
             else if (_session.PromoActive)
             {
                 if (StreamBindings.PromoConfirmDown())
+                {
+                    Echo("입력됨 홍보");
                     _session.TryPromo(true);
+                }
                 else if (StreamBindings.PromoSkipDown())
+                {
+                    Echo("입력됨 넘김");
                     _session.TryPromo(false);
+                }
                 StreamBindings.DiscardLaneQueue();
             }
             else if (_session.LineActive)
             {
                 if (StreamBindings.PromoConfirmDown())
+                {
+                    Echo("입력됨 멘트");
                     _session.TryLine(true);
+                }
                 else if (StreamBindings.PromoSkipDown())
+                {
+                    Echo("입력됨 넘김");
                     _session.TryLine(false);
+                }
                 StreamBindings.DiscardLaneQueue();
             }
             else if (_session.ConcertActive)
             {
                 if (StreamBindings.PromoConfirmDown())
+                {
+                    Echo("입력됨 퍼포먼스");
                     _session.TryConcert(true);
+                }
                 else if (StreamBindings.PromoSkipDown())
+                {
+                    Echo("입력됨 넘김");
                     _session.TryConcert(false);
+                }
                 StreamBindings.DiscardLaneQueue();
             }
             else if (StreamBindings.TryConsumeKind(out var kind, out var hold))
+            {
+                Echo($"입력됨 {Palette.LabelFor(kind)}", LanePad(kind));
                 _session.TryHit(kind, _session.Elapsed, hold);
+            }
 
             MaybeSettleSponsorLine();
 
@@ -184,6 +219,13 @@ namespace BankruptVtuber
             var jc = _judge.color;
             jc.a = _judgeFlash;
             _judge.color = jc;
+            _echoFlash = Mathf.MoveTowards(_echoFlash, 0f, dt * 1.6f);
+            if (_echo != null)
+            {
+                var ec = _echo.color;
+                ec.a = _echoFlash;
+                _echo.color = ec;
+            }
             var sc = _stub.color;
             sc.a = Mathf.MoveTowards(sc.a, 0f, dt * 0.7f);
             _stub.color = sc;
@@ -251,13 +293,22 @@ namespace BankruptVtuber
         {
             var canvas = UiKit.CreateCanvas("LiveCanvas", transform);
             canvas.gameObject.AddComponent<StreamPointerRelay>();
-            var root = canvas.transform;
+            var canvasRoot = canvas.transform;
 
-            UiKit.Image(root, "Wash", Palette.Studio);
-            UiKit.Stretch(root.Find("Wash") as RectTransform);
+            UiKit.Image(canvasRoot, "Wash", Palette.Studio);
+            UiKit.Stretch(canvasRoot.Find("Wash") as RectTransform);
+
+            var safe = UiKit.Panel(canvasRoot, "Safe", new Color(0, 0, 0, 0));
+            UiKit.Stretch(safe);
+            var safeImg = safe.GetComponent<Image>();
+            if (safeImg != null)
+                safeImg.raycastTarget = false;
+            safe.gameObject.AddComponent<StreamSafeArea>();
+            var root = safe;
 
             _hypeFlash = UiKit.Image(root, "HypeFlash", new Color(1f, 0.82f, 0.25f, 0f));
             UiKit.Stretch(_hypeFlash.rectTransform);
+            _hypeFlash.raycastTarget = false;
 
             var top = UiKit.Panel(root, "Top", new Color(0.08f, 0.04f, 0.1f, 0.78f));
             UiKit.Layout(top, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(0, 86));
@@ -289,24 +340,32 @@ namespace BankruptVtuber
             var bottom = UiKit.Panel(root, "Bottom", new Color(0.08f, 0.04f, 0.1f, 0.82f));
             UiKit.Layout(bottom, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 200));
 
-            _combo = UiKit.Label(bottom, "Combo", "COMBO 0", 28, Palette.Pastel, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UiKit.Layout(_combo.rectTransform, new Vector2(0, 0.72f), new Vector2(0.42f, 1), new Vector2(0, 1), new Vector2(28, -6), new Vector2(0, 44));
+            _combo = UiKit.Label(bottom, "Combo", "COMBO 0", 22, Palette.Pastel, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_combo.rectTransform, new Vector2(0, 0.70f), new Vector2(0.55f, 1), new Vector2(0, 1), new Vector2(12, -4), new Vector2(0, 36));
 
             var tensionBg = UiKit.Image(bottom, "TensionBg", new Color(1, 1, 1, 0.12f));
-            UiKit.Layout(tensionBg.rectTransform, new Vector2(0, 0.58f), new Vector2(0.38f, 0.70f), new Vector2(0, 0.5f), new Vector2(28, 0), new Vector2(0, 0));
+            UiKit.Layout(tensionBg.rectTransform, new Vector2(0, 0.62f), new Vector2(0.40f, 0.70f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(0, 0));
             _tensionFill = UiKit.Image(tensionBg.transform, "Fill", Palette.Troll);
             UiKit.Stretch(_tensionFill.rectTransform);
-            var tlab = UiKit.Label(bottom, "TensionL", "텐션 (미스 스트릭)", 14, Palette.Muted, TextAnchor.LowerLeft);
-            UiKit.Layout(tlab.rectTransform, new Vector2(0, 0.48f), new Vector2(0.38f, 0.58f), new Vector2(0, 0), new Vector2(28, 0), Vector2.zero);
+            var tlab = UiKit.Label(bottom, "TensionL", "텐션 (미스 스트릭)", 12, Palette.Muted, TextAnchor.LowerLeft);
+            UiKit.Layout(tlab.rectTransform, new Vector2(0, 0.54f), new Vector2(0.40f, 0.62f), new Vector2(0, 0), new Vector2(12, 0), Vector2.zero);
 
-            var keys = UiKit.Label(bottom, "Keys", "← 긍정   ↓ 공감   → 웃음   ↑ 감사   Space/Enter 슈퍼챗   이벤트 1–4   홍보 ←↑ / →↓", 16, Palette.PastelDim, TextAnchor.MiddleLeft);
-            UiKit.Layout(keys.rectTransform, new Vector2(0.42f, 0.72f), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-24, -8), new Vector2(0, 40));
+            var keys = UiKit.Label(bottom, "Keys", "←↓→↑  ·  A/S/D/F  ·  WASD  ·  Space 슈퍼챗  ·  1–4 이벤트", 14, Palette.PastelDim, TextAnchor.MiddleLeft);
+            UiKit.Layout(keys.rectTransform, new Vector2(0.42f, 0.70f), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-12, -4), new Vector2(0, 36));
 
-            AddKindPad(bottom, ChatKind.Positive, -420f);
-            AddKindPad(bottom, ChatKind.Empathy, -210f);
-            AddKindPad(bottom, ChatKind.Laugh, 0f);
-            AddKindPad(bottom, ChatKind.Thanks, 210f);
-            AddPadButton(bottom, "슈퍼챗", Palette.Gold, 420f, StreamPadButton.Mode.Superchat);
+            _echo = UiKit.Label(bottom, "Echo", "", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_echo.rectTransform, new Vector2(0, 0.54f), new Vector2(1, 0.70f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+
+            var padRow = UiKit.Panel(bottom, "PadRow", new Color(0, 0, 0, 0));
+            UiKit.Layout(padRow, new Vector2(0, 0), new Vector2(1, 0.54f), new Vector2(0.5f, 0), Vector2.zero, Vector2.zero);
+            var padRowImg = padRow.GetComponent<Image>();
+            if (padRowImg != null)
+                padRowImg.raycastTarget = false;
+            _lanePads[0] = AddColumnPad(padRow, 0, 5, "긍정", Palette.ForKind(ChatKind.Positive), StreamPadButton.Mode.Kind, ChatKind.Positive);
+            _lanePads[1] = AddColumnPad(padRow, 1, 5, "공감", Palette.ForKind(ChatKind.Empathy), StreamPadButton.Mode.Kind, ChatKind.Empathy);
+            _lanePads[2] = AddColumnPad(padRow, 2, 5, "웃음", Palette.ForKind(ChatKind.Laugh), StreamPadButton.Mode.Kind, ChatKind.Laugh);
+            _lanePads[3] = AddColumnPad(padRow, 3, 5, "감사", Palette.ForKind(ChatKind.Thanks), StreamPadButton.Mode.Kind, ChatKind.Thanks);
+            _lanePads[4] = AddColumnPad(padRow, 4, 5, "슈퍼챗", Palette.Gold, StreamPadButton.Mode.Superchat);
 
             _judge = UiKit.Label(root, "Judge", "", 64, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_judge.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(520, 80));
@@ -328,16 +387,18 @@ namespace BankruptVtuber
             _eventBody = UiKit.Label(_eventRoot, "EBody", "", 20, Palette.Pastel, TextAnchor.UpperCenter);
             UiKit.Layout(_eventBody.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -64), new Vector2(-28, 52));
             _eventTimer = UiKit.Label(_eventRoot, "ETimer", "", 18, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_eventTimer.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 16), new Vector2(0, 24));
+            UiKit.Layout(_eventTimer.rectTransform, new Vector2(0, 0.28f), new Vector2(1, 0.36f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            var eventRow = UiKit.Panel(_eventRoot, "EKeys", new Color(0, 0, 0, 0));
+            UiKit.Layout(eventRow, new Vector2(0, 0), new Vector2(1, 0.28f), new Vector2(0.5f, 0), Vector2.zero, Vector2.zero);
+            var eventRowImg = eventRow.GetComponent<Image>();
+            if (eventRowImg != null)
+                eventRowImg.raycastTarget = false;
             for (int i = 0; i < 4; i++)
             {
-                var keyImg = UiKit.Image(_eventRoot, "EKey" + (i + 1), new Color(1, 1, 1, 0.12f));
-                UiKit.Layout(keyImg.rectTransform, new Vector2(0.5f, 0.38f), new Vector2(0.5f, 0.38f), new Vector2(0.5f, 0.5f), new Vector2((i - 1.5f) * 110f, 0), new Vector2(88, 88));
-                var lab = UiKit.Label(keyImg.transform, "L", (i + 1).ToString(), 36, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
-                UiKit.Stretch(lab.rectTransform);
-                StreamPadButton.Attach(keyImg.gameObject, StreamPadButton.Mode.Event, eventIndex: i + 1);
-                _eventKeys[i] = keyImg;
-                _eventKeyLabels[i] = lab;
+                var pad = AddColumnPad(eventRow, i, 4, (i + 1).ToString(), new Color(1, 1, 1, 0.18f), StreamPadButton.Mode.Event, eventIndex: i + 1);
+                _eventPads[i] = pad;
+                _eventKeys[i] = pad.GetComponent<Image>();
+                _eventKeyLabels[i] = pad.transform.Find("L").GetComponent<Text>();
             }
             _eventRoot.gameObject.SetActive(false);
             _eventDim.gameObject.SetActive(false);
@@ -376,39 +437,67 @@ namespace BankruptVtuber
             _concertRoot.gameObject.SetActive(false);
         }
 
-        void AddKindPad(Transform parent, ChatKind kind, float x)
-        {
-            AddPadButton(parent, Palette.LabelFor(kind), Palette.ForKind(kind), x, StreamPadButton.Mode.Kind, kind);
-        }
-
-        void AddPadButton(
+        StreamPadButton AddColumnPad(
             Transform parent,
+            int index,
+            int count,
             string label,
             Color color,
-            float x,
             StreamPadButton.Mode mode,
-            ChatKind kind = ChatKind.Positive)
+            ChatKind kind = ChatKind.Positive,
+            int eventIndex = 0)
         {
             var img = UiKit.Image(parent, "Pad" + label, new Color(color.r, color.g, color.b, 0.92f));
-            UiKit.Layout(img.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(x, 16), new Vector2(188, 112));
-            var cap = UiKit.Label(img.transform, "L", label, 28, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            float a = index / (float)count;
+            float b = (index + 1) / (float)count;
+            img.rectTransform.anchorMin = new Vector2(a, 0f);
+            img.rectTransform.anchorMax = new Vector2(b, 1f);
+            img.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            img.rectTransform.offsetMin = new Vector2(4f, 4f);
+            img.rectTransform.offsetMax = new Vector2(-4f, -4f);
+            var cap = UiKit.Label(img.transform, "L", label, count >= 5 ? 22 : 28, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Stretch(cap.rectTransform);
-            StreamPadButton.Attach(img.gameObject, mode, kind);
+            return StreamPadButton.Attach(img.gameObject, mode, kind, eventIndex);
         }
 
         void AddOverlayChoice(Transform parent, string confirm, string skip)
         {
-            var yes = UiKit.Image(parent, "YesPad", Palette.PinkDeep);
-            UiKit.Layout(yes.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-130, 20), new Vector2(220, 52));
-            var yesL = UiKit.Label(yes.transform, "L", confirm, 20, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Stretch(yesL.rectTransform);
-            StreamPadButton.Attach(yes.gameObject, StreamPadButton.Mode.PromoConfirm);
+            var row = UiKit.Panel(parent, "ChoiceRow", new Color(0, 0, 0, 0));
+            UiKit.Layout(row, new Vector2(0, 0), new Vector2(1, 0.24f), new Vector2(0.5f, 0), Vector2.zero, Vector2.zero);
+            var rowImg = row.GetComponent<Image>();
+            if (rowImg != null)
+                rowImg.raycastTarget = false;
+            AddColumnPad(row, 0, 2, confirm, Palette.PinkDeep, StreamPadButton.Mode.PromoConfirm);
+            AddColumnPad(row, 1, 2, skip, Palette.Troll, StreamPadButton.Mode.PromoSkip);
+        }
 
-            var no = UiKit.Image(parent, "NoPad", Palette.Troll);
-            UiKit.Layout(no.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(130, 20), new Vector2(220, 52));
-            var noL = UiKit.Label(no.transform, "L", skip, 20, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Stretch(noL.rectTransform);
-            StreamPadButton.Attach(no.gameObject, StreamPadButton.Mode.PromoSkip);
+        void Echo(string text, StreamPadButton pad = null)
+        {
+            if (_echo != null)
+            {
+                _echo.text = text;
+                var c = _echo.color;
+                c.a = 1f;
+                _echo.color = c;
+            }
+            _echoFlash = 1f;
+            pad?.Flash();
+        }
+
+        StreamPadButton LanePad(ChatKind kind)
+        {
+            int i = (int)kind;
+            if (i >= 0 && i < 4)
+                return _lanePads[i];
+            return _lanePads[4];
+        }
+
+        StreamPadButton EventPad(int index)
+        {
+            int i = index - 1;
+            if (i >= 0 && i < _eventPads.Length)
+                return _eventPads[i];
+            return null;
         }
 
         void MaybeSettleSponsorLine()

@@ -11,8 +11,8 @@ namespace BankruptVtuber
         static bool _padCharging;
 
         /// <summary>
-        /// Arrow tap once. Space/Enter superchat commits once on release (hold-to-charge).
-        /// Holding Space must not poll Thanks every frame. On-screen pad queues the same path.
+        /// Arrows are the documented map. A/S/D/F and WASD are aliases.
+        /// Space/Enter superchat commits once on release (hold-to-charge).
         /// </summary>
         public static bool TryConsumeKind(out ChatKind kind, out bool hold)
         {
@@ -26,28 +26,27 @@ namespace BankruptVtuber
             }
 
             hold = false;
-            if (UnityEngine.Input.GetKeyDown(KeyCode.LeftArrow))
+            if (PositiveDown())
             {
                 kind = ChatKind.Positive;
                 return true;
             }
-            if (UnityEngine.Input.GetKeyDown(KeyCode.DownArrow))
+            if (EmpathyDown())
             {
                 kind = ChatKind.Empathy;
                 return true;
             }
-            if (UnityEngine.Input.GetKeyDown(KeyCode.RightArrow))
+            if (LaughDown())
             {
                 kind = ChatKind.Laugh;
                 return true;
             }
-            if (UnityEngine.Input.GetKeyDown(KeyCode.UpArrow))
+            if (ThanksDown())
             {
                 kind = ChatKind.Thanks;
                 return true;
             }
 
-            // One resolve per press: charge while held, commit on release.
             if (UnityEngine.Input.GetKeyUp(KeyCode.Space)
                 || UnityEngine.Input.GetKeyUp(KeyCode.Return)
                 || UnityEngine.Input.GetKeyUp(KeyCode.KeypadEnter))
@@ -102,7 +101,6 @@ namespace BankruptVtuber
             UnityEngine.Input.GetKeyDown(KeyCode.Space) ||
             UnityEngine.Input.GetKeyDown(KeyCode.Return);
 
-        /// <summary>굿즈/멘트/콘서트 confirm (Left / Up). Distinct from judgement while the prompt is up.</summary>
         public static bool PromoConfirmDown()
         {
             if (_queuedPromo > 0)
@@ -111,10 +109,12 @@ namespace BankruptVtuber
                 return true;
             }
             return UnityEngine.Input.GetKeyDown(KeyCode.LeftArrow)
-                || UnityEngine.Input.GetKeyDown(KeyCode.UpArrow);
+                || UnityEngine.Input.GetKeyDown(KeyCode.UpArrow)
+                || UnityEngine.Input.GetKeyDown(KeyCode.A)
+                || UnityEngine.Input.GetKeyDown(KeyCode.W)
+                || UnityEngine.Input.GetKeyDown(KeyCode.F);
         }
 
-        /// <summary>굿즈/멘트/콘서트 skip (Right / Down).</summary>
         public static bool PromoSkipDown()
         {
             if (_queuedPromo < 0)
@@ -123,7 +123,9 @@ namespace BankruptVtuber
                 return true;
             }
             return UnityEngine.Input.GetKeyDown(KeyCode.RightArrow)
-                || UnityEngine.Input.GetKeyDown(KeyCode.DownArrow);
+                || UnityEngine.Input.GetKeyDown(KeyCode.DownArrow)
+                || UnityEngine.Input.GetKeyDown(KeyCode.D)
+                || UnityEngine.Input.GetKeyDown(KeyCode.S);
         }
 
         public static void QueueKind(ChatKind kind, bool hold = false)
@@ -163,5 +165,22 @@ namespace BankruptVtuber
             _queuedHold = false;
             _padCharging = false;
         }
+
+        static bool PositiveDown() =>
+            UnityEngine.Input.GetKeyDown(KeyCode.LeftArrow)
+            || UnityEngine.Input.GetKeyDown(KeyCode.A);
+
+        static bool EmpathyDown() =>
+            UnityEngine.Input.GetKeyDown(KeyCode.DownArrow)
+            || UnityEngine.Input.GetKeyDown(KeyCode.S);
+
+        static bool LaughDown() =>
+            UnityEngine.Input.GetKeyDown(KeyCode.RightArrow)
+            || UnityEngine.Input.GetKeyDown(KeyCode.D);
+
+        static bool ThanksDown() =>
+            UnityEngine.Input.GetKeyDown(KeyCode.UpArrow)
+            || UnityEngine.Input.GetKeyDown(KeyCode.F)
+            || UnityEngine.Input.GetKeyDown(KeyCode.W);
     }
 }

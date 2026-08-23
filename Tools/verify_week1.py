@@ -86,12 +86,13 @@ def check_project() -> None:
         ok("built-in 2D / no SRP asset")
 
     bindings = (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8")
-    for key in ("KeyCode.LeftArrow", "KeyCode.DownArrow", "KeyCode.RightArrow", "KeyCode.UpArrow", "KeyCode.Space", "KeyCode.Return", "KeyCode.Alpha1"):
+    for key in ("KeyCode.LeftArrow", "KeyCode.DownArrow", "KeyCode.RightArrow", "KeyCode.UpArrow", "KeyCode.Space", "KeyCode.Return", "KeyCode.Alpha1", "KeyCode.A", "KeyCode.S", "KeyCode.D", "KeyCode.F", "KeyCode.W"):
         if key not in bindings:
             fail(f"StreamBindings missing {key}")
-    if "GetKeyDown(KeyCode.A)" in bindings or "GetKeyDown(KeyCode.S)" in bindings or "GetKeyDown(KeyCode.D)" in bindings or "GetKeyDown(KeyCode.F)" in bindings:
-        fail("A/S/D/F is still the primary stream map")
-    ok("←↓→↑ / Space / Enter / 1–4 bindings present")
+    if "GetKeyDown(KeyCode.LeftArrow)" not in bindings or "PositiveDown" not in bindings:
+        fail("arrows are no longer the documented lane map")
+    else:
+        ok("←↓→↑ documented, A/S/D/F and WASD aliases, Space / Enter / 1–4 present")
 
     consume = bindings.split("TryConsumeKind", 1)[-1]
     consume = consume.split("public static bool SuperchatCharging", 1)[0]
@@ -106,34 +107,52 @@ def check_project() -> None:
     else:
         ok("Space superchat commits once (GetKeyUp/GetKeyDown)")
     for tap in ("GetKeyDown(KeyCode.LeftArrow)", "GetKeyDown(KeyCode.DownArrow)", "GetKeyDown(KeyCode.RightArrow)", "GetKeyDown(KeyCode.UpArrow)"):
-        if tap not in consume:
+        if tap not in bindings:
             fail(f"regular lane missing {tap}")
-    ok("arrow keys stay GetKeyDown")
+    if "GetKeyDown(KeyCode.A)" not in bindings or "GetKeyDown(KeyCode.W)" not in bindings:
+        fail("A/S/D/F / WASD aliases missing")
+    ok("arrow keys stay GetKeyDown; A/S/D/F and WASD alias the lanes")
 
     uikit_cs = (ROOT / "Assets/Scripts/Presentation/UiKit.cs").read_text(encoding="utf-8")
     live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
     live_awake = live_cs.split("void Awake()", 1)[-1].split("void Start()", 1)[0]
+    lock_fn = uikit_cs.split("LockUiInputForStream", 1)[-1].split("UnlockUiInputForStream", 1)[0]
     if "LockUiInputForStream" not in uikit_cs:
         fail("UiKit missing LockUiInputForStream")
-    elif "sendNavigationEvents = false" not in uikit_cs or "SetSelectedGameObject(null)" not in uikit_cs or "StandaloneInputModule" not in uikit_cs.split("LockUiInputForStream", 1)[-1]:
-        fail("LockUiInputForStream does not disable EventSystem navigation / StandaloneInputModule")
+    elif "sendNavigationEvents = false" not in lock_fn or "SetSelectedGameObject(null)" not in lock_fn:
+        fail("LockUiInputForStream does not drop EventSystem navigation")
+    elif "module.enabled = false" in lock_fn or "enabled = false" in lock_fn:
+        fail("LockUiInputForStream still disables StandaloneInputModule")
+    elif "horizontalAxis" not in lock_fn or "Disabled" not in lock_fn:
+        fail("LockUiInputForStream does not retarget module axes to unused names")
+    elif "UnlockUiInputForStream" not in uikit_cs or "UnlockUiInputForStream" not in live_cs:
+        fail("stream lock is never unlocked for later Submit screens")
     elif "LockUiInputForStream" not in live_awake or live_awake.find("EnsureEventSystem") > live_awake.find("LockUiInputForStream"):
         fail("LiveStreamDirector.Awake does not lock UI input after EnsureEventSystem")
     else:
-        ok("LiveStream locks EventSystem so arrow keys / Space reach TryConsumeKind")
+        ok("LiveStream keeps EventSystem clicks and stops navigation from eating keys")
 
     pad_cs = (ROOT / "Assets/Scripts/Input/StreamPadButton.cs").read_text(encoding="utf-8") if (ROOT / "Assets/Scripts/Input/StreamPadButton.cs").exists() else ""
     relay_cs = (ROOT / "Assets/Scripts/Input/StreamPointerRelay.cs").read_text(encoding="utf-8") if (ROOT / "Assets/Scripts/Input/StreamPointerRelay.cs").exists() else ""
+    safe_cs = (ROOT / "Assets/Scripts/Presentation/StreamSafeArea.cs").read_text(encoding="utf-8") if (ROOT / "Assets/Scripts/Presentation/StreamSafeArea.cs").exists() else ""
     if "IPointerDownHandler" not in pad_cs or "QueueKind" not in pad_cs:
         fail("StreamPadButton does not tap the same TryHit path")
     elif "GraphicRaycaster" not in relay_cs or "StandaloneInputModule" not in relay_cs:
         fail("StreamPointerRelay does not raycast without StandaloneInputModule")
+    elif "EventSystemOwnsPointer" not in relay_cs:
+        fail("StreamPointerRelay does not yield to EventSystem clicks")
+    elif "safeArea" not in safe_cs or "StreamSafeArea" not in live_cs:
+        fail("LiveStream pads are not lifted by Screen.safeArea")
+    elif "AddColumnPad" not in live_cs or "index / (float)count" not in live_cs:
+        fail("lane pads are not a full-width equal-column row")
+    elif "입력됨" not in live_cs:
+        fail("accepted input has no on-screen echo")
     elif "긍정" not in live_cs or "공감" not in live_cs or "웃음" not in live_cs or "감사" not in live_cs or "슈퍼챗" not in live_cs:
         fail("LiveStream missing on-screen 긍정/공감/웃음/감사/슈퍼챗 pad")
     elif "StreamPointerRelay" not in live_cs or "StreamPadButton" not in live_cs:
         fail("LiveStream does not wire the touch pad")
     else:
-        ok("LiveStream on-screen pad calls the same hit path without UI navigation")
+        ok("LiveStream pads fit the canvas, stay clickable, and echo accepted input")
 
     run_cs = (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8")
     begin = run_cs.split("BeginNextDay", 1)[-1]

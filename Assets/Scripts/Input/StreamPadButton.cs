@@ -5,8 +5,8 @@ using UnityEngine.UI;
 namespace BankruptVtuber
 {
     /// <summary>
-    /// LiveStream tap target. Works via IPointerDownHandler when an input module
-    /// is present, and via StreamPointerRelay when StandaloneInputModule is off.
+    /// LiveStream tap target. EventSystem pointer (StandaloneInputModule on) is primary;
+    /// StreamPointerRelay is a fallback if the module is off.
     /// </summary>
     public class StreamPadButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     {
@@ -23,12 +23,39 @@ namespace BankruptVtuber
         public ChatKind kind;
         public int eventIndex;
 
+        Image _img;
+        Color _base = Color.white;
+        float _flash;
+
+        void Awake()
+        {
+            _img = GetComponent<Image>();
+            if (_img != null)
+                _base = _img.color;
+        }
+
+        void Update()
+        {
+            if (_img == null || _flash <= 0f)
+                return;
+            _flash -= Time.unscaledDeltaTime;
+            _img.color = Color.Lerp(_base, Color.white, Mathf.Clamp01(_flash / 0.16f));
+        }
+
         public void OnPointerDown(PointerEventData eventData) => Press();
 
         public void OnPointerUp(PointerEventData eventData) => Release();
 
+        public void Flash()
+        {
+            if (_img != null)
+                _base = _img.color;
+            _flash = 0.16f;
+        }
+
         public void Press()
         {
+            Flash();
             switch (mode)
             {
                 case Mode.Kind:
@@ -69,7 +96,21 @@ namespace BankruptVtuber
             pad.eventIndex = eventIndex;
             var img = go.GetComponent<Image>();
             if (img != null)
+            {
                 img.raycastTarget = true;
+                pad._img = img;
+                pad._base = img.color;
+            }
+
+            var btn = go.GetComponent<Button>();
+            if (btn == null)
+                btn = go.AddComponent<Button>();
+            btn.targetGraphic = img;
+            btn.transition = Selectable.Transition.None;
+            var nav = btn.navigation;
+            nav.mode = Navigation.Mode.None;
+            btn.navigation = nav;
+            btn.onClick.RemoveAllListeners();
             return pad;
         }
     }
