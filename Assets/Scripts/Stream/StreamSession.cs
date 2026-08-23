@@ -222,7 +222,7 @@ namespace BankruptVtuber
                 if (IncomeShieldLeft > 0f && ShieldViewers > viewersForIncome)
                     viewersForIncome = ShieldViewers;
                 float mul = IncomeMultiplier;
-                IncomeRemainder += Math.Floor(viewersForIncome) * Balance.incomePerViewerPerSec * mul * dt;
+                IncomeRemainder += MathF.Floor(viewersForIncome) * Balance.incomePerViewerPerSec * mul * dt;
                 int gained = (int)Math.Floor(IncomeRemainder);
                 if (gained > 0)
                 {
