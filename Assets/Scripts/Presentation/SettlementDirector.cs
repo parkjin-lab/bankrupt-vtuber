@@ -281,6 +281,9 @@ namespace BankruptVtuber
                     ? ""
                     : $"\n{FandomRules.SuperfanLine(run, gm.Fandom)}") +
                 (FandomRules.MustResolveConflict(run) ? "\n콘텐츠 편중 갈등 — 오늘 안에 고르세요." : "") +
+                (ContentRules.HasPick(run)
+                    ? $"\n콘텐츠 {ContentRules.DisplayName(gm.Content, run.contentPicked)}"
+                    : "") +
                 $"\n\n현금 {EconomyRules.FormatWon(run.cash)}     부채 {EconomyRules.FormatWon(run.debt)}     멘탈 {run.mental}";
 
             run.lastOutcome = EconomyRules.Evaluate(run, b, w2, w3, w4, w5);

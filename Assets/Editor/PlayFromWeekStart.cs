@@ -82,6 +82,12 @@ namespace BankruptVtuber.Editor
                 missing = true;
             }
 
+            if (Resources.Load<BankruptVtuber.ContentBalance>("Balance/ContentBalance") == null)
+            {
+                Debug.LogError("[파산 버튜버] missing Resources/Balance/ContentBalance");
+                missing = true;
+            }
+
             if (!BankruptVtuber.RunSave.DummyRoundTrip())
             {
                 Debug.LogError("[파산 버튜버] save dummy roundtrip failed");

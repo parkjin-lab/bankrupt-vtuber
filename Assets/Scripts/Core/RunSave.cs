@@ -155,7 +155,8 @@ namespace BankruptVtuber
                 && dst.extraRolls[0].Amount == 7000
                 && dst.npcRankingScore != null
                 && dst.npcRankingScore.Length == 3
-                && dst.npcRankingScore[1] == 360;
+                && dst.npcRankingScore[1] == 360
+                && dst.contentPicked == StreamContentType.Game;
         }
 
         public static GameRunState MakeDummy()
@@ -196,6 +197,8 @@ namespace BankruptVtuber
             run.concertPlayed = false;
             run.lastEnding = EndingKind.None;
             run.lastOutcome = WeekOutcome.Continue;
+            run.contentPicked = StreamContentType.Game;
+            run.contentMentalAppliedThisDay = false;
             run.ApplyExtraRolls(new[]
             {
                 new ExtraThreatRoll("gear_break", "장비 고장", 7000, "Art/bill_gear", new Color(1f, 0.42f, 0.42f))
@@ -339,7 +342,9 @@ namespace BankruptVtuber
                 lastMinjunLeft = run.lastMinjunLeft,
                 lastHaeunLeft = run.lastHaeunLeft,
                 lastHadSuccessfulSuperchat = run.lastHadSuccessfulSuperchat,
-                lastMissStreak = run.lastMissStreak
+                lastMissStreak = run.lastMissStreak,
+                contentPicked = (int)run.contentPicked,
+                contentMentalAppliedThisDay = run.contentMentalAppliedThisDay
             };
             return data;
         }
@@ -459,6 +464,8 @@ namespace BankruptVtuber
             run.lastHaeunLeft = data.lastHaeunLeft;
             run.lastHadSuccessfulSuperchat = data.lastHadSuccessfulSuperchat;
             run.lastMissStreak = data.lastMissStreak;
+            run.contentPicked = (StreamContentType)data.contentPicked;
+            run.contentMentalAppliedThisDay = data.contentMentalAppliedThisDay;
             ApplyRolls(data, run);
         }
 
@@ -663,6 +670,8 @@ namespace BankruptVtuber
             public bool lastHaeunLeft;
             public bool lastHadSuccessfulSuperchat;
             public int lastMissStreak;
+            public int contentPicked;
+            public bool contentMentalAppliedThisDay;
         }
     }
 }

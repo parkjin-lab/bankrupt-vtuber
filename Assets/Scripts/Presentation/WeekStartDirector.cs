@@ -15,6 +15,8 @@ namespace BankruptVtuber
         Text _superfans;
         RectTransform _stack;
         RectTransform _conflictRoot;
+        RectTransform _contentRoot;
+        Text _contentHud;
         Button _goLive;
         bool _ready;
 
@@ -46,7 +48,10 @@ namespace BankruptVtuber
 
         void Update()
         {
-            if (_ready && !FandomRules.MustResolveConflict(GameManager.Instance.Run) && StreamBindings.Confirm)
+            if (_ready
+                && !FandomRules.MustResolveConflict(GameManager.Instance.Run)
+                && !ContentRules.MustPick(GameManager.Instance.Run)
+                && StreamBindings.Confirm)
                 GameManager.Instance.GoLive();
         }
 
@@ -66,6 +71,8 @@ namespace BankruptVtuber
             UiKit.Layout(_fandom.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(52, -132), new Vector2(1100, 28));
             _superfans = UiKit.Label(root, "SuperfanHud", "", 18, Palette.Gold, TextAnchor.UpperLeft);
             UiKit.Layout(_superfans.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(52, -158), new Vector2(920, 26));
+            _contentHud = UiKit.Label(root, "ContentHud", "", 18, Palette.Gold, TextAnchor.UpperLeft);
+            UiKit.Layout(_contentHud.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(52, -184), new Vector2(920, 26));
 
             _cash = MoneyChip(root, "CashChip", "현금", Palette.CashGreen, new Vector2(-520, 250));
             _debt = MoneyChip(root, "DebtChip", "부채", Palette.MoneyRed, new Vector2(-180, 250));
@@ -98,6 +105,18 @@ namespace BankruptVtuber
             var style = UiKit.Button(_conflictRoot, "Style", "내 스타일대로", OnStyleConflict, Palette.Troll, Color.white);
             UiKit.Layout(style.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 56));
             _conflictRoot.gameObject.SetActive(false);
+
+            _contentRoot = UiKit.Panel(root, "ContentPick", new Color(0.14f, 0.07f, 0.16f, 0.97f));
+            UiKit.Layout(_contentRoot, new Vector2(0.5f, 0.22f), new Vector2(0.5f, 0.22f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1180, 200));
+            var pTitle = UiKit.Label(_contentRoot, "PTitle", "오늘 콘텐츠", 28, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
+            UiKit.Layout(pTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -12), new Vector2(-24, 36));
+            var pHint = UiKit.Label(_contentRoot, "PHint", "방송 전에 반드시 고르세요. 채팅 QTE는 그대로입니다.", 16, Palette.PastelDim, TextAnchor.UpperCenter);
+            UiKit.Layout(pHint.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -46), new Vector2(-24, 24));
+            AddContentButton(StreamContentType.Talk, -435);
+            AddContentButton(StreamContentType.Game, -145);
+            AddContentButton(StreamContentType.Song, 145);
+            AddContentButton(StreamContentType.Reaction, 435);
+            _contentRoot.gameObject.SetActive(false);
 
             var hint = UiKit.Label(root, "Hint", "A 긍정   S 공감   D 웃음   F 감사   Space 슈퍼챗(떼면 판정)", 18, Palette.Muted, TextAnchor.LowerRight);
             UiKit.Layout(hint.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 16), new Vector2(620, 28));
@@ -137,6 +156,49 @@ namespace BankruptVtuber
             string fans = FandomRules.SuperfanLine(run, GameManager.Instance.Fandom);
             _superfans.text = fans;
             _superfans.gameObject.SetActive(!string.IsNullOrEmpty(fans));
+            string content = ContentRules.HudLine(GameManager.Instance.Content, run);
+            _contentHud.text = content;
+            _contentHud.gameObject.SetActive(!string.IsNullOrEmpty(content));
+        }
+
+        static string ContentPickName(StreamContentType type) => type switch
+        {
+            StreamContentType.Talk => "토크",
+            StreamContentType.Game => "게임",
+            StreamContentType.Song => "노래",
+            StreamContentType.Reaction => "리액션",
+            _ => ""
+        };
+
+        void AddContentButton(StreamContentType type, float x)
+        {
+            var t = ContentRules.Tuning(GameManager.Instance != null ? GameManager.Instance.Content : null, type);
+            string name = ContentPickName(type);
+            if (string.IsNullOrEmpty(name))
+                name = t.Name;
+            string caption = $"{name}\n수입 ×{t.IncomeMul:0.##}  멘탈 −{t.MentalCost}";
+            var btn = UiKit.Button(_contentRoot, type.ToString(), caption, () => OnPickContent(type), Palette.PinkDeep, Color.white);
+            UiKit.Layout(btn.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(x, 24), new Vector2(260, 88));
+            var cap = btn.GetComponentInChildren<Text>();
+            if (cap != null)
+            {
+                cap.fontSize = 20;
+                cap.lineSpacing = 1.1f;
+            }
+        }
+
+        void OnPickContent(StreamContentType type)
+        {
+            var gm = GameManager.Instance;
+            if (gm == null || !ContentRules.Pick(gm.Run, type))
+                return;
+            gm.SaveRun();
+            _contentRoot.gameObject.SetActive(false);
+            RefreshHud();
+            _ready = true;
+            if (Week5Rules.ConcertStreamReady(gm.Run))
+                _goLive.GetComponentInChildren<Text>().text = "콘서트 방송  (Space)";
+            _goLive.gameObject.SetActive(true);
         }
 
         void OnSootheConflict()
@@ -268,10 +330,20 @@ namespace BankruptVtuber
                 }, bills.Count, bills.Count + 1);
             }
             yield return new WaitForSeconds(0.2f);
-            _ready = true;
-            if (Week5Rules.ConcertStreamReady(gm.Run))
-                _goLive.GetComponentInChildren<Text>().text = "콘서트 방송  (Space)";
-            _goLive.gameObject.SetActive(true);
+            if (ContentRules.MustPick(gm.Run))
+            {
+                _ready = false;
+                _goLive.gameObject.SetActive(false);
+                _contentRoot.gameObject.SetActive(true);
+                _log.text += "   ·   오늘 콘텐츠를 고르세요.";
+            }
+            else
+            {
+                _ready = true;
+                if (Week5Rules.ConcertStreamReady(gm.Run))
+                    _goLive.GetComponentInChildren<Text>().text = "콘서트 방송  (Space)";
+                _goLive.gameObject.SetActive(true);
+            }
         }
 
         void SpawnIncoming(Bill bill, int index, int total)

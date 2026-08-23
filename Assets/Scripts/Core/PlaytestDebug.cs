@@ -76,6 +76,8 @@ namespace BankruptVtuber
                 Debug.Log("[파산 버튜버] DEBUG F10 ignored — 콘텐츠 편중 갈등 first.");
                 return;
             }
+            if (ContentRules.MustPick(gm.Run))
+                ContentRules.Pick(gm.Run, StreamContentType.Talk);
 
             string scene = SceneManager.GetActiveScene().name;
             if (scene == SceneFlow.Settlement)
@@ -249,6 +251,7 @@ namespace BankruptVtuber
             run.retirePicked = false;
             run.ClearExtraThreat();
             FandomRules.ResetDaily(run);
+            ContentRules.ResetDaily(run);
             FandomRules.OnMorning(run, b, gm.Fandom);
         }
 
@@ -284,6 +287,8 @@ namespace BankruptVtuber
             run.lastMissStreak = 0;
             Week2Rules.AfterStream(run, AveragePeak, false, false, AverageMisses, gm.Week2);
             FandomRules.AfterStream(run, gm.Balance, gm.Fandom);
+            ContentRules.ApplyStartMental(run, gm.Content, gm.Balance);
+            ContentRules.AfterStream(run, gm.Content, gm.Fandom);
         }
 
         void EnsureBadge()

@@ -19,6 +19,8 @@ namespace BankruptVtuber
     {
         public readonly Week1Balance Balance;
         public readonly ChatCatalog Catalog;
+        public readonly ContentBalance Content;
+        public readonly ContentTuning Tuning;
         public readonly Random Rng;
 
         public float TimeLeft;
@@ -75,17 +77,29 @@ namespace BankruptVtuber
             "트롤킹", "질문봇", "달콤이", "초롱이", "빚쟁이아님", "월세공포", "이모트창"
         };
 
-        public StreamSession(Week1Balance balance, ChatCatalog catalog, int mental, float extraViewers = 0f, int? seed = null)
+        public StreamSession(
+            Week1Balance balance,
+            ChatCatalog catalog,
+            int mental,
+            float extraViewers = 0f,
+            int? seed = null,
+            ContentBalance content = null,
+            StreamContentType contentType = StreamContentType.None)
         {
             Balance = balance;
             Catalog = catalog;
+            Content = content;
+            Tuning = ContentRules.Tuning(content, contentType);
             Rng = seed.HasValue ? new Random(seed.Value) : new Random();
             TimeLeft = balance.streamSeconds;
             Viewers = balance.startingViewers + extraViewers;
             PeakViewers = Viewers;
             Mental = mental;
             _nextChatAt = 0.4f;
-            _superchatTarget = Rng.Next(balance.superchatMinCount, balance.superchatMaxCount + 1);
+            int extraSc = Tuning.ExtraSuperchat;
+            if (extraSc < 0)
+                extraSc = 0;
+            _superchatTarget = Rng.Next(balance.superchatMinCount, balance.superchatMaxCount + 1) + extraSc;
             _nextSuperchatAt = NextSuperchatDelay();
             float earliest = balance.eventEarliestSeconds;
             float latest = balance.eventLatestSeconds;
@@ -144,7 +158,8 @@ namespace BankruptVtuber
             Concert.Window = w5.concertWindowSeconds > 0.2f ? w5.concertWindowSeconds : 1.2f;
         }
 
-        public float IncomeMultiplier => StreamRules.IncomeMultiplier(PerfectCombo, HypeActive, Balance);
+        public float IncomeMultiplier =>
+            StreamRules.IncomeMultiplier(PerfectCombo, HypeActive, Balance) * Tuning.IncomeMul;
 
         public int LiveIncome => TickIncome + SuperchatIncome;
 
@@ -300,7 +315,7 @@ namespace BankruptVtuber
                 return false;
 
             best.Consumed = true;
-            var judgement = StreamRules.Judge(bestAbs, Balance);
+            var judgement = StreamRules.Judge(bestAbs, Balance, Tuning.PerfectWindowMul);
             Resolve(best, judgement);
             return true;
         }
@@ -311,15 +326,10 @@ namespace BankruptVtuber
                 return;
 
             float t = 1f - TimeLeft / Balance.streamSeconds;
-            float interval = Lerp(Balance.chatSpawnStart, Balance.chatSpawnEnd, t);
+            float interval = Lerp(Balance.chatSpawnStart, Balance.chatSpawnEnd, t) * Tuning.ChatSpawnMul;
             _nextChatAt = Elapsed + interval;
 
-            var roll = Rng.NextDouble();
-            ChatKind kind = roll < 0.50 ? ChatKind.Positive
-                : roll < 0.78 ? ChatKind.Empathy
-                : ChatKind.Laugh;
-
-            SpawnNote(kind, superchat: false, 0);
+            SpawnNote(ContentRules.RollRegularKind(Tuning, Rng), superchat: false, 0);
         }
 
         void MaybeSpawnSuperchat()
@@ -387,7 +397,16 @@ namespace BankruptVtuber
                 ref TotalMissPenaltyUsed,
                 Balance);
 
-            Viewers = StreamRules.ClampViewers(Viewers + result.ViewerDelta - result.ExtraViewerLoss, Balance);
+            float viewers = result.ViewerDelta;
+            float extraLoss = result.ExtraViewerLoss;
+            if (judgement == Judgement.Perfect)
+                viewers *= Tuning.PerfectViewerMul;
+            else if (judgement == Judgement.Miss)
+            {
+                viewers *= Tuning.MissViewerMul;
+                extraLoss *= Tuning.MissViewerMul;
+            }
+            Viewers = StreamRules.ClampViewers(Viewers + viewers - extraLoss, Balance);
             ApplyRivalSteal(judgement);
             Mental += result.MentalDelta;
             if (Mental < 0)
@@ -662,7 +681,9 @@ namespace BankruptVtuber
         float NextSuperchatDelay()
         {
             double t = Rng.NextDouble();
-            return (float)(Balance.superchatMinInterval + t * (Balance.superchatMaxInterval - Balance.superchatMinInterval));
+            float raw = (float)(Balance.superchatMinInterval + t * (Balance.superchatMaxInterval - Balance.superchatMinInterval));
+            float mul = Tuning.SuperchatIntervalMul > 0f ? Tuning.SuperchatIntervalMul : 1f;
+            return raw * mul;
         }
 
         static float Lerp(float a, float b, float t) => a + (b - a) * Clamp01(t);

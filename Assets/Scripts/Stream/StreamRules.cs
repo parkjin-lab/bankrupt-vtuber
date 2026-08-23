@@ -34,9 +34,13 @@ namespace BankruptVtuber
     /// <summary>Pure Week 1 stream rules. Safe to call from a headless simulator.</summary>
     public static class StreamRules
     {
-        public static Judgement Judge(float absDeltaSeconds, Week1Balance b)
+        public static Judgement Judge(float absDeltaSeconds, Week1Balance b) =>
+            Judge(absDeltaSeconds, b, 1f);
+
+        public static Judgement Judge(float absDeltaSeconds, Week1Balance b, float perfectWindowMul)
         {
-            if (absDeltaSeconds <= b.perfectWindow)
+            float perfect = b.perfectWindow * (perfectWindowMul > 0f ? perfectWindowMul : 1f);
+            if (absDeltaSeconds <= perfect)
                 return Judgement.Perfect;
             if (absDeltaSeconds <= b.greatWindow)
                 return Judgement.Great;

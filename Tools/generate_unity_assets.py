@@ -898,6 +898,64 @@ MonoBehaviour:
         native_meta(guid_for("Assets/Resources/Balance/FandomBalance.asset")),
     )
 
+    content_guid = guid_for("Assets/Scripts/Data/ContentBalance.cs")
+    write(
+        ROOT / "Assets/Resources/Balance/ContentBalance.asset",
+        f"""%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {{fileID: 0}}
+  m_PrefabInstance: {{fileID: 0}}
+  m_PrefabAsset: {{fileID: 0}}
+  m_GameObject: {{fileID: 0}}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {{fileID: 11500000, guid: {content_guid}, type: 3}}
+  m_Name: ContentBalance
+  m_EditorClassIdentifier: BankruptVtuber.ContentBalance
+  talkName: 토크
+  talkIncomeMultiplier: 1
+  talkMentalCost: 6
+  talkPositiveWeight: 55
+  talkEmpathyWeight: 35
+  talkLaughWeight: 10
+  talkT0toT1: 1
+  talkT1toT2: 1
+  gameName: 게임
+  gameIncomeMultiplier: 1.15
+  gameMentalCost: 10
+  gamePositiveWeight: 28
+  gameEmpathyWeight: 22
+  gameLaughWeight: 50
+  gamePerfectViewerMul: 1.4
+  gameMissViewerMul: 1.35
+  songName: 노래
+  songIncomeMultiplier: 1.1
+  songMentalCost: 8
+  songPositiveWeight: 40
+  songEmpathyWeight: 25
+  songLaughWeight: 35
+  songPerfectWindowMul: 0.85
+  songSuperchatIntervalMul: 0.75
+  songExtraSuperchat: 2
+  reactionName: 리액션
+  reactionIncomeMultiplier: 0.9
+  reactionMentalCost: 4
+  reactionPositiveWeight: 45
+  reactionEmpathyWeight: 35
+  reactionLaughWeight: 20
+  reactionChatSpawnMul: 1.35
+  reactionLoyalty: 2
+  reactionMissMax: 8
+""",
+    )
+    write(
+        ROOT / "Assets/Resources/Balance/ContentBalance.asset.meta",
+        native_meta(guid_for("Assets/Resources/Balance/ContentBalance.asset")),
+    )
+
     write(
         ROOT / "Assets/Resources/Balance/ChatCatalog.asset",
         f"""%YAML 1.1

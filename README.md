@@ -26,6 +26,8 @@ Build Settings 순서:
 
 1주차 승리 후 **2주차 시작**으로 6–10일차. Title / Restart는 항상 1주차 새 런.
 
+청구 슬램 후, 방송 켜기 전에 **오늘 콘텐츠**를 반드시 고른다 (토크 / 게임 / 노래 / 리액션). 라이브 QTE는 그대로다.
+
 타이틀: 「파산 버튜버」 / 빚더미에서 최고의 버튜버가 되어라. / 방송 시작 · 조작 설명 (A S D F Space, 1–4).  
 세이브가 있으면 **이어서 하기**가 방송 시작 옆에 뜬다. **새 방송 시작**은 세이브를 지우고 1주차부터. 이어서 하기는 그날 청구 전이면 WeekStart, 방송이 끝났으면 정산으로 복귀. Play Mode를 꺼도 런은 `Application.persistentDataPath` JSON에 남는다 (방송 90초 중에는 저장하지 않음).  
 1일차·미청구·이번 Play에서 아직 안 봤으면 5–8초 프롤로그(빨간 청구서 더미 + 파산냥) 후 WeekStart. 다음날과, 이번 세션에서 한 번 본 뒤 Restart는 건너뛴다.
@@ -101,6 +103,15 @@ Build Settings 순서:
 - 3주차 첫날(11일) 한 번 **콘텐츠 편중 갈등**. 특별방송으로 달래기(멘탈 −10, 충성 +8) 또는 내 스타일대로(T2 −2, 충성 −10, 다음 추가 위협 +2,000). 그날 반드시 고름.
 - 4주차+ 에이전시 설립 후 정산 **기본 자동응답**. 매일 ₩8,000. T0/T1 케어는 자동. 민준/하은은 진짜 팬레터가 필요하고, 자동만 켜고 팬레터를 안 내면 충성 −1.
 
+## 콘텐츠 타입 (1–5주차에 접힘, 6주차 없음)
+
+1–5주차 청구/승리 숫자는 그대로. 리튠: `Assets/Resources/Balance/ContentBalance.asset`. WeekStart에서 청구 후, 방송 켜기 전에 오늘 콘텐츠를 반드시 고른다. 라이브는 기존 A/S/D/F/Space QTE. 타입은 채팅 가중치·타이밍·수입 배율만 바꾼다. HUD와 정산에 오늘 픽이 보이고, 세이브에 남는다.
+
+- **토크:** 긍정/공감 위주, 수입 ×1.0, 멘탈 −6, 팔로워 T0→T1 / T1→T2 쪽.
+- **게임:** 웃음/트롤 위주, 수입 ×1.15, 멘탈 −10, Perfect 시청자 스파이크, Miss 시청자 손실 더 큼.
+- **노래:** Perfect 창 ×0.85, 수입 ×1.1, 멘탈 −8, 슈퍼챗 간격 짧아지고 횟수 +2.
+- **리액션:** 채팅 느림 (스폰 간격 ×1.35), 수입 ×0.9, 멘탈 −4, Miss < 8이면 종료 충성 +2.
+
 ## 조작 (PC 키보드)
 
 | 키 | 행동 | 채팅 |
@@ -135,6 +146,7 @@ Build Settings 순서:
 - `Assets/Resources/Balance/Week4Balance.asset` — 4주차 청구/위협/에이전시/주니어/스폰서
 - `Assets/Resources/Balance/Week5Balance.asset` — 5주차 청구/위협/랭킹/콘서트/엔딩
 - `Assets/Resources/Balance/FandomBalance.asset` — 팬덤 티어/충성/지원금/갈등/자동응답
+- `Assets/Resources/Balance/ContentBalance.asset` — 콘텐츠 4종 수입/멘탈/채팅 가중치
 - `Assets/Resources/Balance/ChatCatalog.asset` — 한국어 채팅 카피
 - 런타임 폴백: `Week1Balance.ApplyLockedWeek1Defaults()` / `ChatCatalog.ApplyDefaults()`
 

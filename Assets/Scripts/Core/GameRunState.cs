@@ -133,6 +133,8 @@ namespace BankruptVtuber
         public bool lastHaeunLeft;
         public bool lastHadSuccessfulSuperchat;
         public int lastMissStreak;
+        public StreamContentType contentPicked;
+        public bool contentMentalAppliedThisDay;
 
         public void ResetNewRun(Week1Balance b, int? seed = null)
         {
@@ -162,6 +164,7 @@ namespace BankruptVtuber
             ClearWeek4Progress();
             ClearWeek5Progress();
             FandomRules.Reset(this, b, null);
+            ContentRules.ResetDaily(this);
         }
 
         void ClearWeek2Progress()
@@ -347,6 +350,7 @@ namespace BankruptVtuber
             retirePicked = false;
             ClearExtraThreat();
             FandomRules.ResetDaily(this);
+            ContentRules.ResetDaily(this);
             Week2Rules.ApplyWeek2Entry(this, w2);
             WeekSchedule.TryUnlockMembership(this, w2);
             Week3Rules.TryUnlockGoods(this, w3);

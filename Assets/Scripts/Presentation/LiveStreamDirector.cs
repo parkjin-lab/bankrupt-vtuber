@@ -75,7 +75,15 @@ namespace BankruptVtuber
                 gm.SaveRun();
             }
             Week3Rules.TryUnlockGoods(gm.Run, gm.Week3);
-            _session = new StreamSession(gm.Balance, gm.Catalog, gm.Run.mental, gm.Run.viewerBonus);
+            ContentRules.ApplyStartMental(gm.Run, gm.Content, gm.Balance);
+            _session = new StreamSession(
+                gm.Balance,
+                gm.Catalog,
+                gm.Run.mental,
+                gm.Run.viewerBonus,
+                null,
+                gm.Content,
+                gm.Run.contentPicked);
             if (Week3Rules.ShouldStartRival(gm.Run, gm.Week3))
             {
                 Week3Rules.MarkRivalStarted(gm.Run);
@@ -218,6 +226,7 @@ namespace BankruptVtuber
             gm.Run.lastMissStreak = _session.PeakMissStreak;
             gm.Run.lastHadSuccessfulSuperchat = _session.HadSuccessfulSuperchat;
             FandomRules.AfterStream(gm.Run, gm.Balance, gm.Fandom);
+            ContentRules.AfterStream(gm.Run, gm.Content, gm.Fandom);
             Week3Rules.ApplyRivalResult(
                 gm.Run,
                 gm.Balance,
@@ -395,9 +404,9 @@ namespace BankruptVtuber
             else if (_session.IncomeShieldLeft > 0f)
                 _combo.text = $"수익 보호막 {_session.IncomeShieldLeft:0.0}s";
             else if (_session.HypeActive)
-                _combo.text = $"HYPE {_session.HypeLeft:0.0}s  ·  x{_session.IncomeMultiplier:0.0}";
+                _combo.text = $"{_session.Tuning.Name}  ·  HYPE {_session.HypeLeft:0.0}s  ·  x{_session.IncomeMultiplier:0.00}";
             else
-                _combo.text = $"COMBO {_session.Combo}   PERFECT {_session.PerfectCombo}";
+                _combo.text = $"{_session.Tuning.Name}  ·  COMBO {_session.Combo}   PERFECT {_session.PerfectCombo}";
             _combo.color = _session.HypeActive ? Palette.Gold : Palette.Pastel;
             float tension = Mathf.Clamp01(_session.MissStreak / (float)_session.Balance.missStreakMental);
             _tensionFill.rectTransform.anchorMax = new Vector2(tension, 1f);

@@ -13,6 +13,7 @@ namespace BankruptVtuber
         public Week4Balance Week4 { get; private set; }
         public Week5Balance Week5 { get; private set; }
         public FandomBalance Fandom { get; private set; }
+        public ContentBalance Content { get; private set; }
         public ChatCatalog Catalog { get; private set; }
         public GameRunState Run { get; private set; }
 
@@ -53,6 +54,7 @@ namespace BankruptVtuber
             Week4 = Week4Balance.Load();
             Week5 = Week5Balance.Load();
             Fandom = FandomBalance.Load();
+            Content = ContentBalance.Load();
             Catalog = ChatCatalog.Load();
             if (Catalog.positive == null || Catalog.positive.Length == 0)
                 Catalog.ApplyDefaults();
@@ -138,6 +140,8 @@ namespace BankruptVtuber
         public void GoLive()
         {
             if (FandomRules.MustResolveConflict(Run))
+                return;
+            if (ContentRules.MustPick(Run))
                 return;
             ExtraThreatRules.EnsureRolled(Run, Balance, Week2, Week3, Week4, Week5);
             Week3Rules.TryUnlockGoods(Run, Week3);

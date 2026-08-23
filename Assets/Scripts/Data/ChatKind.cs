@@ -39,4 +39,14 @@ namespace BankruptVtuber
         RetireProducer,
         Nameless
     }
+
+    /// <summary>WeekStart content pick. Retunes the existing A/S/D/F stream.</summary>
+    public enum StreamContentType
+    {
+        None = 0,
+        Talk = 1,
+        Game = 2,
+        Song = 3,
+        Reaction = 4
+    }
 }

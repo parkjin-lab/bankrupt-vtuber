@@ -172,6 +172,7 @@ def check_project() -> None:
         "Assets/Resources/Balance/Week4Balance.asset",
         "Assets/Resources/Balance/Week5Balance.asset",
         "Assets/Resources/Balance/FandomBalance.asset",
+        "Assets/Resources/Balance/ContentBalance.asset",
         "Assets/Resources/Balance/ChatCatalog.asset",
         "Assets/Resources/Fonts/NotoSansKR-Regular.ttf",
     ):
@@ -1140,6 +1141,77 @@ def check_project() -> None:
     else:
         ok("corrupt save is ignored and does not crash")
     check_save_roundtrip()
+    check_content_types()
+
+
+def check_content_types() -> None:
+    content_path = ROOT / "Assets/Resources/Balance/ContentBalance.asset"
+    content_cs = (ROOT / "Assets/Scripts/Data/ContentBalance.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Economy/ContentRules.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    save_cs = (ROOT / "Assets/Scripts/Core/RunSave.cs").read_text(encoding="utf-8")
+    content_asset = content_path.read_text(encoding="utf-8") if content_path.exists() else ""
+
+    expect = {
+        "talkIncomeMultiplier: 1": "talk income",
+        "talkMentalCost: 6": "talk mental",
+        "gameIncomeMultiplier: 1.15": "game income",
+        "gameMentalCost: 10": "game mental",
+        "gamePerfectViewerMul: 1.4": "game perfect viewers",
+        "gameMissViewerMul: 1.35": "game miss viewers",
+        "songIncomeMultiplier: 1.1": "song income",
+        "songMentalCost: 8": "song mental",
+        "songPerfectWindowMul: 0.85": "song perfect window",
+        "reactionIncomeMultiplier: 0.9": "reaction income",
+        "reactionMentalCost: 4": "reaction mental",
+        "reactionLoyalty: 2": "reaction loyalty",
+        "reactionMissMax: 8": "reaction miss cap",
+    }
+    for token, label in expect.items():
+        if token not in content_asset:
+            fail(f"ContentBalance missing {label} ({token})")
+    if "talkIncomeMultiplier = 1.0f" not in content_cs or "gameIncomeMultiplier = 1.15f" not in content_cs:
+        fail("ContentBalance.cs missing locked income multipliers")
+    else:
+        ok("each content type has locked income / mental multiplier fields")
+    if "오늘 콘텐츠" not in week_cs or "토크" not in week_cs or "게임" not in week_cs or "노래" not in week_cs or "리액션" not in week_cs:
+        fail("WeekStart does not force a 4-type 콘텐츠 pick")
+    else:
+        ok("WeekStart after bills forces 토크 / 게임 / 노래 / 리액션")
+    if "MustPick" not in week_cs or "MustPick" not in gm.split("GoLive", 1)[-1].split("public void GoSettlement", 1)[0]:
+        fail("Go Live is not blocked until a content type is picked")
+    else:
+        ok("Go Live waits for today's content pick")
+    if "Tuning.IncomeMul" not in session_cs or "PerfectWindowMul" not in session_cs or "RollRegularKind" not in session_cs:
+        fail("StreamSession does not retune chat/income/windows from the pick")
+    else:
+        ok("the existing A/S/D/F stream reads the picked type")
+    if "contentPicked" not in save_cs or "contentPicked" not in (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8"):
+        fail("save/load does not persist today's content pick")
+    else:
+        ok("save/load persists today's content pick")
+    if "ContentBalance.Load" not in gm:
+        fail("GameManager does not load ContentBalance")
+    else:
+        ok("GameManager loads ContentBalance")
+    if "토크" in title_cs or "리액션" in title_cs or "ContentBalance" in title_cs:
+        fail("Title started advertising content types")
+    else:
+        ok("Title still starts a Week 1 run without content types")
+    if (ROOT / "Assets/Scripts/Data/Week6Balance.cs").exists():
+        fail("Week 6 was added during content types")
+    if "billRent: 8000" not in (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8"):
+        fail("Week 1 bills were retuned by content types")
+    else:
+        ok("Week 1–5 locked bills stay unchanged after content types")
+    if "TryEventKey" not in live_cs or "KeyCode.A" not in (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8"):
+        fail("content types replaced the A/S/D/F QTE")
+    else:
+        ok("content type only retunes the existing QTE")
 
 
 def check_save_roundtrip() -> None:
@@ -1180,6 +1252,7 @@ def check_save_roundtrip() -> None:
         "concertPlayed": False,
         "lastEnding": 0,
         "lastOutcome": 0,
+        "contentPicked": 2,
         "extraRolls": [
             {
                 "id": "gear_break",
@@ -1204,8 +1277,11 @@ def check_save_roundtrip() -> None:
     if back["extraRolls"][0]["amount"] != 7000 or back["npcRankingScore"][1] != 360:
         fail("dummy run lost extra threat / ranking arrays")
         return
+    if back.get("contentPicked") != 2:
+        fail("dummy run lost today's content pick")
+        return
     save_cs = (ROOT / "Assets/Scripts/Core/RunSave.cs").read_text(encoding="utf-8")
-    for token in ("day = 11", "cash = 88000", "loyalty = 62", "membershipCount = 8", "goodsStock = 14"):
+    for token in ("day = 11", "cash = 88000", "loyalty = 62", "membershipCount = 8", "goodsStock = 14", "contentPicked = StreamContentType.Game"):
         if token not in save_cs:
             fail(f"MakeDummy missing {token}")
             return
