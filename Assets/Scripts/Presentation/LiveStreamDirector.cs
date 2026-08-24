@@ -12,11 +12,14 @@ namespace BankruptVtuber
         RectTransform _hit;
         Text _viewers;
         Text _rival;
+        Text _cash;
+        Text _debt;
         Text _income;
         Text _mental;
         Text _timer;
         Text _combo;
         Text _judge;
+        Image _liveDot;
         Text _stub;
         Text _charge;
         RectTransform _eventRoot;
@@ -49,9 +52,15 @@ namespace BankruptVtuber
         AudioClip _ok;
         AudioClip _bad;
         AudioClip _sc;
+        AudioClip _comboCue;
 
         readonly Dictionary<ChatNote, RectTransform> _views = new Dictionary<ChatNote, RectTransform>();
         float _judgeFlash;
+        float _judgePop;
+        float _judgePopMax;
+        bool _judgeBig;
+        float _shownViewers;
+        int _lastCombo;
         bool _ending;
         bool _eventWasActive;
 
@@ -66,9 +75,10 @@ namespace BankruptVtuber
             Build();
             _audio = gameObject.AddComponent<AudioSource>();
             _audio.playOnAwake = false;
-            _ok = Beep(880, 0.07f);
-            _bad = Beep(180, 0.11f);
-            _sc = Beep(1320, 0.14f);
+            _ok = ToneClip("sfx_perfect", new[] { 880f, 1320f }, 0.07f, 0.22f);
+            _bad = BuzzerClip("sfx_miss", 0.12f, 0.20f);
+            _sc = ToneClip("sfx_super", new[] { 523f, 659f, 784f, 1046f }, 0.06f, 0.20f);
+            _comboCue = ToneClip("sfx_combo", new[] { 698f, 880f, 1174f }, 0.07f, 0.24f);
         }
 
         void OnDestroy()
@@ -108,6 +118,9 @@ namespace BankruptVtuber
                 Week5Rules.MarkConcertStarted(gm.Run);
                 _session.EnableConcert(gm.Week5);
             }
+            _shownViewers = _session.Viewers;
+            _lastCombo = _session.Combo;
+            _avatar.SetViewers(_shownViewers);
         }
 
         void Update()
@@ -117,6 +130,9 @@ namespace BankruptVtuber
 
             float dt = Time.deltaTime;
             _session.Tick(dt);
+            if (_session.Combo >= 5 && _lastCombo < 5)
+                PlaySfx(_comboCue, 0.52f);
+            _lastCombo = _session.Combo;
             if (UnityEngine.EventSystems.EventSystem.current != null)
                 UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null);
 
@@ -187,7 +203,7 @@ namespace BankruptVtuber
                     : StreamEventState.FailCopy(_session.Event.Kind);
                 _judge.color = okHit ? Palette.CashGreen : Palette.MoneyRed;
                 _judgeFlash = 1f;
-                _audio.PlayOneShot(okHit ? _ok : _bad, 0.5f);
+                PlaySfx(okHit ? _ok : _bad, 0.5f);
             }
             _eventWasActive = _session.EventActive;
 
@@ -200,11 +216,13 @@ namespace BankruptVtuber
                 ShowJudge(j, note);
                 _avatar.React(j, note.IsSuperchat);
                 if (j == Judgement.Miss)
-                    _audio.PlayOneShot(_bad, 0.45f);
+                    PlaySfx(_bad, 0.48f);
                 else if (note.IsSuperchat)
-                    _audio.PlayOneShot(_sc, 0.5f);
+                    PlaySfx(_sc, 0.55f);
+                else if (j == Judgement.Perfect)
+                    PlaySfx(_ok, 0.42f);
                 else
-                    _audio.PlayOneShot(_ok, 0.35f);
+                    PlaySfx(_ok, 0.22f);
             }
 
             SyncNotes();
@@ -212,6 +230,8 @@ namespace BankruptVtuber
             RefreshPromoOverlay();
             RefreshLineOverlay();
             RefreshConcertOverlay();
+            _shownViewers = Mathf.MoveTowards(_shownViewers, _session.Viewers, dt * 80f);
+            _avatar.SetViewers(_shownViewers);
             RefreshHud();
             _avatar.Tick(dt);
 
@@ -219,6 +239,19 @@ namespace BankruptVtuber
             var jc = _judge.color;
             jc.a = _judgeFlash;
             _judge.color = jc;
+            if (_judgePop > 0f)
+            {
+                _judgePop = Mathf.MoveTowards(_judgePop, 0f, dt);
+                float u = _judgePopMax <= 0.001f ? 0f : Mathf.Clamp01(_judgePop / _judgePopMax);
+                float s = _judgeBig ? 1f + 0.58f * u : 1f + 0.18f * u;
+                _judge.rectTransform.localScale = Vector3.one * s;
+            }
+            else
+            {
+                _judge.rectTransform.localScale = Vector3.one;
+            }
+            if (_liveDot != null)
+                _liveDot.color = new Color(1f, 1f, 1f, 0.4f + 0.6f * Mathf.Abs(Mathf.Sin(Time.time * 6f)));
             _echoFlash = Mathf.MoveTowards(_echoFlash, 0f, dt * 1.6f);
             if (_echo != null)
             {
@@ -310,26 +343,42 @@ namespace BankruptVtuber
             UiKit.Stretch(_hypeFlash.rectTransform);
             _hypeFlash.raycastTarget = false;
 
-            var top = UiKit.Panel(root, "Top", new Color(0.08f, 0.04f, 0.1f, 0.78f));
-            UiKit.Layout(top, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(0, 86));
+            var top = UiKit.Panel(root, "Top", new Color(0.08f, 0.04f, 0.1f, 0.86f));
+            UiKit.Layout(top, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(0, 124));
 
-            _viewers = Chip(top, "Viewers", "시청자", new Vector2(20, -16));
-            _rival = Chip(top, "Rival", "라이벌", new Vector2(300, -16));
-            _income = Chip(top, "Income", "실시간 수익", new Vector2(580, -16));
-            _mental = Chip(top, "Mental", "멘탈", new Vector2(860, -16));
-            _timer = Chip(top, "Timer", "남은 시간", new Vector2(1140, -16));
+            var liveBox = UiKit.Panel(top, "LiveHud", new Color(0.86f, 0.12f, 0.22f, 0.96f));
+            liveBox.anchorMin = new Vector2(0f, 1f);
+            liveBox.anchorMax = new Vector2(0.16f, 1f);
+            liveBox.pivot = new Vector2(0.5f, 1f);
+            liveBox.anchoredPosition = new Vector2(0f, -8f);
+            liveBox.sizeDelta = new Vector2(-8f, 48f);
+            _liveDot = UiKit.Image(liveBox, "Dot", Color.white);
+            UiKit.Layout(_liveDot.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(16f, 0f), new Vector2(10f, 10f));
+            var liveL = UiKit.Label(liveBox, "L", "LIVE", 18, Color.white, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(liveL.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0.5f), new Vector2(28f, 0f), new Vector2(-16f, 0f));
+
+            _viewers = Chip(top, "Viewers", "시청자", 0.16f, 0.40f, -6f);
+            _rival = Chip(top, "Rival", "라이벌", 0.40f, 0.64f, -6f);
+            _timer = Chip(top, "Timer", "남은 시간", 0.64f, 1f, -6f);
+            _cash = Chip(top, "Cash", "현금", 0f, 0.25f, -64f);
+            _debt = Chip(top, "Debt", "부채", 0.25f, 0.50f, -64f);
+            _income = Chip(top, "Income", "실시간 수익", 0.50f, 0.75f, -64f);
+            _mental = Chip(top, "Mental", "멘탈", 0.75f, 1f, -64f);
             _rival.transform.parent.gameObject.SetActive(false);
 
             _avatar = new AvatarView(root as RectTransform);
 
             var chatPanel = UiKit.Panel(root, "Chat", new Color(0.07f, 0.05f, 0.1f, 0.88f));
             UiKit.Layout(chatPanel, new Vector2(1, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-18, 0), new Vector2(420, -220));
-            UiKit.Label(chatPanel, "ChatTitle", "채팅", 22, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
+            UiKit.Label(chatPanel, "ChatTitle", "실시간 채팅", 22, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
             var ct = chatPanel.Find("ChatTitle") as RectTransform;
             UiKit.Layout(ct, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -10), new Vector2(-24, 30));
 
             _lane = UiKit.Panel(chatPanel, "Lane", new Color(1, 1, 1, 0.03f));
             UiKit.Stretch(_lane, 12, 12, 44, 70);
+            var laneFade = _lane.gameObject.AddComponent<CanvasGroup>();
+            laneFade.blocksRaycasts = false;
+            laneFade.interactable = false;
 
             _hit = UiKit.Panel(_lane, "Hit", new Color(1f, 1f, 1f, 0.22f));
             UiKit.Layout(_hit, new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, LaneHit), new Vector2(0, 10));
@@ -510,29 +559,38 @@ namespace BankruptVtuber
             _session.Mental = gm.Run.mental;
         }
 
-        Text Chip(Transform parent, string name, string label, Vector2 pos)
+        Text Chip(Transform parent, string name, string label, float x0, float x1, float y)
         {
-            var box = UiKit.Panel(parent, name, new Color(1, 1, 1, 0.04f));
-            UiKit.Layout(box, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), pos, new Vector2(280, 58));
-            UiKit.Label(box, "L", label, 14, Palette.Muted, TextAnchor.UpperLeft);
+            var box = UiKit.Panel(parent, name, new Color(1, 1, 1, 0.06f));
+            box.anchorMin = new Vector2(x0, 1f);
+            box.anchorMax = new Vector2(x1, 1f);
+            box.pivot = new Vector2(0.5f, 1f);
+            box.anchoredPosition = new Vector2(0f, y);
+            box.sizeDelta = new Vector2(-8f, 52f);
+            UiKit.Label(box, "L", label, 13, Palette.Muted, TextAnchor.UpperLeft);
             var l = box.Find("L") as RectTransform;
-            UiKit.Layout(l, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(12, -4), new Vector2(-16, 18));
-            var v = UiKit.Label(box, "V", "-", 26, Palette.Pastel, TextAnchor.LowerLeft, FontStyle.Bold);
-            UiKit.Layout(v.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(12, 4), new Vector2(-16, -20));
+            UiKit.Layout(l, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(10, -3), new Vector2(-16, 16));
+            var v = UiKit.Label(box, "V", "-", 20, Palette.Pastel, TextAnchor.LowerLeft, FontStyle.Bold);
+            UiKit.Layout(v.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(10, 4), new Vector2(-16, -18));
             return v;
         }
 
         void RefreshHud()
         {
-            _viewers.text = $"{_session.Viewers:0.0}";
+            _viewers.text = Mathf.RoundToInt(_shownViewers).ToString();
             _viewers.color = Palette.Pastel;
             bool vs = _session.RivalActive;
             _rival.transform.parent.gameObject.SetActive(vs);
             if (vs)
             {
-                _rival.text = $"{_session.RivalViewers:0.0}";
+                _rival.text = $"{_session.RivalViewers:0}";
                 _rival.color = Palette.Troll;
             }
+            var run = GameManager.Instance.Run;
+            _cash.text = EconomyRules.FormatWon(run.cash);
+            _cash.color = Palette.CashGreen;
+            _debt.text = EconomyRules.FormatWon(run.debt);
+            _debt.color = Palette.MoneyRed;
             int shown = _session.ForceEnded ? _session.PayoutIncome : _session.LiveIncome;
             _income.text = EconomyRules.FormatWon(shown);
             _income.color = Palette.CashGreen;
@@ -576,13 +634,23 @@ namespace BankruptVtuber
                 float u = span <= 0.001f ? 1f : (_session.Elapsed - note.SpawnTime) / span;
                 float y = Mathf.Lerp(LaneTop, LaneHit, Mathf.Clamp01(u));
                 rt.anchoredPosition = new Vector2(0, y);
-                var img = rt.GetComponent<UnityEngine.UI.Image>();
-                if (img != null)
+                if (note.IsSuperchat)
                 {
-                    var c = img.color;
-                    c.a = _session.EventActive || _session.PromoActive || _session.LineActive || _session.ConcertActive ? 0.22f : 0.18f;
-                    img.color = c;
+                    float slam = Mathf.Clamp01((_session.Elapsed - note.SpawnTime) / 0.18f);
+                    float s = Mathf.Lerp(1.38f, 1f, slam * slam);
+                    rt.localScale = Vector3.one * s;
                 }
+                else
+                {
+                    rt.localScale = Vector3.one;
+                }
+            }
+
+            var fade = _lane.GetComponent<CanvasGroup>();
+            if (fade != null)
+            {
+                bool overlay = _session.EventActive || _session.PromoActive || _session.LineActive || _session.ConcertActive;
+                fade.alpha = overlay ? 0.38f : 1f;
             }
         }
 
@@ -643,31 +711,44 @@ namespace BankruptVtuber
 
         RectTransform MakeBubble(ChatNote note)
         {
-            var color = Palette.ForKind(note.Kind);
-            var card = UiKit.Panel(_lane, "Note", new Color(color.r, color.g, color.b, 0.18f));
-            float h = note.IsSuperchat ? 78f : 58f;
-            UiKit.Layout(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(380, h));
-            var stripe = UiKit.Image(card, "Stripe", color);
-            UiKit.Layout(stripe.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 0.5f), Vector2.zero, new Vector2(8, 0));
-
-            var badge = UiKit.Image(card, "Badge", color);
-            UiKit.Layout(badge.rectTransform, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(44, 0), new Vector2(44, 44));
-            if (note.IsSuperchat)
-                ArtSprites.Apply(badge, ArtSprites.Superchat, Palette.Gold);
-            else if (note.Kind == ChatKind.Laugh)
-                ArtSprites.Apply(badge, ArtSprites.Troll, Palette.Troll);
+            bool super = note.IsSuperchat;
+            bool troll = !super && note.Kind == ChatKind.Laugh;
+            var color = super ? Palette.Gold : Palette.ForKind(note.Kind);
+            var card = UiKit.Panel(_lane, "Note", Color.white);
+            float h = super ? 88f : troll ? 72f : 64f;
+            float w = super ? 400f : 372f;
+            UiKit.Layout(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(w, h));
+            var img = card.GetComponent<Image>();
+            if (super)
+                ArtSprites.ApplySliced(img, ArtSprites.SuperchatBanner, new Color(1f, 0.86f, 0.28f, 1f), new Vector4(36f, 28f, 36f, 28f));
+            else if (troll)
+            {
+                ArtSprites.Apply(img, ArtSprites.TrollBubble, Palette.Troll, Palette.Troll);
+                img.preserveAspect = false;
+            }
             else
-                badge.color = color;
+                ArtSprites.ApplySliced(img, ArtSprites.BubblePill, new Color(color.r, color.g, color.b, 0.94f));
 
-            string key = note.IsSuperchat ? "SPACE" : Palette.KeyFor(note.Kind);
-            var keyT = UiKit.Label(card, "Key", key, 14, color, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(keyT.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(86, 0), new Vector2(52, 0));
-            string body = note.IsSuperchat
-                ? $"{note.User}  {EconomyRules.FormatWon(note.SuperchatWon)}\n{note.Text}"
-                : $"{note.User}  {note.Text}";
-            var msg = UiKit.Label(card, "Msg", body, note.IsSuperchat ? 16 : 17, Palette.Pastel, TextAnchor.MiddleLeft);
-            UiKit.Layout(msg.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0.5f), new Vector2(142, 0), new Vector2(-150, 0));
+            string key = super ? "SPACE" : note.Kind switch
+            {
+                ChatKind.Positive => "←",
+                ChatKind.Empathy => "↓",
+                ChatKind.Laugh => "→",
+                _ => "↑"
+            };
+            string kind = super ? "슈퍼챗" : troll ? "트롤" : Palette.LabelFor(note.Kind);
+            var keyCol = super || troll ? Palette.Ink : Color.white;
+            var keyT = UiKit.Label(card, "Key", key, super ? 16 : 18, keyCol, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(keyT.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(18, 0), new Vector2(56, 0));
+            string body = super
+                ? $"{note.User}  ·  {kind}  {EconomyRules.FormatWon(note.SuperchatWon)}\n{note.Text}"
+                : $"{note.User}  ·  {kind}\n{note.Text}";
+            var msgCol = troll ? Color.white : Palette.Ink;
+            var msg = UiKit.Label(card, "Msg", body, super ? 16 : 17, msgCol, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(msg.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0.5f), new Vector2(76, 0), new Vector2(-88, 0));
             msg.horizontalOverflow = HorizontalWrapMode.Wrap;
+            if (super)
+                card.localScale = Vector3.one * 1.38f;
             return card;
         }
 
@@ -688,17 +769,50 @@ namespace BankruptVtuber
                 _ => Palette.MoneyRed
             };
             _judgeFlash = 1f;
+            _judgeBig = j == Judgement.Perfect || j == Judgement.Miss;
+            _judgePopMax = _judgeBig ? 0.25f : 0.12f;
+            _judgePop = _judgePopMax;
+            _judge.rectTransform.localScale = Vector3.one * (_judgeBig ? 1.58f : 1.18f);
         }
 
-        static AudioClip Beep(float freq, float dur)
+        void PlaySfx(AudioClip clip, float volume)
+        {
+            if (_audio != null && clip != null)
+                _audio.PlayOneShot(clip, volume);
+        }
+
+        static AudioClip ToneClip(string name, float[] freqs, float noteDur, float amp)
+        {
+            int noteSamples = Mathf.Max(1, Mathf.CeilToInt(44100 * noteDur));
+            int samples = noteSamples * freqs.Length;
+            var clip = AudioClip.Create(name, samples, 1, 44100, false);
+            var data = new float[samples];
+            int w = 0;
+            for (int n = 0; n < freqs.Length; n++)
+            {
+                float freq = freqs[n];
+                for (int i = 0; i < noteSamples && w < samples; i++, w++)
+                {
+                    float env = 1f - i / (float)noteSamples;
+                    data[w] = Mathf.Sin(2f * Mathf.PI * freq * i / 44100f) * amp * env;
+                }
+            }
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        static AudioClip BuzzerClip(string name, float dur, float amp)
         {
             int samples = Mathf.CeilToInt(44100 * dur);
-            var clip = AudioClip.Create("beep", samples, 1, 44100, false);
+            var clip = AudioClip.Create(name, samples, 1, 44100, false);
             var data = new float[samples];
             for (int i = 0; i < samples; i++)
             {
+                float t = i / 44100f;
                 float env = 1f - i / (float)samples;
-                data[i] = Mathf.Sin(2f * Mathf.PI * freq * i / 44100f) * 0.22f * env;
+                float square = Mathf.Sign(Mathf.Sin(2f * Mathf.PI * 140f * t));
+                float rasp = Mathf.Sin(2f * Mathf.PI * 90f * t);
+                data[i] = (square * 0.55f + rasp * 0.45f) * amp * env;
             }
             clip.SetData(data, 0);
             return clip;

@@ -207,6 +207,60 @@ def check_project() -> None:
     else:
         ok("directors hook ArtSprites at runtime")
 
+    stream_art = {
+        "bubble_pill.png": "chat pill",
+        "bubble_superchat.png": "superchat banner",
+        "bubble_troll.png": "troll spike",
+        "sparkle.png": "sparkle",
+    }
+    for name, label in stream_art.items():
+        path = ROOT / "Assets/Resources/Art" / name
+        if not path.exists() or path.stat().st_size < 1000:
+            fail(f"missing/empty art {name} ({label})")
+        else:
+            ok(f"art {name} ({label})")
+    avatar_cs = (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    if "Bezel" not in avatar_cs or '"LIVE"' not in avatar_cs or "SetViewers" not in avatar_cs:
+        fail("AvatarView missing webcam LIVE frame")
+    elif "_pop" not in avatar_cs or "_shake" not in avatar_cs or "_spark" not in avatar_cs:
+        fail("AvatarView missing hit / miss / superchat reactions")
+    else:
+        ok("AvatarView webcam frame reacts to Perfect/Miss/superchat")
+    if "ApplySliced" not in art_cs or "BubblePill" not in art_cs or "SuperchatBanner" not in art_cs or "TrollBubble" not in art_cs:
+        fail("ArtSprites missing sliced chat bubble sprites")
+    elif "ApplySliced" not in live_cs or "SuperchatBanner" not in live_cs or "TrollBubble" not in live_cs:
+        fail("LiveStream notes are not chat bubbles")
+    else:
+        ok("chat notes use pill / gold banner / troll spike sprites")
+    sync = live_cs.split("void SyncNotes", 1)[-1].split("void RefreshPromoOverlay", 1)[0]
+    if "c.a =" in sync or "img.color = c" in sync:
+        fail("SyncNotes still washes bubble alpha into a flat bar")
+    else:
+        ok("SyncNotes keeps bubble color (no flat-bar alpha wash)")
+    if "_judgePop" not in live_cs or "0.25f" not in live_cs:
+        fail("Perfect/Miss judgement pop is missing")
+    else:
+        ok("Perfect/Miss judgement pops bigger for 0.25s")
+    if '"현금"' not in live_cs or '"부채"' not in live_cs or "Palette.CashGreen" not in live_cs or "Palette.MoneyRed" not in live_cs:
+        fail("LiveStream HUD missing loud cash/debt")
+    elif '"LIVE"' not in live_cs or "MoveTowards(_shownViewers" not in live_cs:
+        fail("LiveStream missing LIVE + ticking viewers")
+    else:
+        ok("LiveStream overlay has LIVE, ticking viewers, cash/debt")
+    if "sfx_perfect" not in live_cs or "sfx_miss" not in live_cs or "sfx_super" not in live_cs or "sfx_combo" not in live_cs:
+        fail("distinct generated SFX clips missing")
+    elif "Combo >= 5" not in live_cs or "PlayOneShot" not in live_cs:
+        fail("combo-5 cue or AudioSource PlayOneShot missing")
+    else:
+        ok("Perfect/Miss/superchat/combo-5 SFX fire from generated clips")
+    if "new Vector2(128, 128)" not in week_cs or "ArtSprites.BillRent" not in week_cs:
+        fail("WeekStart bill sprites are still tiny")
+    else:
+        ok("WeekStart money slam shows bill sprites at 128px")
+
     for rel in (
         "Assets/Scripts/Core/GameManager.cs",
         "Assets/Scripts/Core/RunSave.cs",

@@ -79,13 +79,13 @@ namespace BankruptVtuber
             _mental = MoneyChip(root, "MentalChip", "멘탈", Palette.Pink, new Vector2(160, 250));
 
             var wavePanel = UiKit.Panel(root, "WavePanel", new Color(1, 1, 1, 0.06f));
-            UiKit.Layout(wavePanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -20), new Vector2(1240, 420));
+            UiKit.Layout(wavePanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -20), new Vector2(1320, 480));
             UiKit.Label(wavePanel, "WaveTitle", "오늘의 고정비 + 위협 — 방어 웨이브", 26, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
             var wt = wavePanel.Find("WaveTitle") as RectTransform;
             UiKit.Layout(wt, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -12), new Vector2(0, 36));
 
             _stack = UiKit.Panel(wavePanel, "Stack", new Color(0, 0, 0, 0));
-            UiKit.Layout(_stack, new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1180, 220));
+            UiKit.Layout(_stack, new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1260, 268));
 
             _log = UiKit.Label(wavePanel, "Log", "청구서가 몰려옵니다…", 24, Palette.PastelDim, TextAnchor.LowerLeft);
             UiKit.Layout(_log.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 16), new Vector2(-40, 48));
@@ -348,11 +348,11 @@ namespace BankruptVtuber
 
         void SpawnIncoming(Bill bill, int index, int total)
         {
-            float step = total > 6 ? 148f : 168f;
+            float step = total > 6 ? 164f : 192f;
             float x = (index - (total - 1) * 0.5f) * step;
             var bg = bill.Extra ? new Color(1f, 0.86f, 0.88f, 0.98f) : new Color(0.95f, 0.93f, 0.96f, 0.96f);
             var card = UiKit.Panel(_stack, "Bill" + index, bg);
-            UiKit.Layout(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 220), new Vector2(156, 210));
+            UiKit.Layout(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 240), new Vector2(176, 248));
             if (bill.Extra)
             {
                 string tagText = bill.Gain ? "팬 지원" : "오늘의 위협";
@@ -360,7 +360,7 @@ namespace BankruptVtuber
                 UiKit.Layout(tag.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -4), new Vector2(0, 18));
             }
             var icon = UiKit.Image(card, "Icon", Color.white);
-            UiKit.Layout(icon.rectTransform, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, bill.Extra ? -24 : -10), new Vector2(96, 96));
+            UiKit.Layout(icon.rectTransform, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, bill.Extra ? -28 : -12), new Vector2(128, 128));
             ArtSprites.Apply(icon, bill.Art, bill.Extra ? bill.Tint : Palette.PinkDeep, bill.Extra ? bill.Tint : (Color?)null);
             UiKit.Label(card, "N", bill.Name, 16, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
             var n = card.Find("N") as RectTransform;
@@ -377,7 +377,7 @@ namespace BankruptVtuber
             {
                 t += Time.deltaTime * 2.6f;
                 float e = 1f - Mathf.Pow(1f - Mathf.Clamp01(t), 3f);
-                card.anchoredPosition = new Vector2(x, Mathf.Lerp(220f, 0f, e));
+                card.anchoredPosition = new Vector2(x, Mathf.Lerp(240f, 0f, e));
                 card.localScale = Vector3.one * Mathf.Lerp(0.7f, 1f, e);
                 yield return null;
             }

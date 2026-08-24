@@ -17,6 +17,10 @@ namespace BankruptVtuber
         public const string BillGear = "Art/bill_gear";
         public const string Superchat = "Art/badge_superchat";
         public const string Troll = "Art/badge_troll";
+        public const string BubblePill = "Art/bubble_pill";
+        public const string SuperchatBanner = "Art/bubble_superchat";
+        public const string TrollBubble = "Art/bubble_troll";
+        public const string Sparkle = "Art/sparkle";
 
         static readonly Dictionary<string, Sprite> Cache = new Dictionary<string, Sprite>();
 
@@ -61,6 +65,48 @@ namespace BankruptVtuber
             image.preserveAspect = true;
             image.color = multiply ?? Color.white;
             image.type = UnityEngine.UI.Image.Type.Simple;
+        }
+
+        public static void ApplySliced(UnityEngine.UI.Image image, string resourcePath, Color color, Vector4? border = null)
+        {
+            if (image == null)
+                return;
+            var sprite = GetSliced(resourcePath, border ?? new Vector4(48f, 36f, 48f, 36f));
+            if (sprite == null)
+            {
+                Apply(image, resourcePath, color, color);
+                return;
+            }
+
+            image.sprite = sprite;
+            image.type = UnityEngine.UI.Image.Type.Sliced;
+            image.color = color;
+            image.raycastTarget = false;
+        }
+
+        static Sprite GetSliced(string resourcePath, Vector4 border)
+        {
+            string key = resourcePath + "|slice";
+            if (Cache.TryGetValue(key, out var cached) && cached != null)
+                return cached;
+
+            var tex = Resources.Load<Texture2D>(resourcePath);
+            if (tex == null)
+                return Get(resourcePath);
+
+            tex.wrapMode = TextureWrapMode.Clamp;
+            tex.filterMode = FilterMode.Bilinear;
+            var sprite = Sprite.Create(
+                tex,
+                new Rect(0, 0, tex.width, tex.height),
+                new Vector2(0.5f, 0.5f),
+                100f,
+                0,
+                SpriteMeshType.FullRect,
+                border);
+            sprite.name = tex.name + "_slice";
+            Cache[key] = sprite;
+            return sprite;
         }
     }
 }
