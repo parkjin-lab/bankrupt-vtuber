@@ -15,7 +15,9 @@ namespace BankruptVtuber
         RectTransform _billStack;
         Button _start;
         Button _continue;
+        Button _how;
         Text _hint;
+        StudioPortrait _portrait;
         bool _busy;
         bool _howToOpen;
         bool _prologuePlaying;
@@ -47,6 +49,9 @@ namespace BankruptVtuber
                 return;
             }
 
+            if (_portrait != null && !_prologuePlaying)
+                _portrait.Tick(Time.deltaTime);
+
             if (!_howToOpen && !_prologuePlaying && !_busy && StreamBindings.Confirm)
             {
                 if (_hasSave)
@@ -60,45 +65,34 @@ namespace BankruptVtuber
         {
             var canvas = UiKit.CreateCanvas("TitleCanvas", transform);
             var root = canvas.transform;
-
-            UiKit.Image(root, "Wash", Palette.Studio);
-            UiKit.Stretch(root.Find("Wash") as RectTransform);
+            StudioChrome.Wash(root);
 
             _titleRoot = new GameObject("TitleRoot", typeof(RectTransform));
             _titleRoot.transform.SetParent(root, false);
             UiKit.Stretch(_titleRoot.GetComponent<RectTransform>());
 
             var titleParent = _titleRoot.transform;
+            _portrait = new StudioPortrait(titleParent, new Vector2(0.78f, 0.48f), new Vector2(440, 560), true);
 
-            var glow = UiKit.Image(titleParent, "Glow", new Color(0.91f, 0.22f, 0.38f, 0.16f));
-            UiKit.Layout(glow.rectTransform, new Vector2(0.72f, 0.42f), new Vector2(0.72f, 0.42f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(620, 620));
-
-            var bust = UiKit.Image(titleParent, "Bust", Color.white);
-            UiKit.Layout(bust.rectTransform, new Vector2(0.74f, 0.46f), new Vector2(0.74f, 0.46f), new Vector2(0.5f, 0.5f), new Vector2(0, 10), new Vector2(460, 560));
-            ArtSprites.Apply(bust, ArtSprites.Avatar, new Color(1f, 0.83f, 0.9f, 1f));
-
-            var name = UiKit.Label(titleParent, "BustName", "파산냥", 22, Palette.PastelDim, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(name.rectTransform, new Vector2(0.74f, 0.12f), new Vector2(0.74f, 0.12f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(240, 32));
-
-            var title = UiKit.Label(titleParent, "GameTitle", "「파산 버튜버」", 72, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
-            UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(72, -86), new Vector2(820, 90));
-
-            var line = UiKit.Label(titleParent, "Tagline", "빚더미에서 최고의 버튜버가 되어라.", 30, Palette.Pink, TextAnchor.UpperLeft);
-            UiKit.Layout(line.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(76, -184), new Vector2(760, 44));
+            var lockup = UiKit.Panel(titleParent, "Lockup", Color.white);
+            UiKit.Layout(lockup, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(56, -48), new Vector2(760, 200));
+            ArtSprites.ApplySliced(lockup.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 1f, 1f, 0.92f));
+            var title = UiKit.Label(lockup, "GameTitle", "「파산 버튜버」", 64, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
+            UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(28, -18), new Vector2(-40, 86));
+            var line = UiKit.Label(lockup, "Tagline", "빚더미에서 최고의 버튜버가 되어라.", 26, Palette.Pink, TextAnchor.UpperLeft);
+            UiKit.Layout(line.rectTransform, new Vector2(0, 0), new Vector2(1, 0.48f), new Vector2(0, 0), new Vector2(28, 18), new Vector2(-40, 0));
             line.horizontalOverflow = HorizontalWrapMode.Wrap;
 
             _start = UiKit.Button(titleParent, "Start", "방송 시작", OnStartBroadcast, Palette.PinkDeep, Color.white);
-            UiKit.Layout(_start.GetComponent<RectTransform>(), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(76, -20), new Vector2(320, 68));
-
+            StyleMenuButton(_start, new Vector2(56, -40), new Vector2(420, 78), Palette.PinkDeep);
             _continue = UiKit.Button(titleParent, "Continue", "이어서 하기", OnContinue, Palette.Gold, Palette.Ink);
-            UiKit.Layout(_continue.GetComponent<RectTransform>(), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(412, -20), new Vector2(320, 68));
+            StyleMenuButton(_continue, new Vector2(56, -132), new Vector2(420, 78), Palette.Gold);
             _continue.gameObject.SetActive(false);
-
-            var how = UiKit.Button(titleParent, "HowTo", "조작 설명", OpenHowTo, Palette.StudioHi, Palette.Pastel);
-            UiKit.Layout(how.GetComponent<RectTransform>(), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(76, -104), new Vector2(320, 68));
+            _how = UiKit.Button(titleParent, "HowTo", "조작 설명", OpenHowTo, Palette.StudioHi, Palette.Pastel);
+            StyleMenuButton(_how, new Vector2(56, -224), new Vector2(420, 70), Palette.StudioHi);
 
             _hint = UiKit.Label(titleParent, "Hint", "Space / Enter  방송 시작", 18, Palette.Muted, TextAnchor.LowerLeft);
-            UiKit.Layout(_hint.rectTransform, new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0), new Vector2(76, 28), new Vector2(520, 28));
+            UiKit.Layout(_hint.rectTransform, new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0), new Vector2(64, 28), new Vector2(520, 28));
 
             BuildHowTo(root);
             BuildPrologue(root);
@@ -106,8 +100,9 @@ namespace BankruptVtuber
 
         void BuildHowTo(Transform root)
         {
-            var panel = UiKit.Panel(root, "HowTo", new Color(0.08f, 0.05f, 0.1f, 0.94f));
-            UiKit.Layout(panel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 520));
+            var panel = UiKit.Panel(root, "HowTo", Color.white);
+            UiKit.Layout(panel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760, 540));
+            ArtSprites.ApplySliced(panel.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 1f, 1f, 0.98f));
             _howToRoot = panel.gameObject;
             _howToRoot.SetActive(false);
 
@@ -141,6 +136,9 @@ namespace BankruptVtuber
             var bust = UiKit.Image(panel, "Pasan", Color.white);
             UiKit.Layout(bust.rectTransform, new Vector2(0.28f, 0.46f), new Vector2(0.28f, 0.46f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420, 520));
             ArtSprites.Apply(bust, ArtSprites.Avatar, new Color(1f, 0.83f, 0.9f, 1f));
+            var cam = UiKit.Image(panel, "CamFrame", new Color(0.92f, 0.28f, 0.48f, 0.95f));
+            UiKit.Layout(cam.rectTransform, new Vector2(0.28f, 0.46f), new Vector2(0.28f, 0.46f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(448, 548));
+            cam.transform.SetSiblingIndex(bust.transform.GetSiblingIndex());
 
             _billStack = UiKit.Panel(panel, "BillStack", new Color(0, 0, 0, 0));
             UiKit.Layout(_billStack, new Vector2(0.68f, 0.48f), new Vector2(0.68f, 0.48f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(280, 340));
@@ -175,6 +173,8 @@ namespace BankruptVtuber
                 caption.text = _hasSave ? "새 방송 시작" : "방송 시작";
             if (_hint != null)
                 _hint.text = _hasSave ? "Space / Enter  이어서 하기" : "Space / Enter  방송 시작";
+            if (_how != null)
+                StyleMenuButton(_how, new Vector2(56, _hasSave ? -224 : -132), new Vector2(420, 70), Palette.StudioHi);
         }
 
         void OnContinue()
@@ -280,6 +280,18 @@ namespace BankruptVtuber
             _canSkipPrologue = false;
             StopAllCoroutines();
             GameManager.Instance.GoWeekStart();
+        }
+
+        static void StyleMenuButton(Button btn, Vector2 pos, Vector2 size, Color tint)
+        {
+            var rt = btn.GetComponent<RectTransform>();
+            UiKit.Layout(rt, new Vector2(0, 0.52f), new Vector2(0, 0.52f), new Vector2(0, 0.5f), pos, size);
+            var img = btn.GetComponent<Image>();
+            ArtSprites.ApplySliced(img, ArtSprites.BubblePill, tint);
+            img.raycastTarget = true;
+            var cap = btn.GetComponentInChildren<Text>();
+            if (cap != null)
+                cap.fontSize = 30;
         }
     }
 }

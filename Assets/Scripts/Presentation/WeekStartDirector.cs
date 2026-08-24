@@ -18,7 +18,11 @@ namespace BankruptVtuber
         RectTransform _contentRoot;
         Text _contentHud;
         Button _goLive;
+        StudioPortrait _portrait;
+        RectTransform _fanMinjun;
+        RectTransform _fanHaeun;
         bool _ready;
+        float _cashSlam;
 
         struct Bill
         {
@@ -27,6 +31,7 @@ namespace BankruptVtuber
             public int Amount;
             public bool Extra;
             public bool Gain;
+            public bool Threat;
             public Color Tint;
         }
 
@@ -48,6 +53,15 @@ namespace BankruptVtuber
 
         void Update()
         {
+            _portrait?.Tick(Time.deltaTime);
+            if (_cashSlam > 0f)
+            {
+                _cashSlam = Mathf.MoveTowards(_cashSlam, 0f, Time.deltaTime);
+                float u = _cashSlam;
+                _cash.rectTransform.localScale = Vector3.one * (1f + 0.18f * u);
+                _debt.rectTransform.localScale = Vector3.one * (1f + 0.22f * u);
+            }
+
             if (_ready
                 && !FandomRules.MustResolveConflict(GameManager.Instance.Run)
                 && !ContentRules.MustPick(GameManager.Instance.Run)
@@ -59,24 +73,32 @@ namespace BankruptVtuber
         {
             var canvas = UiKit.CreateCanvas("WeekStartCanvas", transform);
             var root = canvas.transform;
+            StudioChrome.Wash(root);
+            _portrait = new StudioPortrait(root, new Vector2(0.90f, 0.82f), new Vector2(220, 280), true);
 
-            UiKit.Image(root, "Wash", Palette.Studio);
-            UiKit.Stretch(root.Find("Wash") as RectTransform);
+            var title = UiKit.Label(root, "Title", "파산 버튜버", 48, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
+            UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(36, -16), new Vector2(640, 54));
+            _day = UiKit.Label(root, "DayLabel", "", 24, Palette.Pink, TextAnchor.UpperLeft);
+            UiKit.Layout(_day.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -68), new Vector2(720, 32));
+            _fandom = UiKit.Label(root, "FandomHud", "", 18, Palette.Pastel, TextAnchor.UpperLeft);
+            UiKit.Layout(_fandom.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -98), new Vector2(900, 24));
+            _superfans = UiKit.Label(root, "SuperfanHud", "", 16, Palette.Gold, TextAnchor.UpperLeft);
+            UiKit.Layout(_superfans.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -122), new Vector2(720, 22));
+            _contentHud = UiKit.Label(root, "ContentHud", "", 16, Palette.Gold, TextAnchor.UpperLeft);
+            UiKit.Layout(_contentHud.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -144), new Vector2(720, 22));
 
-            var title = UiKit.Label(root, "Title", "파산 버튜버", 56, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
-            UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(48, -28), new Vector2(640, 70));
-            _day = UiKit.Label(root, "DayLabel", "", 28, Palette.Pink, TextAnchor.UpperLeft);
-            UiKit.Layout(_day.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(52, -96), new Vector2(720, 40));
-            _fandom = UiKit.Label(root, "FandomHud", "", 20, Palette.Pastel, TextAnchor.UpperLeft);
-            UiKit.Layout(_fandom.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(52, -132), new Vector2(1100, 28));
-            _superfans = UiKit.Label(root, "SuperfanHud", "", 18, Palette.Gold, TextAnchor.UpperLeft);
-            UiKit.Layout(_superfans.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(52, -158), new Vector2(920, 26));
-            _contentHud = UiKit.Label(root, "ContentHud", "", 18, Palette.Gold, TextAnchor.UpperLeft);
-            UiKit.Layout(_contentHud.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(52, -184), new Vector2(920, 26));
+            _fanMinjun = StudioChrome.FanChip(root, "FanMinjun", "민준", "첫 도네", 40);
+            UiKit.Layout(_fanMinjun, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -168), new Vector2(220, 48));
+            _fanHaeun = StudioChrome.FanChip(root, "FanHaeun", "하은", "매일 오는 야간", 270);
+            UiKit.Layout(_fanHaeun, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(272, -168), new Vector2(240, 48));
+            _fanMinjun.gameObject.SetActive(false);
+            _fanHaeun.gameObject.SetActive(false);
 
-            _cash = MoneyChip(root, "CashChip", "현금", Palette.CashGreen, new Vector2(-520, 250));
-            _debt = MoneyChip(root, "DebtChip", "부채", Palette.MoneyRed, new Vector2(-180, 250));
-            _mental = MoneyChip(root, "MentalChip", "멘탈", Palette.Pink, new Vector2(160, 250));
+            var moneyBar = UiKit.Panel(root, "MoneyBar", new Color(0, 0, 0, 0));
+            UiKit.Layout(moneyBar, new Vector2(0, 1), new Vector2(0.72f, 1), new Vector2(0, 1), new Vector2(24, -220), new Vector2(0, 88));
+            _cash = MoneyChip(moneyBar, "CashChip", "현금", Palette.CashGreen, 0f, 0.33f);
+            _debt = MoneyChip(moneyBar, "DebtChip", "부채", Palette.MoneyRed, 0.33f, 0.66f);
+            _mental = MoneyChip(moneyBar, "MentalChip", "멘탈", Palette.Pink, 0.66f, 1f);
 
             var wavePanel = UiKit.Panel(root, "WavePanel", new Color(1, 1, 1, 0.06f));
             UiKit.Layout(wavePanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -20), new Vector2(1320, 480));
@@ -106,33 +128,41 @@ namespace BankruptVtuber
             UiKit.Layout(style.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 56));
             _conflictRoot.gameObject.SetActive(false);
 
-            _contentRoot = UiKit.Panel(root, "ContentPick", new Color(0.14f, 0.07f, 0.16f, 0.97f));
-            UiKit.Layout(_contentRoot, new Vector2(0.5f, 0.22f), new Vector2(0.5f, 0.22f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1180, 200));
+            _contentRoot = UiKit.Panel(root, "ContentPick", Color.white);
+            UiKit.Layout(_contentRoot, new Vector2(0.5f, 0.18f), new Vector2(0.5f, 0.18f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1280, 280));
+            ArtSprites.ApplySliced(_contentRoot.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 1f, 1f, 0.96f));
             var pTitle = UiKit.Label(_contentRoot, "PTitle", "오늘 콘텐츠", 28, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
-            UiKit.Layout(pTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -12), new Vector2(-24, 36));
+            UiKit.Layout(pTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -10), new Vector2(-24, 34));
             var pHint = UiKit.Label(_contentRoot, "PHint", "방송 전에 반드시 고르세요. 채팅 QTE는 그대로입니다.", 16, Palette.PastelDim, TextAnchor.UpperCenter);
-            UiKit.Layout(pHint.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -46), new Vector2(-24, 24));
-            AddContentButton(StreamContentType.Talk, -435);
-            AddContentButton(StreamContentType.Game, -145);
-            AddContentButton(StreamContentType.Song, 145);
-            AddContentButton(StreamContentType.Reaction, 435);
+            UiKit.Layout(pHint.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -42), new Vector2(-24, 22));
+            AddContentButton(StreamContentType.Talk, 0, Palette.Blue);
+            AddContentButton(StreamContentType.Game, 1, Palette.Troll);
+            AddContentButton(StreamContentType.Song, 2, Palette.Gold);
+            AddContentButton(StreamContentType.Reaction, 3, Palette.Green);
             _contentRoot.gameObject.SetActive(false);
 
             var hint = UiKit.Label(root, "Hint", "← 긍정   ↓ 공감   → 웃음   ↑ 감사   Space 슈퍼챗(떼면 판정)", 18, Palette.Muted, TextAnchor.LowerRight);
             UiKit.Layout(hint.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 16), new Vector2(620, 28));
         }
 
-        Text MoneyChip(Transform root, string name, string label, Color accent, Vector2 pos)
+        Text MoneyChip(Transform root, string name, string label, Color accent, float x0, float x1)
         {
-            var panel = UiKit.Panel(root, name, new Color(0.08f, 0.05f, 0.1f, 0.86f));
-            UiKit.Layout(panel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(300, 88));
-            var bar = UiKit.Image(panel, "Accent", accent);
-            UiKit.Layout(bar.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 0.5f), Vector2.zero, new Vector2(8, 0));
-            UiKit.Label(panel, "L", label, 18, Palette.Muted, TextAnchor.UpperLeft);
+            var panel = UiKit.Panel(root, name, Color.white);
+            panel.anchorMin = new Vector2(x0, 0f);
+            panel.anchorMax = new Vector2(x1, 1f);
+            panel.offsetMin = new Vector2(6f, 0f);
+            panel.offsetMax = new Vector2(-6f, 0f);
+            bool cash = name.Contains("Cash");
+            bool debt = name.Contains("Debt");
+            ArtSprites.ApplySliced(
+                panel.GetComponent<Image>(),
+                debt ? ArtSprites.ThreatBanner : cash ? ArtSprites.CashBanner : ArtSprites.PanelDark,
+                debt ? Palette.MoneyRed : cash ? Palette.CashGreen : new Color(0.92f, 0.45f, 0.62f, 1f));
+            UiKit.Label(panel, "L", label, 16, Color.white, TextAnchor.UpperLeft, FontStyle.Bold);
             var l = panel.Find("L") as RectTransform;
-            UiKit.Layout(l, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(20, -8), new Vector2(-28, 24));
-            var v = UiKit.Label(panel, "V", "₩0", 32, accent, TextAnchor.LowerLeft, FontStyle.Bold);
-            UiKit.Layout(v.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(20, 10), new Vector2(-28, -36));
+            UiKit.Layout(l, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(16, -6), new Vector2(-20, 20));
+            var v = UiKit.Label(panel, "V", "₩0", 28, Color.white, TextAnchor.LowerLeft, FontStyle.Bold);
+            UiKit.Layout(v.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(16, 8), new Vector2(-20, -24));
             return v;
         }
 
@@ -156,6 +186,10 @@ namespace BankruptVtuber
             string fans = FandomRules.SuperfanLine(run, GameManager.Instance.Fandom);
             _superfans.text = fans;
             _superfans.gameObject.SetActive(!string.IsNullOrEmpty(fans));
+            if (_fanMinjun != null)
+                _fanMinjun.gameObject.SetActive(run.minjunPresent);
+            if (_fanHaeun != null)
+                _fanHaeun.gameObject.SetActive(run.haeunPresent);
             string content = ContentRules.HudLine(GameManager.Instance.Content, run);
             _contentHud.text = content;
             _contentHud.gameObject.SetActive(!string.IsNullOrEmpty(content));
@@ -170,20 +204,30 @@ namespace BankruptVtuber
             _ => ""
         };
 
-        void AddContentButton(StreamContentType type, float x)
+        void AddContentButton(StreamContentType type, int index, Color color)
         {
             var t = ContentRules.Tuning(GameManager.Instance != null ? GameManager.Instance.Content : null, type);
             string name = ContentPickName(type);
             if (string.IsNullOrEmpty(name))
                 name = t.Name;
             string caption = $"{name}\n수입 ×{t.IncomeMul:0.##}  멘탈 −{t.MentalCost}";
-            var btn = UiKit.Button(_contentRoot, type.ToString(), caption, () => OnPickContent(type), Palette.PinkDeep, Color.white);
-            UiKit.Layout(btn.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(x, 24), new Vector2(260, 88));
+            var btn = UiKit.Button(_contentRoot, type.ToString(), caption, () => OnPickContent(type), color, Palette.Ink);
+            float a = index / 4f;
+            float b = (index + 1) / 4f;
+            var rt = btn.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(a, 0f);
+            rt.anchorMax = new Vector2(b, 0.70f);
+            rt.offsetMin = new Vector2(10f, 16f);
+            rt.offsetMax = new Vector2(-10f, -8f);
+            var img = btn.GetComponent<Image>();
+            ArtSprites.ApplySliced(img, ArtSprites.BubblePill, color);
+            img.raycastTarget = true;
             var cap = btn.GetComponentInChildren<Text>();
             if (cap != null)
             {
-                cap.fontSize = 20;
-                cap.lineSpacing = 1.1f;
+                cap.fontSize = 26;
+                cap.lineSpacing = 1.15f;
+                cap.color = Palette.Ink;
             }
         }
 
@@ -262,6 +306,7 @@ namespace BankruptVtuber
                     Art = extra.ArtPath,
                     Amount = extra.Amount,
                     Extra = true,
+                    Threat = true,
                     Tint = extra.Tint
                 });
             }
@@ -273,6 +318,7 @@ namespace BankruptVtuber
                     Art = ArtSprites.BillLicense,
                     Amount = gm.Run.pendingExtraSurcharge,
                     Extra = true,
+                    Threat = true,
                     Tint = Palette.Troll
                 });
             }
@@ -304,7 +350,8 @@ namespace BankruptVtuber
             EconomyRules.ApplyDailyBills(gm.Run, b, gm.Week2, gm.Week3, gm.Week4, gm.Week5, gm.Fandom);
             gm.SaveRun();
             RefreshHud();
-            _cash.color = Palette.MoneyRed;
+            _cash.color = Color.white;
+            _cashSlam = 1f;
             int today = gm.Run.lastBills + gm.Run.extraThreatAmount + gm.Run.lastConflictSurcharge + gm.Run.lastAutoCost;
             string support = gm.Run.lastFanSupport > 0
                 ? $"   ·   팬 지원금 {EconomyRules.FormatWon(gm.Run.lastFanSupport)}"
@@ -350,38 +397,55 @@ namespace BankruptVtuber
         {
             float step = total > 6 ? 164f : 192f;
             float x = (index - (total - 1) * 0.5f) * step;
-            var bg = bill.Extra ? new Color(1f, 0.86f, 0.88f, 0.98f) : new Color(0.95f, 0.93f, 0.96f, 0.96f);
+            bool threat = bill.Threat;
+            var bg = threat
+                ? Palette.MoneyRed
+                : bill.Gain
+                    ? new Color(0.72f, 0.96f, 0.82f, 0.98f)
+                    : bill.Extra
+                        ? new Color(1f, 0.86f, 0.88f, 0.98f)
+                        : new Color(0.95f, 0.93f, 0.96f, 0.96f);
             var card = UiKit.Panel(_stack, "Bill" + index, bg);
-            UiKit.Layout(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 240), new Vector2(176, 248));
+            UiKit.Layout(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 280), new Vector2(176, 248));
+            if (threat)
+                ArtSprites.ApplySliced(card.GetComponent<Image>(), ArtSprites.ThreatBanner, Palette.MoneyRed, new Vector4(28f, 24f, 28f, 24f));
+            else if (bill.Gain)
+                ArtSprites.ApplySliced(card.GetComponent<Image>(), ArtSprites.CashBanner, Palette.CashGreen, new Vector4(28f, 24f, 28f, 24f));
             if (bill.Extra)
             {
                 string tagText = bill.Gain ? "팬 지원" : "오늘의 위협";
-                var tag = UiKit.Label(card, "Tag", tagText, 13, bill.Gain ? Palette.CashGreen : Palette.MoneyRed, TextAnchor.UpperCenter, FontStyle.Bold);
+                var tagCol = bill.Gain || threat ? Color.white : Palette.MoneyRed;
+                var tag = UiKit.Label(card, "Tag", tagText, 13, tagCol, TextAnchor.UpperCenter, FontStyle.Bold);
                 UiKit.Layout(tag.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -4), new Vector2(0, 18));
             }
             var icon = UiKit.Image(card, "Icon", Color.white);
             UiKit.Layout(icon.rectTransform, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, bill.Extra ? -28 : -12), new Vector2(128, 128));
             ArtSprites.Apply(icon, bill.Art, bill.Extra ? bill.Tint : Palette.PinkDeep, bill.Extra ? bill.Tint : (Color?)null);
-            UiKit.Label(card, "N", bill.Name, 16, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            var nameCol = threat || bill.Gain ? Color.white : Palette.Ink;
+            UiKit.Label(card, "N", bill.Name, 16, nameCol, TextAnchor.MiddleCenter, FontStyle.Bold);
             var n = card.Find("N") as RectTransform;
             UiKit.Layout(n, new Vector2(0, 0.20f), new Vector2(1, 0.38f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-            var amt = UiKit.Label(card, "A", (bill.Gain ? "+" : "-") + EconomyRules.FormatWon(bill.Amount), 18, bill.Gain ? Palette.CashGreen : Palette.MoneyRed, TextAnchor.LowerCenter, FontStyle.Bold);
-            UiKit.Layout(amt.rectTransform, new Vector2(0, 0), new Vector2(1, 0.22f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-            StartCoroutine(Slam(card, x));
+            var amtCol = bill.Gain ? Color.white : threat ? Palette.Gold : Palette.MoneyRed;
+            var amt = UiKit.Label(card, "A", (bill.Gain ? "+" : "-") + EconomyRules.FormatWon(bill.Amount), 26, amtCol, TextAnchor.LowerCenter, FontStyle.Bold);
+            UiKit.Layout(amt.rectTransform, new Vector2(0, 0), new Vector2(1, 0.24f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            StartCoroutine(Slam(card, x, threat));
         }
 
-        IEnumerator Slam(RectTransform card, float x)
+        IEnumerator Slam(RectTransform card, float x, bool threat)
         {
             float t = 0f;
+            float rot = threat ? 12f : 6f;
             while (t < 1f)
             {
-                t += Time.deltaTime * 2.6f;
+                t += Time.deltaTime * 2.4f;
                 float e = 1f - Mathf.Pow(1f - Mathf.Clamp01(t), 3f);
-                card.anchoredPosition = new Vector2(x, Mathf.Lerp(240f, 0f, e));
-                card.localScale = Vector3.one * Mathf.Lerp(0.7f, 1f, e);
+                card.anchoredPosition = new Vector2(x, Mathf.Lerp(280f, 0f, e));
+                card.localScale = Vector3.one * Mathf.Lerp(threat ? 1.45f : 0.7f, 1f, e);
+                card.localRotation = Quaternion.Euler(0, 0, Mathf.Lerp(rot, 0f, e));
                 yield return null;
             }
             card.anchoredPosition = new Vector2(x, 0);
+            card.localRotation = Quaternion.identity;
         }
     }
 }

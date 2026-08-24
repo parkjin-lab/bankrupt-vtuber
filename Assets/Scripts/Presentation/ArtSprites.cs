@@ -21,6 +21,9 @@ namespace BankruptVtuber
         public const string SuperchatBanner = "Art/bubble_superchat";
         public const string TrollBubble = "Art/bubble_troll";
         public const string Sparkle = "Art/sparkle";
+        public const string PanelDark = "Art/panel_dark";
+        public const string ThreatBanner = "Art/banner_red";
+        public const string CashBanner = "Art/banner_green";
 
         static readonly Dictionary<string, Sprite> Cache = new Dictionary<string, Sprite>();
 

@@ -29,6 +29,19 @@ namespace BankruptVtuber
         GameObject _endingRoot;
         Text _endingTitle;
         Text _endingBody;
+        Text _tileIncome;
+        Text _tileBills;
+        Text _tileCash;
+        Text _tileDebt;
+        Text _tilePerfect;
+        Text _tileMiss;
+        Text _tileViewers;
+        RectTransform _cashTile;
+        RectTransform _debtTile;
+        StudioPortrait _portrait;
+        StudioPortrait _endingPortrait;
+        float _mood;
+        bool _cashUp;
 
         void Awake()
         {
@@ -59,6 +72,24 @@ namespace BankruptVtuber
             var gm = GameManager.Instance;
             if (gm == null)
                 return;
+            _portrait?.Tick(Time.deltaTime);
+            _endingPortrait?.Tick(Time.deltaTime);
+            _mood = Mathf.MoveTowards(_mood, 0f, Time.deltaTime * 0.55f);
+            if (_cashTile != null && _debtTile != null)
+            {
+                float pulse = 1f + 0.12f * Mathf.Abs(Mathf.Sin(Time.time * 6f)) * (0.35f + _mood);
+                if (_cashUp)
+                {
+                    _cashTile.localScale = Vector3.one * pulse;
+                    _debtTile.localScale = Vector3.one;
+                }
+                else
+                {
+                    _cashTile.localScale = Vector3.one;
+                    _debtTile.anchoredPosition = new Vector2(_debtTile.anchoredPosition.x, Mathf.Sin(Time.time * 28f) * 5f * (0.4f + _mood));
+                    _debtTile.localScale = Vector3.one * (1f + 0.08f * _mood);
+                }
+            }
             if (CanAdvance(gm.Run) && StreamBindings.Confirm)
                 gm.NextMorning();
         }
@@ -75,19 +106,32 @@ namespace BankruptVtuber
         {
             var canvas = UiKit.CreateCanvas("SettlementCanvas", transform);
             var root = canvas.transform;
-            UiKit.Image(root, "Wash", Palette.Studio);
-            UiKit.Stretch(root.Find("Wash") as RectTransform);
+            StudioChrome.Wash(root);
+            _portrait = new StudioPortrait(root, new Vector2(0.90f, 0.82f), new Vector2(210, 268), false);
 
-            var title = UiKit.Label(root, "Title", "정산", 54, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
-            UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(48, -28), new Vector2(400, 70));
+            var title = UiKit.Label(root, "Title", "정산", 48, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
+            UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(36, -16), new Vector2(400, 56));
 
-            var panel = UiKit.Panel(root, "Sheet", new Color(1, 1, 1, 0.07f));
-            UiKit.Layout(panel, new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(920, 500));
-            _body = UiKit.Label(panel, "Body", "", 24, Palette.Pastel, TextAnchor.UpperLeft);
-            UiKit.Stretch(_body.rectTransform, 36, 36, 28, 28);
+            var recap = UiKit.Panel(root, "Recap", new Color(0, 0, 0, 0));
+            UiKit.Layout(recap, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(20, -78), new Vector2(0, 210));
+            _tileIncome = StudioChrome.RecapTile(recap, "Income", "오늘 수입", Palette.CashGreen, 0f, 0.25f, 0.48f, 0.52f, true);
+            _tileBills = StudioChrome.RecapTile(recap, "Bills", "청구", Palette.MoneyRed, 0.25f, 0.50f, 0.48f, 0.52f, false);
+            _tileCash = StudioChrome.RecapTile(recap, "Cash", "현금", Palette.CashGreen, 0.50f, 0.75f, 0.48f, 0.52f, true);
+            _tileDebt = StudioChrome.RecapTile(recap, "Debt", "부채", Palette.MoneyRed, 0.75f, 1f, 0.48f, 0.52f, false);
+            _cashTile = recap.Find("Cash") as RectTransform;
+            _debtTile = recap.Find("Debt") as RectTransform;
+            _tilePerfect = StudioChrome.RecapTile(recap, "Perfect", "PERFECT", Palette.Gold, 0f, 0.33f, 0f, 0.48f, true);
+            _tileMiss = StudioChrome.RecapTile(recap, "Miss", "MISS", Palette.MoneyRed, 0.33f, 0.66f, 0f, 0.48f, false);
+            _tileViewers = StudioChrome.RecapTile(recap, "Viewers", "시청자", Palette.Pink, 0.66f, 1f, 0f, 0.48f, true);
+
+            var panel = UiKit.Panel(root, "Sheet", Color.white);
+            UiKit.Layout(panel, new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(980, 200));
+            ArtSprites.ApplySliced(panel.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 1f, 1f, 0.92f));
+            _body = UiKit.Label(panel, "Body", "", 18, Palette.Pastel, TextAnchor.UpperLeft);
+            UiKit.Stretch(_body.rectTransform, 22, 22, 16, 16);
             _body.horizontalOverflow = HorizontalWrapMode.Wrap;
             _body.verticalOverflow = VerticalWrapMode.Overflow;
-            _body.lineSpacing = 1.12f;
+            _body.lineSpacing = 1.08f;
 
             _result = UiKit.Label(root, "Result", "", 30, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_result.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 168), new Vector2(1200, 50));
@@ -150,18 +194,20 @@ namespace BankruptVtuber
             UiKit.Stretch(_endingRoot.GetComponent<RectTransform>());
             var endingWash = UiKit.Image(_endingRoot.transform, "EndingWash", new Color(0.06f, 0.03f, 0.08f, 0.94f));
             UiKit.Stretch(endingWash.rectTransform);
-            var endingCard = UiKit.Panel(_endingRoot.transform, "EndingCard", new Color(0.14f, 0.07f, 0.12f, 0.98f));
-            UiKit.Layout(endingCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760, 360));
-            _endingTitle = UiKit.Label(endingCard, "ETitle", "", 48, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
-            UiKit.Layout(_endingTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 64));
-            _endingBody = UiKit.Label(endingCard, "EBody", "", 24, Palette.Pastel, TextAnchor.MiddleCenter);
-            UiKit.Layout(_endingBody.rectTransform, new Vector2(0, 0.28f), new Vector2(1, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-48, 0));
+            var endingCard = UiKit.Panel(_endingRoot.transform, "EndingCard", Color.white);
+            UiKit.Layout(endingCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1080, 460));
+            ArtSprites.ApplySliced(endingCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 1f, 1f, 0.98f));
+            _endingPortrait = new StudioPortrait(endingCard, new Vector2(0.18f, 0.52f), new Vector2(320, 400), false);
+            _endingTitle = UiKit.Label(endingCard, "ETitle", "", 52, Palette.Gold, TextAnchor.UpperLeft, FontStyle.Bold);
+            UiKit.Layout(_endingTitle.rectTransform, new Vector2(0.38f, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(12, -36), new Vector2(-40, 72));
+            _endingBody = UiKit.Label(endingCard, "EBody", "", 24, Palette.Pastel, TextAnchor.UpperLeft);
+            UiKit.Layout(_endingBody.rectTransform, new Vector2(0.38f, 0.28f), new Vector2(1, 0.72f), new Vector2(0, 1), new Vector2(12, 0), new Vector2(-48, 0));
             _endingBody.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _endingBody.lineSpacing = 1.2f;
+            _endingBody.lineSpacing = 1.25f;
             _retire = UiKit.Button(endingCard, "Retire", "후배에게 메인 양도", OnRetire, Palette.Gold, Palette.Ink);
-            UiKit.Layout(_retire.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-190, 28), new Vector2(320, 56));
+            UiKit.Layout(_retire.GetComponent<RectTransform>(), new Vector2(0.68f, 0), new Vector2(0.68f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 56));
             var endingRestart = UiKit.Button(endingCard, "EndingRestart", "처음부터", () => GameManager.Instance.RestartRun(), Palette.PinkDeep, Color.white);
-            UiKit.Layout(endingRestart.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(190, 28), new Vector2(320, 56));
+            UiKit.Layout(endingRestart.GetComponent<RectTransform>(), new Vector2(0.68f, 0), new Vector2(0.68f, 0), new Vector2(0.5f, 0), new Vector2(150, 28), new Vector2(300, 56));
             _endingRoot.SetActive(false);
         }
 
@@ -207,6 +253,19 @@ namespace BankruptVtuber
                         : "") +
                     $"아크릴 재고         {run.goodsStock}개\n";
             }
+            int charges = run.lastBills + run.extraThreatAmount + run.lastConflictSurcharge + run.lastAutoCost;
+            _tileIncome.text = EconomyRules.FormatWon(run.lastStreamIncome);
+            _tileBills.text = "-" + EconomyRules.FormatWon(charges);
+            _tileCash.text = EconomyRules.FormatWon(run.cash);
+            _tileDebt.text = EconomyRules.FormatWon(run.debt);
+            _tilePerfect.text = run.lastPerfects.ToString();
+            _tileMiss.text = run.lastMisses.ToString();
+            _tileViewers.text = Mathf.RoundToInt(run.lastStreamPeakViewers).ToString();
+            _cashUp = run.lastStreamIncome >= run.lastBills;
+            _mood = 1f;
+            if (_portrait != null)
+                _portrait.PoseEnding(_cashUp ? EndingKind.SoloLegend : EndingKind.Bankrupt);
+
             _body.text =
                 $"{weekTag}  {run.day}일차 정산\n\n" +
                 force +
@@ -577,6 +636,7 @@ namespace BankruptVtuber
                 : run.lastEnding;
             _endingTitle.text = Week5Rules.EndingTitle(kind);
             _endingBody.text = Week5Rules.EndingBody(kind);
+            _endingPortrait?.PoseEnding(kind);
             bool offerRetire = Week5Rules.CanOfferRetire(run, w5) && !run.retirePicked;
             _retire.gameObject.SetActive(offerRetire);
             _next.gameObject.SetActive(false);

@@ -261,6 +261,47 @@ def check_project() -> None:
     else:
         ok("WeekStart money slam shows bill sprites at 128px")
 
+    chrome = {
+        "panel_dark.png": "studio card",
+        "banner_red.png": "threat banner",
+        "banner_green.png": "cash banner",
+    }
+    for name, label in chrome.items():
+        path = ROOT / "Assets/Resources/Art" / name
+        if not path.exists() or path.stat().st_size < 1000:
+            fail(f"missing/empty art {name} ({label})")
+        else:
+            ok(f"art {name} ({label})")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    chrome_cs = (ROOT / "Assets/Scripts/Presentation/StudioChrome.cs").read_text(encoding="utf-8") if (ROOT / "Assets/Scripts/Presentation/StudioChrome.cs").exists() else ""
+    if "StudioPortrait" not in title_cs or "「파산 버튜버」" not in title_cs or "빚더미에서 최고의 버튜버가 되어라." not in title_cs:
+        fail("Title is not a splash lockup with webcam + title")
+    elif "방송 시작" not in title_cs or "이어서 하기" not in title_cs or "조작 설명" not in title_cs:
+        fail("Title missing 방송 시작 / 이어서 하기 / 조작 설명")
+    else:
+        ok("Title splash has webcam, lockup, and the three menu actions")
+    if "FanChip" not in week_cs or "민준" not in week_cs or "하은" not in week_cs:
+        fail("WeekStart missing 민준/하은 fan chips")
+    elif "ThreatBanner" not in week_cs or "오늘의 위협" not in week_cs:
+        fail("WeekStart extra threat is not a red card")
+    elif "토크" not in week_cs or "BubblePill" not in week_cs or "index / 4f" not in week_cs:
+        fail("content pick is still tiny buttons")
+    else:
+        ok("WeekStart slam + red threat + chunky 콘텐츠 cards")
+    if '"오늘 수입"' not in settle_cs or '"청구"' not in settle_cs or "_tilePerfect" not in settle_cs or "_tileMiss" not in settle_cs:
+        fail("Settlement missing 2-second recap tiles")
+    elif "_cashUp" not in settle_cs or "PoseEnding" not in settle_cs:
+        fail("Settlement cash-up / debt-up / ending pose missing")
+    elif "EndingRoot" not in settle_cs or "EndingTitle" not in settle_cs:
+        fail("named ending screen missing")
+    else:
+        ok("Settlement recap is 오늘 수입 / 청구 / 현금·부채 / Perfect·Miss")
+    if "StudioPortrait" not in chrome_cs or "PoseEnding" not in chrome_cs:
+        fail("StudioChrome missing shared webcam portrait")
+    else:
+        ok("Title / WeekStart / Settlement share StudioChrome webcam language")
+
     for rel in (
         "Assets/Scripts/Core/GameManager.cs",
         "Assets/Scripts/Core/RunSave.cs",
