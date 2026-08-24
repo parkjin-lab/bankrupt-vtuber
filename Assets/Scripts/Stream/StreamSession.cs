@@ -13,6 +13,8 @@ namespace BankruptVtuber
         public int SuperchatWon;
         public bool Consumed;
         public bool IsSuperchat;
+        public bool NamedFan;
+        public bool FanWounded;
     }
 
     public class StreamSession
@@ -70,6 +72,11 @@ namespace BankruptVtuber
         bool _promoEnabled;
         bool _lineEnabled;
         bool _concertEnabled;
+        string _fanMinjun;
+        string _fanHaeun;
+        bool _minjunWounded;
+        bool _haeunWounded;
+        int _haeunHurtAt;
 
         static readonly string[] FakeUsers =
         {
@@ -146,6 +153,15 @@ namespace BankruptVtuber
             _lineEnabled = true;
             Line.Reset();
             Line.Window = w4.lineWindowSeconds > 0.2f ? w4.lineWindowSeconds : 1.2f;
+        }
+
+        public void BindNamedFans(string minjun, bool minjunWounded, string haeun, bool haeunWounded, int haeunHurtStreak = 0)
+        {
+            _fanMinjun = minjun;
+            _fanHaeun = haeun;
+            _minjunWounded = minjunWounded;
+            _haeunWounded = haeunWounded;
+            _haeunHurtAt = haeunHurtStreak;
         }
 
         public void EnableConcert(Week5Balance w5)
@@ -349,13 +365,32 @@ namespace BankruptVtuber
 
         void SpawnNote(ChatKind kind, bool superchat, int won)
         {
+            _userSerial += 1;
+            string user = FakeUsers[_userSerial % FakeUsers.Length];
+            bool named = false;
+            bool wounded = false;
+            if (superchat && !string.IsNullOrEmpty(_fanMinjun) && _userSerial % 2 == 0)
+            {
+                user = _fanMinjun;
+                named = true;
+                wounded = _minjunWounded;
+            }
+            else if (!superchat && kind != ChatKind.Laugh && !string.IsNullOrEmpty(_fanHaeun) && _userSerial % 3 == 0)
+            {
+                user = _fanHaeun;
+                named = true;
+                wounded = _haeunWounded;
+            }
+
             Notes.Add(new ChatNote
             {
                 Kind = kind,
                 IsSuperchat = superchat,
                 SuperchatWon = won,
                 Text = Catalog.Pick(kind, Rng),
-                User = FakeUsers[_userSerial++ % FakeUsers.Length],
+                User = user,
+                NamedFan = named,
+                FanWounded = wounded,
                 SpawnTime = Elapsed,
                 HitTime = Elapsed + Balance.approachSeconds
             });
@@ -442,7 +477,18 @@ namespace BankruptVtuber
             }
 
             if (judgement == Judgement.Miss)
+            {
                 PeakMissStreak = Math.Max(PeakMissStreak, MissStreak);
+                if (!string.IsNullOrEmpty(_fanHaeun) && _haeunHurtAt > 0 && PeakMissStreak >= _haeunHurtAt)
+                {
+                    _haeunWounded = true;
+                    for (int i = 0; i < Notes.Count; i++)
+                    {
+                        if (Notes[i].NamedFan && Notes[i].User == _fanHaeun)
+                            Notes[i].FanWounded = true;
+                    }
+                }
+            }
             else if (note.IsSuperchat)
             {
                 SuperchatIncome += note.SuperchatWon;

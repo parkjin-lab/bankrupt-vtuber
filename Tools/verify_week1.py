@@ -302,6 +302,34 @@ def check_project() -> None:
     else:
         ok("Title / WeekStart / Settlement share StudioChrome webcam language")
 
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    if '"오늘 청구"' not in live_cs or "청구 커버" not in live_cs or "파산까지" not in live_cs:
+        fail("LiveStream missing tonight bill race HUD")
+    elif "TonightBills" not in eco_cs or "BankruptDebt" not in eco_cs or "BankruptDebt" not in live_cs:
+        fail("bill race is not reading existing lastBills / bankruptDebt")
+    elif "하이프" not in live_cs or "hypeIncomeMultiplier" not in live_cs:
+        fail("hype income ticker does not show existing 2.5x")
+    else:
+        ok("LiveStream races tonight's 청구 vs LiveIncome and shows 파산까지")
+    if "BindNamedFans" not in session_cs or "NamedFan" not in live_cs or "minjunName" not in live_cs:
+        fail("named 민준/하은 bubbles are missing")
+    elif "FanWounded" not in session_cs or "FanWounded" not in live_cs:
+        fail("wounded fan bubbles are not dimmed")
+    else:
+        ok("민준/하은 get labeled gold/pink bubbles when present")
+    if "ShowMissSting" not in live_cs or "시청자" not in live_cs or "멘탈" not in live_cs:
+        fail("Miss sting is not unmissable")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs:
+        fail("stream pads/echo were broken while adding the money HUD")
+    else:
+        ok("Miss sting flashes 시청자 / 멘탈; pads still echo 입력됨")
+    if "billRent: 8000" not in (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8"):
+        fail("Week 1 bills were retuned by the money HUD")
+    else:
+        ok("Week 1–5 locked bills stay unchanged after the money HUD")
+
     for rel in (
         "Assets/Scripts/Core/GameManager.cs",
         "Assets/Scripts/Core/RunSave.cs",

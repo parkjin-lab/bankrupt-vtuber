@@ -17,6 +17,15 @@ namespace BankruptVtuber
         Text _income;
         Text _mental;
         Text _timer;
+        Text _billToday;
+        Text _incomeNow;
+        Text _remain;
+        Text _hypeMul;
+        Text _bankruptLeft;
+        Text _sting;
+        Image _raceFill;
+        Image _bankruptFill;
+        RectTransform _bankruptRow;
         Text _combo;
         Text _judge;
         Image _liveDot;
@@ -60,7 +69,14 @@ namespace BankruptVtuber
         float _judgePopMax;
         bool _judgeBig;
         float _shownViewers;
+        float _shownIncome;
+        float _stingFlash;
+        float _viewerFlash;
         int _lastCombo;
+        int _tonightBills;
+        int _bankruptAt;
+        int _lastMental;
+        float _lastViewers;
         bool _ending;
         bool _eventWasActive;
 
@@ -119,7 +135,20 @@ namespace BankruptVtuber
                 _session.EnableConcert(gm.Week5);
             }
             _shownViewers = _session.Viewers;
+            _lastViewers = _session.Viewers;
+            _lastMental = _session.Mental;
             _lastCombo = _session.Combo;
+            _tonightBills = EconomyRules.TonightBills(gm.Run);
+            _bankruptAt = EconomyRules.BankruptDebt(gm.Run, gm.Balance, gm.Week2, gm.Week3, gm.Week4, gm.Week5);
+            var fandom = gm.Fandom;
+            string minjun = gm.Run.minjunPresent && fandom != null ? fandom.minjunName : null;
+            string haeun = gm.Run.haeunPresent && fandom != null ? fandom.haeunName : null;
+            _session.BindNamedFans(
+                minjun,
+                gm.Run.minjunPresent && gm.Run.minjunIgnoreSettlements > 0,
+                haeun,
+                gm.Run.haeunPresent && gm.Run.haeunHurtThisDay,
+                fandom != null ? fandom.haeunHurtStreak : 0);
             _avatar.SetViewers(_shownViewers);
         }
 
@@ -216,7 +245,12 @@ namespace BankruptVtuber
                 ShowJudge(j, note);
                 _avatar.React(j, note.IsSuperchat);
                 if (j == Judgement.Miss)
+                {
+                    float dv = _session.Viewers - _lastViewers;
+                    int dm = _session.Mental - _lastMental;
+                    ShowMissSting(dv, dm);
                     PlaySfx(_bad, 0.48f);
+                }
                 else if (note.IsSuperchat)
                     PlaySfx(_sc, 0.55f);
                 else if (j == Judgement.Perfect)
@@ -230,9 +264,18 @@ namespace BankruptVtuber
             RefreshPromoOverlay();
             RefreshLineOverlay();
             RefreshConcertOverlay();
-            _shownViewers = Mathf.MoveTowards(_shownViewers, _session.Viewers, dt * 80f);
+            float viewerSpeed = _stingFlash > 0.4f ? 220f : 80f;
+            _shownViewers = Mathf.MoveTowards(_shownViewers, _session.Viewers, dt * viewerSpeed);
+            float incomeSpeed = 90f * StreamRules.IncomeMultiplier(
+                _session.PerfectCombo,
+                _session.HypeActive,
+                _session.Balance);
+            int live = _session.ForceEnded ? _session.PayoutIncome : _session.LiveIncome;
+            _shownIncome = Mathf.MoveTowards(_shownIncome, live, dt * incomeSpeed);
             _avatar.SetViewers(_shownViewers);
             RefreshHud();
+            _lastViewers = _session.Viewers;
+            _lastMental = _session.Mental;
             _avatar.Tick(dt);
 
             _judgeFlash = Mathf.MoveTowards(_judgeFlash, 0f, dt * 2.2f);
@@ -252,6 +295,15 @@ namespace BankruptVtuber
             }
             if (_liveDot != null)
                 _liveDot.color = new Color(1f, 1f, 1f, 0.4f + 0.6f * Mathf.Abs(Mathf.Sin(Time.time * 6f)));
+            _stingFlash = Mathf.MoveTowards(_stingFlash, 0f, dt * 1.4f);
+            _viewerFlash = Mathf.MoveTowards(_viewerFlash, 0f, dt * 1.8f);
+            if (_sting != null)
+            {
+                var st = _sting.color;
+                st.a = _stingFlash;
+                _sting.color = st;
+                _sting.rectTransform.localScale = Vector3.one * (1f + 0.28f * _stingFlash);
+            }
             _echoFlash = Mathf.MoveTowards(_echoFlash, 0f, dt * 1.6f);
             if (_echo != null)
             {
@@ -343,8 +395,8 @@ namespace BankruptVtuber
             UiKit.Stretch(_hypeFlash.rectTransform);
             _hypeFlash.raycastTarget = false;
 
-            var top = UiKit.Panel(root, "Top", new Color(0.08f, 0.04f, 0.1f, 0.86f));
-            UiKit.Layout(top, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(0, 124));
+            var top = UiKit.Panel(root, "Top", new Color(0.08f, 0.04f, 0.1f, 0.90f));
+            UiKit.Layout(top, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(0, 200));
 
             var liveBox = UiKit.Panel(top, "LiveHud", new Color(0.86f, 0.12f, 0.22f, 0.96f));
             liveBox.anchorMin = new Vector2(0f, 1f);
@@ -364,6 +416,21 @@ namespace BankruptVtuber
             _debt = Chip(top, "Debt", "부채", 0.25f, 0.50f, -64f);
             _income = Chip(top, "Income", "실시간 수익", 0.50f, 0.75f, -64f);
             _mental = Chip(top, "Mental", "멘탈", 0.75f, 1f, -64f);
+            _billToday = Chip(top, "TonightBills", "오늘 청구", 0f, 0.25f, -124f);
+            _incomeNow = Chip(top, "TonightIncome", "지금 수입", 0.25f, 0.50f, -124f);
+            _remain = Chip(top, "Remain", "남은 금액", 0.50f, 0.78f, -124f);
+            _bankruptLeft = Chip(top, "ToBankrupt", "파산까지", 0.78f, 1f, -124f);
+            _bankruptRow = _bankruptLeft.transform.parent as RectTransform;
+            _bankruptFill = UiKit.Image(_bankruptRow, "BankruptFill", Palette.MoneyRed);
+            UiKit.Layout(_bankruptFill.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 3), new Vector2(-10, 5));
+            _bankruptFill.raycastTarget = false;
+            _bankruptFill.gameObject.SetActive(false);
+            _hypeMul = UiKit.Label(top, "HypeMul", "", 14, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_hypeMul.rectTransform, new Vector2(0.25f, 1), new Vector2(0.50f, 1), new Vector2(0, 1), new Vector2(12, -176), new Vector2(-16, 18));
+            var raceBg = UiKit.Image(top, "RaceBg", new Color(1, 1, 1, 0.12f));
+            UiKit.Layout(raceBg.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 6), new Vector2(-16, 8));
+            _raceFill = UiKit.Image(raceBg.transform, "RaceFill", Palette.MoneyRed);
+            UiKit.Stretch(_raceFill.rectTransform);
             _rival.transform.parent.gameObject.SetActive(false);
 
             _avatar = new AvatarView(root as RectTransform);
@@ -415,6 +482,10 @@ namespace BankruptVtuber
             _lanePads[2] = AddColumnPad(padRow, 2, 5, "웃음", Palette.ForKind(ChatKind.Laugh), StreamPadButton.Mode.Kind, ChatKind.Laugh);
             _lanePads[3] = AddColumnPad(padRow, 3, 5, "감사", Palette.ForKind(ChatKind.Thanks), StreamPadButton.Mode.Kind, ChatKind.Thanks);
             _lanePads[4] = AddColumnPad(padRow, 4, 5, "슈퍼챗", Palette.Gold, StreamPadButton.Mode.Superchat);
+
+            _sting = UiKit.Label(root, "MissSting", "", 40, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_sting.rectTransform, new Vector2(0.22f, 0.48f), new Vector2(0.22f, 0.48f), new Vector2(0.5f, 0.5f), new Vector2(0, 0), new Vector2(420, 80));
+            _sting.color = new Color(1f, 0.18f, 0.32f, 0f);
 
             _judge = UiKit.Label(root, "Judge", "", 64, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_judge.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(520, 80));
@@ -578,7 +649,7 @@ namespace BankruptVtuber
         void RefreshHud()
         {
             _viewers.text = Mathf.RoundToInt(_shownViewers).ToString();
-            _viewers.color = Palette.Pastel;
+            _viewers.color = Color.Lerp(Palette.Pastel, Palette.MoneyRed, _viewerFlash);
             bool vs = _session.RivalActive;
             _rival.transform.parent.gameObject.SetActive(vs);
             if (vs)
@@ -592,8 +663,48 @@ namespace BankruptVtuber
             _debt.text = EconomyRules.FormatWon(run.debt);
             _debt.color = Palette.MoneyRed;
             int shown = _session.ForceEnded ? _session.PayoutIncome : _session.LiveIncome;
+            int ticking = Mathf.RoundToInt(_shownIncome);
             _income.text = EconomyRules.FormatWon(shown);
             _income.color = Palette.CashGreen;
+            _billToday.text = EconomyRules.FormatWon(_tonightBills);
+            _billToday.color = Palette.MoneyRed;
+            _incomeNow.text = EconomyRules.FormatWon(ticking);
+            _incomeNow.color = Palette.CashGreen;
+            int remain = _tonightBills - ticking;
+            bool covered = remain <= 0;
+            _remain.text = covered ? "청구 커버" : EconomyRules.FormatWon(remain);
+            _remain.color = covered ? Palette.CashGreen : Palette.MoneyRed;
+            if (_session.HypeActive)
+                _hypeMul.text = $"하이프 {_session.Balance.hypeIncomeMultiplier:0.#}x";
+            else if (_session.PerfectCombo >= _session.Balance.comboIncomeThreshold)
+                _hypeMul.text = $"콤보 {_session.Balance.comboIncomeMultiplier:0.#}x";
+            else
+                _hypeMul.text = "";
+            _hypeMul.color = Palette.Gold;
+            int room = _bankruptAt - run.debt;
+            bool atRisk = run.cash + shown < _tonightBills;
+            if (_bankruptRow != null)
+                _bankruptRow.gameObject.SetActive(atRisk);
+            if (atRisk)
+            {
+                _bankruptLeft.text = EconomyRules.FormatWon(Mathf.Max(0, room));
+                _bankruptLeft.color = Palette.MoneyRed;
+            }
+            if (_raceFill != null)
+            {
+                float u = _tonightBills <= 0 ? 1f : Mathf.Clamp01(ticking / (float)_tonightBills);
+                _raceFill.rectTransform.anchorMax = new Vector2(u, 1f);
+                _raceFill.color = covered ? Palette.CashGreen : Palette.MoneyRed;
+            }
+            if (_bankruptFill != null)
+            {
+                _bankruptFill.gameObject.SetActive(atRisk);
+                if (atRisk)
+                {
+                    float risk = _bankruptAt <= 0 ? 1f : Mathf.Clamp01(run.debt / (float)_bankruptAt);
+                    _bankruptFill.rectTransform.anchorMax = new Vector2(risk, 1f);
+                }
+            }
             _mental.text = $"{_session.Mental}/{_session.Balance.maxMental}";
             _mental.color = _session.Mental <= 24 ? Palette.MoneyRed : Palette.Pink;
             _timer.text = $"{Mathf.CeilToInt(_session.TimeLeft)}s";
@@ -602,7 +713,7 @@ namespace BankruptVtuber
             else if (_session.IncomeShieldLeft > 0f)
                 _combo.text = $"수익 보호막 {_session.IncomeShieldLeft:0.0}s";
             else if (_session.HypeActive)
-                _combo.text = $"{_session.Tuning.Name}  ·  HYPE {_session.HypeLeft:0.0}s  ·  x{_session.IncomeMultiplier:0.00}";
+                _combo.text = $"{_session.Tuning.Name}  ·  하이프 {_session.HypeLeft:0.0}s  ·  {_session.Balance.hypeIncomeMultiplier:0.#}x";
             else
                 _combo.text = $"{_session.Tuning.Name}  ·  COMBO {_session.Combo}   PERFECT {_session.PerfectCombo}";
             _combo.color = _session.HypeActive ? Palette.Gold : Palette.Pastel;
@@ -644,6 +755,8 @@ namespace BankruptVtuber
                 {
                     rt.localScale = Vector3.one;
                 }
+                if (note.FanWounded)
+                    DimNamedBubble(rt);
             }
 
             var fade = _lane.GetComponent<CanvasGroup>();
@@ -713,13 +826,20 @@ namespace BankruptVtuber
         {
             bool super = note.IsSuperchat;
             bool troll = !super && note.Kind == ChatKind.Laugh;
+            bool named = note.NamedFan;
             var color = super ? Palette.Gold : Palette.ForKind(note.Kind);
+            if (named && !super)
+                color = Palette.Pink;
             var card = UiKit.Panel(_lane, "Note", Color.white);
-            float h = super ? 88f : troll ? 72f : 64f;
-            float w = super ? 400f : 372f;
+            float h = named || super ? 92f : troll ? 72f : 64f;
+            float w = super || named ? 400f : 372f;
             UiKit.Layout(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(w, h));
             var img = card.GetComponent<Image>();
-            if (super)
+            if (named && super)
+                ArtSprites.ApplySliced(img, ArtSprites.SuperchatBanner, note.FanWounded ? new Color(0.72f, 0.62f, 0.28f, 0.72f) : new Color(1f, 0.86f, 0.28f, 1f), new Vector4(36f, 28f, 36f, 28f));
+            else if (named)
+                ArtSprites.ApplySliced(img, ArtSprites.BubblePill, note.FanWounded ? new Color(0.72f, 0.42f, 0.55f, 0.55f) : Palette.Pink);
+            else if (super)
                 ArtSprites.ApplySliced(img, ArtSprites.SuperchatBanner, new Color(1f, 0.86f, 0.28f, 1f), new Vector4(36f, 28f, 36f, 28f));
             else if (troll)
             {
@@ -737,19 +857,59 @@ namespace BankruptVtuber
                 _ => "↑"
             };
             string kind = super ? "슈퍼챗" : troll ? "트롤" : Palette.LabelFor(note.Kind);
-            var keyCol = super || troll ? Palette.Ink : Color.white;
+            string fanTag = "";
+            if (named)
+            {
+                var gm = GameManager.Instance;
+                var f = gm != null ? gm.Fandom : null;
+                if (f != null && note.User == f.minjunName)
+                    fanTag = "슈퍼팬 · 첫 도네";
+                else if (f != null && note.User == f.haeunName)
+                    fanTag = "슈퍼팬 · 매일 오는 야간";
+                else
+                    fanTag = "슈퍼팬";
+            }
+            var keyCol = super || troll || named ? Palette.Ink : Color.white;
             var keyT = UiKit.Label(card, "Key", key, super ? 16 : 18, keyCol, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(keyT.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(18, 0), new Vector2(56, 0));
-            string body = super
-                ? $"{note.User}  ·  {kind}  {EconomyRules.FormatWon(note.SuperchatWon)}\n{note.Text}"
-                : $"{note.User}  ·  {kind}\n{note.Text}";
+            string body = named
+                ? (super
+                    ? $"{note.User}  ·  {fanTag}\n{kind}  {EconomyRules.FormatWon(note.SuperchatWon)}  {note.Text}"
+                    : $"{note.User}  ·  {fanTag}\n{note.Text}")
+                : super
+                    ? $"{note.User}  ·  {kind}  {EconomyRules.FormatWon(note.SuperchatWon)}\n{note.Text}"
+                    : $"{note.User}  ·  {kind}\n{note.Text}";
             var msgCol = troll ? Color.white : Palette.Ink;
+            if (named && note.FanWounded)
+                msgCol = new Color(msgCol.r, msgCol.g, msgCol.b, 0.55f);
             var msg = UiKit.Label(card, "Msg", body, super ? 16 : 17, msgCol, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(msg.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0.5f), new Vector2(76, 0), new Vector2(-88, 0));
             msg.horizontalOverflow = HorizontalWrapMode.Wrap;
             if (super)
                 card.localScale = Vector3.one * 1.38f;
             return card;
+        }
+
+        static void DimNamedBubble(RectTransform rt)
+        {
+            if (rt == null)
+                return;
+            var img = rt.GetComponent<Image>();
+            if (img != null && img.color.a > 0.74f)
+            {
+                var c = img.color;
+                img.color = new Color(c.r * 0.78f, c.g * 0.78f, c.b * 0.78f, 0.62f);
+            }
+            var msg = rt.Find("Msg");
+            if (msg != null)
+            {
+                var t = msg.GetComponent<Text>();
+                if (t != null && t.color.a > 0.6f)
+                {
+                    var c = t.color;
+                    t.color = new Color(c.r, c.g, c.b, 0.55f);
+                }
+            }
         }
 
         void ShowJudge(Judgement j, ChatNote note)
@@ -773,6 +933,20 @@ namespace BankruptVtuber
             _judgePopMax = _judgeBig ? 0.25f : 0.12f;
             _judgePop = _judgePopMax;
             _judge.rectTransform.localScale = Vector3.one * (_judgeBig ? 1.58f : 1.18f);
+        }
+
+        void ShowMissSting(float viewerDelta, int mentalDelta)
+        {
+            float drop = Mathf.Abs(Mathf.Min(0f, viewerDelta));
+            string line = $"시청자 −{drop:0.0} / 멘탈";
+            if (mentalDelta != 0)
+                line = $"시청자 −{drop:0.0} / 멘탈 {mentalDelta}";
+            _sting.text = line;
+            var c = Palette.MoneyRed;
+            c.a = 1f;
+            _sting.color = c;
+            _stingFlash = 1.15f;
+            _viewerFlash = 1f;
         }
 
         void PlaySfx(AudioClip clip, float volume)

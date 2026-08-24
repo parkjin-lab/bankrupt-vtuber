@@ -64,15 +64,7 @@ namespace BankruptVtuber
 
         public static WeekOutcome Evaluate(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null, Week4Balance w4 = null, Week5Balance w5 = null)
         {
-            int bankrupt = b.bankruptDebt;
-            if (w5 != null && WeekSchedule.InWeek5(state))
-                bankrupt = w5.bankruptDebt;
-            else if (w4 != null && WeekSchedule.InWeek4(state))
-                bankrupt = w4.bankruptDebt;
-            else if (w3 != null && WeekSchedule.InWeek3(state))
-                bankrupt = w3.bankruptDebt;
-            else if (w2 != null && WeekSchedule.InWeek2(state))
-                bankrupt = w2.bankruptDebt;
+            int bankrupt = BankruptDebt(state, b, w2, w3, w4, w5);
             if (state.debt >= bankrupt)
             {
                 if (WeekSchedule.InWeek5(state) && w5 != null)
@@ -141,6 +133,26 @@ namespace BankruptVtuber
                 (state.debt <= w2.winDebtMax || state.cash >= w2.winCashMin))
                 return WeekOutcome.Week2Win;
             return WeekOutcome.WeekFailed;
+        }
+
+        public static int BankruptDebt(GameRunState state, Week1Balance b, Week2Balance w2 = null, Week3Balance w3 = null, Week4Balance w4 = null, Week5Balance w5 = null)
+        {
+            if (w5 != null && WeekSchedule.InWeek5(state))
+                return w5.bankruptDebt;
+            if (w4 != null && WeekSchedule.InWeek4(state))
+                return w4.bankruptDebt;
+            if (w3 != null && WeekSchedule.InWeek3(state))
+                return w3.bankruptDebt;
+            if (w2 != null && WeekSchedule.InWeek2(state))
+                return w2.bankruptDebt;
+            return b != null ? b.bankruptDebt : 180000;
+        }
+
+        public static int TonightBills(GameRunState state)
+        {
+            if (state == null)
+                return 0;
+            return state.lastBills + state.extraThreatAmount + state.lastConflictSurcharge + state.lastAutoCost;
         }
 
         public static string FormatWon(int amount)

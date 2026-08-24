@@ -127,7 +127,7 @@ Build Settings 순서:
 | **화면 버튼** | 긍정 / 공감 / 웃음 / 감사 / 슈퍼챗 (전폭 행, 세이프 에어리어) | 키와 같은 판정 |
 | **Space / Enter** | 타이틀·프롤로그·WeekStart·정산에서 진행 | — |
 
-채팅이 오른쪽 레인에서 히트바로 떨어질 때 색/타입에 맞는 키 또는 화면 버튼을 누른다. Perfect / Great / Good / Miss. Title / WeekStart / LiveStream / Settlement는 같은 웹캠·KRW 크롬을 쓴다. 청구 슬램과 정산 타일이 돈 공포를 먼저 보여준다.
+채팅이 오른쪽 레인에서 히트바로 떨어질 때 색/타입에 맞는 키 또는 화면 버튼을 누른다. Perfect / Great / Good / Miss. Title / WeekStart / LiveStream / Settlement는 같은 웹캠·KRW 크롬을 쓴다. 라이브 HUD는 오늘 청구 vs 지금 수입을 재고, 하이프 2.5x와 민준/하은 말풍선을 보여준다.
 
 ## 플레이테스트 스킵 (에디터 / DEVELOPMENT만)
 
