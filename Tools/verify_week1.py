@@ -1406,6 +1406,22 @@ def check_content_types() -> None:
         fail("content show skin retuned ContentBalance numbers")
     else:
         ok("content show skin does not retune spawn / income / mental")
+    threat_cs = (ROOT / "Assets/Scripts/Presentation/ExtraThreatLook.cs").read_text(encoding="utf-8")
+    extra_cs = (ROOT / "Assets/Scripts/Data/ExtraThreat.cs").read_text(encoding="utf-8")
+    if "장비 불안정" not in threat_cs or "재연결 중" not in threat_cs or '"수수료"' not in threat_cs:
+        fail("extra-threat overlay look is missing Korean fingerprints")
+    elif "gear_break" not in threat_cs or "net_drop" not in threat_cs or "petty_bill" not in threat_cs:
+        fail("extra-threat overlay does not map existing kind ids")
+    elif "ApplyThreatShow" not in live_cs or "TickThreatFx" not in live_cs:
+        fail("LiveStream does not apply today's extra-threat fingerprint")
+    elif "ExtraThreatLook.For" not in week_cs:
+        fail("WeekStart threat cards do not share ExtraThreatLook")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("threat overlay broke pads or added timeScale lag")
+    elif "id = \"gear_break\"" not in extra_cs or "minWon = 7000" not in extra_cs:
+        fail("extra threat table was retuned")
+    else:
+        ok("LiveStream fingerprints today's extra threat; WeekStart cards match")
 
 
 def check_save_roundtrip() -> None:

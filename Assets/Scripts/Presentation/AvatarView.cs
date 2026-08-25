@@ -17,6 +17,7 @@ namespace BankruptVtuber
         readonly Text _liveViewers;
         readonly Image _liveDot;
         readonly Color _idleTint = new Color(1f, 0.86f, 0.92f, 1f);
+        public RectTransform Root => _root;
         Image _karaokeFill;
         Text _camTag;
         bool _songGlow;

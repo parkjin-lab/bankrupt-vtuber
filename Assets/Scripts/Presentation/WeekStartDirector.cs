@@ -26,6 +26,7 @@ namespace BankruptVtuber
 
         struct Bill
         {
+            public string Id;
             public string Name;
             public string Art;
             public int Amount;
@@ -317,6 +318,7 @@ namespace BankruptVtuber
                 var extra = gm.Run.extraRolls[e];
                 bills.Add(new Bill
                 {
+                    Id = extra.Id,
                     Name = extra.DisplayName,
                     Art = extra.ArtPath,
                     Amount = extra.Amount,
@@ -422,8 +424,15 @@ namespace BankruptVtuber
                         : new Color(0.95f, 0.93f, 0.96f, 0.96f);
             var card = UiKit.Panel(_stack, "Bill" + index, bg);
             UiKit.Layout(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 280), new Vector2(176, 248));
+            ExtraThreatLook threatLook = default;
+            if (threat && !string.IsNullOrEmpty(bill.Id))
+                threatLook = ExtraThreatLook.For(bill.Id, bill.Name, bill.Tint, bill.Art);
             if (threat)
-                ArtSprites.ApplySliced(card.GetComponent<Image>(), ArtSprites.ThreatBanner, Palette.MoneyRed, new Vector4(28f, 24f, 28f, 24f));
+                ArtSprites.ApplySliced(
+                    card.GetComponent<Image>(),
+                    ArtSprites.ThreatBanner,
+                    threatLook.Fx != ExtraThreatFx.None ? threatLook.Tint : Palette.MoneyRed,
+                    new Vector4(28f, 24f, 28f, 24f));
             else if (bill.Gain)
                 ArtSprites.ApplySliced(card.GetComponent<Image>(), ArtSprites.CashBanner, Palette.CashGreen, new Vector4(28f, 24f, 28f, 24f));
             if (bill.Extra)
@@ -435,7 +444,9 @@ namespace BankruptVtuber
             }
             var icon = UiKit.Image(card, "Icon", Color.white);
             UiKit.Layout(icon.rectTransform, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, bill.Extra ? -28 : -12), new Vector2(128, 128));
-            ArtSprites.Apply(icon, bill.Art, bill.Extra ? bill.Tint : Palette.PinkDeep, bill.Extra ? bill.Tint : (Color?)null);
+            string iconArt = threatLook.Fx != ExtraThreatFx.None ? threatLook.Art : bill.Art;
+            Color iconTint = threatLook.Fx != ExtraThreatFx.None ? threatLook.Tint : (bill.Extra ? bill.Tint : Palette.PinkDeep);
+            ArtSprites.Apply(icon, iconArt, iconTint, bill.Extra || threatLook.Fx != ExtraThreatFx.None ? iconTint : (Color?)null);
             var nameCol = threat || bill.Gain ? Color.white : Palette.Ink;
             UiKit.Label(card, "N", bill.Name, 16, nameCol, TextAnchor.MiddleCenter, FontStyle.Bold);
             var n = card.Find("N") as RectTransform;

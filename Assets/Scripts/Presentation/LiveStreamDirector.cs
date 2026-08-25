@@ -69,6 +69,19 @@ namespace BankruptVtuber
         Text _showTitle;
         ContentShowLook _look = ContentShowLook.For(StreamContentType.None);
         float _bedDuck;
+        bool _threatGear;
+        bool _threatNet;
+        bool _threatRival;
+        bool _threatScandal;
+        bool _threatFee;
+        int _feeShown;
+        Image[] _gearTears;
+        Image _netFx;
+        Text _netLabel;
+        Text[] _rivalSpam;
+        Image _scandalVeil;
+        Text _feeChip;
+        RectTransform _chatRoot;
 
         readonly Dictionary<ChatNote, RectTransform> _views = new Dictionary<ChatNote, RectTransform>();
         float _judgeFlash;
@@ -162,6 +175,7 @@ namespace BankruptVtuber
                 gm.Run.haeunPresent && gm.Run.haeunHurtThisDay,
                 fandom != null ? fandom.haeunHurtStreak : 0);
             ApplyContentShow(ContentShowLook.For(gm.Run.contentPicked));
+            ApplyThreatShow(gm.Run);
             _avatar.SetViewers(_shownViewers);
         }
 
@@ -334,6 +348,7 @@ namespace BankruptVtuber
             _bedDuck = Mathf.MoveTowards(_bedDuck, 0f, dt * 1.8f);
             if (_bed != null)
                 _bed.volume = Mathf.Lerp(_look.BedVolume, _look.BedVolume * 0.28f, _bedDuck);
+            TickThreatFx();
 
             if (_session.Finished)
                 StartCoroutine(EndRoutine());
@@ -458,6 +473,7 @@ namespace BankruptVtuber
 
             var chatPanel = UiKit.Panel(root, "Chat", new Color(0.07f, 0.05f, 0.1f, 0.88f));
             _chatPanel = chatPanel.GetComponent<Image>();
+            _chatRoot = chatPanel;
             UiKit.Layout(chatPanel, new Vector2(1, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-18, 0), new Vector2(420, -220));
             UiKit.Label(chatPanel, "ChatTitle", "실시간 채팅", 22, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
             var ct = chatPanel.Find("ChatTitle") as RectTransform;
@@ -1022,6 +1038,186 @@ namespace BankruptVtuber
                 _bed.clip = BedClip(look.Type);
                 _bed.volume = look.BedVolume;
                 _bed.Play();
+            }
+        }
+
+        void ApplyThreatShow(GameRunState run)
+        {
+            if (run == null || run.extraRolls == null || run.extraRolls.Count == 0)
+                return;
+
+            var root = _showTitle != null ? _showTitle.transform.parent : transform;
+            var badges = UiKit.Panel(root, "ThreatBadges", new Color(0, 0, 0, 0));
+            UiKit.Layout(badges, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -256), new Vector2(440, 40));
+            int shown = 0;
+            for (int i = 0; i < run.extraRolls.Count; i++)
+            {
+                var look = ExtraThreatLook.For(run.extraRolls[i]);
+                if (look.Fx == ExtraThreatFx.None)
+                    continue;
+                if (look.Fx == ExtraThreatFx.Gear)
+                    _threatGear = true;
+                else if (look.Fx == ExtraThreatFx.Net)
+                    _threatNet = true;
+                else if (look.Fx == ExtraThreatFx.Rival)
+                    _threatRival = true;
+                else if (look.Fx == ExtraThreatFx.Scandal)
+                    _threatScandal = true;
+                else if (look.Fx == ExtraThreatFx.Fee)
+                {
+                    _threatFee = true;
+                    _feeShown += run.extraRolls[i].Amount;
+                }
+                AddThreatBadge(badges, look, shown);
+                shown += 1;
+            }
+
+            if (_threatGear)
+                BuildGearGlitch();
+            if (_threatNet)
+                BuildNetFx();
+            if (_threatRival)
+                BuildRivalSpam();
+            if (_threatScandal)
+                BuildScandalWash();
+            if (_threatFee)
+                BuildFeeChip();
+        }
+
+        void AddThreatBadge(RectTransform parent, ExtraThreatLook look, int index)
+        {
+            var box = UiKit.Panel(parent, "ThreatBadge" + index, look.Tint);
+            box.anchorMin = new Vector2(0f, 0f);
+            box.anchorMax = new Vector2(0f, 1f);
+            box.pivot = new Vector2(0f, 0.5f);
+            box.anchoredPosition = new Vector2(index * 150f, 0f);
+            box.sizeDelta = new Vector2(144f, 0f);
+            var icon = UiKit.Image(box, "I", Color.white);
+            UiKit.Layout(icon.rectTransform, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(18, 0), new Vector2(22, 22));
+            ArtSprites.Apply(icon, look.Art, look.Tint, Color.white);
+            var lab = UiKit.Label(box, "L", look.Badge, 14, Palette.Ink, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(lab.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0.5f), new Vector2(36, 0), new Vector2(-8, 0));
+        }
+
+        void BuildGearGlitch()
+        {
+            if (_avatar == null || _avatar.Root == null)
+                return;
+            _gearTears = new Image[4];
+            for (int i = 0; i < _gearTears.Length; i++)
+            {
+                var tear = UiKit.Image(_avatar.Root, "GearTear" + i, new Color(1f, 1f, 1f, 0f));
+                UiKit.Layout(tear.rectTransform, new Vector2(0, 0.2f + i * 0.18f), new Vector2(1, 0.2f + i * 0.18f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-20, 7));
+                tear.raycastTarget = false;
+                _gearTears[i] = tear;
+            }
+        }
+
+        void BuildNetFx()
+        {
+            if (_lane == null)
+                return;
+            _netFx = UiKit.Image(_lane, "NetFx", new Color(0.3f, 0.7f, 1f, 0f));
+            UiKit.Stretch(_netFx.rectTransform);
+            _netFx.raycastTarget = false;
+            _netLabel = UiKit.Label(_lane, "NetLabel", "재연결 중…", 22, Palette.Hex("4EC8FF"), TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_netLabel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 40), new Vector2(280, 32));
+            var c = _netLabel.color;
+            c.a = 0f;
+            _netLabel.color = c;
+        }
+
+        void BuildRivalSpam()
+        {
+            if (_chatRoot == null)
+                return;
+            string[] nicks = { "견제계정", "라이벌팬", "안티닉", "견제봇" };
+            _rivalSpam = new Text[nicks.Length];
+            for (int i = 0; i < nicks.Length; i++)
+            {
+                var t = UiKit.Label(_chatRoot, "RivalSpam" + i, nicks[i] + "  ·  라이벌 견제", 13, new Color(0.77f, 0.48f, 1f, 0.55f), TextAnchor.MiddleLeft, FontStyle.Bold);
+                UiKit.Layout(t.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(12, -36 - i * 18), new Vector2(-24, 16));
+                _rivalSpam[i] = t;
+            }
+        }
+
+        void BuildScandalWash()
+        {
+            if (_washVeil == null)
+                return;
+            var red = new Color(1f, 0.12f, 0.28f, 0.22f);
+            _scandalVeil = UiKit.Image(_washVeil.transform.parent, "ScandalWash", red);
+            UiKit.Stretch(_scandalVeil.rectTransform);
+            _scandalVeil.raycastTarget = false;
+            _scandalVeil.transform.SetSiblingIndex(_washVeil.transform.GetSiblingIndex() + 1);
+            if (_chatPanel != null)
+                _chatPanel.color = Color.Lerp(_chatPanel.color, Palette.Troll, 0.28f);
+        }
+
+        void BuildFeeChip()
+        {
+            if (_incomeNow == null)
+                return;
+            var host = _incomeNow.transform.parent;
+            _feeChip = UiKit.Label(host, "FeeChip", "수수료 " + EconomyRules.FormatWon(_feeShown), 12, Palette.Hex("FFB020"), TextAnchor.UpperRight, FontStyle.Bold);
+            UiKit.Layout(_feeChip.rectTransform, new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-8, -4), new Vector2(120, 16));
+        }
+
+        void TickThreatFx()
+        {
+            float t = Time.time;
+            if (_threatGear && _gearTears != null)
+            {
+                bool flash = Mathf.Repeat(t, 2.2f) < 0.18f;
+                for (int i = 0; i < _gearTears.Length; i++)
+                {
+                    if (_gearTears[i] == null)
+                        continue;
+                    float y = 0.18f + i * 0.17f + Mathf.Sin(t * 9f + i) * 0.02f;
+                    _gearTears[i].rectTransform.anchorMin = new Vector2(flash ? 0.04f : 0f, y);
+                    _gearTears[i].rectTransform.anchorMax = new Vector2(flash ? 0.96f : 1f, y);
+                    _gearTears[i].color = flash
+                        ? new Color(0.7f + (i % 2) * 0.3f, 0.2f, 0.25f, 0.55f)
+                        : new Color(1f, 1f, 1f, 0.04f);
+                }
+            }
+
+            if (_threatNet && _netFx != null)
+            {
+                bool drop = Mathf.Repeat(t, 3.1f) < 0.7f;
+                _netFx.color = drop ? new Color(0.25f, 0.65f, 1f, 0.22f) : new Color(0.25f, 0.65f, 1f, 0f);
+                if (_netLabel != null)
+                {
+                    var c = _netLabel.color;
+                    c.a = drop ? 1f : 0f;
+                    _netLabel.color = c;
+                }
+                if (drop && _lane != null)
+                {
+                    float slice = Mathf.Repeat(t * 14f, 1f);
+                    _netFx.rectTransform.offsetMin = new Vector2(0f, slice * 8f);
+                    _netFx.rectTransform.offsetMax = new Vector2(0f, -((1f - slice) * 6f));
+                }
+            }
+
+            if (_threatRival && _rivalSpam != null)
+            {
+                for (int i = 0; i < _rivalSpam.Length; i++)
+                {
+                    if (_rivalSpam[i] == null)
+                        continue;
+                    float u = Mathf.Repeat(t * 0.18f + i * 0.22f, 1f);
+                    _rivalSpam[i].rectTransform.anchoredPosition = new Vector2(12f, -36f - u * 72f);
+                    var c = _rivalSpam[i].color;
+                    c.a = 0.25f + 0.35f * (1f - u);
+                    _rivalSpam[i].color = c;
+                }
+            }
+
+            if (_threatScandal && _scandalVeil != null)
+            {
+                float pulse = 0.16f + 0.08f * Mathf.Abs(Mathf.Sin(t * 1.6f));
+                _scandalVeil.color = new Color(1f, 0.12f, 0.28f, pulse);
             }
         }
 
