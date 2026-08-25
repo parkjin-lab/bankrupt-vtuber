@@ -7,6 +7,9 @@ namespace BankruptVtuber
     {
         readonly RectTransform _root;
         readonly RectTransform _body;
+        readonly Image _bezel;
+        readonly Image _frame;
+        readonly Image _window;
         readonly Image _bust;
         readonly Image _blush;
         readonly Image _flash;
@@ -14,6 +17,10 @@ namespace BankruptVtuber
         readonly Text _liveViewers;
         readonly Image _liveDot;
         readonly Color _idleTint = new Color(1f, 0.86f, 0.92f, 1f);
+        Image _karaokeFill;
+        Text _camTag;
+        bool _songGlow;
+        bool _closeCam;
         float _bob;
         float _pop;
         float _shake;
@@ -27,17 +34,17 @@ namespace BankruptVtuber
             _root = UiKit.Panel(parent, "Avatar", new Color(0, 0, 0, 0));
             UiKit.Layout(_root, new Vector2(0.20f, 0.22f), new Vector2(0.20f, 0.22f), new Vector2(0.5f, 0f), new Vector2(8, 8), new Vector2(420, 560));
 
-            var bezel = UiKit.Image(_root, "Bezel", Palette.Ink);
-            UiKit.Stretch(bezel.rectTransform, 0, 0, 0, 0);
-            bezel.color = new Color(0.08f, 0.05f, 0.1f, 0.96f);
+            _bezel = UiKit.Image(_root, "Bezel", Palette.Ink);
+            UiKit.Stretch(_bezel.rectTransform, 0, 0, 0, 0);
+            _bezel.color = new Color(0.08f, 0.05f, 0.1f, 0.96f);
 
-            var frame = UiKit.Image(_root, "Frame", Palette.PinkDeep);
-            UiKit.Stretch(frame.rectTransform, 8, 8, 36, 10);
-            frame.color = new Color(0.92f, 0.28f, 0.48f, 0.95f);
+            _frame = UiKit.Image(_root, "Frame", Palette.PinkDeep);
+            UiKit.Stretch(_frame.rectTransform, 8, 8, 36, 10);
+            _frame.color = new Color(0.92f, 0.28f, 0.48f, 0.95f);
 
-            var window = UiKit.Image(_root, "Window", Palette.Hex("1C1228"));
-            UiKit.Stretch(window.rectTransform, 16, 16, 44, 18);
-            window.color = new Color(0.12f, 0.07f, 0.16f, 0.98f);
+            _window = UiKit.Image(_root, "Window", Palette.Hex("1C1228"));
+            UiKit.Stretch(_window.rectTransform, 16, 16, 44, 18);
+            _window.color = new Color(0.12f, 0.07f, 0.16f, 0.98f);
 
             _body = UiKit.Panel(_root, "BodyRoot", new Color(0, 0, 0, 0));
             UiKit.Stretch(_body, 28, 28, 56, 26);
@@ -76,6 +83,108 @@ namespace BankruptVtuber
             UiKit.Layout(name.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -6), new Vector2(200, 28));
         }
 
+        public void ApplyShow(ContentShowLook look)
+        {
+            _frame.color = look.CamFrame;
+            _window.color = look.CamWindow;
+            _bezel.color = Color.Lerp(Palette.Ink, look.Wash, 0.55f);
+            _songGlow = look.GoldSparkle;
+            _closeCam = look.Type == StreamContentType.Talk;
+
+            if (look.Type == StreamContentType.Talk)
+            {
+                _root.localScale = Vector3.one * 1.16f;
+                _root.anchoredPosition = new Vector2(28f, -12f);
+                UiKit.Stretch(_body, 8, 8, 36, 10);
+                TagCam("클로즈업", look.CamFrame);
+            }
+            else if (look.Type == StreamContentType.Game)
+            {
+                _root.localScale = Vector3.one;
+                BuildGameBezel();
+                TagCam("게임 화면", Palette.CashGreen);
+            }
+            else if (look.Type == StreamContentType.Song)
+            {
+                _root.localScale = Vector3.one;
+                BuildKaraokeBar();
+                TagCam("노래방", Palette.Gold);
+            }
+            else if (look.Type == StreamContentType.Reaction)
+            {
+                _root.localScale = Vector3.one * 0.92f;
+                _root.anchoredPosition = new Vector2(-10f, 8f);
+                BuildReactionFrame();
+                TagCam("리액션 캠", Palette.PastelDim);
+            }
+        }
+
+        void TagCam(string copy, Color color)
+        {
+            var bg = _root.Find("CamTagBg") as RectTransform;
+            if (bg == null)
+            {
+                var img = UiKit.Image(_root, "CamTagBg", color);
+                UiKit.Layout(img.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 10), new Vector2(168, 26));
+                bg = img.rectTransform;
+            }
+            else
+                bg.GetComponent<Image>().color = color;
+
+            if (_camTag == null)
+            {
+                _camTag = UiKit.Label(_root, "CamTag", copy, 16, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+                UiKit.Layout(_camTag.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 10), new Vector2(160, 24));
+            }
+            _camTag.text = copy;
+            _camTag.color = lookInkFor(color);
+            _camTag.rectTransform.SetAsLastSibling();
+        }
+
+        static Color lookInkFor(Color bg) =>
+            bg.grayscale > 0.55f ? Palette.Ink : Palette.Pastel;
+
+        void BuildGameBezel()
+        {
+            var bar = UiKit.Panel(_root, "GameTitle", new Color(0.08f, 0.1f, 0.08f, 0.98f));
+            UiKit.Layout(bar, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(0, 34));
+            UiKit.Label(bar, "G", "게임 화면", 16, Palette.CashGreen, TextAnchor.MiddleLeft, FontStyle.Bold);
+            var gl = bar.Find("G") as RectTransform;
+            UiKit.Layout(gl, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(-80, 0));
+            for (int i = 0; i < 3; i++)
+            {
+                var c = i == 0 ? Palette.Troll : i == 1 ? Palette.Gold : Palette.CashGreen;
+                var dot = UiKit.Image(bar, "W" + i, c);
+                UiKit.Layout(dot.rectTransform, new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-14 - i * 18, 0), new Vector2(10, 10));
+            }
+            UiKit.Stretch(_frame.rectTransform, 6, 6, 34, 8);
+            UiKit.Stretch(_window.rectTransform, 12, 12, 40, 14);
+        }
+
+        void BuildKaraokeBar()
+        {
+            var bar = UiKit.Panel(_root, "Karaoke", new Color(0.12f, 0.08f, 0.02f, 0.94f));
+            UiKit.Layout(bar, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 36), new Vector2(-20, 22));
+            var bg = UiKit.Image(bar, "KBg", new Color(1f, 0.82f, 0.25f, 0.22f));
+            UiKit.Stretch(bg.rectTransform, 8, 8, 4, 4);
+            _karaokeFill = UiKit.Image(bar, "KFill", Palette.Gold);
+            UiKit.Layout(_karaokeFill.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(8, 0), new Vector2(0, -8));
+            var lyric = UiKit.Label(bar, "Lyric", "♪ 따라 부르기", 14, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Stretch(lyric.rectTransform);
+        }
+
+        void BuildReactionFrame()
+        {
+            var outer = UiKit.Image(_root, "ReactOuter", new Color(0.22f, 0.24f, 0.22f, 0.9f));
+            UiKit.Stretch(outer.rectTransform, -10, -10, -8, -10);
+            outer.transform.SetAsFirstSibling();
+            var pip = UiKit.Panel(_root, "ReactPip", new Color(0.08f, 0.09f, 0.08f, 0.95f));
+            UiKit.Layout(pip, new Vector2(1, 0), new Vector2(1, 0), new Vector2(1, 0), new Vector2(-18, 40), new Vector2(120, 78));
+            UiKit.Label(pip, "P", "보고 있는 영상", 12, Palette.PastelDim, TextAnchor.MiddleCenter, FontStyle.Bold);
+            var pl = pip.Find("P") as RectTransform;
+            UiKit.Stretch(pl, 4, 4, 4, 4);
+        }
+
         public void React(Judgement j, bool superchat)
         {
             if (j == Judgement.Perfect || j == Judgement.Great)
@@ -110,7 +219,7 @@ namespace BankruptVtuber
             _hurt = Mathf.MoveTowards(_hurt, 0f, dt * 2.4f);
             _spark = Mathf.MoveTowards(_spark, 0f, dt * 1.5f);
 
-            float bobY = Mathf.Sin(_bob * 2.1f) * 7f;
+            float bobY = Mathf.Sin(_bob * (_closeCam ? 1.6f : 2.1f)) * (_closeCam ? 4f : 7f);
             float popY = _pop * 22f;
             float x = Mathf.Sin(Time.time * 52f) * _shake * 12f;
             _body.anchoredPosition = new Vector2(x, bobY + popY);
@@ -132,10 +241,18 @@ namespace BankruptVtuber
             {
                 float u = Mathf.Repeat(_spark + i * 0.17f, 1f);
                 float a = _spark * (1f - u);
+                if (_songGlow)
+                    a = Mathf.Max(a, 0.18f + 0.10f * Mathf.Abs(Mathf.Sin(Time.time * 3f + i)));
                 float ang = i * 1.256f;
                 _sparkles[i].rectTransform.anchoredPosition = new Vector2(Mathf.Cos(ang) * (40f + u * 50f), 30f + u * 70f);
                 _sparkles[i].color = new Color(1f, 0.92f, 0.45f, a);
                 _sparkles[i].rectTransform.localScale = Vector3.one * (0.7f + u * 0.6f);
+            }
+
+            if (_karaokeFill != null)
+            {
+                float u = 0.18f + 0.72f * (0.5f + 0.5f * Mathf.Sin(Time.time * 1.4f));
+                _karaokeFill.rectTransform.anchorMax = new Vector2(u, 1f);
             }
         }
     }

@@ -58,10 +58,17 @@ namespace BankruptVtuber
         Image _tensionFill;
         Image _hypeFlash;
         AudioSource _audio;
+        AudioSource _bed;
         AudioClip _ok;
         AudioClip _bad;
         AudioClip _sc;
         AudioClip _comboCue;
+        Image _wash;
+        Image _washVeil;
+        Image _chatPanel;
+        Text _showTitle;
+        ContentShowLook _look = ContentShowLook.For(StreamContentType.None);
+        float _bedDuck;
 
         readonly Dictionary<ChatNote, RectTransform> _views = new Dictionary<ChatNote, RectTransform>();
         float _judgeFlash;
@@ -91,6 +98,9 @@ namespace BankruptVtuber
             Build();
             _audio = gameObject.AddComponent<AudioSource>();
             _audio.playOnAwake = false;
+            _bed = gameObject.AddComponent<AudioSource>();
+            _bed.playOnAwake = false;
+            _bed.loop = true;
             _ok = ToneClip("sfx_perfect", new[] { 880f, 1320f }, 0.07f, 0.22f);
             _bad = BuzzerClip("sfx_miss", 0.12f, 0.20f);
             _sc = ToneClip("sfx_super", new[] { 523f, 659f, 784f, 1046f }, 0.06f, 0.20f);
@@ -99,6 +109,8 @@ namespace BankruptVtuber
 
         void OnDestroy()
         {
+            if (_bed != null)
+                _bed.Stop();
             UiKit.UnlockUiInputForStream();
         }
 
@@ -149,6 +161,7 @@ namespace BankruptVtuber
                 haeun,
                 gm.Run.haeunPresent && gm.Run.haeunHurtThisDay,
                 fandom != null ? fandom.haeunHurtStreak : 0);
+            ApplyContentShow(ContentShowLook.For(gm.Run.contentPicked));
             _avatar.SetViewers(_shownViewers);
         }
 
@@ -318,6 +331,9 @@ namespace BankruptVtuber
             var hype = _hypeFlash.color;
             hype.a = _session.HypeActive ? 0.16f + Mathf.Sin(Time.time * 8f) * 0.05f : 0f;
             _hypeFlash.color = hype;
+            _bedDuck = Mathf.MoveTowards(_bedDuck, 0f, dt * 1.8f);
+            if (_bed != null)
+                _bed.volume = Mathf.Lerp(_look.BedVolume, _look.BedVolume * 0.28f, _bedDuck);
 
             if (_session.Finished)
                 StartCoroutine(EndRoutine());
@@ -380,8 +396,10 @@ namespace BankruptVtuber
             canvas.gameObject.AddComponent<StreamPointerRelay>();
             var canvasRoot = canvas.transform;
 
-            UiKit.Image(canvasRoot, "Wash", Palette.Studio);
-            UiKit.Stretch(canvasRoot.Find("Wash") as RectTransform);
+            _wash = UiKit.Image(canvasRoot, "Wash", Palette.Studio);
+            UiKit.Stretch(_wash.rectTransform);
+            _washVeil = UiKit.Image(canvasRoot, "WashVeil", new Color(0, 0, 0, 0));
+            UiKit.Stretch(_washVeil.rectTransform);
 
             var safe = UiKit.Panel(canvasRoot, "Safe", new Color(0, 0, 0, 0));
             UiKit.Stretch(safe);
@@ -433,9 +451,13 @@ namespace BankruptVtuber
             UiKit.Stretch(_raceFill.rectTransform);
             _rival.transform.parent.gameObject.SetActive(false);
 
+            _showTitle = UiKit.Label(root, "ShowTitle", "", 34, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_showTitle.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -212), new Vector2(420, 44));
+
             _avatar = new AvatarView(root as RectTransform);
 
             var chatPanel = UiKit.Panel(root, "Chat", new Color(0.07f, 0.05f, 0.1f, 0.88f));
+            _chatPanel = chatPanel.GetComponent<Image>();
             UiKit.Layout(chatPanel, new Vector2(1, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-18, 0), new Vector2(420, -220));
             UiKit.Label(chatPanel, "ChatTitle", "실시간 채팅", 22, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
             var ct = chatPanel.Find("ChatTitle") as RectTransform;
@@ -744,7 +766,17 @@ namespace BankruptVtuber
                 float span = note.HitTime - note.SpawnTime;
                 float u = span <= 0.001f ? 1f : (_session.Elapsed - note.SpawnTime) / span;
                 float y = Mathf.Lerp(LaneTop, LaneHit, Mathf.Clamp01(u));
-                rt.anchoredPosition = new Vector2(0, y);
+                float jitter = _look.LaneJitter;
+                float x = 0f;
+                float tilt = 0f;
+                if (jitter > 0.01f)
+                {
+                    float h = Mathf.Repeat(note.SpawnTime * 17.3f, 1f);
+                    x = (h - 0.5f) * jitter * 36f + Mathf.Sin(Time.time * 6.5f + note.SpawnTime) * jitter * 10f;
+                    tilt = (h - 0.5f) * jitter * 8f;
+                }
+                rt.anchoredPosition = new Vector2(x, y);
+                rt.localEulerAngles = new Vector3(0f, 0f, tilt);
                 if (note.IsSuperchat)
                 {
                     float slam = Mathf.Clamp01((_session.Elapsed - note.SpawnTime) / 0.18f);
@@ -830,11 +862,21 @@ namespace BankruptVtuber
             var color = super ? Palette.Gold : Palette.ForKind(note.Kind);
             if (named && !super)
                 color = Palette.Pink;
+            if (_look.WarmChat && !super && !named && (note.Kind == ChatKind.Positive || note.Kind == ChatKind.Empathy))
+                color = Color.Lerp(color, Color.white, 0.08f);
+            if (_look.LoudTroll && troll)
+                color = Color.Lerp(Palette.Troll, Palette.MoneyRed, 0.35f);
+            if (_look.GoldSparkle && !troll && !named)
+                color = Color.Lerp(color, Palette.Gold, 0.28f);
             var card = UiKit.Panel(_lane, "Note", Color.white);
-            float h = named || super ? 92f : troll ? 72f : 64f;
-            float w = super || named ? 400f : 372f;
+            float scale = _look.BubbleScale > 0.1f ? _look.BubbleScale : 1f;
+            if (_look.LoudTroll && troll)
+                scale *= 1.12f;
+            float h = (named || super ? 92f : troll ? 72f : 64f) * scale;
+            float w = (super || named ? 400f : 372f) * scale;
             UiKit.Layout(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(w, h));
             var img = card.GetComponent<Image>();
+            float a = _look.DimWash ? 0.80f : 0.94f;
             if (named && super)
                 ArtSprites.ApplySliced(img, ArtSprites.SuperchatBanner, note.FanWounded ? new Color(0.72f, 0.62f, 0.28f, 0.72f) : new Color(1f, 0.86f, 0.28f, 1f), new Vector4(36f, 28f, 36f, 28f));
             else if (named)
@@ -843,11 +885,11 @@ namespace BankruptVtuber
                 ArtSprites.ApplySliced(img, ArtSprites.SuperchatBanner, new Color(1f, 0.86f, 0.28f, 1f), new Vector4(36f, 28f, 36f, 28f));
             else if (troll)
             {
-                ArtSprites.Apply(img, ArtSprites.TrollBubble, Palette.Troll, Palette.Troll);
+                ArtSprites.Apply(img, ArtSprites.TrollBubble, color, color);
                 img.preserveAspect = false;
             }
             else
-                ArtSprites.ApplySliced(img, ArtSprites.BubblePill, new Color(color.r, color.g, color.b, 0.94f));
+                ArtSprites.ApplySliced(img, ArtSprites.BubblePill, new Color(color.r, color.g, color.b, a));
 
             string key = super ? "SPACE" : note.Kind switch
             {
@@ -949,8 +991,43 @@ namespace BankruptVtuber
             _viewerFlash = 1f;
         }
 
+        void ApplyContentShow(ContentShowLook look)
+        {
+            _look = look;
+            if (_wash != null)
+                _wash.color = look.Wash;
+            if (_washVeil != null)
+                _washVeil.color = look.WashVeil;
+            if (_chatPanel != null)
+                _chatPanel.color = look.Lane;
+            if (_showTitle != null)
+            {
+                _showTitle.text = look.OverlayTitle;
+                _showTitle.color = look.Type == StreamContentType.Game ? Palette.Troll
+                    : look.Type == StreamContentType.Reaction ? Palette.PastelDim
+                    : look.Card;
+            }
+            UiKit.EnsureCamera(look.Wash);
+            _avatar?.ApplyShow(look);
+            if (look.Type == StreamContentType.Talk)
+                _ok = ToneClip("sfx_perfect", new[] { 660f, 880f }, 0.08f, 0.16f);
+            else if (look.Type == StreamContentType.Song)
+                _ok = ToneClip("sfx_perfect", new[] { 1046f, 1480f, 1760f }, 0.06f, 0.22f);
+            if (look.Type == StreamContentType.Game)
+                _bad = BuzzerClip("sfx_miss", 0.18f, 0.28f);
+            else if (look.Type == StreamContentType.Talk)
+                _bad = BuzzerClip("sfx_miss", 0.09f, 0.14f);
+            if (_bed != null)
+            {
+                _bed.clip = BedClip(look.Type);
+                _bed.volume = look.BedVolume;
+                _bed.Play();
+            }
+        }
+
         void PlaySfx(AudioClip clip, float volume)
         {
+            _bedDuck = 1f;
             if (_audio != null && clip != null)
                 _audio.PlayOneShot(clip, volume);
         }
@@ -971,6 +1048,55 @@ namespace BankruptVtuber
                     data[w] = Mathf.Sin(2f * Mathf.PI * freq * i / 44100f) * amp * env;
                 }
             }
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        static AudioClip BedClip(StreamContentType type)
+        {
+            const int rate = 22050;
+            float dur = 1.6f;
+            int samples = Mathf.CeilToInt(rate * dur);
+            var data = new float[samples];
+            float[] freqs;
+            float amp;
+            bool square;
+            switch (type)
+            {
+                case StreamContentType.Talk:
+                    freqs = new[] { 220f, 277f, 330f, 277f };
+                    amp = 0.045f;
+                    square = false;
+                    break;
+                case StreamContentType.Game:
+                    freqs = new[] { 165f, 196f, 247f, 196f };
+                    amp = 0.040f;
+                    square = true;
+                    break;
+                case StreamContentType.Song:
+                    freqs = new[] { 523f, 659f, 784f, 880f };
+                    amp = 0.042f;
+                    square = false;
+                    break;
+                default:
+                    freqs = new[] { 110f, 165f, 147f, 110f };
+                    amp = 0.032f;
+                    square = false;
+                    break;
+            }
+
+            int step = Mathf.Max(1, samples / freqs.Length);
+            for (int i = 0; i < samples; i++)
+            {
+                float freq = freqs[Mathf.Clamp(i / step, 0, freqs.Length - 1)];
+                float t = i / (float)rate;
+                float phase = 2f * Mathf.PI * freq * t;
+                float wave = square ? Mathf.Sign(Mathf.Sin(phase)) : Mathf.Sin(phase);
+                float env = 0.35f + 0.65f * Mathf.Sin(Mathf.PI * i / (float)samples);
+                data[i] = wave * amp * env;
+            }
+
+            var clip = AudioClip.Create("bgm_" + type, samples, 1, rate, false);
             clip.SetData(data, 0);
             return clip;
         }

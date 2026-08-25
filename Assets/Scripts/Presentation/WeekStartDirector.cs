@@ -135,10 +135,10 @@ namespace BankruptVtuber
             UiKit.Layout(pTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -10), new Vector2(-24, 34));
             var pHint = UiKit.Label(_contentRoot, "PHint", "방송 전에 반드시 고르세요. 채팅 QTE는 그대로입니다.", 16, Palette.PastelDim, TextAnchor.UpperCenter);
             UiKit.Layout(pHint.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -42), new Vector2(-24, 22));
-            AddContentButton(StreamContentType.Talk, 0, Palette.Blue);
-            AddContentButton(StreamContentType.Game, 1, Palette.Troll);
-            AddContentButton(StreamContentType.Song, 2, Palette.Gold);
-            AddContentButton(StreamContentType.Reaction, 3, Palette.Green);
+            AddContentButton(StreamContentType.Talk, 0);
+            AddContentButton(StreamContentType.Game, 1);
+            AddContentButton(StreamContentType.Song, 2);
+            AddContentButton(StreamContentType.Reaction, 3);
             _contentRoot.gameObject.SetActive(false);
 
             var hint = UiKit.Label(root, "Hint", "← 긍정   ↓ 공감   → 웃음   ↑ 감사   Space 슈퍼챗(떼면 판정)", 18, Palette.Muted, TextAnchor.LowerRight);
@@ -204,14 +204,15 @@ namespace BankruptVtuber
             _ => ""
         };
 
-        void AddContentButton(StreamContentType type, int index, Color color)
+        void AddContentButton(StreamContentType type, int index)
         {
+            var look = ContentShowLook.For(type);
             var t = ContentRules.Tuning(GameManager.Instance != null ? GameManager.Instance.Content : null, type);
             string name = ContentPickName(type);
             if (string.IsNullOrEmpty(name))
                 name = t.Name;
             string caption = $"{name}\n수입 ×{t.IncomeMul:0.##}  멘탈 −{t.MentalCost}";
-            var btn = UiKit.Button(_contentRoot, type.ToString(), caption, () => OnPickContent(type), color, Palette.Ink);
+            var btn = UiKit.Button(_contentRoot, type.ToString(), caption, () => OnPickContent(type), look.Card, look.CardInk);
             float a = index / 4f;
             float b = (index + 1) / 4f;
             var rt = btn.GetComponent<RectTransform>();
@@ -220,15 +221,29 @@ namespace BankruptVtuber
             rt.offsetMin = new Vector2(10f, 16f);
             rt.offsetMax = new Vector2(-10f, -8f);
             var img = btn.GetComponent<Image>();
-            ArtSprites.ApplySliced(img, ArtSprites.BubblePill, color);
+            ArtSprites.ApplySliced(img, ArtSprites.BubblePill, look.Card);
             img.raycastTarget = true;
+            var wash = UiKit.Image(btn.transform, "ShowWash", look.Wash);
+            UiKit.Layout(wash.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -6), new Vector2(-20, 10));
+            var veil = UiKit.Image(btn.transform, "ShowVeil", look.WashVeil);
+            UiKit.Layout(veil.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -6), new Vector2(-20, 10));
+            AddCardChip(btn.transform, 0, look.Type == StreamContentType.Talk ? Palette.Blue : look.Type == StreamContentType.Game ? Palette.Troll : look.Type == StreamContentType.Song ? Palette.Gold : Palette.Muted);
+            AddCardChip(btn.transform, 1, look.Type == StreamContentType.Talk ? Palette.Green : look.CamFrame);
             var cap = btn.GetComponentInChildren<Text>();
             if (cap != null)
             {
                 cap.fontSize = 26;
                 cap.lineSpacing = 1.15f;
-                cap.color = Palette.Ink;
+                cap.color = look.CardInk;
+                cap.rectTransform.offsetMin = new Vector2(8f, 8f);
+                cap.rectTransform.offsetMax = new Vector2(-8f, -18f);
             }
+        }
+
+        static void AddCardChip(Transform parent, int index, Color color)
+        {
+            var chip = UiKit.Image(parent, "Chip" + index, color);
+            UiKit.Layout(chip.rectTransform, new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0), new Vector2(14 + index * 22, 10), new Vector2(16, 16));
         }
 
         void OnPickContent(StreamContentType type)

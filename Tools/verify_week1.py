@@ -1386,6 +1386,26 @@ def check_content_types() -> None:
         fail("content types replaced the arrow-key QTE")
     else:
         ok("content type only retunes the existing QTE")
+    look_cs = (ROOT / "Assets/Scripts/Presentation/ContentShowLook.cs").read_text(encoding="utf-8")
+    avatar_show = (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+    if "오늘: 토크" not in look_cs or "오늘: 게임" not in look_cs or "오늘: 노래" not in look_cs or "오늘: 리액션" not in look_cs:
+        fail("content show look missing 오늘: overlay titles")
+    elif "ApplyContentShow" not in live_cs or "ContentShowLook.For" not in live_cs or "ShowTitle" not in live_cs:
+        fail("LiveStream does not apply today's content show skin")
+    elif "BedClip" not in live_cs or "bgm_" not in live_cs or "_bed" not in live_cs:
+        fail("content type BGM bed is missing")
+    elif "클로즈업" not in avatar_show or "게임 화면" not in avatar_show or "노래방" not in avatar_show or "리액션 캠" not in avatar_show:
+        fail("webcam does not change per content type")
+    elif "ContentShowLook.For" not in week_cs or "ShowWash" not in week_cs:
+        fail("WeekStart cards do not preview the LiveStream color language")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or '"오늘 청구"' not in live_cs:
+        fail("content show skin broke pads or the money HUD")
+    else:
+        ok("LiveStream skins 토크/게임/노래/리액션; WeekStart cards match")
+    if "talkIncomeMultiplier: 1" not in content_asset or "reactionChatSpawnMul" in look_cs:
+        fail("content show skin retuned ContentBalance numbers")
+    else:
+        ok("content show skin does not retune spawn / income / mental")
 
 
 def check_save_roundtrip() -> None:
