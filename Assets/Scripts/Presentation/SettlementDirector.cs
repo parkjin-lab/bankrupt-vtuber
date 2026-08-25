@@ -40,6 +40,17 @@ namespace BankruptVtuber
         RectTransform _debtTile;
         StudioPortrait _portrait;
         StudioPortrait _endingPortrait;
+        StudioPortrait _clearPortrait;
+        StudioPortrait _stampPortrait;
+        GameObject _clearRoot;
+        Text _clearTitle;
+        Text _clearCash;
+        Text _clearDebt;
+        GameObject _stampRoot;
+        Image _stampWash;
+        Text _stampMark;
+        Text _stampDebt;
+        Text _stampEpitaph;
         float _mood;
         bool _cashUp;
 
@@ -74,6 +85,8 @@ namespace BankruptVtuber
                 return;
             _portrait?.Tick(Time.deltaTime);
             _endingPortrait?.Tick(Time.deltaTime);
+            _clearPortrait?.Tick(Time.deltaTime);
+            _stampPortrait?.Tick(Time.deltaTime);
             _mood = Mathf.MoveTowards(_mood, 0f, Time.deltaTime * 0.55f);
             if (_cashTile != null && _debtTile != null)
             {
@@ -209,6 +222,47 @@ namespace BankruptVtuber
             var endingRestart = UiKit.Button(endingCard, "EndingRestart", "처음부터", () => GameManager.Instance.RestartRun(), Palette.PinkDeep, Color.white);
             UiKit.Layout(endingRestart.GetComponent<RectTransform>(), new Vector2(0.68f, 0), new Vector2(0.68f, 0), new Vector2(0.5f, 0), new Vector2(150, 28), new Vector2(300, 56));
             _endingRoot.SetActive(false);
+
+            _clearRoot = new GameObject("ClearRoot", typeof(RectTransform));
+            _clearRoot.transform.SetParent(root, false);
+            UiKit.Stretch(_clearRoot.GetComponent<RectTransform>());
+            var clearWash = UiKit.Image(_clearRoot.transform, "ClearWash", new Color(0.08f, 0.16f, 0.12f, 0.96f));
+            UiKit.Stretch(clearWash.rectTransform);
+            var clearGlow = UiKit.Image(_clearRoot.transform, "ClearGlow", new Color(1f, 0.82f, 0.25f, 0.16f));
+            UiKit.Layout(clearGlow.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(900, 900));
+            var clearTag = UiKit.Label(_clearRoot.transform, "ClearTag", "주차 클리어", 28, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(clearTag.rectTransform, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -36), new Vector2(480, 40));
+            _clearTitle = UiKit.Label(_clearRoot.transform, "ClearTitle", "1주차 생존", 72, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_clearTitle.rectTransform, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -100), new Vector2(1100, 90));
+            _clearPortrait = new StudioPortrait(_clearRoot.transform, new Vector2(0.5f, 0.46f), new Vector2(340, 420), false);
+            var snap = UiKit.Panel(_clearRoot.transform, "ClearSnap", Color.white);
+            UiKit.Layout(snap, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 156), new Vector2(720, 88));
+            ArtSprites.ApplySliced(snap.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 1f, 1f, 0.94f));
+            _clearCash = UiKit.Label(snap, "C", "현금 ₩0", 28, Palette.CashGreen, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_clearCash.rectTransform, new Vector2(0, 0), new Vector2(0.5f, 1), new Vector2(0, 0.5f), new Vector2(24, 0), new Vector2(-16, 0));
+            _clearDebt = UiKit.Label(snap, "D", "부채 ₩0", 28, Palette.MoneyRed, TextAnchor.MiddleRight, FontStyle.Bold);
+            UiKit.Layout(_clearDebt.rectTransform, new Vector2(0.5f, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-24, 0), new Vector2(-16, 0));
+            var clearGo = UiKit.Button(_clearRoot.transform, "ClearGo", "다음 주차 시작", () => GameManager.Instance.NextMorning(), Palette.Gold, Palette.Ink);
+            UiKit.Layout(clearGo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 48), new Vector2(420, 72));
+            _clearRoot.SetActive(false);
+
+            _stampRoot = new GameObject("StampRoot", typeof(RectTransform));
+            _stampRoot.transform.SetParent(root, false);
+            UiKit.Stretch(_stampRoot.GetComponent<RectTransform>());
+            _stampWash = UiKit.Image(_stampRoot.transform, "StampWash", new Color(0.42f, 0.04f, 0.10f, 0.97f));
+            UiKit.Stretch(_stampWash.rectTransform);
+            _stampPortrait = new StudioPortrait(_stampRoot.transform, new Vector2(0.18f, 0.50f), new Vector2(320, 400), false);
+            _stampMark = UiKit.Label(_stampRoot.transform, "StampMark", "파산", 120, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_stampMark.rectTransform, new Vector2(0.58f, 0.62f), new Vector2(0.58f, 0.62f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 160));
+            _stampMark.rectTransform.localEulerAngles = new Vector3(0f, 0f, -8f);
+            _stampDebt = UiKit.Label(_stampRoot.transform, "StampDebt", "", 36, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_stampDebt.rectTransform, new Vector2(0.58f, 0.38f), new Vector2(0.58f, 0.38f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 48));
+            _stampEpitaph = UiKit.Label(_stampRoot.transform, "StampEpitaph", "", 22, Palette.Pastel, TextAnchor.MiddleCenter);
+            UiKit.Layout(_stampEpitaph.rectTransform, new Vector2(0.58f, 0.28f), new Vector2(0.58f, 0.28f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760, 64));
+            _stampEpitaph.horizontalOverflow = HorizontalWrapMode.Wrap;
+            var stampRestart = UiKit.Button(_stampRoot.transform, "StampRestart", "처음부터", () => GameManager.Instance.RestartRun(), Palette.Ink, Palette.Pastel);
+            UiKit.Layout(stampRestart.GetComponent<RectTransform>(), new Vector2(0.58f, 0), new Vector2(0.58f, 0), new Vector2(0.5f, 0), new Vector2(0, 48), new Vector2(360, 72));
+            _stampRoot.SetActive(false);
         }
 
         void Render()
@@ -492,6 +546,7 @@ namespace BankruptVtuber
                 _next.gameObject.SetActive(false);
 
             ApplyEndingOverlay(run, w5);
+            ApplyResultSplashes(run, w5);
         }
 
         void PlaceTripleButtons()
@@ -607,18 +662,88 @@ namespace BankruptVtuber
             Render();
         }
 
+        static bool IsBankruptResult(GameRunState run) =>
+            run != null &&
+            (run.lastOutcome == WeekOutcome.Bankrupt || run.lastEnding == EndingKind.Bankrupt);
+
+        static bool IsBurnoutResult(GameRunState run) =>
+            run != null && run.lastEnding == EndingKind.Burnout;
+
+        static bool IsWeekClear(GameRunState run) =>
+            run != null &&
+            (run.lastOutcome == WeekOutcome.Win ||
+             run.lastOutcome == WeekOutcome.Week2Win ||
+             run.lastOutcome == WeekOutcome.Week3Win ||
+             run.lastOutcome == WeekOutcome.Week4Win);
+
         static bool ShouldShowEnding(GameRunState run, Week5Balance w5)
         {
             if (run == null || !WeekSchedule.InWeek5(run))
                 return false;
-            bool fatal = run.lastOutcome == WeekOutcome.Bankrupt
-                || run.lastEnding == EndingKind.Bankrupt
-                || run.lastEnding == EndingKind.Burnout;
-            if (fatal)
-                return true;
+            if (IsBankruptResult(run) || IsBurnoutResult(run))
+                return false;
             if (run.lastOutcome != WeekOutcome.Ending)
                 return false;
             return !Week5Rules.CanBookConcert(run, w5) && !Week5Rules.ConcertStreamReady(run);
+        }
+
+        void ApplyResultSplashes(GameRunState run, Week5Balance w5)
+        {
+            bool clear = IsWeekClear(run);
+            bool bankrupt = IsBankruptResult(run);
+            bool burnout = IsBurnoutResult(run);
+            if (_clearRoot != null)
+                _clearRoot.SetActive(clear && !bankrupt && !burnout);
+            if (_stampRoot != null)
+                _stampRoot.SetActive(bankrupt || burnout);
+            if (clear && _clearRoot != null && _clearRoot.activeSelf)
+            {
+                _clearTitle.text = run.lastOutcome switch
+                {
+                    WeekOutcome.Week4Win => "4주차 클리어",
+                    WeekOutcome.Week3Win => "3주차 클리어",
+                    WeekOutcome.Week2Win => "2주차 클리어",
+                    _ => "1주차 생존"
+                };
+                _clearCash.text = "현금  " + EconomyRules.FormatWon(run.cash);
+                _clearDebt.text = "부채  " + EconomyRules.FormatWon(run.debt);
+                _clearPortrait?.PoseEnding(EndingKind.SoloLegend);
+            }
+            if ((bankrupt || burnout) && _stampRoot != null && _stampRoot.activeSelf)
+            {
+                bool burn = burnout && !bankrupt;
+                _stampWash.color = burn
+                    ? new Color(0.10f, 0.08f, 0.10f, 0.97f)
+                    : new Color(0.42f, 0.04f, 0.10f, 0.97f);
+                _stampMark.text = burn ? "번아웃" : "파산";
+                _stampMark.color = burn ? Palette.PastelDim : Palette.MoneyRed;
+                _stampDebt.text = burn
+                    ? $"멘탈 0   ·   {run.zeroMentalDays}일"
+                    : "부채  " + EconomyRules.FormatWon(run.debt);
+                int cap = EconomyRules.BankruptDebt(run, GameManager.Instance.Balance, GameManager.Instance.Week2, GameManager.Instance.Week3, GameManager.Instance.Week4, w5);
+                _stampEpitaph.text = burn
+                    ? Week5Rules.EndingBody(EndingKind.Burnout)
+                    : $"부채가 {EconomyRules.FormatWon(cap)}을 넘었습니다. 채널은 여기서 멈춥니다.";
+                _stampPortrait?.PoseEnding(burn ? EndingKind.Burnout : EndingKind.Bankrupt);
+            }
+            if (clear || bankrupt || burnout)
+            {
+                _next.gameObject.SetActive(clear);
+                _repay.gameObject.SetActive(false);
+                _restart.gameObject.SetActive(!clear);
+                _letter.gameObject.SetActive(false);
+                _auto.gameObject.SetActive(false);
+                _soothe.gameObject.SetActive(false);
+                _style.gameObject.SetActive(false);
+                _clipYes.gameObject.SetActive(false);
+                _clipNo.gameObject.SetActive(false);
+                _produce.gameObject.SetActive(false);
+                _foundAgency.gameObject.SetActive(false);
+                _scout.gameObject.SetActive(false);
+                _signSponsor.gameObject.SetActive(false);
+                _bookConcert.gameObject.SetActive(false);
+                _concertLive.gameObject.SetActive(false);
+            }
         }
 
         void ApplyEndingOverlay(GameRunState run, Week5Balance w5)

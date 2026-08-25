@@ -301,6 +301,16 @@ def check_project() -> None:
         fail("StudioChrome missing shared webcam portrait")
     else:
         ok("Title / WeekStart / Settlement share StudioChrome webcam language")
+    if "주차 클리어" not in settle_cs or "1주차 생존" not in settle_cs or "다음 주차 시작" not in settle_cs:
+        fail("week-clear splash is missing")
+    elif "StampRoot" not in settle_cs or '"파산"' not in settle_cs or "처음부터" not in settle_cs:
+        fail("bankrupt stamp overlay is missing")
+    elif "번아웃" not in settle_cs or "IsBurnoutResult" not in settle_cs:
+        fail("burnout stamp is missing")
+    elif "2주차 시작" not in settle_cs or "EndingRoot" not in settle_cs:
+        fail("week-clear splash dropped Week 2 continue or Week 5 endings")
+    else:
+        ok("week clear / 파산 / 번아웃 have screenshot screens; Week 5 endings stay")
 
     live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
     session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
