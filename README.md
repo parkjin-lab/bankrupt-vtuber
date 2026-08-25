@@ -2,11 +2,11 @@
 
 VTuber money-defense. Week 1 slice: 매일 청구서가 들이닥치고, 90초 라이브 채팅 QTE로 메우고, 정산한다.
 
-Cute anime-adjacent presentation, harsh red KRW numbers. Built-in 2D (Unity UI Canvas), Unity **6000.3.x**.
+Cute anime-adjacent presentation, harsh red KRW numbers. Built-in 2D (Unity UI Canvas), Unity **6000.5.9f1**.
 
 ## Unity에서 열기
 
-1. [Unity Hub](https://unity.com/download)에 **Unity 6000.3.x** (이 레포는 `6000.3.11f1`로 기록, 같은 6.3 LTS면 업그레이드 가능)를 설치한다.
+1. [Unity Hub](https://unity.com/download)에 **Unity 6000.5.9f1** (changeset `b57deb96f08d`)를 설치한다.
 2. Hub → **Add** → 이 폴더(`Assets`, `Packages`, `ProjectSettings`가 있는 루트)를 연다.
 3. 첫 임포트 후 **`Assets/Scenes/Title.unity`** 를 더블클릭한다. 이 씬이 시작 씬이다.
 4. Play를 누른다. 에디터 스크립트가 Play Mode 시작 씬을 `Title`로 고정하고 Build Settings에 네 씬을 넣는다.

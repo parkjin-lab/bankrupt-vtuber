@@ -74,8 +74,8 @@ def check_project() -> None:
         ok("first build scene is Title")
 
     version = (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8")
-    if "6000.3" not in version:
-        fail("ProjectVersion is not Unity 6000.3.x")
+    if "6000.5.9f1" not in version or "b57deb96f08d" not in version:
+        fail("ProjectVersion is not Unity 6000.5.9f1")
     else:
         ok("Unity version " + version.split()[1])
 
