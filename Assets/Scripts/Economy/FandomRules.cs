@@ -192,6 +192,11 @@ namespace BankruptVtuber
         public static bool CanSendLetter(GameRunState run) =>
             run != null && !run.fanLetterSentThisDay;
 
+        public static bool ShouldOfferLetter(GameRunState run) =>
+            run != null
+            && !run.fanLetterSentThisDay
+            && (run.minjunPresent || run.haeunPresent);
+
         public static bool SendLetter(GameRunState run, Week1Balance w1, FandomBalance f)
         {
             if (!CanSendLetter(run) || f == null)

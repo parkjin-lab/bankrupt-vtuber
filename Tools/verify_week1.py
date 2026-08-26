@@ -1328,6 +1328,7 @@ def check_project() -> None:
     check_content_types()
     check_first_stream_coach()
     check_event_accident()
+    check_fan_letter()
 
 
 def check_content_types() -> None:
@@ -1551,6 +1552,57 @@ def check_event_accident() -> None:
         fail("event accident retuned Week 1 bills or dropped combo SFX")
     else:
         ok("no new event types, no extra rolls, same windows and numbers; Day-1 coach stays")
+
+
+def check_fan_letter() -> None:
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    look_cs = (ROOT / "Assets/Scripts/Presentation/FanLetterLook.cs").read_text(encoding="utf-8") if (ROOT / "Assets/Scripts/Presentation/FanLetterLook.cs").exists() else ""
+    fandom_rules = (ROOT / "Assets/Scripts/Economy/FandomRules.cs").read_text(encoding="utf-8")
+    fandom_asset = (ROOT / "Assets/Resources/Balance/FandomBalance.asset").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    offer = fandom_rules.split("ShouldOfferLetter", 1)[-1].split("public static bool SendLetter", 1)[0]
+
+    if "ShouldOfferLetter" not in fandom_rules or "minjunPresent" not in offer or "haeunPresent" not in offer:
+        fail("fan letter is not gated on existing 민준/하은 present flags")
+    elif "답장하기" not in settle_cs or "나중에" not in settle_cs or "팬레터" not in settle_cs:
+        fail("settlement letter card missing 답장하기 / 나중에")
+    elif "FanLetterLook" not in settle_cs or "첫 도네" not in look_cs or "매일 오는 야간" not in look_cs:
+        fail("letter card does not use named 민준/하은 copy")
+    elif "내일도 켤 거죠" not in look_cs or "내일 밤에 또 올게" not in look_cs:
+        fail("warm in-character letter lines are missing")
+    elif "답이 없더라고요" not in look_cs or "채팅이 좀 아팠어요" not in look_cs:
+        fail("wounded/ignored letters are not shorter and colder")
+    elif "SendLetter" not in settle_cs.split("void OnLetter", 1)[-1][:500]:
+        fail("답장하기 does not call existing SendLetter")
+    elif "letterLoyalty" not in settle_cs or "letterMental" not in settle_cs or "충성 +" not in settle_cs:
+        fail("reply heart does not show existing loyalty / mental deltas")
+    else:
+        ok("named fan letter is a readable card with 답장하기 / 나중에")
+
+    if "letterLoyalty: 4" not in fandom_asset or "letterMental: 8" not in fandom_asset:
+        fail("팬레터 loyalty / mental numbers were retuned")
+    elif "minjunIgnoreSettlements: 3" not in fandom_asset or "haeunAppearDay: 2" not in fandom_asset:
+        fail("민준 ignore / 하은 appear numbers were retuned")
+    elif "MaybeSpawnHaeun" not in fandom_rules.split("void OnMorning", 1)[-1][:400]:
+        fail("하은 morning spawn was moved off WeekStart / OnMorning")
+    elif "새로운팬" in look_cs or "third fan" in look_cs.lower():
+        fail("a new named fan was invented")
+    elif "팬레터 답장" not in settle_cs or "CanSendLetter" not in fandom_rules:
+        fail("existing once-per-day 팬레터 답장 path was removed")
+    elif "MaybeSpawnHaeun" not in week_cs and "haeunPresent" not in week_cs:
+        fail("WeekStart no longer shows 하은 when present")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "사고 수습" not in (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8"):
+        fail("letter card broke pads or the event accident")
+    elif "색에 맞는 키 또는 아래 버튼을 눌러" not in live_cs or "주차 클리어" not in settle_cs:
+        fail("coach or week-clear was dropped while adding the letter")
+    elif "토크" in title_cs or "팬레터" in title_cs or "민준" in title_cs:
+        fail("Title started advertising the fan letter")
+    elif "billRent: 8000" not in (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8"):
+        fail("Week 1 bills were retuned by the fan letter")
+    else:
+        ok("letter uses existing fandom numbers; Day 1 has no fake letter; WeekStart 하은 stays")
 
 
 def check_save_roundtrip() -> None:

@@ -53,6 +53,14 @@ namespace BankruptVtuber
         Text _stampEpitaph;
         float _mood;
         bool _cashUp;
+        GameObject _letterRoot;
+        Text _letterFrom;
+        Text _letterTag;
+        Text _letterBody;
+        Text _letterHeart;
+        float _letterHeartFlash;
+        bool _letterOpen;
+        bool _letterDismissed;
 
         void Awake()
         {
@@ -76,6 +84,7 @@ namespace BankruptVtuber
                 Week5Rules.NoteZeroMentalDay(gm.Run);
             }
             Render();
+            MaybeShowLetter();
         }
 
         void Update()
@@ -103,6 +112,16 @@ namespace BankruptVtuber
                     _debtTile.localScale = Vector3.one * (1f + 0.08f * _mood);
                 }
             }
+            _letterHeartFlash = Mathf.MoveTowards(_letterHeartFlash, 0f, Time.deltaTime * 0.85f);
+            if (_letterHeart != null)
+            {
+                var hc = _letterHeart.color;
+                hc.a = _letterHeartFlash;
+                _letterHeart.color = hc;
+                _letterHeart.rectTransform.localScale = Vector3.one * (1f + 0.18f * _letterHeartFlash);
+            }
+            if (_letterOpen)
+                return;
             if (CanAdvance(gm.Run) && StreamBindings.Confirm)
                 gm.NextMorning();
         }
@@ -179,6 +198,7 @@ namespace BankruptVtuber
 
             _letter = UiKit.Button(root, "FanLetter", "팬레터 답장", OnLetter, Palette.PinkDeep, Color.white);
             UiKit.Layout(_letter.GetComponent<RectTransform>(), new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0), new Vector2(48, 52), new Vector2(240, 56));
+            _letter.gameObject.SetActive(false);
             _auto = UiKit.Button(root, "AutoReply", "기본 자동응답", OnToggleAuto, Palette.Gold, Palette.Ink);
             UiKit.Layout(_auto.GetComponent<RectTransform>(), new Vector2(1, 0), new Vector2(1, 0), new Vector2(1, 0), new Vector2(-48, 52), new Vector2(240, 56));
             _soothe = UiKit.Button(root, "Soothe", "특별방송으로 달래기", OnSootheConflict, Palette.PinkDeep, Color.white);
@@ -263,6 +283,36 @@ namespace BankruptVtuber
             var stampRestart = UiKit.Button(_stampRoot.transform, "StampRestart", "처음부터", () => GameManager.Instance.RestartRun(), Palette.Ink, Palette.Pastel);
             UiKit.Layout(stampRestart.GetComponent<RectTransform>(), new Vector2(0.58f, 0), new Vector2(0.58f, 0), new Vector2(0.5f, 0), new Vector2(0, 48), new Vector2(360, 72));
             _stampRoot.SetActive(false);
+
+            _letterRoot = new GameObject("LetterRoot", typeof(RectTransform));
+            _letterRoot.transform.SetParent(root, false);
+            UiKit.Stretch(_letterRoot.GetComponent<RectTransform>());
+            var letterWash = UiKit.Image(_letterRoot.transform, "LetterWash", new Color(0.08f, 0.04f, 0.1f, 0.72f));
+            UiKit.Stretch(letterWash.rectTransform);
+            letterWash.raycastTarget = true;
+            var paper = UiKit.Panel(_letterRoot.transform, "LetterCard", Color.white);
+            UiKit.Layout(paper, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 440));
+            ArtSprites.ApplySliced(paper.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.92f, 0.94f, 0.98f));
+            var letterTitle = UiKit.Label(paper, "LetterTitle", "팬레터", 22, Palette.Pink, TextAnchor.UpperLeft, FontStyle.Bold);
+            UiKit.Layout(letterTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(28, -16), new Vector2(-56, 28));
+            _letterFrom = UiKit.Label(paper, "LetterFrom", "", 40, Palette.Ink, TextAnchor.UpperLeft, FontStyle.Bold);
+            UiKit.Layout(_letterFrom.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(28, -48), new Vector2(-56, 48));
+            _letterTag = UiKit.Label(paper, "LetterTag", "", 18, Palette.PinkDeep, TextAnchor.UpperLeft, FontStyle.Bold);
+            UiKit.Layout(_letterTag.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(28, -96), new Vector2(-56, 24));
+            _letterBody = UiKit.Label(paper, "LetterBody", "", 22, Palette.Ink, TextAnchor.UpperLeft);
+            UiKit.Layout(_letterBody.rectTransform, new Vector2(0, 0.28f), new Vector2(1, 0.72f), new Vector2(0, 1), new Vector2(28, 0), new Vector2(-56, 0));
+            _letterBody.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _letterBody.lineSpacing = 1.22f;
+            var reply = UiKit.Button(paper, "Reply", "답장하기", OnLetter, Palette.PinkDeep, Color.white);
+            UiKit.Layout(reply.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 72));
+            var later = UiKit.Button(paper, "Later", "나중에", OnLetterLater, Palette.StudioHi, Palette.Pastel);
+            UiKit.Layout(later.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 72));
+            _letterHeart = UiKit.Label(root, "LetterHeart", "", 36, Palette.Pink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_letterHeart.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(640, 56));
+            var heartC = _letterHeart.color;
+            heartC.a = 0f;
+            _letterHeart.color = heartC;
+            _letterRoot.SetActive(false);
         }
 
         void Render()
@@ -435,7 +485,7 @@ namespace BankruptVtuber
 
             bool ending = ShouldShowEnding(run, w5);
             bool conflict = FandomRules.MustResolveConflict(run);
-            _letter.gameObject.SetActive(!ending);
+            _letter.gameObject.SetActive(false);
             _letter.interactable = FandomRules.CanSendLetter(run);
             _letter.GetComponentInChildren<Text>().text = run.fanLetterSentThisDay ? "팬레터 완료" : "팬레터 답장";
             _auto.gameObject.SetActive(!ending && FandomRules.CanToggleAuto(run));
@@ -568,8 +618,68 @@ namespace BankruptVtuber
         void OnLetter()
         {
             var gm = GameManager.Instance;
-            FandomRules.SendLetter(gm.Run, gm.Balance, gm.Fandom);
+            if (!FandomRules.SendLetter(gm.Run, gm.Balance, gm.Fandom))
+                return;
+            var f = gm.Fandom;
+            int loy = f != null ? f.letterLoyalty : 4;
+            int men = f != null ? f.letterMental : 8;
+            if (_letterHeart != null)
+            {
+                _letterHeart.text = $"♥  충성 +{loy}  멘탈 +{men}";
+                var c = Palette.Pink;
+                c.a = 1f;
+                _letterHeart.color = c;
+            }
+            _letterHeartFlash = 1.2f;
+            if (_letterHeart != null)
+                _letterHeart.transform.SetAsLastSibling();
+            CloseLetter(true);
             Render();
+        }
+
+        void OnLetterLater()
+        {
+            CloseLetter(true);
+        }
+
+        void MaybeShowLetter()
+        {
+            if (_letterOpen || _letterDismissed)
+                return;
+            var gm = GameManager.Instance;
+            if (gm == null || gm.Run == null)
+                return;
+            if (!FandomRules.ShouldOfferLetter(gm.Run))
+                return;
+            if (ShouldShowEnding(gm.Run, gm.Week5))
+                return;
+            var look = FanLetterLook.For(gm.Run, gm.Fandom);
+            if (string.IsNullOrEmpty(look.From))
+                return;
+            if (_letterFrom != null)
+                _letterFrom.text = look.From;
+            if (_letterTag != null)
+                _letterTag.text = look.Tag;
+            if (_letterBody != null)
+            {
+                _letterBody.text = look.Body;
+                _letterBody.color = look.Cold ? new Color(0.28f, 0.22f, 0.26f, 1f) : Palette.Ink;
+            }
+            if (_letterRoot != null)
+            {
+                _letterRoot.SetActive(true);
+                _letterRoot.transform.SetAsLastSibling();
+            }
+            _letterOpen = true;
+        }
+
+        void CloseLetter(bool dismissed)
+        {
+            _letterOpen = false;
+            if (dismissed)
+                _letterDismissed = true;
+            if (_letterRoot != null)
+                _letterRoot.SetActive(false);
         }
 
         void OnToggleAuto()
