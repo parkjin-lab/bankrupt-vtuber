@@ -82,6 +82,8 @@ namespace BankruptVtuber
         Image _scandalVeil;
         Text _feeChip;
         RectTransform _chatRoot;
+        Text _coachHint;
+        Text _coachPrompt;
 
         readonly Dictionary<ChatNote, RectTransform> _views = new Dictionary<ChatNote, RectTransform>();
         float _judgeFlash;
@@ -176,6 +178,8 @@ namespace BankruptVtuber
                 fandom != null ? fandom.haeunHurtStreak : 0);
             ApplyContentShow(ContentShowLook.For(gm.Run.contentPicked));
             ApplyThreatShow(gm.Run);
+            if (StreamSession.ShouldOfferFirstStreamCoach(gm.Run))
+                _session.EnableFirstStreamCoach();
             _avatar.SetViewers(_shownViewers);
         }
 
@@ -301,6 +305,7 @@ namespace BankruptVtuber
             _shownIncome = Mathf.MoveTowards(_shownIncome, live, dt * incomeSpeed);
             _avatar.SetViewers(_shownViewers);
             RefreshHud();
+            RefreshCoach();
             _lastViewers = _session.Viewers;
             _lastMental = _session.Mental;
             _avatar.Tick(dt);
@@ -525,6 +530,13 @@ namespace BankruptVtuber
             UiKit.Layout(_sting.rectTransform, new Vector2(0.22f, 0.48f), new Vector2(0.22f, 0.48f), new Vector2(0.5f, 0.5f), new Vector2(0, 0), new Vector2(420, 80));
             _sting.color = new Color(1f, 0.18f, 0.32f, 0f);
 
+            _coachHint = UiKit.Label(root, "CoachHint", "색에 맞는 키 또는 아래 버튼을 눌러.", 22, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_coachHint.rectTransform, new Vector2(0.5f, 0.30f), new Vector2(0.5f, 0.30f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(640, 36));
+            _coachHint.gameObject.SetActive(false);
+            _coachPrompt = UiKit.Label(root, "CoachPrompt", "", 56, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_coachPrompt.rectTransform, new Vector2(0.5f, 0.40f), new Vector2(0.5f, 0.40f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(640, 72));
+            _coachPrompt.gameObject.SetActive(false);
+
             _judge = UiKit.Label(root, "Judge", "", 64, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_judge.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(520, 80));
 
@@ -648,6 +660,55 @@ namespace BankruptVtuber
             if (i >= 0 && i < 4)
                 return _lanePads[i];
             return _lanePads[4];
+        }
+
+        StreamPadButton CoachPad(ChatNote note)
+        {
+            if (note == null)
+                return null;
+            if (note.IsSuperchat)
+                return _lanePads[4];
+            return LanePad(note.Kind);
+        }
+
+        static string CoachPrompt(ChatNote note, int presented)
+        {
+            if (note == null)
+                return "";
+            if (note.IsSuperchat)
+                return presented >= 3 ? "눌러서 차지 후 떼기" : "슈퍼챗 Space";
+            return note.Kind switch
+            {
+                ChatKind.Positive => "← 긍정",
+                ChatKind.Empathy => "↓ 공감",
+                ChatKind.Laugh => "→ 웃음",
+                _ => "↑ 감사"
+            };
+        }
+
+        void RefreshCoach()
+        {
+            bool on = _session != null && _session.CoachActive;
+            if (_coachHint != null)
+                _coachHint.gameObject.SetActive(on);
+            var held = on ? _session.CoachHeld : null;
+            if (_coachPrompt != null)
+            {
+                _coachPrompt.gameObject.SetActive(held != null);
+                if (held != null)
+                {
+                    _coachPrompt.text = CoachPrompt(held, _session.CoachPresented);
+                    _coachPrompt.color = held.IsSuperchat ? Palette.Gold : Palette.ForKind(held.Kind);
+                }
+            }
+
+            StreamPadButton hot = held != null ? CoachPad(held) : null;
+            for (int i = 0; i < _lanePads.Length; i++)
+            {
+                if (_lanePads[i] == null)
+                    continue;
+                _lanePads[i].SetPulse(_lanePads[i] == hot);
+            }
         }
 
         StreamPadButton EventPad(int index)

@@ -26,6 +26,7 @@ namespace BankruptVtuber
         Image _img;
         Color _base = Color.white;
         float _flash;
+        bool _pulse;
 
         void Awake()
         {
@@ -36,10 +37,22 @@ namespace BankruptVtuber
 
         void Update()
         {
-            if (_img == null || _flash <= 0f)
+            if (_img != null && _flash > 0f)
+            {
+                _flash -= Time.unscaledDeltaTime;
+                _img.color = Color.Lerp(_base, Color.white, Mathf.Clamp01(_flash / 0.16f));
+            }
+
+            var rt = transform as RectTransform;
+            if (rt == null)
                 return;
-            _flash -= Time.unscaledDeltaTime;
-            _img.color = Color.Lerp(_base, Color.white, Mathf.Clamp01(_flash / 0.16f));
+            if (_pulse)
+            {
+                float s = 1f + 0.14f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 8f));
+                rt.localScale = Vector3.one * s;
+            }
+            else if (rt.localScale != Vector3.one)
+                rt.localScale = Vector3.one;
         }
 
         public void OnPointerDown(PointerEventData eventData) => Press();
@@ -51,6 +64,13 @@ namespace BankruptVtuber
             if (_img != null)
                 _base = _img.color;
             _flash = 0.16f;
+        }
+
+        public void SetPulse(bool on)
+        {
+            _pulse = on;
+            if (!on && transform is RectTransform rt)
+                rt.localScale = Vector3.one;
         }
 
         public void Press()

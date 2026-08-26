@@ -1326,6 +1326,7 @@ def check_project() -> None:
         ok("corrupt save is ignored and does not crash")
     check_save_roundtrip()
     check_content_types()
+    check_first_stream_coach()
 
 
 def check_content_types() -> None:
@@ -1432,6 +1433,62 @@ def check_content_types() -> None:
         fail("extra threat table was retuned")
     else:
         ok("LiveStream fingerprints today's extra threat; WeekStart cards match")
+
+
+def check_first_stream_coach() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    pad_cs = (ROOT / "Assets/Scripts/Input/StreamPadButton.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    offer = session_cs.split("ShouldOfferFirstStreamCoach", 1)[-1].split("public void EnableFirstStreamCoach", 1)[0]
+    coach_tick = session_cs.split("void TickCoach", 1)[-1].split("void FreezeNotes", 1)[0]
+    spawn_reg = session_cs.split("void MaybeSpawnRegular", 1)[-1].split("void MaybeSpawnSuperchat", 1)[0]
+    spawn_sc = session_cs.split("void MaybeSpawnSuperchat", 1)[-1].split("void SpawnNote", 1)[0]
+
+    if "EnableFirstStreamCoach" not in session_cs or "ShouldOfferFirstStreamCoach" not in session_cs:
+        fail("Day 1 first-stream coach gate is missing")
+    elif "day != 1" not in offer and "day == 1" not in offer:
+        fail("first-stream coach is not gated on day == 1")
+    elif "streamDoneThisDay" not in offer or "successfulStreams" not in offer:
+        fail("first-stream coach does not skip continue / already-streamed day 1")
+    elif "EnableFirstStreamCoach" not in live_cs or "ShouldOfferFirstStreamCoach" not in live_cs:
+        fail("LiveStream does not arm the Day 1 first-stream coach")
+    else:
+        ok("Day 1 first LiveStream of a new run arms the QTE coach")
+
+    if "CoachSuccessTarget = 3" not in session_cs or "CoachSeconds = 8f" not in session_cs:
+        fail("coach does not end on 3 successes or 8 seconds")
+    elif "CoachSeconds" not in coach_tick or "CoachSuccessTarget" not in coach_tick:
+        fail("TickCoach does not honor 3 successes / 8 seconds")
+    elif "MissHeldCoach" not in session_cs or "Judgement.Miss" not in session_cs.split("public bool MissHeldCoach", 1)[-1][:500]:
+        fail("wrong coach key is not a normal Miss")
+    else:
+        ok("coach holds notes until 3 successes or 8 seconds; wrong key is a Miss")
+
+    if "색에 맞는 키 또는 아래 버튼을 눌러" not in live_cs:
+        fail("coach is missing the single Korean hint line")
+    elif "← 긍정" not in live_cs or "↓ 공감" not in live_cs or "→ 웃음" not in live_cs or "↑ 감사" not in live_cs:
+        fail("coach prompts do not match note kinds")
+    elif "슈퍼챗 Space" not in live_cs or "눌러서 차지 후 떼기" not in live_cs:
+        fail("superchat coach prompt is missing")
+    elif "SetPulse" not in pad_cs or "SetPulse" not in live_cs or "RefreshCoach" not in live_cs:
+        fail("matching pad does not pulse during the coach")
+    else:
+        ok("one-line coach + kind prompt + pad pulse; superchat teaches charge-and-release")
+
+    if "Coach" in spawn_reg or "Coach" in spawn_sc:
+        fail("coach changed spawn tables")
+    elif "chatSpawnStart: 1.55" not in balance or "billRent: 8000" not in balance:
+        fail("Week 1 spawn / bill numbers were retuned by the coach")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("coach broke pads, 입력됨 echo, or added timeScale")
+    elif "주차 클리어" not in (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8"):
+        fail("week-clear screen was dropped while adding the coach")
+    elif "토크" in title_cs or "Week2" in title_cs or "민준" in title_cs:
+        fail("Title started advertising the coach / later weeks")
+    else:
+        ok("spawn tables, pads, week-clear, and Title stay unchanged; Day 2 has no coach")
 
 
 def check_save_roundtrip() -> None:

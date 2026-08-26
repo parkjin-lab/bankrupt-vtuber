@@ -77,6 +77,15 @@ namespace BankruptVtuber
         bool _minjunWounded;
         bool _haeunWounded;
         int _haeunHurtAt;
+        bool _coachEnabled;
+        bool _coachDone;
+        int _coachSuccesses;
+        int _coachPresented;
+        float _coachElapsed;
+        ChatNote _coachHeld;
+
+        public const int CoachSuccessTarget = 3;
+        public const float CoachSeconds = 8f;
 
         static readonly string[] FakeUsers =
         {
@@ -172,6 +181,39 @@ namespace BankruptVtuber
             _concertEnabled = true;
             Concert.Reset();
             Concert.Window = w5.concertWindowSeconds > 0.2f ? w5.concertWindowSeconds : 1.2f;
+        }
+
+        public bool CoachActive => _coachEnabled && !_coachDone;
+
+        public ChatNote CoachHeld => _coachHeld;
+
+        public int CoachSuccesses => _coachSuccesses;
+
+        public int CoachPresented => _coachPresented;
+
+        public static bool ShouldOfferFirstStreamCoach(GameRunState run)
+        {
+            if (run == null)
+                return false;
+            if (run.day != 1)
+                return false;
+            if (run.streamDoneThisDay)
+                return false;
+            if (run.successfulStreams != 0)
+                return false;
+            if (run.lastStreamIncome != 0 || run.lastTickIncome != 0)
+                return false;
+            return true;
+        }
+
+        public void EnableFirstStreamCoach()
+        {
+            _coachEnabled = true;
+            _coachDone = false;
+            _coachSuccesses = 0;
+            _coachPresented = 0;
+            _coachElapsed = 0f;
+            _coachHeld = null;
         }
 
         public float IncomeMultiplier =>
@@ -273,6 +315,8 @@ namespace BankruptVtuber
                 MaybeStartConcert();
             }
 
+            TickCoach(dt);
+
             if (Mental <= 0)
             {
                 Mental = 0;
@@ -321,14 +365,14 @@ namespace BankruptVtuber
             }
 
             if (best == null)
-                return false;
+                return MissHeldCoach();
 
             // Hold only consumes when the note is inside the Good window.
             if (hold && bestAbs > Balance.goodWindow)
-                return false;
+                return MissHeldCoach();
 
             if (bestAbs > Balance.goodWindow * 1.15f)
-                return false;
+                return MissHeldCoach();
 
             best.Consumed = true;
             var judgement = StreamRules.Judge(bestAbs, Balance, Tuning.PerfectWindowMul);
@@ -497,6 +541,7 @@ namespace BankruptVtuber
 
             LastJudgement = judgement;
             LastResolved = note;
+            NoteCoachResolved(note, judgement);
         }
 
         void ApplyRivalSteal(Judgement judgement)
@@ -707,6 +752,90 @@ namespace BankruptVtuber
             Concert.Resolved = true;
             Concert.Success = success;
             Concert.TimeLeft = 0f;
+        }
+
+        void TickCoach(float dt)
+        {
+            if (!_coachEnabled || _coachDone || Finished)
+                return;
+
+            _coachElapsed += dt;
+            if (_coachElapsed >= CoachSeconds || _coachSuccesses >= CoachSuccessTarget)
+            {
+                EndCoach();
+                return;
+            }
+
+            if (Event.Active || Promo.Active || Line.Active || Concert.Active)
+                return;
+
+            if (_coachHeld != null && _coachHeld.Consumed)
+                _coachHeld = null;
+
+            if (_coachHeld == null)
+                TryGrabCoachNote();
+
+            if (_coachHeld != null && !_coachHeld.Consumed)
+            {
+                FreezeNotes(dt);
+                _coachHeld.HitTime = Elapsed;
+            }
+        }
+
+        void TryGrabCoachNote()
+        {
+            ChatNote best = null;
+            float bestHit = float.MaxValue;
+            for (int i = 0; i < Notes.Count; i++)
+            {
+                var n = Notes[i];
+                if (n.Consumed)
+                    continue;
+                if (Elapsed + 0.16f < n.HitTime)
+                    continue;
+                if (n.HitTime < bestHit)
+                {
+                    bestHit = n.HitTime;
+                    best = n;
+                }
+            }
+
+            if (best == null)
+                return;
+
+            _coachHeld = best;
+            _coachPresented += 1;
+            best.HitTime = Elapsed;
+        }
+
+        public bool MissHeldCoach()
+        {
+            if (_coachHeld == null || _coachHeld.Consumed || _coachDone)
+                return false;
+            var n = _coachHeld;
+            n.Consumed = true;
+            _coachHeld = null;
+            Resolve(n, Judgement.Miss);
+            return true;
+        }
+
+        void NoteCoachResolved(ChatNote note, Judgement judgement)
+        {
+            if (!_coachEnabled || _coachDone)
+                return;
+            if (_coachHeld == note)
+                _coachHeld = null;
+            if (judgement == Judgement.Miss)
+                return;
+            _coachSuccesses += 1;
+            if (_coachSuccesses >= CoachSuccessTarget)
+                EndCoach();
+        }
+
+        void EndCoach()
+        {
+            _coachDone = true;
+            _coachHeld = null;
         }
 
         void FreezeNotes(float dt)
