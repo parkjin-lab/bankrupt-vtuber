@@ -66,5 +66,8 @@ namespace BankruptVtuber
             StreamEventKind.GearLag => "송출 끊김 — 3초 무수익",
             _ => ""
         };
+
+        public static string RecoverCopy(StreamEventKind kind) =>
+            kind == StreamEventKind.None ? "" : "사고 수습!";
     }
 }

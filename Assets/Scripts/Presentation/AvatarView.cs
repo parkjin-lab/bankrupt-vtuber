@@ -28,6 +28,7 @@ namespace BankruptVtuber
         float _happy;
         float _hurt;
         float _spark;
+        float _panic;
         float _shownViewers;
 
         public AvatarView(RectTransform parent)
@@ -206,6 +207,15 @@ namespace BankruptVtuber
             }
         }
 
+        public void Panic()
+        {
+            _panic = 1f;
+            _shake = 1f;
+            _hurt = 1f;
+            _happy = 0f;
+            _pop = 0f;
+        }
+
         public void SetViewers(float viewers)
         {
             _shownViewers = viewers;
@@ -219,22 +229,30 @@ namespace BankruptVtuber
             _happy = Mathf.MoveTowards(_happy, 0f, dt * 1.8f);
             _hurt = Mathf.MoveTowards(_hurt, 0f, dt * 2.4f);
             _spark = Mathf.MoveTowards(_spark, 0f, dt * 1.5f);
+            _panic = Mathf.MoveTowards(_panic, 0f, dt * 1.15f);
 
             float bobY = Mathf.Sin(_bob * (_closeCam ? 1.6f : 2.1f)) * (_closeCam ? 4f : 7f);
             float popY = _pop * 22f;
             float x = Mathf.Sin(Time.time * 52f) * _shake * 12f;
-            _body.anchoredPosition = new Vector2(x, bobY + popY);
+            if (_panic > 0.01f)
+                x += Mathf.Sin(Time.time * 78f) * _panic * 16f;
+            _body.anchoredPosition = new Vector2(x, bobY + popY - _panic * 18f);
             float squash = _pop * 0.22f;
-            _body.localScale = new Vector3(1f + squash, 1f - squash * 0.55f, 1f);
+            if (_panic > 0.01f)
+                _body.localScale = new Vector3(1.08f + 0.06f * _panic, 0.82f - 0.08f * _panic, 1f);
+            else
+                _body.localScale = new Vector3(1f + squash, 1f - squash * 0.55f, 1f);
 
             var tint = _idleTint;
             if (_hurt > 0.01f)
                 tint = Color.Lerp(tint, new Color(1f, 0.55f, 0.58f, 1f), _hurt);
             if (_happy > 0.01f)
                 tint = Color.Lerp(tint, new Color(1f, 0.94f, 0.72f, 1f), _happy);
+            if (_panic > 0.01f)
+                tint = Color.Lerp(tint, new Color(1f, 0.38f, 0.42f, 1f), _panic);
             _bust.color = tint;
             _blush.color = new Color(1f, 0.45f, 0.62f, _happy * 0.28f);
-            _flash.color = new Color(1f, 0.18f, 0.28f, _hurt * 0.28f);
+            _flash.color = new Color(1f, 0.12f, 0.22f, Mathf.Max(_hurt * 0.28f, _panic * 0.5f));
             _liveDot.color = new Color(1f, 1f, 1f, 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(Time.time * 6f)));
             _liveViewers.text = $"시청자 {Mathf.RoundToInt(_shownViewers)}";
 

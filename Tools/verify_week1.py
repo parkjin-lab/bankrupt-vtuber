@@ -1327,6 +1327,7 @@ def check_project() -> None:
     check_save_roundtrip()
     check_content_types()
     check_first_stream_coach()
+    check_event_accident()
 
 
 def check_content_types() -> None:
@@ -1489,6 +1490,67 @@ def check_first_stream_coach() -> None:
         fail("Title started advertising the coach / later weeks")
     else:
         ok("spawn tables, pads, week-clear, and Title stay unchanged; Day 2 has no coach")
+
+
+def check_event_accident() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    avatar_cs = (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    start_ev = session_cs.split("void StartEvent", 1)[-1].split("void ResolveEvent", 1)[0]
+    resolve_ev = session_cs.split("void ResolveEvent", 1)[-1].split("public bool TryLine", 1)[0]
+    event_in = live_cs.split("if (_session.EventActive)", 1)[-1].split("else if (_session.PromoActive)", 1)[0]
+    kinds = event_cs.split("enum StreamEventKind", 1)[-1].split("enum StreamEventTrigger", 1)[0]
+
+    if "BeginEventAccident" not in live_cs or "EventSting" not in live_cs:
+        fail("mid-stream event has no full-screen accident sting")
+    elif "0.2f" not in live_cs.split("void BeginEventAccident", 1)[-1][:500]:
+        fail("event sting is not a short ~0.2s flash")
+    elif "Panic" not in avatar_cs or "Panic" not in live_cs:
+        fail("avatar does not panic when a stream event fires")
+    elif "LaneFreeze" not in live_cs or "EventActive ? 0f" not in live_cs:
+        fail("chat lane does not freeze visually during the event")
+    else:
+        ok("existing stream event opens with a kind-matched sting and a frozen lane")
+
+    event_overlay = live_cs.split("void RefreshEventOverlay", 1)[-1].split("RectTransform MakeBubble", 1)[0]
+    if "SetPulse" not in event_overlay or "1.18f" not in event_overlay:
+        fail("correct event key 1–4 does not glow brighter than the others")
+    elif "1.18f" not in live_cs and "localScale = hot" not in live_cs:
+        fail("correct event pad is not larger / brighter than the rest")
+    elif "DiscardLaneQueue" not in event_in or "TryEventKey" not in event_in:
+        fail("event 1–4 pads/keys or lane-queue discard were dropped")
+    elif "사고 수습" not in event_cs or "RecoverCopy" not in live_cs:
+        fail("event success does not snap back with 사고 수습 copy")
+    elif "방어 실패 — 시청자·멘탈 타격" not in event_cs or "송출 끊김 — 3초 무수익" not in event_cs:
+        fail("existing event fail copy was rewritten")
+    elif "ApplyEventScar" not in live_cs or "EventCrack" not in live_cs or "EventStatic" not in live_cs:
+        fail("event fail has no leftover webcam scar")
+    else:
+        ok("correct 1–4 key glows; success 사고 수습; fail keeps copy plus a cosmetic scar")
+
+    if "RivalWave" in event_cs or kinds.count("=") > 3:
+        fail("a new StreamEvent kind was added")
+    elif "Event.Kind =" in start_ev and "StreamEventKind.AntiWave" not in start_ev:
+        fail("StartEvent no longer assigns existing kinds")
+    elif "eventEarliestSeconds: 35" not in balance or "eventAntiFailMental: 8" not in balance or "eventLagFailFreezeSeconds: 3" not in balance:
+        fail("event timing / fail numbers were retuned")
+    elif "eventAntiFailViewers" in resolve_ev and "eventAntiFailViewers + 1" in resolve_ev:
+        fail("event fail penalties were retuned")
+    elif "MaybeStartEvent" in live_cs or "StartEvent(" in live_cs:
+        fail("LiveStream started firing extra events")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("event accident broke pads, 입력됨, or added timeScale")
+    elif "색에 맞는 키 또는 아래 버튼을 눌러" not in live_cs or "주차 클리어" not in (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8"):
+        fail("coach or week-clear was dropped while dressing the event")
+    elif "토크" in title_cs or "Week2" in title_cs:
+        fail("Title started advertising events / later weeks")
+    elif "billRent: 8000" not in balance or "Combo >= 5" not in live_cs:
+        fail("event accident retuned Week 1 bills or dropped combo SFX")
+    else:
+        ok("no new event types, no extra rolls, same windows and numbers; Day-1 coach stays")
 
 
 def check_save_roundtrip() -> None:

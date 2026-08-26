@@ -84,6 +84,16 @@ namespace BankruptVtuber
         RectTransform _chatRoot;
         Text _coachHint;
         Text _coachPrompt;
+        Image _eventSting;
+        Text _eventStingLabel;
+        readonly Image[] _eventStingBars = new Image[7];
+        float _eventStingLeft;
+        StreamEventKind _eventStingKind;
+        bool _eventScarAnti;
+        bool _eventScarGear;
+        Image[] _eventCrack;
+        Image _eventStatic;
+        Image _laneFreeze;
 
         readonly Dictionary<ChatNote, RectTransform> _views = new Dictionary<ChatNote, RectTransform>();
         float _judgeFlash;
@@ -255,15 +265,23 @@ namespace BankruptVtuber
 
             MaybeSettleSponsorLine();
 
+            if (!_eventWasActive && _session.EventActive)
+                BeginEventAccident(_session.Event.Kind);
             if (_eventWasActive && !_session.EventActive && _session.Event.Resolved)
             {
                 bool okHit = _session.Event.Success;
                 _judge.text = okHit
-                    ? StreamEventState.SuccessCopy(_session.Event.Kind)
+                    ? StreamEventState.RecoverCopy(_session.Event.Kind)
                     : StreamEventState.FailCopy(_session.Event.Kind);
                 _judge.color = okHit ? Palette.CashGreen : Palette.MoneyRed;
                 _judgeFlash = 1f;
+                _judgeBig = true;
+                _judgePopMax = 0.28f;
+                _judgePop = _judgePopMax;
                 PlaySfx(okHit ? _ok : _bad, 0.5f);
+                if (!okHit)
+                    ApplyEventScar(_session.Event.Kind);
+                ResetEventPads();
             }
             _eventWasActive = _session.EventActive;
 
@@ -354,6 +372,7 @@ namespace BankruptVtuber
             if (_bed != null)
                 _bed.volume = Mathf.Lerp(_look.BedVolume, _look.BedVolume * 0.28f, _bedDuck);
             TickThreatFx();
+            TickEventAccident(dt);
 
             if (_session.Finished)
                 StartCoroutine(EndRoutine());
@@ -572,6 +591,24 @@ namespace BankruptVtuber
             }
             _eventRoot.gameObject.SetActive(false);
             _eventDim.gameObject.SetActive(false);
+
+            _laneFreeze = UiKit.Image(_lane, "LaneFreeze", new Color(0.08f, 0.04f, 0.1f, 0f));
+            UiKit.Stretch(_laneFreeze.rectTransform);
+            _laneFreeze.raycastTarget = false;
+
+            _eventSting = UiKit.Image(root, "EventSting", new Color(1f, 0.08f, 0.18f, 0f));
+            UiKit.Stretch(_eventSting.rectTransform);
+            _eventSting.raycastTarget = false;
+            for (int i = 0; i < _eventStingBars.Length; i++)
+            {
+                var bar = UiKit.Image(_eventSting.rectTransform, "StingBar" + i, new Color(1f, 1f, 1f, 0f));
+                UiKit.Layout(bar.rectTransform, new Vector2(0, i / 7f), new Vector2(1, i / 7f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 18));
+                bar.raycastTarget = false;
+                _eventStingBars[i] = bar;
+            }
+            _eventStingLabel = UiKit.Label(_eventSting.rectTransform, "StingName", "", 72, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_eventStingLabel.rectTransform, new Vector2(0, 0.4f), new Vector2(1, 0.6f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _eventSting.gameObject.SetActive(false);
 
             _promoRoot = UiKit.Panel(root, "PromoCard", new Color(0.12f, 0.08f, 0.18f, 0.96f));
             UiKit.Layout(_promoRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(560, 280));
@@ -843,7 +880,7 @@ namespace BankruptVtuber
                 float span = note.HitTime - note.SpawnTime;
                 float u = span <= 0.001f ? 1f : (_session.Elapsed - note.SpawnTime) / span;
                 float y = Mathf.Lerp(LaneTop, LaneHit, Mathf.Clamp01(u));
-                float jitter = _look.LaneJitter;
+                float jitter = _session.EventActive ? 0f : _look.LaneJitter;
                 float x = 0f;
                 float tilt = 0f;
                 if (jitter > 0.01f)
@@ -872,7 +909,15 @@ namespace BankruptVtuber
             if (fade != null)
             {
                 bool overlay = _session.EventActive || _session.PromoActive || _session.LineActive || _session.ConcertActive;
-                fade.alpha = overlay ? 0.38f : 1f;
+                fade.alpha = _session.EventActive ? 0.22f : overlay ? 0.38f : 1f;
+            }
+            if (_laneFreeze != null)
+            {
+                bool frozen = _session.EventActive;
+                var fc = _eventStingKind == StreamEventKind.GearLag
+                    ? new Color(0.35f, 0.55f, 0.7f, frozen ? 0.42f : 0f)
+                    : new Color(0.7f, 0.08f, 0.16f, frozen ? 0.4f : 0f);
+                _laneFreeze.color = fc;
             }
         }
 
@@ -912,11 +957,17 @@ namespace BankruptVtuber
         void RefreshEventOverlay()
         {
             bool on = _session.EventActive;
-            _eventRoot.gameObject.SetActive(on);
+            bool sting = on && _eventStingLeft > 0f;
+            _eventRoot.gameObject.SetActive(on && !sting);
             _eventDim.gameObject.SetActive(on || _session.PromoActive || _session.LineActive || _session.ConcertActive);
+            if (_eventDim != null && on)
+                _eventDim.color = new Color(0.06f, 0.03f, 0.08f, sting ? 0.82f : 0.62f);
             _charge.gameObject.SetActive(!on && !_session.PromoActive && !_session.LineActive && !_session.ConcertActive && StreamBindings.SuperchatCharging);
             if (!on)
+            {
+                ResetEventPads();
                 return;
+            }
 
             _eventTitle.text = StreamEventState.DisplayName(_session.Event.Kind);
             _eventBody.text = StreamEventState.Prompt(_session.Event.Kind);
@@ -925,9 +976,15 @@ namespace BankruptVtuber
             for (int i = 0; i < 4; i++)
             {
                 bool hot = i + 1 == target;
-                float pulse = hot ? 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(Time.time * 10f)) : 0.12f;
-                _eventKeys[i].color = hot ? new Color(1f, 0.82f, 0.25f, pulse) : new Color(1f, 1f, 1f, 0.12f);
-                _eventKeyLabels[i].color = hot ? Palette.Ink : Palette.Pastel;
+                float pulse = 0.88f + 0.12f * Mathf.Abs(Mathf.Sin(Time.time * 12f));
+                _eventKeys[i].color = hot
+                    ? new Color(1f, 0.94f, 0.28f, pulse)
+                    : new Color(0.28f, 0.24f, 0.3f, 0.2f);
+                _eventKeyLabels[i].color = hot ? Palette.Ink : Palette.Muted;
+                _eventKeys[i].rectTransform.localScale = hot
+                    ? Vector3.one * (1.18f + 0.1f * Mathf.Abs(Mathf.Sin(Time.time * 10f)))
+                    : Vector3.one;
+                _eventPads[i]?.SetPulse(hot);
             }
         }
 
@@ -1279,6 +1336,134 @@ namespace BankruptVtuber
             {
                 float pulse = 0.16f + 0.08f * Mathf.Abs(Mathf.Sin(t * 1.6f));
                 _scandalVeil.color = new Color(1f, 0.12f, 0.28f, pulse);
+            }
+        }
+
+        void BeginEventAccident(StreamEventKind kind)
+        {
+            _eventStingKind = kind;
+            _eventStingLeft = 0.2f;
+            _avatar?.Panic();
+            if (_eventSting != null)
+            {
+                _eventSting.gameObject.SetActive(true);
+                _eventSting.transform.SetAsLastSibling();
+                if (_eventStingLabel != null)
+                    _eventStingLabel.text = StreamEventState.DisplayName(kind);
+            }
+            PlaySfx(_bad, 0.62f);
+        }
+
+        void TickEventAccident(float dt)
+        {
+            if (_eventStingLeft > 0f)
+                _eventStingLeft = Mathf.MoveTowards(_eventStingLeft, 0f, dt);
+
+            bool stingOn = _eventStingLeft > 0f;
+            if (_eventSting != null)
+            {
+                _eventSting.gameObject.SetActive(stingOn || _eventSting.color.a > 0.02f);
+                float a = stingOn ? 0.92f : Mathf.MoveTowards(_eventSting.color.a, 0f, dt * 6f);
+                bool anti = _eventStingKind == StreamEventKind.AntiWave;
+                _eventSting.color = anti
+                    ? new Color(0.92f, 0.05f, 0.16f, a)
+                    : new Color(0.22f, 0.28f, 0.34f, a);
+                if (_eventStingLabel != null)
+                {
+                    var lc = _eventStingLabel.color;
+                    lc.a = a;
+                    _eventStingLabel.color = lc;
+                    _eventStingLabel.rectTransform.localScale = Vector3.one * (1f + 0.12f * a);
+                }
+                for (int i = 0; i < _eventStingBars.Length; i++)
+                {
+                    if (_eventStingBars[i] == null)
+                        continue;
+                    float slice = Mathf.Repeat(Time.unscaledTime * (anti ? 9f : 18f) + i * 0.17f, 1f);
+                    _eventStingBars[i].rectTransform.anchorMin = new Vector2(0f, slice);
+                    _eventStingBars[i].rectTransform.anchorMax = new Vector2(1f, slice);
+                    _eventStingBars[i].color = anti
+                        ? new Color(1f, 0.85f, 0.9f, a * 0.35f)
+                        : new Color(0.85f, 0.95f, 1f, a * (0.15f + 0.55f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 40f + i))));
+                }
+                if (!stingOn && a <= 0.02f)
+                    _eventSting.gameObject.SetActive(false);
+            }
+
+            TickEventScar();
+        }
+
+        void ApplyEventScar(StreamEventKind kind)
+        {
+            if (kind == StreamEventKind.AntiWave)
+            {
+                _eventScarAnti = true;
+                BuildEventCrack();
+            }
+            else if (kind == StreamEventKind.GearLag)
+            {
+                _eventScarGear = true;
+                BuildEventStatic();
+            }
+        }
+
+        void BuildEventCrack()
+        {
+            if (_eventCrack != null || _avatar == null || _avatar.Root == null)
+                return;
+            _eventCrack = new Image[3];
+            for (int i = 0; i < _eventCrack.Length; i++)
+            {
+                var crack = UiKit.Image(_avatar.Root, "EventCrack" + i, new Color(1f, 0.85f, 0.9f, 0.55f));
+                float y = 0.28f + i * 0.18f;
+                UiKit.Layout(crack.rectTransform, new Vector2(0.08f + i * 0.04f, y), new Vector2(0.92f - i * 0.06f, y), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 5));
+                crack.rectTransform.localEulerAngles = new Vector3(0f, 0f, i == 1 ? -12f : 8f + i * 6f);
+                crack.raycastTarget = false;
+                _eventCrack[i] = crack;
+            }
+        }
+
+        void BuildEventStatic()
+        {
+            if (_eventStatic != null || _avatar == null || _avatar.Root == null)
+                return;
+            _eventStatic = UiKit.Image(_avatar.Root, "EventStatic", new Color(0.75f, 0.85f, 1f, 0.16f));
+            UiKit.Stretch(_eventStatic.rectTransform, 16, 16, 44, 18);
+            _eventStatic.raycastTarget = false;
+        }
+
+        void TickEventScar()
+        {
+            if (_eventScarAnti && _eventCrack != null)
+            {
+                float t = Time.unscaledTime;
+                for (int i = 0; i < _eventCrack.Length; i++)
+                {
+                    if (_eventCrack[i] == null)
+                        continue;
+                    float flicker = 0.42f + 0.16f * Mathf.Abs(Mathf.Sin(t * 2.4f + i));
+                    _eventCrack[i].color = new Color(1f, 0.82f, 0.88f, flicker);
+                }
+            }
+
+            if (_eventScarGear && _eventStatic != null)
+            {
+                float t = Time.unscaledTime;
+                bool slice = Mathf.Repeat(t, 1.6f) < 0.18f;
+                float y = Mathf.Repeat(t * 11f, 1f);
+                _eventStatic.rectTransform.offsetMin = new Vector2(0f, slice ? y * 10f : 0f);
+                _eventStatic.rectTransform.offsetMax = new Vector2(0f, slice ? -((1f - y) * 8f) : 0f);
+                _eventStatic.color = new Color(0.7f, 0.82f, 1f, slice ? 0.22f : 0.1f);
+            }
+        }
+
+        void ResetEventPads()
+        {
+            for (int i = 0; i < _eventPads.Length; i++)
+            {
+                _eventPads[i]?.SetPulse(false);
+                if (_eventKeys[i] != null)
+                    _eventKeys[i].rectTransform.localScale = Vector3.one;
             }
         }
 
