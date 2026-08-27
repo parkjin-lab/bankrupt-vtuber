@@ -285,7 +285,7 @@ def check_project() -> None:
         ok("LiveStream overlay has LIVE, ticking viewers, cash/debt")
     if "Audio/sfx_perfect" not in live_cs or "Audio/sfx_good" not in live_cs or "Audio/sfx_miss" not in live_cs:
         fail("distinct Perfect/Good/Miss Resource SFX clips missing")
-    elif "sfx_super" not in live_cs or "sfx_combo" not in live_cs or "sfx_onair" not in live_cs:
+    elif "sfx_super" not in live_cs or "sfx_combo" not in live_cs or "Audio/sfx_onair" not in live_cs:
         fail("superchat / combo / on-air SFX missing")
     elif "Combo >= 5" not in live_cs or "PlayOneShot" not in live_cs:
         fail("combo-5 cue or AudioSource PlayOneShot missing")
@@ -1435,6 +1435,7 @@ def check_project() -> None:
     check_note_chip()
     check_hit_rail()
     check_judge_sfx()
+    check_stream_stings()
 
 
 def check_content_types() -> None:
@@ -2481,6 +2482,8 @@ def check_on_air() -> None:
         fail("stream start has no ON AIR / 방송 시작 sting")
     elif "_onAirLeft = 0.6f" not in live_cs:
         fail("ON AIR sting is not 0.6s")
+    elif "PlaySfx(_onAirCue" not in live_cs or "Audio/sfx_onair" not in live_cs:
+        fail("ON AIR has no start sting clip")
     elif "EnableFirstStreamCoach" not in live_cs or "_onAirLeft <= 0f" not in live_cs:
         fail("Day-1 coach was replaced by ON AIR or no longer runs after it")
     elif "_nextChatAt = 0.4f" not in session_cs:
@@ -2602,12 +2605,15 @@ def check_end_cut() -> None:
     player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
     end = live_cs.split("EndRoutine", 1)[-1].split("void Build", 1)[0]
 
+    show = live_cs.split("void ShowEndCut", 1)[-1].split("void Build", 1)[0]
     if "ShowEndCut" not in live_cs or "방송 종료" not in live_cs:
         fail("90s end has no 방송 종료 cut")
     elif "WaitForSeconds(0.5f)" not in end:
         fail("방송 종료 cut is not 0.5s")
     elif "EndCut" not in live_cs or "0f, 0f, 0f, 0.96f" not in live_cs:
         fail("방송 종료 cut has no black flash")
+    elif "PlaySfx(_endCutCue" not in show or "Audio/sfx_end_cut" not in live_cs:
+        fail("방송 종료 cut has no end-cut sting")
     elif "ApplyStreamPayout" not in end or "GoSettlement" not in end:
         fail("end cut dropped payout or settlement")
     elif "gm.GoSettlement()" not in debug_cs or "ShowEndCut" in debug_cs:
@@ -5078,6 +5084,63 @@ def check_judge_sfx() -> None:
         fail("judge SFX moved Unity off 6000.5.9f1")
     else:
         ok("Perfect/Good/Miss are distinct Resource SFX; combo-break thud; windows stay")
+
+
+def check_stream_stings() -> None:
+    import wave
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    start_block = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    end_show = live_cs.split("void ShowEndCut", 1)[-1].split("void Build", 1)[0]
+    judge = live_cs.split("if (_session.LastJudgement.HasValue", 1)[-1].split("SyncNotes();", 1)[0]
+
+    clips = {
+        "sfx_onair.wav": (0.18, 0.45),
+        "sfx_end_cut.wav": (0.12, 0.40),
+    }
+    for name, (lo, hi) in clips.items():
+        path = ROOT / "Assets/Resources/Audio" / name
+        if not path.exists() or path.stat().st_size < 2000:
+            fail(f"stream sting {name} is missing")
+            return
+        with wave.open(str(path), "rb") as w:
+            dur = w.getnframes() / float(w.getframerate())
+            if dur < lo or dur > hi:
+                fail(f"stream sting {name} duration {dur:.3f}s is not a short distinct sting")
+                return
+
+    if "Audio/sfx_onair" not in live_cs or "PlaySfx(_onAirCue" not in start_block:
+        fail("ON AIR does not play Audio/sfx_onair start sting")
+    elif "Audio/sfx_end_cut" not in live_cs or "PlaySfx(_endCutCue" not in end_show:
+        fail("방송 종료 does not play Audio/sfx_end_cut sting")
+    elif "PlaySfx(_perfect" not in judge or "PlaySfx(_miss" not in judge or "PlaySfx(_good" not in judge:
+        fail("stream stings overwrote distinct judge SFX")
+    elif "Audio/sfx_perfect" not in live_cs or "Audio/sfx_good" not in live_cs:
+        fail("stream stings dropped judge Resource SFX")
+    elif "_onAirLeft = 0.6f" not in live_cs:
+        fail("stream stings retuned 0.6s ON AIR")
+    elif "WaitForSeconds(0.5f)" not in live_cs.split("EndRoutine", 1)[-1].split("void Build", 1)[0]:
+        fail("stream stings retuned 0.5s end cut")
+    elif "streamSeconds: 90" not in balance:
+        fail("stream stings retuned 90s length")
+    elif "ShowEndCut" in debug_cs or "PlaySfx(_endCutCue" in debug_cs:
+        fail("F10 skip is no longer silent / direct to settlement")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("stream stings retuned Week 1 economy")
+    elif "ArtSprites.HitRail" not in live_cs or "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("stream stings broke rail, pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising stream stings / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("stream stings dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("stream stings moved Unity off 6000.5.9f1")
+    else:
+        ok("ON AIR start sting + 방송 종료 cut sting; timings / F10 / judge SFX stay")
 
 
 def check_save_roundtrip() -> None:

@@ -109,6 +109,7 @@ namespace BankruptVtuber
         AudioClip _comboCue;
         AudioClip _clockTick;
         AudioClip _onAirCue;
+        AudioClip _endCutCue;
         Image _wash;
         Image _washVeil;
         Image _chatPanel;
@@ -225,7 +226,12 @@ namespace BankruptVtuber
             _sc = ToneClip("sfx_super", new[] { 523f, 659f, 784f, 1046f }, 0.06f, 0.20f);
             _comboCue = ToneClip("sfx_combo", new[] { 698f, 880f, 1174f }, 0.07f, 0.24f);
             _clockTick = ToneClip("sfx_clock", new[] { 1320f }, 0.045f, 0.18f);
-            _onAirCue = ToneClip("sfx_onair", new[] { 392f, 523f, 784f }, 0.06f, 0.22f);
+            _onAirCue = Resources.Load<AudioClip>("Audio/sfx_onair");
+            if (_onAirCue == null)
+                _onAirCue = ToneClip("sfx_onair", new[] { 392f, 523f, 784f }, 0.06f, 0.22f);
+            _endCutCue = Resources.Load<AudioClip>("Audio/sfx_end_cut");
+            if (_endCutCue == null)
+                _endCutCue = ToneClip("sfx_end_cut", new[] { 330f, 196f }, 0.08f, 0.20f);
         }
 
         void OnDestroy()
@@ -688,6 +694,7 @@ namespace BankruptVtuber
                 _liveDot.color = new Color(0.2f, 0.02f, 0.04f, 0.2f);
             if (_bed != null)
                 _bed.Stop();
+            PlaySfx(_endCutCue, 0.50f);
             if (_endCutRoot == null)
                 return;
             _endCutRoot.gameObject.SetActive(true);
