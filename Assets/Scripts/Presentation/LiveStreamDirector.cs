@@ -1395,6 +1395,7 @@ namespace BankruptVtuber
                     if (g != null)
                         g.color = new Color(1f, 1f, 1f, hot ? 0.40f : 0f);
                 }
+                TintTravelNote(rt, note);
                 if (note.IsSuperchat)
                 {
                     float slam = Mathf.Clamp01((_session.Elapsed - note.SpawnTime) / 0.18f);
@@ -1559,22 +1560,29 @@ namespace BankruptVtuber
             }
         }
 
+        static Color NotePadColor(ChatNote note)
+        {
+            return note.IsSuperchat ? Palette.Gold : Palette.ForKind(note.Kind);
+        }
+
+        static void TintTravelNote(RectTransform rt, ChatNote note)
+        {
+            if (rt == null || note.FanWounded)
+                return;
+            var body = rt.GetComponent<Image>();
+            if (body == null)
+                return;
+            var pad = NotePadColor(note);
+            pad.a = body.color.a;
+            body.color = pad;
+        }
+
         RectTransform MakeBubble(ChatNote note)
         {
             bool super = note.IsSuperchat;
             bool troll = !super && note.Kind == ChatKind.Laugh;
             bool named = note.NamedFan;
-            var color = super ? Palette.Gold : Palette.ForKind(note.Kind);
-            if (named && !super)
-                color = Palette.Pink;
-            if (_look.WarmChat && !super && !named && (note.Kind == ChatKind.Positive || note.Kind == ChatKind.Empathy))
-                color = Color.Lerp(color, Color.white, 0.08f);
-            if (_look.LoudTroll && troll)
-                color = Color.Lerp(Palette.Troll, Palette.MoneyRed, 0.35f);
-            if (_look.GoldSparkle && !troll && !named)
-                color = Color.Lerp(color, Palette.Gold, 0.28f);
-            if (_session != null && _session.HypeActive && !named)
-                color = Color.Lerp(color, Palette.Gold, 0.22f);
+            var color = NotePadColor(note);
             var card = UiKit.Panel(_lane, "Note", Color.white);
             float scale = _look.BubbleScale > 0.1f ? _look.BubbleScale : 1f;
             if (_look.LoudTroll && troll)
@@ -1587,7 +1595,7 @@ namespace BankruptVtuber
             if (named && super)
                 ArtSprites.ApplySliced(img, ArtSprites.SuperchatBanner, note.FanWounded ? new Color(0.72f, 0.62f, 0.28f, 0.72f) : new Color(1f, 0.86f, 0.28f, 1f), new Vector4(36f, 28f, 36f, 28f));
             else if (named)
-                ArtSprites.ApplySliced(img, ArtSprites.BubblePill, note.FanWounded ? new Color(0.72f, 0.42f, 0.55f, 0.55f) : Palette.Pink);
+                ArtSprites.ApplySliced(img, ArtSprites.BubblePill, note.FanWounded ? new Color(color.r * 0.72f, color.g * 0.72f, color.b * 0.72f, 0.55f) : color);
             else if (super)
                 ArtSprites.ApplySliced(img, ArtSprites.SuperchatBanner, new Color(1f, 0.86f, 0.28f, 1f), new Vector4(36f, 28f, 36f, 28f));
             else if (troll)

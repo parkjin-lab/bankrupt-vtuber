@@ -1390,6 +1390,7 @@ def check_project() -> None:
     check_superchat_pip()
     check_left_cash()
     check_go_live_pulse()
+    check_note_pad_color()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -3353,6 +3354,72 @@ def check_go_live_pulse() -> None:
         fail("GO LIVE pulse moved Unity off 6000.5.9f1")
     else:
         ok("WeekStart 방송 켜기 pulses 1.04 with a red LIVE pip; click still GoLive")
+
+
+def check_note_pad_color() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    bind_cs = (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    make = live_cs.split("RectTransform MakeBubble", 1)[-1].split("static void DimNamedBubble", 1)[0]
+    sync = live_cs.split("void SyncNotes", 1)[-1].split("void RefreshPromoOverlay", 1)[0]
+    padc = live_cs.split("static Color NotePadColor", 1)[-1].split("RectTransform MakeBubble", 1)[0]
+    pads = live_cs.split("_lanePads[0]", 1)[-1].split("BuildSuperchatPip", 1)[0]
+
+    if "NotePadColor" not in live_cs or "TintTravelNote" not in sync:
+        fail("traveling notes are not tinted to the kind pad")
+    elif "Palette.ForKind(note.Kind)" not in padc or "Palette.Gold" not in padc:
+        fail("note pad color is not ForKind / gold superchat")
+    elif "IsSuperchat" not in padc:
+        fail("superchat notes are not kept gold")
+    elif "Palette.ForKind(ChatKind.Positive)" not in pads or "Palette.ForKind(ChatKind.Empathy)" not in pads:
+        fail("kind pads no longer use ForKind")
+    elif "Palette.ForKind(ChatKind.Laugh)" not in pads or "Palette.ForKind(ChatKind.Thanks)" not in pads:
+        fail("laugh / thanks pads no longer use ForKind")
+    elif "Palette.Gold" not in pads or "슈퍼챗" not in pads:
+        fail("superchat pad is no longer gold")
+    elif "color = Palette.Pink" in make or "Color.Lerp(color, Palette.Gold" in make:
+        fail("named / hype / song wash still hides the pad color")
+    elif "abs <= 0.15f" not in sync or '"Hot"' not in live_cs or "1f, 1f, 1f" not in sync:
+        fail("note pad tint dropped the 0.15s hittable glow")
+    elif "c.a =" in sync or "img.color = c" in sync:
+        fail("note pad tint washed bubble alpha into a flat bar")
+    elif "approachSeconds =" in sync or "HitTime =" in sync:
+        fail("note pad tint writes travel / hit times")
+    elif "perfectWindow =" in live_cs or "goodWindow =" in live_cs:
+        fail("note pad tint retuned judge windows")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("note pad tint retuned hit windows")
+    elif "approachSeconds: 1.35" not in balance:
+        fail("note pad tint retuned travel speed")
+    elif "GetKeyUp(KeyCode.Space)" not in bind_cs or "TryConsumeKind" not in bind_cs:
+        fail("note pad tint broke stream bindings")
+    elif "TickGoLivePulse" not in week_cs or "LivePip" not in week_cs:
+        fail("note pad tint dropped GO LIVE pulse")
+    elif "TickLeftCash" not in (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8"):
+        fail("note pad tint dropped 남은 현금")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("note pad tint broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising note pad tint / later weeks")
+    elif "billRent: 8000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("note pad tint retuned Week 1 bills or hype")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("note pad tint dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("note pad tint moved Unity off 6000.5.9f1")
+    elif "SpawnNote" in padc or "HitTime =" in padc:
+        fail("note pad tint writes spawn / hit times")
+    elif "FreezeNotes(dt)" not in session_cs.split("void TickCoach", 1)[-1]:
+        fail("note pad tint broke the Day-1 coach pause")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("note pad tint retuned Judge")
+    else:
+        ok("traveling notes match kind pad colors; superchat stays gold; 0.15s glow stays")
 
 
 def check_mental_fatigue() -> None:
