@@ -1446,6 +1446,7 @@ def check_project() -> None:
     check_hype_sfx()
     check_event_sfx()
     check_content_icons()
+    check_title_bgm()
 
 
 def check_content_types() -> None:
@@ -5513,6 +5514,77 @@ def check_content_icons() -> None:
         fail("content icons moved Unity off 6000.5.9f1")
     else:
         ok("content picks have distinct 2D show icons; accents / vibes / multipliers stay")
+
+
+def check_title_bgm() -> None:
+    import wave
+
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    path = ROOT / "Assets/Resources/Audio/bgm_title.wav"
+    start = title_cs.split("void StartTitleBgm", 1)[-1].split("void LeaveTitle", 1)[0]
+    fade = title_cs.split("IEnumerator FadeTitleBgmThen", 1)[-1]
+    leave_new = title_cs.split("void OnStartBroadcast", 1)[-1].split("void BeginNewRun", 1)[0]
+    leave_cont = title_cs.split("void OnContinue", 1)[-1].split("void OnStartBroadcast", 1)[0]
+    wipe = title_cs.split("void ConfirmWipe", 1)[-1].split("void OnContinue", 1)[0]
+
+    if not path.exists() or path.stat().st_size < 20000:
+        fail("bgm_title.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("bgm_title.wav is not a readable PCM loop")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 4.0 or dur > 16.0:
+            fail(f"bgm_title.wav duration {dur:.3f}s is not a short looping lobby bed")
+            return
+
+    if "Audio/bgm_title" not in title_cs or "StartTitleBgm" not in title_cs:
+        fail("Title does not load Audio/bgm_title")
+    elif "loop = true" not in start or "_titleBgm.Play()" not in start:
+        fail("title BGM does not loop on Title")
+    elif "const float fade = 0.2f" not in fade or "_titleBgm.Stop()" not in fade:
+        fail("title BGM does not fade ~0.2s on leave")
+    elif "LeaveTitle(BeginNewRun)" not in leave_new:
+        fail("new game does not fade title BGM before leaving")
+    elif "ContinueRun()" not in leave_cont or "LeaveTitle" not in leave_cont:
+        fail("continue does not fade title BGM before leaving")
+    elif "LeaveTitle(BeginNewRun)" not in wipe:
+        fail("wipe confirm does not fade title BGM before leaving")
+    elif "Audio/bgm_title" in week_cs or "Audio/bgm_title" in live_cs or "Audio/bgm_title" in settle_cs:
+        fail("title BGM leaked onto WeekStart / LiveStream / Settlement")
+    elif "TickStartPulse" not in title_cs or "StartChip" not in title_cs or '"시작"' not in title_cs:
+        fail("title BGM dropped 새 방송 시작 pulse")
+    elif "TickContinuePulse" not in title_cs or "ContinueChip" not in title_cs or '"이어"' not in title_cs:
+        fail("title BGM dropped 이어서 하기 pulse")
+    elif "1f + 0.04f" not in title_cs or "_wordmark" not in title_cs:
+        fail("title BGM dropped the wordmark pulse")
+    elif "진행 중인 " not in title_cs or "지울까?" not in title_cs or "ConfirmWipe" not in title_cs:
+        fail("title BGM changed the wipe confirm")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("title BGM retuned start numbers")
+    elif "billRent: 8000" not in balance:
+        fail("title BGM retuned Week 1 bills")
+    elif "public void StartNewRun()" not in gm or "public bool ContinueRun()" not in gm:
+        fail("title BGM changed StartNewRun / ContinueRun")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("title BGM broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising title BGM / later weeks")
+    elif "F9" in title_cs or "F10" in title_cs or "PlaytestDebug" in title_cs:
+        fail("Title started advertising playtest keys")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("title BGM dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("title BGM moved Unity off 6000.5.9f1")
+    else:
+        ok("Title loops anxious neon bgm_title; fades 0.2s on leave; other scenes stay mute")
 
 
 def check_save_roundtrip() -> None:

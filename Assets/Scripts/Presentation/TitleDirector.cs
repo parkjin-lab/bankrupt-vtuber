@@ -35,6 +35,8 @@ namespace BankruptVtuber
         bool _prologuePlaying;
         bool _canSkipPrologue;
         bool _hasSave;
+        AudioSource _titleBgm;
+        bool _leavingTitle;
 
         void Awake()
         {
@@ -43,6 +45,13 @@ namespace BankruptVtuber
             UiKit.UnlockUiInputForStream();
             Build();
             RefreshContinue();
+            StartTitleBgm();
+        }
+
+        void OnDestroy()
+        {
+            if (_titleBgm != null)
+                _titleBgm.Stop();
         }
 
         void Update()
@@ -362,12 +371,12 @@ namespace BankruptVtuber
         void ConfirmWipe()
         {
             CloseWipe();
-            BeginNewRun();
+            LeaveTitle(BeginNewRun);
         }
 
         void OnContinue()
         {
-            if (_busy || _prologuePlaying)
+            if (_busy || _prologuePlaying || _leavingTitle)
                 return;
             if (_wipeOpen)
             {
@@ -380,18 +389,21 @@ namespace BankruptVtuber
                 return;
             }
 
-            var gm = GameManager.Instance;
-            if (gm == null)
-                return;
-            if (gm.ContinueRun())
-                return;
-            RefreshContinue();
-            OnStartBroadcast();
+            LeaveTitle(() =>
+            {
+                var gm = GameManager.Instance;
+                if (gm == null)
+                    return;
+                if (gm.ContinueRun())
+                    return;
+                RefreshContinue();
+                BeginNewRun();
+            });
         }
 
         void OnStartBroadcast()
         {
-            if (_busy || _prologuePlaying)
+            if (_busy || _prologuePlaying || _leavingTitle)
                 return;
             if (_wipeOpen)
                 return;
@@ -407,7 +419,7 @@ namespace BankruptVtuber
                 return;
             }
 
-            BeginNewRun();
+            LeaveTitle(BeginNewRun);
         }
 
         void BeginNewRun()
@@ -498,6 +510,46 @@ namespace BankruptVtuber
             var cap = btn.GetComponentInChildren<Text>();
             if (cap != null)
                 cap.fontSize = 30;
+        }
+
+        void StartTitleBgm()
+        {
+            var clip = Resources.Load<AudioClip>("Audio/bgm_title");
+            if (clip == null)
+                return;
+            _titleBgm = gameObject.AddComponent<AudioSource>();
+            _titleBgm.clip = clip;
+            _titleBgm.loop = true;
+            _titleBgm.playOnAwake = false;
+            _titleBgm.volume = 0.28f;
+            _titleBgm.Play();
+        }
+
+        void LeaveTitle(System.Action next)
+        {
+            if (_leavingTitle)
+                return;
+            _leavingTitle = true;
+            _busy = true;
+            StartCoroutine(FadeTitleBgmThen(next));
+        }
+
+        IEnumerator FadeTitleBgmThen(System.Action next)
+        {
+            if (_titleBgm != null && _titleBgm.isPlaying)
+            {
+                float start = _titleBgm.volume;
+                float t = 0f;
+                const float fade = 0.2f;
+                while (t < fade)
+                {
+                    t += Time.deltaTime;
+                    _titleBgm.volume = Mathf.Lerp(start, 0f, t / fade);
+                    yield return null;
+                }
+                _titleBgm.Stop();
+            }
+            next?.Invoke();
         }
     }
 }
