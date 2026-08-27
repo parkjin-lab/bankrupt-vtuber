@@ -79,6 +79,9 @@ namespace BankruptVtuber
         float _mentalCountT;
         float _mentalTick;
         string _bodyLead;
+        Text _leftCash;
+        bool _leftCashShown;
+        float _leftCashSnap;
         RectTransform _billsTile;
         Image _billsImg;
         Text _billsCap;
@@ -175,6 +178,7 @@ namespace BankruptVtuber
             TickIncomeCount(Time.deltaTime);
             TickDebtCount(Time.deltaTime);
             TickMentalCount(Time.deltaTime);
+            TickLeftCash(Time.deltaTime);
             if (_cashTile != null && _debtTile != null)
             {
                 float pulse = 1f + 0.12f * Mathf.Abs(Mathf.Sin(Time.time * 6f)) * (0.35f + _mood);
@@ -303,6 +307,9 @@ namespace BankruptVtuber
             _tileMiss = StudioChrome.RecapTile(recap, "Miss", "MISS", Palette.MoneyRed, 0.25f, 0.50f, 0f, 0.48f, false);
             _tileViewers = StudioChrome.RecapTile(recap, "Viewers", "시청자", Palette.Pink, 0.50f, 0.75f, 0f, 0.48f, true);
             _tileMental = StudioChrome.RecapTile(recap, "Mental", "멘탈", Palette.Pink, 0.75f, 1f, 0f, 0.48f, false);
+            _leftCash = UiKit.Label(root, "LeftCash", "남은 현금", 24, Palette.Pastel, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_leftCash.rectTransform, new Vector2(0f, 1f), new Vector2(0.78f, 1f), new Vector2(0f, 1f), new Vector2(40f, -344f), new Vector2(0f, 34f));
+            _leftCash.gameObject.SetActive(false);
 
             var panel = UiKit.Panel(root, "Sheet", Color.white);
             UiKit.Layout(panel, new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(980, 200));
@@ -779,6 +786,47 @@ namespace BankruptVtuber
             }
         }
 
+        void TickLeftCash(float dt)
+        {
+            if (!_leftCashShown && !_incomeCounting && !_debtCounting)
+                ShowLeftCash();
+            if (!_leftCashShown || _leftCash == null)
+                return;
+            _leftCashSnap = Mathf.MoveTowards(_leftCashSnap, 0f, dt * 4f);
+            float u = _leftCashSnap;
+            _leftCash.rectTransform.localScale = Vector3.one * (1f + 0.10f * u);
+        }
+
+        void ShowLeftCash()
+        {
+            _leftCashShown = true;
+            _leftCashSnap = 1f;
+            ApplyLeftCash();
+            if (_leftCash != null)
+                _leftCash.gameObject.SetActive(true);
+        }
+
+        void ApplyLeftCash()
+        {
+            var gm = GameManager.Instance;
+            if (gm == null || gm.Run == null || _leftCash == null)
+                return;
+            int cash = gm.Run.cash;
+            _leftCash.text = "남은 현금  " + EconomyRules.FormatWon(cash);
+            int typical = PeekTomorrowTypical(gm);
+            bool shortfall = typical > 0 && cash < typical;
+            _leftCash.color = shortfall ? Palette.MoneyRed : Palette.Pastel;
+        }
+
+        static int PeekTomorrowTypical(GameManager gm)
+        {
+            if (gm == null || gm.Run == null || gm.Balance == null)
+                return 0;
+            if (WeekSchedule.DaysLeftInWeek(gm.Run) <= 0)
+                return 0;
+            return WeekSchedule.TotalFixedBills(gm.Run, gm.Balance, gm.Week2, gm.Week3, gm.Week4, gm.Week5);
+        }
+
         void ShowShortfall()
         {
             _shortFired = true;
@@ -891,6 +939,8 @@ namespace BankruptVtuber
             }
             _tileBills.text = "-" + EconomyRules.FormatWon(charges);
             _tileCash.text = EconomyRules.FormatWon(run.cash);
+            if (_leftCashShown)
+                ApplyLeftCash();
             _debtTo = run.debt;
             _debtFrom = run.debtAtDayStart;
             if (!_debtCountStarted)

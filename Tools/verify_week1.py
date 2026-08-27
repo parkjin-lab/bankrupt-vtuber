@@ -1388,6 +1388,7 @@ def check_project() -> None:
     check_content_card_mood()
     check_title_broke_login()
     check_superchat_pip()
+    check_left_cash()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -3247,6 +3248,52 @@ def check_superchat_pip() -> None:
         fail("superchat pip moved Unity off 6000.5.9f1")
     else:
         ok("superchat flashes a gold 슈퍼챗 pip 0.4s early; miss still cracks")
+
+
+def check_left_cash() -> None:
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    left = settle_cs.split("void TickLeftCash", 1)[-1].split("void ShowShortfall", 1)[0]
+
+    if "TickLeftCash" not in settle_cs or "남은 현금" not in settle_cs:
+        fail("settlement has no 남은 현금 snap")
+    elif "!_incomeCounting && !_debtCounting" not in settle_cs:
+        fail("남은 현금 does not wait for income / debt counts")
+    elif "gm.Run.cash" not in left and "run.cash" not in left:
+        fail("남은 현금 does not read the real leftover cash")
+    elif "TotalFixedBills" not in settle_cs or "DaysLeftInWeek" not in settle_cs:
+        fail("남은 현금 cannot compare to tomorrow's typical bill")
+    elif "Palette.MoneyRed" not in left:
+        fail("short leftover 남은 현금 is not warning-red")
+    elif "run.cash =" in left or "lastBills =" in left or "cash +=" in left:
+        fail("남은 현금 writes cash / bill math")
+    elif "ApplyDailyBills" in left or "ConvertNegativeCashToDebt" in settle_cs:
+        fail("남은 현금 reimplemented bill math")
+    elif "TickIncomeCount" not in settle_cs or "TickDebtCount" not in settle_cs:
+        fail("남은 현금 dropped income / debt counts")
+    elif "eta <= 0.4f" not in live_cs or "BuildSuperchatPip" not in live_cs:
+        fail("남은 현금 dropped superchat telegraph")
+    elif "_wordmark" not in title_cs or "청구보다 부족" not in week_cs:
+        fail("남은 현금 dropped title pulse or 청구보다 부족")
+    elif "TonightBills" not in eco_cs:
+        fail("남은 현금 dropped EconomyRules.TonightBills")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("남은 현금 broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising leftover cash / later weeks")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("남은 현금 retuned Week 1 cash or bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("남은 현금 dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("남은 현금 moved Unity off 6000.5.9f1")
+    else:
+        ok("settlement snaps 남은 현금 after counts; short vs tomorrow tints red")
 
 
 def check_mental_fatigue() -> None:
