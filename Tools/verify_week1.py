@@ -1400,6 +1400,7 @@ def check_project() -> None:
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
+    check_viewer_chip_pop()
     check_bill_cover_slam()
     check_yesterday_headline()
     check_last_day_banner()
@@ -3882,6 +3883,61 @@ def check_viewer_pop() -> None:
         fail("viewer popup retuned hype viewers or Week 1 bills")
     else:
         ok("시청 +/− pops next to the chip; miss reuses one popup; deltas unchanged")
+
+
+def check_viewer_chip_pop() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    show = live_cs.split("void ShowViewerDelta", 1)[-1].split("void TickViewerChipPop", 1)[0]
+    paint = live_cs.split("void PaintViewerChip", 1)[-1].split("void ShowMissSting", 1)[0]
+
+    if "_viewerChipPop" not in live_cs or "TickViewerChipPop" not in live_cs:
+        fail("viewer chip does not pop when the count changes")
+    elif "_viewerChipPop = 0.1f" not in show:
+        fail("viewer chip pop is not 0.1s")
+    elif "1f + 0.12f" not in paint or "_viewerChip.localScale" not in paint:
+        fail("viewer chip pop is not 1.12 scale on the chip")
+    elif "Palette.CashGreen" not in paint or "Palette.MoneyRed" not in paint:
+        fail("viewer chip is not green on gain / red on drop")
+    elif "_viewerChipUp" not in show or "_viewerChipUp" not in paint:
+        fail("viewer chip tint is not keyed off gain vs drop")
+    elif "시청 +" not in show or "시청 −" not in show:
+        fail("viewer chip pop dropped the existing +/− text")
+    elif show.count("시청 +") != 1 or live_cs.count("ViewerPop") < 1:
+        fail("viewer chip pop duplicated the +/− text")
+    elif "ShowViewerDelta(viewerDelta)" not in live_cs:
+        fail("viewer chip pop stopped miss from reusing the one popup")
+    elif live_cs.count("ShowViewerDelta") < 3:
+        fail("viewer chip pop is not used for hit / miss / leftover ticks")
+    elif "ClampViewers" not in rules_cs or "ViewerDeltaFor" not in rules_cs:
+        fail("viewer chip pop retuned ClampViewers / deltas")
+    elif "perfectViewerDelta" not in rules_cs or "missViewerDelta" not in rules_cs:
+        fail("StreamRules viewer deltas were dropped")
+    elif "Viewers =" in show or "Viewers =" in paint:
+        fail("viewer chip pop writes viewer math")
+    elif "BillFill" not in live_cs or "new Vector2(180, 10)" not in live_cs:
+        fail("viewer chip pop dropped the 청구 fill bar")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("viewer chip pop broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising viewer chip / later weeks")
+    elif "perfectViewerDelta: 0.5" not in balance or "missViewerDelta: -1.2" not in balance:
+        fail("viewer chip pop retuned Perfect / Miss viewer deltas")
+    elif "hypeViewersPerSec: 1" not in balance or "billRent: 8000" not in balance:
+        fail("viewer chip pop retuned hype viewers or Week 1 bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("viewer chip pop dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("viewer chip pop moved Unity off 6000.5.9f1")
+    elif "오늘 헤드라인" not in settle_cs:
+        fail("viewer chip pop dropped settlement headline")
+    else:
+        ok("viewer chip pops 1.12 / 0.1s; green gain / red drop; +/− text stays one")
 
 
 def check_bill_cover_slam() -> None:

@@ -13,6 +13,10 @@ namespace BankruptVtuber
         RectTransform _hit;
         Image _strike;
         Text _viewers;
+        RectTransform _viewerChip;
+        Image _viewerChipImg;
+        float _viewerChipPop;
+        bool _viewerChipUp;
         Text _rival;
         Text _cash;
         Text _debt;
@@ -499,6 +503,7 @@ namespace BankruptVtuber
             }
             _stingFlash = Mathf.MoveTowards(_stingFlash, 0f, dt * 1.4f);
             _viewerFlash = Mathf.MoveTowards(_viewerFlash, 0f, dt * 1.8f);
+            TickViewerChipPop();
             _viewerPopFlash = Mathf.MoveTowards(_viewerPopFlash, 0f, dt * 1.6f);
             _incomePopFlash = Mathf.MoveTowards(_incomePopFlash, 0f, dt * 1.6f);
             if (_viewerPop != null)
@@ -734,6 +739,8 @@ namespace BankruptVtuber
             UiKit.Layout(liveL.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0.5f), new Vector2(28f, 0f), new Vector2(-16f, 0f));
 
             _viewers = Chip(top, "Viewers", "시청자", 0.16f, 0.40f, -6f);
+            _viewerChip = _viewers.transform.parent as RectTransform;
+            _viewerChipImg = _viewerChip != null ? _viewerChip.GetComponent<Image>() : null;
             _viewerPop = UiKit.Label(_viewers.transform.parent, "ViewerPop", "", 20, Palette.CashGreen, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(_viewerPop.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(8f, 6f), new Vector2(150f, 28f));
             _rival = Chip(top, "Rival", "라이벌", 0.40f, 0.64f, -6f);
@@ -1272,7 +1279,7 @@ namespace BankruptVtuber
         void RefreshHud()
         {
             _viewers.text = Mathf.RoundToInt(_shownViewers).ToString();
-            _viewers.color = Color.Lerp(Palette.Pastel, Palette.MoneyRed, _viewerFlash);
+            PaintViewerChip();
             bool vs = _session.RivalActive;
             _rival.transform.parent.gameObject.SetActive(vs);
             if (vs)
@@ -2055,8 +2062,38 @@ namespace BankruptVtuber
             c.a = 1f;
             _viewerPop.color = c;
             _viewerPopFlash = 1f;
-            if (!up)
+            _viewerChipPop = 0.1f;
+            _viewerChipUp = up;
+            if (up)
+                _viewerFlash = 0f;
+            else
                 _viewerFlash = 1f;
+        }
+
+        void TickViewerChipPop()
+        {
+            _viewerChipPop = Mathf.MoveTowards(_viewerChipPop, 0f, Time.deltaTime);
+            PaintViewerChip();
+        }
+
+        void PaintViewerChip()
+        {
+            float u = _viewerChipPop / 0.1f;
+            if (_viewerChip != null)
+                _viewerChip.localScale = Vector3.one * (1f + 0.12f * u);
+            if (_viewers != null)
+            {
+                var tint = _viewerChipUp ? Palette.CashGreen : Palette.MoneyRed;
+                float amt = Mathf.Max(u, _viewerChipUp ? 0f : _viewerFlash);
+                _viewers.color = Color.Lerp(Palette.Pastel, tint, amt);
+            }
+            if (_viewerChipImg != null)
+            {
+                var bg = new Color(1f, 1f, 1f, 0.06f);
+                var wash = _viewerChipUp ? Palette.CashGreen : Palette.MoneyRed;
+                wash.a = 0.28f;
+                _viewerChipImg.color = Color.Lerp(bg, wash, u);
+            }
         }
 
         void ShowMissSting(float viewerDelta, int mentalDelta)
