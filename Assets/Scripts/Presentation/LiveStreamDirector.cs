@@ -116,6 +116,8 @@ namespace BankruptVtuber
         AudioClip _billCoverCue;
         AudioClip _padClick;
         AudioClip _mentalCue;
+        AudioClip _rivalWinCue;
+        AudioClip _rivalLoseCue;
         Image _wash;
         Image _washVeil;
         Image _chatPanel;
@@ -266,6 +268,12 @@ namespace BankruptVtuber
             _mentalCue = Resources.Load<AudioClip>("Audio/sfx_mental");
             if (_mentalCue == null)
                 _mentalCue = ToneClip("sfx_mental", new[] { 220f, 277f, 165f }, 0.10f, 0.18f);
+            _rivalWinCue = Resources.Load<AudioClip>("Audio/sfx_rival_win");
+            if (_rivalWinCue == null)
+                _rivalWinCue = ToneClip("sfx_rival_win", new[] { 523f, 659f, 784f, 1046f }, 0.07f, 0.22f);
+            _rivalLoseCue = Resources.Load<AudioClip>("Audio/sfx_rival_lose");
+            if (_rivalLoseCue == null)
+                _rivalLoseCue = ToneClip("sfx_rival_lose", new[] { 330f, 247f, 196f }, 0.08f, 0.16f);
             StreamBindings.OnLanePadPress += PlayPadClick;
         }
 
@@ -712,6 +720,7 @@ namespace BankruptVtuber
             if (_session.RivalActive && _rivalDuel != null)
             {
                 _rivalDuel.ShowResult(gm.Run.lastRivalWon, gm.Week3.rivalWinCash, gm.Week3.rivalLoseMental);
+                PlaySfx(gm.Run.lastRivalWon ? _rivalWinCue : _rivalLoseCue, 0.56f);
                 yield return new WaitForSeconds(0.85f);
             }
             _judge.text = _session.ForceEnded ? "멘탈 붕괴 — 강제 종료" : "방송 종료";

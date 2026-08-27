@@ -1471,6 +1471,7 @@ def check_project() -> None:
     check_title_sfx()
     check_pick_sfx()
     check_letter_sfx()
+    check_rival_sfx()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -6588,6 +6589,93 @@ def check_letter_sfx() -> None:
         fail("letter SFX moved Unity off 6000.5.9f1")
     else:
         ok("답장하기 plays sfx_letter once; 나중에 silent; paper / routing / BGM stay")
+
+
+def check_rival_sfx() -> None:
+    import wave
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    duel_cs = (ROOT / "Assets/Scripts/Presentation/RivalDuelView.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    end = live_cs.split("EndRoutine", 1)[-1].split("void ShowEndCut", 1)[0]
+    update = live_cs.split("void Update()", 1)[-1].split("IEnumerator EndRoutine", 1)[0]
+    show = duel_cs.split("void ShowResult", 1)[-1].split("void RefreshBars", 1)[0]
+    tick = duel_cs.split("public void Tick", 1)[-1].split("public void FlashSteal", 1)[0]
+    flash = duel_cs.split("public void FlashSteal", 1)[-1].split("public void ShowResult", 1)[0]
+    clips = {
+        "sfx_rival_win.wav": (0.20, 0.55),
+        "sfx_rival_lose.wav": (0.16, 0.50),
+    }
+    durs = {}
+    for name, (lo, hi) in clips.items():
+        path = ROOT / "Assets/Resources/Audio" / name
+        if not path.exists() or path.stat().st_size < 2000:
+            fail(f"{name} is missing")
+            return
+        with wave.open(str(path), "rb") as w:
+            if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+                fail(f"{name} is not a readable PCM sting")
+                return
+            dur = w.getnframes() / float(w.getframerate())
+            durs[name] = dur
+            if dur < lo or dur > hi:
+                fail(f"{name} duration {dur:.3f}s is not a short distinct sting")
+                return
+    if abs(durs["sfx_rival_win.wav"] - durs["sfx_rival_lose.wav"]) < 0.02:
+        fail("rival win / lose stings are not distinct")
+        return
+
+    if "Audio/sfx_rival_win" not in live_cs or "Audio/sfx_rival_lose" not in live_cs:
+        fail("LiveStream does not load rival win / lose SFX")
+    elif "ShowResult" not in end or "PlaySfx" not in end or "lastRivalWon" not in end:
+        fail("duel resolve does not play a win/lose one-shot")
+    elif "_rivalWinCue" not in end or "_rivalLoseCue" not in end:
+        fail("duel resolve does not pick distinct win / lose clips")
+    elif "ApplyRivalResult" not in end or end.find("ApplyRivalResult") > end.find("ShowResult"):
+        fail("rival SFX moved ahead of ApplyRivalResult")
+    elif "PlaySfx" in tick or "sfx_rival" in tick or "PlaySfx" in flash or "sfx_rival" in flash:
+        fail("rival SFX plays on the viewer tick or steal flash")
+    elif "_rivalWinCue" in update or "_rivalLoseCue" in update or "sfx_rival" in update:
+        fail("rival SFX plays mid-stream instead of on resolve")
+    elif "FlashSteal" not in live_cs or "스틸 +" not in duel_cs:
+        fail("rival SFX dropped steal flash")
+    elif 'RivalAvatar = "Art/rival_nyang"' not in (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8"):
+        fail("rival SFX dropped rival face")
+    elif "라이벌 승" not in show or "라이벌 패" not in show:
+        fail("rival SFX dropped win/lose copy")
+    elif "rivalWinCash: 20000" not in w3_asset or "rivalLoseMental: 12" not in w3_asset or "rivalPerfectSteal: 0.6" not in w3_asset:
+        fail("rival SFX retuned Week3 rival numbers")
+    elif "playerViewers > rivalViewers" not in w3r_cs or "ApplyRivalResult" not in w3r_cs:
+        fail("rival SFX changed win/lose routing")
+    elif "Audio/sfx_letter" not in settle_cs or "PlayLetterSfx" not in settle_cs:
+        fail("rival SFX dropped letter reply confirm")
+    elif "Audio/sfx_title" not in title_cs or "PlayTitleSfx" not in title_cs:
+        fail("rival SFX dropped title leave confirm")
+    elif "Audio/sfx_pick" not in week_cs or "PlayPickSfx" not in week_cs:
+        fail("rival SFX dropped content pick confirm")
+    elif "Audio/sfx_rival_win" in title_cs or "Audio/sfx_rival_win" in week_cs or "Audio/sfx_rival_win" in settle_cs:
+        fail("rival SFX leaked onto Title / WeekStart / Settlement")
+    elif "ShowResult" in debug_cs or "sfx_rival" in debug_cs:
+        fail("F10 skip is no longer mute-safe")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("rival SFX retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("rival SFX broke pads, 입력됨, or added timeScale")
+    elif "Week3" in title_cs or "라이벌" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising rival SFX / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("rival SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("rival SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("rival duel plays distinct win/lose one-shots; tick / steal / numbers stay")
 
 
 def check_mental_sfx() -> None:
