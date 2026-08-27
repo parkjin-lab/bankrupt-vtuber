@@ -1438,6 +1438,7 @@ def check_project() -> None:
     check_stream_stings()
     check_clock_tick_sfx()
     check_superchat_sfx()
+    check_bill_cover_sfx()
 
 
 def check_content_types() -> None:
@@ -3993,6 +3994,7 @@ def check_bill_cover_slam() -> None:
     avatar_cs = (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
     balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
 
+    slam = live_cs.split("void SlamBillCover", 1)[-1].split("void ShowIncomeDelta", 1)[0]
     if "SlamBillCover" not in live_cs or "CoverSlam" not in live_cs:
         fail("mid-stream 청구 커버 has no gold slam")
     elif "청구 커버" not in live_cs or "TonightBills" not in live_cs:
@@ -4003,6 +4005,10 @@ def check_bill_cover_slam() -> None:
         fail("cover slam is not a short 0.4s hit")
     elif "HappyPop" not in avatar_cs or "HappyPop()" not in live_cs:
         fail("cover slam has no avatar happy pop")
+    elif "PlaySfx(_billCoverCue" not in slam or "Audio/sfx_bill_cover" not in live_cs:
+        fail("cover slam has no cash-register SFX on the one-shot")
+    elif slam.count("PlaySfx(_billCoverCue") != 1:
+        fail("cover slam plays bill-cover SFX more than once in SlamBillCover")
     elif "SlamBillCover" in settle_cs or "CoverSlam" in settle_cs:
         fail("settlement grew a fake 청구 커버 slam")
     elif "청구 미달" not in (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").read_text(encoding="utf-8"):
@@ -5254,6 +5260,51 @@ def check_superchat_sfx() -> None:
         fail("superchat chime moved Unity off 6000.5.9f1")
     else:
         ok("superchat success plays gold-coin chime; miss still cracks; amounts stay")
+
+
+def check_bill_cover_sfx() -> None:
+    import wave
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    slam = live_cs.split("void SlamBillCover", 1)[-1].split("void ShowIncomeDelta", 1)[0]
+    trigger = live_cs.split("if (!_billsCovered && shown >= _tonightBills", 1)[-1].split("_remain.text", 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_bill_cover.wav"
+
+    if not path.exists() or path.stat().st_size < 2000:
+        fail("sfx_bill_cover.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.15 or dur > 0.55:
+            fail(f"bill-cover SFX duration {dur:.3f}s is not a short cash-register clip")
+            return
+
+    if "Audio/sfx_bill_cover" not in live_cs or "PlaySfx(_billCoverCue" not in slam:
+        fail("청구 커버 slam does not play Audio/sfx_bill_cover")
+    elif "_billsCovered = true" not in trigger or "SlamBillCover()" not in trigger:
+        fail("bill-cover SFX is not on the existing one-shot trigger")
+    elif live_cs.count("void SlamBillCover") != 1 or slam.count("_coverSlamFlash = 1f") != 1:
+        fail("bill-cover SFX added a second visual slam")
+    elif "SlamBillCover" in settle_cs or "CoverSlam" in settle_cs or "sfx_bill_cover" in settle_cs:
+        fail("settlement grew a second bill-cover slam/SFX")
+    elif "Audio/sfx_superchat" not in live_cs or "Audio/sfx_clock_tick" not in live_cs:
+        fail("bill-cover SFX dropped superchat chime or clock tick")
+    elif "billRent: 8000" not in balance or "billElectricNet: 4000" not in balance or "startingCash: 45000" not in balance:
+        fail("bill-cover SFX retuned bill amounts")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("bill-cover SFX broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising bill-cover SFX / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("bill-cover SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("bill-cover SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("청구 커버 one-shot plays cash-register SFX; no second slam; bills stay")
 
 
 def check_save_roundtrip() -> None:

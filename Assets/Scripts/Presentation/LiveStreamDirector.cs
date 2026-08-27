@@ -110,6 +110,7 @@ namespace BankruptVtuber
         AudioClip _clockTick;
         AudioClip _onAirCue;
         AudioClip _endCutCue;
+        AudioClip _billCoverCue;
         Image _wash;
         Image _washVeil;
         Image _chatPanel;
@@ -236,6 +237,9 @@ namespace BankruptVtuber
             _endCutCue = Resources.Load<AudioClip>("Audio/sfx_end_cut");
             if (_endCutCue == null)
                 _endCutCue = ToneClip("sfx_end_cut", new[] { 330f, 196f }, 0.08f, 0.20f);
+            _billCoverCue = Resources.Load<AudioClip>("Audio/sfx_bill_cover");
+            if (_billCoverCue == null)
+                _billCoverCue = ToneClip("sfx_bill_cover", new[] { 880f, 1174f, 1568f }, 0.07f, 0.22f);
         }
 
         void OnDestroy()
@@ -2162,6 +2166,7 @@ namespace BankruptVtuber
                 c.a = 1f;
                 _coverSlam.color = c;
             }
+            PlaySfx(_billCoverCue, 0.56f);
             _avatar?.HappyPop();
         }
 
