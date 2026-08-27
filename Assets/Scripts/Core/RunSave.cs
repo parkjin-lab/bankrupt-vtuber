@@ -254,6 +254,7 @@ namespace BankruptVtuber
                 extraThreatArt = run.extraThreatArt ?? "",
                 extraRolls = CaptureRolls(run),
                 membershipUnlocked = run.membershipUnlocked,
+                membershipJustUnlocked = run.membershipJustUnlocked,
                 membershipCount = run.membershipCount,
                 viewerBonus = run.viewerBonus,
                 peakViewersEver = run.peakViewersEver,
@@ -375,6 +376,7 @@ namespace BankruptVtuber
             run.lastOutcome = (WeekOutcome)data.lastOutcome;
             run.runSeed = data.runSeed;
             run.membershipUnlocked = data.membershipUnlocked;
+            run.membershipJustUnlocked = data.membershipJustUnlocked;
             run.membershipCount = data.membershipCount;
             run.viewerBonus = data.viewerBonus;
             run.peakViewersEver = data.peakViewersEver;
@@ -581,6 +583,7 @@ namespace BankruptVtuber
             public string extraThreatArt;
             public ExtraRollSave[] extraRolls;
             public bool membershipUnlocked;
+            public bool membershipJustUnlocked;
             public int membershipCount;
             public int viewerBonus;
             public float peakViewersEver;

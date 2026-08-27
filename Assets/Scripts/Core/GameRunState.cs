@@ -38,6 +38,7 @@ namespace BankruptVtuber
         public readonly List<ExtraThreatRoll> extraRolls = new List<ExtraThreatRoll>();
 
         public bool membershipUnlocked;
+        public bool membershipJustUnlocked;
         public int membershipCount;
         public int viewerBonus;
         public float peakViewersEver;
@@ -170,6 +171,7 @@ namespace BankruptVtuber
         void ClearWeek2Progress()
         {
             membershipUnlocked = false;
+            membershipJustUnlocked = false;
             membershipCount = 0;
             viewerBonus = 0;
             peakViewersEver = 0f;

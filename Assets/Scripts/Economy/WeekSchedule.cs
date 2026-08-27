@@ -141,6 +141,7 @@ namespace BankruptVtuber
                 return;
             run.membershipUnlocked = true;
             run.membershipCount = w2.startingMembers;
+            run.membershipJustUnlocked = true;
             FandomRules.SyncT3(run);
         }
     }

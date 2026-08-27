@@ -1330,6 +1330,7 @@ def check_project() -> None:
     check_event_accident()
     check_fan_letter()
     check_chat_catalog()
+    check_week2_beats()
 
 
 def check_content_types() -> None:
@@ -1673,6 +1674,54 @@ def check_chat_catalog() -> None:
         fail("Title started advertising chat copy")
     else:
         ok("shared ChatCatalog pools only; spawn / bills / named-fan rules unchanged")
+
+
+def check_week2_beats() -> None:
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    w2_asset = (ROOT / "Assets/Resources/Balance/Week2Balance.asset").read_text(encoding="utf-8")
+    w2r_cs = (ROOT / "Assets/Scripts/Economy/Week2Rules.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    beats = settle_cs.split("void AdvanceBeats", 1)[-1].split("void ShowMemberSplash", 1)[0]
+
+    if "멤버십 해금" not in settle_cs or "정산 때 멤버" not in settle_cs:
+        fail("membership unlock splash is missing")
+    elif "membershipJustUnlocked" not in sched_cs or "membershipJustUnlocked" not in settle_cs:
+        fail("first membership unlock is not a one-shot splash")
+    elif "오늘 클립 올릴까" not in settle_cs or "올린다" not in settle_cs or "패스" not in settle_cs:
+        fail("clip decision is not a chunky 올린다 / 패스 card")
+    elif "클립 업로드" not in settle_cs or "올리지 않기" not in settle_cs:
+        fail("existing clip copy was deleted")
+    elif "AttemptClip" not in settle_cs or "DeclineClip" not in settle_cs:
+        fail("clip card does not use existing AttemptClip / DeclineClip")
+    elif "시청자 +" not in settle_cs or "clipCash" not in settle_cs.split("void OnClipYes", 1)[-1][:500]:
+        fail("clip success slam does not read existing clipCash / viewer bonus")
+    else:
+        ok("Week 2 membership splash and clip card are screenshot beats")
+
+    if beats.find("ShouldOfferLetter") > beats.find("membershipJustUnlocked"):
+        fail("membership splash is not after the fan letter")
+    elif beats.find("membershipJustUnlocked") > beats.find("CanOfferClip"):
+        fail("clip card is not after the membership splash")
+    elif "InWeek2" not in w2r_cs.split("CanOfferClip", 1)[-1][:300]:
+        fail("clip offer is no longer Week 2 only")
+    elif "InWeek2" not in sched_cs.split("TryUnlockMembership", 1)[-1][:400]:
+        fail("membership unlock lost its Week 2+ gate")
+    elif "startingMembers: 8" not in w2_asset or "membershipPassivePerMember: 150" not in w2_asset:
+        fail("membership starting count / ₩150 were retuned")
+    elif "clipCash: 30000" not in w2_asset or "clipChance: 30" not in w2_asset or "clipPerfectsRequired: 25" not in w2_asset:
+        fail("clip roll numbers were retuned")
+    elif "unlockPeakViewers: 40" not in w2_asset or "unlockSuccessfulStreams: 4" not in w2_asset:
+        fail("membership unlock thresholds were retuned")
+    elif "답장하기" not in settle_cs or "AddColumnPad" not in live_cs or "입력됨" not in live_cs:
+        fail("Week 2 beats broke the letter or stream pads")
+    elif "토크" in title_cs or "Week2" in title_cs:
+        fail("Title started advertising Week 2 beats")
+    elif "billRent: 8000" not in (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8"):
+        fail("Week 1 bills were retuned by Week 2 beats")
+    else:
+        ok("letter → 멤버십 해금 → clip; Week 1 gated; Week2Balance numbers unchanged")
 
 
 def check_save_roundtrip() -> None:

@@ -61,6 +61,13 @@ namespace BankruptVtuber
         float _letterHeartFlash;
         bool _letterOpen;
         bool _letterDismissed;
+        GameObject _memberRoot;
+        Text _memberBody;
+        bool _memberOpen;
+        GameObject _clipRoot;
+        Text _clipSlam;
+        float _clipSlamFlash;
+        bool _clipOpen;
 
         void Awake()
         {
@@ -84,7 +91,7 @@ namespace BankruptVtuber
                 Week5Rules.NoteZeroMentalDay(gm.Run);
             }
             Render();
-            MaybeShowLetter();
+            AdvanceBeats();
         }
 
         void Update()
@@ -120,7 +127,15 @@ namespace BankruptVtuber
                 _letterHeart.color = hc;
                 _letterHeart.rectTransform.localScale = Vector3.one * (1f + 0.18f * _letterHeartFlash);
             }
-            if (_letterOpen)
+            _clipSlamFlash = Mathf.MoveTowards(_clipSlamFlash, 0f, Time.deltaTime * 0.7f);
+            if (_clipSlam != null)
+            {
+                var sc = _clipSlam.color;
+                sc.a = _clipSlamFlash;
+                _clipSlam.color = sc;
+                _clipSlam.rectTransform.localScale = Vector3.one * (1f + 0.35f * _clipSlamFlash);
+            }
+            if (_letterOpen || _memberOpen || _clipOpen)
                 return;
             if (CanAdvance(gm.Run) && StreamBindings.Confirm)
                 gm.NextMorning();
@@ -313,6 +328,49 @@ namespace BankruptVtuber
             heartC.a = 0f;
             _letterHeart.color = heartC;
             _letterRoot.SetActive(false);
+
+            _memberRoot = new GameObject("MemberRoot", typeof(RectTransform));
+            _memberRoot.transform.SetParent(root, false);
+            UiKit.Stretch(_memberRoot.GetComponent<RectTransform>());
+            var memberWash = UiKit.Image(_memberRoot.transform, "MemberWash", new Color(0.08f, 0.05f, 0.02f, 0.78f));
+            UiKit.Stretch(memberWash.rectTransform);
+            memberWash.raycastTarget = true;
+            var memberCard = UiKit.Panel(_memberRoot.transform, "MemberCard", Color.white);
+            UiKit.Layout(memberCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
+            ArtSprites.ApplySliced(memberCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.92f, 0.55f, 0.98f));
+            var memberTitle = UiKit.Label(memberCard, "MemberTitle", "멤버십 해금", 52, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(memberTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
+            _memberBody = UiKit.Label(memberCard, "MemberBody", "", 26, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_memberBody.rectTransform, new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _memberBody.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _memberBody.lineSpacing = 1.25f;
+            var memberGo = UiKit.Button(memberCard, "MemberAck", "정산으로", OnMemberAck, Palette.Gold, Palette.Ink);
+            UiKit.Layout(memberGo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 28), new Vector2(320, 72));
+            _memberRoot.SetActive(false);
+
+            _clipRoot = new GameObject("ClipRoot", typeof(RectTransform));
+            _clipRoot.transform.SetParent(root, false);
+            UiKit.Stretch(_clipRoot.GetComponent<RectTransform>());
+            var clipWash = UiKit.Image(_clipRoot.transform, "ClipWash", new Color(0.06f, 0.04f, 0.1f, 0.76f));
+            UiKit.Stretch(clipWash.rectTransform);
+            clipWash.raycastTarget = true;
+            var clipCard = UiKit.Panel(_clipRoot.transform, "ClipCard", Color.white);
+            UiKit.Layout(clipCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 360));
+            ArtSprites.ApplySliced(clipCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.94f, 0.72f, 0.98f));
+            var clipTag = UiKit.Label(clipCard, "ClipTag", "클립 업로드", 22, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
+            UiKit.Layout(clipTag.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -20), new Vector2(-40, 28));
+            var clipAsk = UiKit.Label(clipCard, "ClipAsk", "오늘 클립 올릴까?", 44, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(clipAsk.rectTransform, new Vector2(0.08f, 0.38f), new Vector2(0.92f, 0.78f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            var clipYes = UiKit.Button(clipCard, "ClipGo", "올린다", OnClipYes, Palette.Gold, Palette.Ink);
+            UiKit.Layout(clipYes.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 72));
+            var clipNo = UiKit.Button(clipCard, "ClipPass", "패스", OnClipNo, Palette.StudioHi, Palette.Pastel);
+            UiKit.Layout(clipNo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 72));
+            _clipSlam = UiKit.Label(root, "ClipSlam", "", 56, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_clipSlam.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(820, 80));
+            var slamC = _clipSlam.color;
+            slamC.a = 0f;
+            _clipSlam.color = slamC;
+            _clipRoot.SetActive(false);
         }
 
         void Render()
@@ -458,8 +516,8 @@ namespace BankruptVtuber
             bool concertReady = Week5Rules.ConcertStreamReady(run);
             bool week4Offer = offerFound || offerScout || offerSponsor;
             bool week5Offer = offerConcert || concertReady;
-            _clipYes.gameObject.SetActive(offerClip);
-            _clipNo.gameObject.SetActive(offerClip);
+            _clipYes.gameObject.SetActive(false);
+            _clipNo.gameObject.SetActive(false);
             _foundAgency.gameObject.SetActive(offerFound);
             _scout.gameObject.SetActive(offerScout);
             _signSponsor.gameObject.SetActive(offerSponsor);
@@ -635,11 +693,13 @@ namespace BankruptVtuber
                 _letterHeart.transform.SetAsLastSibling();
             CloseLetter(true);
             Render();
+            AdvanceBeats();
         }
 
         void OnLetterLater()
         {
             CloseLetter(true);
+            AdvanceBeats();
         }
 
         void MaybeShowLetter()
@@ -710,16 +770,101 @@ namespace BankruptVtuber
             Render();
         }
 
+        void AdvanceBeats()
+        {
+            if (_letterOpen || _memberOpen || _clipOpen)
+                return;
+            var gm = GameManager.Instance;
+            if (gm == null || gm.Run == null)
+                return;
+            if (ShouldShowEnding(gm.Run, gm.Week5))
+                return;
+            if (!_letterDismissed && FandomRules.ShouldOfferLetter(gm.Run))
+            {
+                MaybeShowLetter();
+                if (_letterOpen)
+                    return;
+            }
+            if (gm.Run.membershipJustUnlocked)
+            {
+                ShowMemberSplash();
+                return;
+            }
+            if (Week2Rules.CanOfferClip(gm.Run, gm.Week2))
+                ShowClipCard();
+        }
+
+        void ShowMemberSplash()
+        {
+            var w2 = GameManager.Instance.Week2;
+            int start = w2 != null ? w2.startingMembers : 8;
+            int pay = w2 != null ? w2.membershipPassivePerMember : 150;
+            if (_memberBody != null)
+                _memberBody.text = $"시작 {start}명\n정산 때 멤버×{EconomyRules.FormatWon(pay)}";
+            if (_memberRoot != null)
+            {
+                _memberRoot.SetActive(true);
+                _memberRoot.transform.SetAsLastSibling();
+            }
+            _memberOpen = true;
+        }
+
+        void OnMemberAck()
+        {
+            var run = GameManager.Instance != null ? GameManager.Instance.Run : null;
+            if (run != null)
+                run.membershipJustUnlocked = false;
+            _memberOpen = false;
+            if (_memberRoot != null)
+                _memberRoot.SetActive(false);
+            Render();
+            AdvanceBeats();
+        }
+
+        void ShowClipCard()
+        {
+            if (_clipRoot != null)
+            {
+                _clipRoot.SetActive(true);
+                _clipRoot.transform.SetAsLastSibling();
+            }
+            _clipOpen = true;
+        }
+
+        void CloseClipCard()
+        {
+            _clipOpen = false;
+            if (_clipRoot != null)
+                _clipRoot.SetActive(false);
+        }
+
         void OnClipYes()
         {
             var gm = GameManager.Instance;
-            Week2Rules.AttemptClip(gm.Run, gm.Week2);
+            bool ok = Week2Rules.AttemptClip(gm.Run, gm.Week2);
+            CloseClipCard();
+            if (ok)
+            {
+                var w2 = gm.Week2;
+                int cash = w2 != null ? w2.clipCash : 30000;
+                int viewers = w2 != null ? w2.clipViewerBonus : 10;
+                if (_clipSlam != null)
+                {
+                    _clipSlam.text = $"{EconomyRules.FormatWon(cash)}  ·  시청자 +{viewers}";
+                    var c = Palette.Gold;
+                    c.a = 1f;
+                    _clipSlam.color = c;
+                    _clipSlam.transform.SetAsLastSibling();
+                }
+                _clipSlamFlash = 1.25f;
+            }
             Render();
         }
 
         void OnClipNo()
         {
             Week2Rules.DeclineClip(GameManager.Instance.Run);
+            CloseClipCard();
             Render();
         }
 
