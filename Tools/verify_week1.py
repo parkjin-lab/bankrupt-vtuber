@@ -197,6 +197,7 @@ def check_project() -> None:
     art = {
         "pasan_nyang.png": "avatar",
         "rival_nyang.png": "라이벌",
+        "goods_stand.png": "아크릴",
         "bill_rent.png": "월세",
         "bill_electric.png": "전기",
         "bill_license.png": "라이선스",
@@ -1465,6 +1466,7 @@ def check_project() -> None:
     check_week2_card_art()
     check_coach_pad_icons()
     check_rival_portrait()
+    check_goods_stand()
 
 
 def check_content_types() -> None:
@@ -6442,6 +6444,71 @@ def check_rival_portrait() -> None:
         fail("rival portrait moved Unity off 6000.5.9f1")
     else:
         ok("rival duel shows rival_nyang face; pasan_nyang / ticks / win-lose stay")
+
+
+def check_goods_stand() -> None:
+    import struct
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    duel_cs = (ROOT / "Assets/Scripts/Presentation/RivalDuelView.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    bind_cs = (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    goods_build = build.split('GoodsRoot"', 1)[-1].split('AgencyRoot"', 1)[0]
+    promo_build = live_cs.split('"PromoCard"', 1)[-1].split('"LineCard"', 1)[0]
+    png = ROOT / "Assets/Resources/Art/goods_stand.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("goods_stand.png is missing")
+    elif w < 128 or h < 128 or abs(w - h) > 16:
+        fail("goods_stand.png is not a readable square product")
+    elif color != 6:
+        fail("goods_stand.png is not RGBA")
+    elif 'GoodsStand = "Art/goods_stand"' not in art_cs:
+        fail("ArtSprites does not hook Art/goods_stand")
+    elif "ArtSprites.GoodsStand" not in goods_build or '"GoodsStand"' not in goods_build:
+        fail("GoodsCard does not hang Art/goods_stand")
+    elif "ArtSprites.GoodsStand" not in promo_build or '"PromoStand"' not in promo_build:
+        fail("PromoCard does not hang Art/goods_stand")
+    elif "아크릴 스탠드 해금" not in goods_build or "정산으로" not in goods_build:
+        fail("goods stand covered unlock copy")
+    elif "굿즈 홍보 타이밍" not in promo_build or "지금 아크릴 홍보" not in live_cs:
+        fail("goods stand covered promo copy")
+    elif "홍보하기" not in promo_build or "넘어가기" not in promo_build:
+        fail("goods stand dropped promo confirm / skip")
+    elif "PromoConfirmDown" not in bind_cs or "PromoSkipDown" not in bind_cs:
+        fail("goods stand changed promo bindings")
+    elif "goodsUnlockCash: 60000" not in w3_asset or "goodsProduceCost: 2500" not in w3_asset or "goodsPrice: 7000" not in w3_asset:
+        fail("goods stand retuned unlock / produce / price")
+    elif "goodsPromoMultiplier: 1.5" not in w3_asset or "promoWindowSeconds: 1.2" not in w3_asset:
+        fail("goods stand retuned promo numbers")
+    elif "TryUnlockGoods" not in w3r_cs or "ProduceGoods" not in w3r_cs:
+        fail("goods stand changed unlock / produce routing")
+    elif "ArtSprites.RivalAvatar" not in duel_cs or 'RivalAvatar = "Art/rival_nyang"' not in art_cs:
+        fail("goods stand dropped rival_nyang face")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("goods stand retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("goods stand broke pads, 입력됨, or added timeScale")
+    elif "Week3" in title_cs or "아크릴" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising goods stand / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("goods stand dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("goods stand moved Unity off 6000.5.9f1")
+    else:
+        ok("acrylic unlock / promo show goods_stand product; rules / rival stay")
 
 
 def check_save_roundtrip() -> None:

@@ -680,8 +680,13 @@ namespace BankruptVtuber
             SafeFitCard.Bind(goodsCard, 720f, 400f);
             var goodsTitle = UiKit.Label(goodsCard, "GoodsTitle", "아크릴 스탠드 해금", 46, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(goodsTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
+            var goodsIcon = UiKit.Image(goodsCard, "GoodsStand", Color.white);
+            UiKit.Layout(goodsIcon.rectTransform, new Vector2(0.5f, 0.62f), new Vector2(0.5f, 0.62f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(148, 148));
+            ArtSprites.Apply(goodsIcon, ArtSprites.GoodsStand, Color.white, Color.white);
+            goodsIcon.preserveAspect = true;
+            goodsIcon.raycastTarget = false;
             _goodsBody = UiKit.Label(goodsCard, "GoodsBody", "", 26, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_goodsBody.rectTransform, new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            UiKit.Layout(_goodsBody.rectTransform, new Vector2(0.08f, 0.22f), new Vector2(0.92f, 0.48f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _goodsBody.horizontalOverflow = HorizontalWrapMode.Wrap;
             _goodsBody.lineSpacing = 1.25f;
             var goodsGo = UiKit.Button(goodsCard, "GoodsAck", "정산으로", OnGoodsAck, Palette.Gold, Palette.Ink);

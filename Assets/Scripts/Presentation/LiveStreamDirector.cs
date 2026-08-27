@@ -1037,8 +1037,13 @@ namespace BankruptVtuber
             SafeFitCard.Bind(_promoRoot, 720f, 380f);
             _promoTitle = UiKit.Label(_promoRoot, "PTitle", "굿즈 홍보 타이밍", 40, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
             UiKit.Layout(_promoTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -18), new Vector2(-24, 52));
+            var promoStand = UiKit.Image(_promoRoot, "PromoStand", Color.white);
+            UiKit.Layout(promoStand.rectTransform, new Vector2(0.5f, 0.68f), new Vector2(0.5f, 0.68f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(120, 120));
+            ArtSprites.Apply(promoStand, ArtSprites.GoodsStand, Color.white, Color.white);
+            promoStand.preserveAspect = true;
+            promoStand.raycastTarget = false;
             _promoBody = UiKit.Label(_promoRoot, "PBody", "지금 아크릴 홍보?\n성공 시 오늘 판매 1.5배", 28, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_promoBody.rectTransform, new Vector2(0, 0.30f), new Vector2(1, 0.78f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-36, 0));
+            UiKit.Layout(_promoBody.rectTransform, new Vector2(0, 0.30f), new Vector2(1, 0.58f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-36, 0));
             _promoTimer = UiKit.Label(_promoRoot, "PTimer", "", 20, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_promoTimer.rectTransform, new Vector2(0, 0.22f), new Vector2(1, 0.30f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             AddOverlayChoice(_promoRoot, "홍보하기", "넘어가기", out _promoYes, out _promoNo);
