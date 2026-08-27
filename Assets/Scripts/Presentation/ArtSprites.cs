@@ -20,6 +20,11 @@ namespace BankruptVtuber
         public const string TitleStudio = "Art/title_studio";
         public const string SettlementDesk = "Art/settlement_desk";
         public const string MorningRoom = "Art/morning_room";
+        public const string PadLeft = "Art/pad_left";
+        public const string PadDown = "Art/pad_down";
+        public const string PadRight = "Art/pad_right";
+        public const string PadUp = "Art/pad_up";
+        public const string PadSuperchat = "Art/pad_superchat";
         public const string Superchat = "Art/badge_superchat";
         public const string Troll = "Art/badge_troll";
         public const string BubblePill = "Art/bubble_pill";

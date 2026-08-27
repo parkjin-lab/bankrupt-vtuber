@@ -206,6 +206,11 @@ def check_project() -> None:
         "title_studio.png": "타이틀 스튜디오",
         "settlement_desk.png": "정산 책상",
         "morning_room.png": "아침 방",
+        "pad_left.png": "← 키캡",
+        "pad_down.png": "↓ 키캡",
+        "pad_right.png": "→ 키캡",
+        "pad_up.png": "↑ 키캡",
+        "pad_superchat.png": "슈퍼챗 키캡",
         "badge_superchat.png": "superchat",
         "badge_troll.png": "troll",
     }
@@ -1420,6 +1425,7 @@ def check_project() -> None:
     check_title_studio()
     check_settlement_desk()
     check_morning_room()
+    check_pad_keycaps()
 
 
 def check_content_types() -> None:
@@ -4710,6 +4716,91 @@ def check_morning_room() -> None:
         fail("morning room moved Unity off 6000.5.9f1")
     else:
         ok("WeekStart sits on a 청구 아침 room; slam / 고지서 / GO LIVE stay")
+
+
+def check_pad_keycaps() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    pad_cs = (ROOT / "Assets/Scripts/Input/StreamPadButton.cs").read_text(encoding="utf-8")
+    bind_cs = (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    uikit_cs = (ROOT / "Assets/Scripts/Presentation/UiKit.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    add = live_cs.split("StreamPadButton AddColumnPad", 1)[-1].split("void BuildSuperchatPip", 1)[0]
+    names = {
+        "pad_left.png": "←",
+        "pad_down.png": "↓",
+        "pad_right.png": "→",
+        "pad_up.png": "↑",
+        "pad_superchat.png": "슈퍼챗",
+    }
+
+    for name, label in names.items():
+        png = ROOT / "Assets/Resources/Art" / name
+        data = png.read_bytes() if png.exists() else b""
+        w = h = color = 0
+        if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+            w, h = struct.unpack(">II", data[16:24])
+            color = data[25]
+        if not png.exists() or png.stat().st_size < 4000:
+            fail(f"pad keycap {name} ({label}) is missing")
+            return
+        if w < 128 or h < 128 or abs(w - h) > 32:
+            fail(f"pad keycap {name} is not a readable square key")
+            return
+        if color != 6:
+            fail(f"pad keycap {name} is not RGBA")
+            return
+
+    if (
+        'PadLeft = "Art/pad_left"' not in art_cs
+        or 'PadDown = "Art/pad_down"' not in art_cs
+        or 'PadRight = "Art/pad_right"' not in art_cs
+        or 'PadUp = "Art/pad_up"' not in art_cs
+        or 'PadSuperchat = "Art/pad_superchat"' not in art_cs
+    ):
+        fail("ArtSprites does not hook pad_* keycaps")
+    elif "KeycapFor" not in add or "ArtSprites.PadLeft" not in add or "ArtSprites.PadSuperchat" not in add:
+        fail("AddColumnPad does not hang stream-deck keycaps")
+    elif "ArtSprites.PadDown" not in add or "ArtSprites.PadRight" not in add or "ArtSprites.PadUp" not in add:
+        fail("kind pads are not each on their own keycap")
+    elif "_flash = 0.08f" not in pad_cs or "Color.white" not in pad_cs:
+        fail("pad keycaps dropped the 0.08s press flash")
+    elif '"슈퍼챗"' not in live_cs.split("void BuildSuperchatPip", 1)[-1].split("void TickSuperchatPip", 1)[0]:
+        fail("pad keycaps dropped the 슈퍼챗 telegraph pip")
+    elif "UnlockUiInputForStream" not in live_cs or "DontDestroyOnLoad" not in uikit_cs:
+        fail("pad keycaps dropped EventSystem unlock / DDOL")
+    elif "GetKeyDown(KeyCode.LeftArrow)" not in bind_cs or "KeyCode.A" not in bind_cs or "KeyCode.W" not in bind_cs:
+        fail("pad keycaps retuned arrows / ASDF / WASD")
+    elif "QueueKind" not in pad_cs or "BeginSuperchatCharge" not in pad_cs or "GetKeyUp(KeyCode.Space)" not in bind_cs:
+        fail("pad keycaps changed input bindings")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("pad keycaps retuned hit windows")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("pad keycaps retuned Judge windows")
+    elif "lastStreamIncome =" in add or "PayoutIncome" in add:
+        fail("pad keycaps write payout")
+    elif "ArtSprites.MorningRoom" not in week_cs or "ArtSprites.StreamOverlay" not in live_cs:
+        fail("pad keycaps dropped morning room or live overlay")
+    elif "긍정" not in live_cs or "공감" not in live_cs or "웃음" not in live_cs or "감사" not in live_cs or "슈퍼챗" not in live_cs:
+        fail("pad keycaps dropped Korean pad labels")
+    elif "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("pad keycaps broke 입력됨 or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising pad keycaps / later weeks")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("pad keycaps retuned Week 1 cash or bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("pad keycaps dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("pad keycaps moved Unity off 6000.5.9f1")
+    else:
+        ok("live pads are stream-deck keycaps; flash / pip / bindings stay")
 
 
 def check_save_roundtrip() -> None:

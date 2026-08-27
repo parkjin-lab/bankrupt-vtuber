@@ -1041,9 +1041,34 @@ namespace BankruptVtuber
             img.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             img.rectTransform.offsetMin = new Vector2(4f, 4f);
             img.rectTransform.offsetMax = new Vector2(-4f, -4f);
+            string keycap = KeycapFor(mode, kind);
+            if (keycap != null)
+                ArtSprites.ApplySliced(img, keycap, new Color(0.86f, 0.86f, 0.86f, 1f), new Vector4(36f, 36f, 36f, 36f));
             var cap = UiKit.Label(img.transform, "L", label, count >= 5 ? 22 : 28, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Stretch(cap.rectTransform);
+            if (keycap != null)
+                UiKit.Layout(cap.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0.48f), new Vector2(0.5f, 0f), Vector2.zero, Vector2.zero);
+            else
+                UiKit.Stretch(cap.rectTransform);
             return StreamPadButton.Attach(img.gameObject, mode, kind, eventIndex);
+        }
+
+        static string KeycapFor(StreamPadButton.Mode mode, ChatKind kind)
+        {
+            if (mode == StreamPadButton.Mode.Superchat)
+                return ArtSprites.PadSuperchat;
+            if (mode != StreamPadButton.Mode.Kind)
+                return null;
+            switch (kind)
+            {
+                case ChatKind.Empathy:
+                    return ArtSprites.PadDown;
+                case ChatKind.Laugh:
+                    return ArtSprites.PadRight;
+                case ChatKind.Thanks:
+                    return ArtSprites.PadUp;
+                default:
+                    return ArtSprites.PadLeft;
+            }
         }
 
         void BuildSuperchatPip(StreamPadButton pad)
