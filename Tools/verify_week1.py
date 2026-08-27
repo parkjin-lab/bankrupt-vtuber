@@ -1440,6 +1440,7 @@ def check_project() -> None:
     check_superchat_sfx()
     check_bill_cover_sfx()
     check_hype_sfx()
+    check_event_sfx()
 
 
 def check_content_types() -> None:
@@ -1618,14 +1619,20 @@ def check_event_accident() -> None:
     event_in = live_cs.split("if (_session.EventActive)", 1)[-1].split("else if (_session.PromoActive)", 1)[0]
     kinds = event_cs.split("enum StreamEventKind", 1)[-1].split("enum StreamEventTrigger", 1)[0]
 
+    begin = live_cs.split("void BeginEventAccident", 1)[-1].split("void TickEventAccident", 1)[0]
+    warn = live_cs.split("void TickEventWarn", 1)[-1].split("void TickStrike", 1)[0]
     if "BeginEventAccident" not in live_cs or "EventSting" not in live_cs:
         fail("mid-stream event has no full-screen accident sting")
-    elif "0.2f" not in live_cs.split("void BeginEventAccident", 1)[-1][:500]:
+    elif "0.2f" not in begin[:500]:
         fail("event sting is not a short ~0.2s flash")
     elif "Panic" not in avatar_cs or "Panic" not in live_cs:
         fail("avatar does not panic when a stream event fires")
     elif "LaneFreeze" not in live_cs or "EventActive ? 0f" not in live_cs:
         fail("chat lane does not freeze visually during the event")
+    elif "PlaySfx(_antiCue" not in begin or "PlaySfx(_lagCue" not in begin:
+        fail("event fire has no distinct anti / lag SFX")
+    elif "PlaySfx" in warn:
+        fail("event telegraph chip plays SFX before the sting")
     else:
         ok("existing stream event opens with a kind-matched sting and a frozen lane")
 
@@ -5360,6 +5367,67 @@ def check_hype_sfx() -> None:
         fail("hype SFX moved Unity off 6000.5.9f1")
     else:
         ok("hype start plays rising cheer once; combo-5 sting / 12s / 2.5x stay")
+
+
+def check_event_sfx() -> None:
+    import wave
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    begin = live_cs.split("void BeginEventAccident", 1)[-1].split("void TickEventAccident", 1)[0]
+    warn = live_cs.split("void TickEventWarn", 1)[-1].split("void TickStrike", 1)[0]
+    scar = live_cs.split("void ApplyEventScar", 1)[-1].split("void BeginEventAccident", 1)[0] if "void ApplyEventScar" in live_cs else ""
+
+    clips = {
+        "sfx_anti.wav": (0.15, 0.45),
+        "sfx_lag.wav": (0.12, 0.40),
+    }
+    for name, (lo, hi) in clips.items():
+        path = ROOT / "Assets/Resources/Audio" / name
+        if not path.exists() or path.stat().st_size < 2000:
+            fail(f"event SFX {name} is missing")
+            return
+        with wave.open(str(path), "rb") as w:
+            dur = w.getnframes() / float(w.getframerate())
+            if dur < lo or dur > hi:
+                fail(f"event SFX {name} duration {dur:.3f}s is not a short distinct sting")
+                return
+
+    if "Audio/sfx_anti" not in live_cs or "Audio/sfx_lag" not in live_cs:
+        fail("LiveStream does not load Audio/sfx_anti|lag")
+    elif "PlaySfx(_antiCue" not in begin or "StreamEventKind.AntiWave" not in begin:
+        fail("anti-wave fire does not play sfx_anti")
+    elif "PlaySfx(_lagCue" not in begin or "StreamEventKind.GearLag" not in begin:
+        fail("gear-lag fire does not play sfx_lag")
+    elif "PlaySfx" in warn:
+        fail("event telegraph plays SFX before fire")
+    elif "_eventStingLeft = 0.2f" not in begin or "Panic" not in begin:
+        fail("event SFX dropped the visual sting / panic")
+    elif "ApplyEventScar" not in live_cs or "EventCrack" not in live_cs or "EventStatic" not in live_cs:
+        fail("event SFX dropped glow/scar leftovers")
+    elif "eta > 0.5f" not in session_cs or "안티 온다" not in live_cs:
+        fail("event SFX retuned telegraph timing/copy")
+    elif "렉 온다" not in (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8"):
+        fail("event SFX dropped 렉 온다 warn copy")
+    elif "eventEarliestSeconds: 35" not in balance or "eventAntiFailMental: 8" not in balance or "eventLagFailFreezeSeconds: 3" not in balance:
+        fail("event SFX retuned penalties / timing")
+    elif "Audio/sfx_hype" not in live_cs or "Audio/sfx_bill_cover" not in live_cs or "PlaySfx(_perfect" not in live_cs:
+        fail("event SFX dropped hype / bill-cover / judge SFX")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("event SFX retuned Week 1 economy / hype")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("event SFX broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising event SFX / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("event SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("event SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("anti / lag fire distinct SFX once; telegraph silent; penalties stay")
 
 
 def check_save_roundtrip() -> None:

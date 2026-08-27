@@ -108,6 +108,8 @@ namespace BankruptVtuber
         AudioClip _sc;
         AudioClip _comboCue;
         AudioClip _hypeCue;
+        AudioClip _antiCue;
+        AudioClip _lagCue;
         AudioClip _clockTick;
         AudioClip _onAirCue;
         AudioClip _endCutCue;
@@ -232,6 +234,12 @@ namespace BankruptVtuber
             _hypeCue = Resources.Load<AudioClip>("Audio/sfx_hype");
             if (_hypeCue == null)
                 _hypeCue = ToneClip("sfx_hype", new[] { 523f, 659f, 784f, 1046f }, 0.07f, 0.24f);
+            _antiCue = Resources.Load<AudioClip>("Audio/sfx_anti");
+            if (_antiCue == null)
+                _antiCue = BuzzerClip("sfx_anti", 0.16f, 0.24f);
+            _lagCue = Resources.Load<AudioClip>("Audio/sfx_lag");
+            if (_lagCue == null)
+                _lagCue = BuzzerClip("sfx_lag", 0.14f, 0.22f);
             _clockTick = Resources.Load<AudioClip>("Audio/sfx_clock_tick");
             if (_clockTick == null)
                 _clockTick = ToneClip("sfx_clock", new[] { 1320f }, 0.045f, 0.18f);
@@ -2660,7 +2668,12 @@ namespace BankruptVtuber
                 if (_eventStingLabel != null)
                     _eventStingLabel.text = StreamEventState.DisplayName(kind);
             }
-            PlaySfx(_bad, 0.62f);
+            if (kind == StreamEventKind.AntiWave)
+                PlaySfx(_antiCue, 0.62f);
+            else if (kind == StreamEventKind.GearLag)
+                PlaySfx(_lagCue, 0.62f);
+            else
+                PlaySfx(_bad, 0.62f);
         }
 
         void TickEventAccident(float dt)
