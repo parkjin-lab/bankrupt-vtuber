@@ -1462,6 +1462,7 @@ def check_project() -> None:
     check_golive_sfx()
     check_mental_sfx()
     check_week2_card_art()
+    check_coach_pad_icons()
 
 
 def check_content_types() -> None:
@@ -6316,6 +6317,68 @@ def check_week2_card_art() -> None:
         fail("week2 card art moved Unity off 6000.5.9f1")
     else:
         ok("membership / clip sit on desk-item art; unlock / clip rules stay")
+
+
+def check_coach_pad_icons() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    offer = session_cs.split("ShouldOfferFirstStreamCoach", 1)[-1].split("public void EnableFirstStreamCoach", 1)[0]
+    refresh = live_cs.split("void RefreshCoach", 1)[-1].split("StreamPadButton EventPad", 1)[0]
+    legend = live_cs.split("RectTransform BuildCoachLegend", 1)[-1].split("void BuildSuperchatPip", 1)[0]
+    if "void BuildSuperchatPip" not in live_cs.split("RectTransform BuildCoachLegend", 1)[-1]:
+        legend = live_cs.split("RectTransform BuildCoachLegend", 1)[-1].split("static string CoachPrompt", 1)[0]
+
+    for name in ("pad_left.png", "pad_down.png", "pad_right.png", "pad_up.png", "pad_superchat.png"):
+        path = ROOT / "Assets/Resources/Art" / name
+        if not path.exists() or path.stat().st_size < 1000:
+            fail(f"coach pad icon missing art {name}")
+            return
+
+    if "BuildCoachLegend" not in live_cs or "CoachPadIcon" not in live_cs:
+        fail("Day-1 coach has no pad keycap tip UI")
+    elif "ArtSprites.PadLeft" not in legend or "ArtSprites.PadDown" not in legend:
+        fail("coach legend missing ← / ↓ keycaps")
+    elif "ArtSprites.PadRight" not in legend or "ArtSprites.PadUp" not in legend or "ArtSprites.PadSuperchat" not in legend:
+        fail("coach legend missing → / ↑ / Space keycaps")
+    elif '"←"' not in legend or '"↓"' not in legend or '"→"' not in legend or '"↑"' not in legend or '"Space"' not in legend:
+        fail("coach legend missing arrow / Space bindings")
+    elif "ArtSprites.PadSuperchat" not in refresh or "KeycapFor" not in refresh:
+        fail("held coach note does not show its pad keycap")
+    elif "색에 맞는 키 또는 아래 버튼을 눌러" not in live_cs:
+        fail("coach pad icons dropped the Korean hint")
+    elif "← 긍정" not in live_cs or "↓ 공감" not in live_cs or "→ 웃음" not in live_cs or "↑ 감사" not in live_cs:
+        fail("coach pad icons changed kind prompts")
+    elif "슈퍼챗 Space" not in live_cs or "눌러서 차지 후 떼기" not in live_cs:
+        fail("coach pad icons changed superchat teach copy")
+    elif "CoachSuccessTarget = 3" not in session_cs or "CoachSeconds = 8f" not in session_cs:
+        fail("coach pad icons changed dismiss (3 / 8s)")
+    elif "day != 1" not in offer and "day == 1" not in offer:
+        fail("coach pad icons are not Day-1 only")
+    elif "EnableFirstStreamCoach" not in live_cs or "_onAirLeft <= 0f" not in refresh:
+        fail("coach pad icons broke Day-1 arm / ON AIR wait")
+    elif 'PadLeft = "Art/pad_left"' not in art_cs or 'PadSuperchat = "Art/pad_superchat"' not in art_cs:
+        fail("ArtSprites pad hooks were dropped")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("coach pad icons retuned hit windows")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("coach pad icons retuned Judge windows")
+    elif "chatSpawnStart: 1.55" not in balance or "billRent: 8000" not in balance:
+        fail("coach pad icons retuned spawn / economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("coach pad icons broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising coach pads / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("coach pad icons dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("coach pad icons moved Unity off 6000.5.9f1")
+    else:
+        ok("Day-1 coach shows pad_* keycaps next to ←↓→↑ Space; teach stays")
 
 
 def check_save_roundtrip() -> None:

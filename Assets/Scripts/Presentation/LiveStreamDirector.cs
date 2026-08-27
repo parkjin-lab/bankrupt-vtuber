@@ -160,6 +160,8 @@ namespace BankruptVtuber
         RectTransform _chatRoot;
         Text _coachHint;
         Text _coachPrompt;
+        Image _coachPadIcon;
+        RectTransform _coachLegend;
         Image _eventSting;
         Text _eventStingLabel;
         readonly Image[] _eventStingBars = new Image[7];
@@ -965,8 +967,14 @@ namespace BankruptVtuber
             _coachHint = UiKit.Label(root, "CoachHint", "색에 맞는 키 또는 아래 버튼을 눌러.", 22, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_coachHint.rectTransform, new Vector2(0.5f, 0.30f), new Vector2(0.5f, 0.30f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(640, 36));
             _coachHint.gameObject.SetActive(false);
+            _coachLegend = BuildCoachLegend(root);
+            _coachLegend.gameObject.SetActive(false);
+            _coachPadIcon = UiKit.Image(root, "CoachPadIcon", Color.white);
+            UiKit.Layout(_coachPadIcon.rectTransform, new Vector2(0.5f, 0.40f), new Vector2(0.5f, 0.40f), new Vector2(0.5f, 0.5f), new Vector2(-280, 0), new Vector2(84, 84));
+            _coachPadIcon.raycastTarget = false;
+            _coachPadIcon.gameObject.SetActive(false);
             _coachPrompt = UiKit.Label(root, "CoachPrompt", "", 56, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_coachPrompt.rectTransform, new Vector2(0.5f, 0.40f), new Vector2(0.5f, 0.40f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(640, 72));
+            UiKit.Layout(_coachPrompt.rectTransform, new Vector2(0.5f, 0.40f), new Vector2(0.5f, 0.40f), new Vector2(0.5f, 0.5f), new Vector2(-20, 0), new Vector2(560, 72));
             _coachPrompt.gameObject.SetActive(false);
 
             _judge = UiKit.Label(root, "Judge", "", 64, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -1164,6 +1172,44 @@ namespace BankruptVtuber
             }
         }
 
+        RectTransform BuildCoachLegend(Transform root)
+        {
+            var row = UiKit.Panel(root, "CoachLegend", new Color(0f, 0f, 0f, 0f));
+            UiKit.Layout(row, new Vector2(0.5f, 0.345f), new Vector2(0.5f, 0.345f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(700, 64));
+            var rowImg = row.GetComponent<Image>();
+            if (rowImg != null)
+                rowImg.raycastTarget = false;
+            var tips = new (string art, string bind)[]
+            {
+                (ArtSprites.PadLeft, "←"),
+                (ArtSprites.PadDown, "↓"),
+                (ArtSprites.PadRight, "→"),
+                (ArtSprites.PadUp, "↑"),
+                (ArtSprites.PadSuperchat, "Space"),
+            };
+            for (int i = 0; i < tips.Length; i++)
+            {
+                float a = i / (float)tips.Length;
+                float b = (i + 1) / (float)tips.Length;
+                var cell = UiKit.Panel(row, "Tip" + i, new Color(0f, 0f, 0f, 0f));
+                cell.anchorMin = new Vector2(a, 0f);
+                cell.anchorMax = new Vector2(b, 1f);
+                cell.offsetMin = new Vector2(4f, 0f);
+                cell.offsetMax = new Vector2(-4f, 0f);
+                var cellImg = cell.GetComponent<Image>();
+                if (cellImg != null)
+                    cellImg.raycastTarget = false;
+                var icon = UiKit.Image(cell, "Icon", Color.white);
+                UiKit.Layout(icon.rectTransform, new Vector2(0.5f, 0.62f), new Vector2(0.5f, 0.62f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(44, 44));
+                ArtSprites.Apply(icon, tips[i].art, Color.white, Color.white);
+                icon.preserveAspect = true;
+                icon.raycastTarget = false;
+                var bind = UiKit.Label(cell, "Bind", tips[i].bind, 18, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
+                UiKit.Layout(bind.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0.38f), new Vector2(0.5f, 0f), Vector2.zero, Vector2.zero);
+            }
+            return row;
+        }
+
         void BuildSuperchatPip(StreamPadButton pad)
         {
             if (pad == null)
@@ -1320,6 +1366,8 @@ namespace BankruptVtuber
             bool on = _session != null && _session.CoachActive && _onAirLeft <= 0f;
             if (_coachHint != null)
                 _coachHint.gameObject.SetActive(on);
+            if (_coachLegend != null)
+                _coachLegend.gameObject.SetActive(on);
             var held = on ? _session.CoachHeld : null;
             if (_coachPrompt != null)
             {
@@ -1328,6 +1376,18 @@ namespace BankruptVtuber
                 {
                     _coachPrompt.text = CoachPrompt(held, _session.CoachPresented);
                     _coachPrompt.color = held.IsSuperchat ? Palette.Gold : Palette.ForKind(held.Kind);
+                }
+            }
+            if (_coachPadIcon != null)
+            {
+                _coachPadIcon.gameObject.SetActive(held != null);
+                if (held != null)
+                {
+                    string art = held.IsSuperchat
+                        ? ArtSprites.PadSuperchat
+                        : KeycapFor(StreamPadButton.Mode.Kind, held.Kind);
+                    ArtSprites.Apply(_coachPadIcon, art, Color.white, Color.white);
+                    _coachPadIcon.preserveAspect = true;
                 }
             }
 
