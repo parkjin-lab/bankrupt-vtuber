@@ -1477,6 +1477,7 @@ def check_project() -> None:
     check_goods_stand()
     check_week4_card_art()
     check_week5_show_art()
+    check_readme_playable()
 
 
 def check_content_types() -> None:
@@ -7015,6 +7016,59 @@ def check_week5_show_art() -> None:
         fail("week5 show art moved Unity off 6000.5.9f1")
     else:
         ok("ranking / concert sit on show art; ranks / flow / numbers stay")
+
+
+def check_readme_playable() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+
+    if "6000.5.9f1" not in readme or "Title.unity" not in readme:
+        fail("README does not tell a clone which Unity / scene to open")
+    elif "폰은 세로" not in readme or "Portrait" not in readme:
+        fail("README does not document Android portrait")
+    elif "A/S/D/F" not in readme or "WASD" not in readme or "Space" not in readme or "Enter" not in readme:
+        fail("README dropped arrows / ASDF / WASD / superchat keys")
+    elif "F9" not in readme or "F10" not in readme:
+        fail("README dropped F9/F10 skip")
+    elif "₩45,000" not in readme or "₩50,000" not in readme or "멘탈 100" not in readme:
+        fail("README dropped Week 1 start cash / debt / mental")
+    elif "₩22,000" not in readme or "5일" not in readme or "90초" not in readme:
+        fail("README dropped daily bills ×5 or 90s stream")
+    elif "₩180,000" not in readme or "₩30,000" not in readme or "₩70,000" not in readme:
+        fail("README dropped bankrupt / clear gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README check retuned start numbers")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README check retuned clear / bankrupt gates")
+    elif "streamSeconds: 90" not in balance or "billRent: 8000" not in balance:
+        fail("README check retuned stream length or bills")
+    elif "bgm_title" not in readme or "bgm_morning" not in readme or "bgm_stream" not in readme or "bgm_concert" not in readme or "bgm_settlement" not in readme:
+        fail("README dropped per-screen BGM")
+    elif "sfx_perfect" not in readme or "sfx_anti" not in readme or "sfx_clear" not in readme:
+        fail("README dropped judge / event / ending SFX")
+    elif "title_studio" not in readme or "morning_room" not in readme or "settlement_desk" not in readme or "pad_*" not in readme:
+        fail("README dropped room / pad art")
+    elif "chat_bubble" not in readme or "note_chip" not in readme or "content_*" not in readme:
+        fail("README dropped chat / note / content icons")
+    elif "rival_nyang" not in readme or "goods_stand" not in readme or "agency_card" not in readme:
+        fail("README dropped rival / goods / agency art")
+    elif "ranking_board" not in readme or "concert_stage" not in readme:
+        fail("README dropped ranking / concert art")
+    elif "입력됨" not in readme or "방송 켜기" not in readme or "다음날" not in readme:
+        fail("README dropped Korean player-facing copy")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising README / later weeks")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README check broke pads, 입력됨, or added timeScale")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README check dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README check moved Unity off 6000.5.9f1")
+    else:
+        ok("README matches the playable: Unity/portrait, controls, Week 1 numbers, art/SFX")
 
 
 def check_save_roundtrip() -> None:
