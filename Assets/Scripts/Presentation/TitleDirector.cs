@@ -269,7 +269,9 @@ namespace BankruptVtuber
             _continue.gameObject.SetActive(_hasSave);
             if (_hasSave)
                 FillContinue(peek);
-            var caption = _start.GetComponentInChildren<Text>();
+            var caption = _start.transform.Find("Caption") != null
+                ? _start.transform.Find("Caption").GetComponent<Text>()
+                : null;
             if (caption != null)
                 caption.text = _hasSave ? "새 방송 시작" : "방송 시작";
             if (_hint != null)
