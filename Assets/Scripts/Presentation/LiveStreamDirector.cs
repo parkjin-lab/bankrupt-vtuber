@@ -18,6 +18,9 @@ namespace BankruptVtuber
         Text _income;
         Text _mental;
         Text _timer;
+        RectTransform _timerChip;
+        Image _timerChipImg;
+        int _lastClockSec = -1;
         Text _billToday;
         Text _incomeNow;
         Text _remain;
@@ -76,6 +79,7 @@ namespace BankruptVtuber
         AudioClip _bad;
         AudioClip _sc;
         AudioClip _comboCue;
+        AudioClip _clockTick;
         Image _wash;
         Image _washVeil;
         Image _chatPanel;
@@ -167,6 +171,7 @@ namespace BankruptVtuber
             _bad = BuzzerClip("sfx_miss", 0.12f, 0.20f);
             _sc = ToneClip("sfx_super", new[] { 523f, 659f, 784f, 1046f }, 0.06f, 0.20f);
             _comboCue = ToneClip("sfx_combo", new[] { 698f, 880f, 1174f }, 0.07f, 0.24f);
+            _clockTick = ToneClip("sfx_clock", new[] { 1320f }, 0.045f, 0.18f);
         }
 
         void OnDestroy()
@@ -638,6 +643,8 @@ namespace BankruptVtuber
             UiKit.Layout(_viewerPop.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(8f, 6f), new Vector2(150f, 28f));
             _rival = Chip(top, "Rival", "라이벌", 0.40f, 0.64f, -6f);
             _timer = Chip(top, "Timer", "남은 시간", 0.64f, 1f, -6f);
+            _timerChip = _timer.transform.parent as RectTransform;
+            _timerChipImg = _timerChip != null ? _timerChip.GetComponent<Image>() : null;
             _cash = Chip(top, "Cash", "현금", 0f, 0.25f, -64f);
             _debt = Chip(top, "Debt", "부채", 0.25f, 0.50f, -64f);
             _income = Chip(top, "Income", "실시간 수익", 0.50f, 0.75f, -64f);
@@ -988,6 +995,43 @@ namespace BankruptVtuber
             return v;
         }
 
+        void RefreshClockChip()
+        {
+            int shown = Mathf.CeilToInt(_session.TimeLeft);
+            bool lastTen = _session.TimeLeft > 0f && _session.TimeLeft <= 10f;
+            if (_session.TimeLeft <= 0f)
+            {
+                _timer.text = "종료";
+                _timer.color = Palette.MoneyRed;
+                if (_timerChip != null)
+                    _timerChip.localScale = Vector3.one;
+                if (_timerChipImg != null)
+                    _timerChipImg.color = new Color(0.52f, 0.08f, 0.16f, 0.94f);
+            }
+            else if (lastTen)
+            {
+                _timer.text = shown.ToString();
+                float pulse = 0.5f + 0.5f * Mathf.Abs(Mathf.Sin(Time.time * 9f));
+                _timer.color = Color.Lerp(Palette.MoneyRed, Color.white, pulse * 0.35f);
+                if (_timerChip != null)
+                    _timerChip.localScale = Vector3.one * (1f + 0.10f * pulse);
+                if (_timerChipImg != null)
+                    _timerChipImg.color = Color.Lerp(new Color(0.42f, 0.05f, 0.12f, 0.94f), Palette.MoneyRed, pulse * 0.55f);
+                if (shown != _lastClockSec && shown >= 1)
+                    PlaySfx(_clockTick, 0.38f);
+            }
+            else
+            {
+                _timer.text = shown + "s";
+                _timer.color = Palette.Pastel;
+                if (_timerChip != null)
+                    _timerChip.localScale = Vector3.one;
+                if (_timerChipImg != null)
+                    _timerChipImg.color = new Color(1f, 1f, 1f, 0.06f);
+            }
+            _lastClockSec = shown;
+        }
+
         void RefreshHud()
         {
             _viewers.text = Mathf.RoundToInt(_shownViewers).ToString();
@@ -1064,7 +1108,7 @@ namespace BankruptVtuber
             if (_mentalPunch > 0.02f)
                 _mental.color = Color.Lerp(_mental.color, Palette.MoneyRed, _mentalPunch);
             _mental.rectTransform.localScale = Vector3.one * (1f + 0.32f * _mentalPunch);
-            _timer.text = $"{Mathf.CeilToInt(_session.TimeLeft)}s";
+            RefreshClockChip();
             if (_comboBreakLeft > 0f)
             {
                 _combo.text = "콤보 끊김";

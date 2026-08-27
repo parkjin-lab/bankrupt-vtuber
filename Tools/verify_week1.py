@@ -1369,6 +1369,7 @@ def check_project() -> None:
     check_chat_nicks()
     check_hype_wash()
     check_combo_break()
+    check_clock_urgency()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -2368,6 +2369,44 @@ def check_combo_break() -> None:
         fail("combo break moved Unity off 6000.5.9f1")
     else:
         ok("combo ≥ 2 miss flashes 콤보 끊김; combo-0 miss stays a normal Miss")
+
+
+def check_clock_urgency() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+
+    if "RefreshClockChip" not in live_cs or "TimeLeft <= 10f" not in live_cs:
+        fail("last 10s clock does not go urgent")
+    elif '"종료"' not in live_cs or "TimeLeft <= 0f" not in live_cs:
+        fail("clock 0 does not snap to 종료")
+    elif "sfx_clock" not in live_cs or "PlaySfx(_clockTick" not in live_cs:
+        fail("last 10s has no per-second tick")
+    elif "shown != _lastClockSec" not in live_cs:
+        fail("clock tick is not once per second")
+    elif "streamSeconds = 90f" not in session_cs.split("TimeLeft = balance.streamSeconds", 1)[0] and "TimeLeft = balance.streamSeconds" not in session_cs:
+        fail("clock urgency retuned stream length wiring")
+    elif "streamSeconds: 90" not in balance:
+        fail("clock urgency retuned the 90s stream")
+    elif "콤보 끊김" not in live_cs or "ShowMissSting" not in live_cs:
+        fail("clock urgency dropped combo-break or miss sting")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("clock urgency broke pads, 입력됨, or added timeScale")
+    elif "StreamSafeArea" not in live_cs or "오늘 헤드라인" not in settle_cs:
+        fail("clock urgency dropped StreamSafeArea or 오늘 헤드라인")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising clock / later weeks")
+    elif "billRent: 8000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("clock urgency retuned Week 1 bills or hype")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("clock urgency dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("clock urgency moved Unity off 6000.5.9f1")
+    else:
+        ok("last 10s clock pulses red and ticks 10…9…; 0 snaps to 종료")
 
 
 def check_mental_fatigue() -> None:
