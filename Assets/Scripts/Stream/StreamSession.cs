@@ -68,6 +68,7 @@ namespace BankruptVtuber
         int _runSeed;
         bool _pendingHypeEvent;
         bool _pendingMissEvent;
+        StreamEventKind _armedKind;
         Week3Balance _week3;
         Week4Balance _week4;
         Week5Balance _week5;
@@ -122,6 +123,30 @@ namespace BankruptVtuber
         }
 
         public bool EventActive => Event.Active;
+
+        public bool TryPeekEventWarn(out StreamEventKind kind)
+        {
+            kind = StreamEventKind.None;
+            if (Event.Fired || Event.Active || Finished)
+                return false;
+            if (_pendingMissEvent)
+            {
+                kind = StreamEventKind.AntiWave;
+                return true;
+            }
+            if (_pendingHypeEvent)
+            {
+                kind = StreamEventKind.GearLag;
+                return true;
+            }
+            float eta = _eventAt - Elapsed;
+            if (eta > 0.5f || eta <= 0f)
+                return false;
+            if (_armedKind == StreamEventKind.None)
+                _armedKind = Rng.Next(0, 2) == 0 ? StreamEventKind.AntiWave : StreamEventKind.GearLag;
+            kind = _armedKind;
+            return true;
+        }
 
         public bool PromoActive => Promo.Active;
 
@@ -620,7 +645,9 @@ namespace BankruptVtuber
             else if (trigger == StreamEventTrigger.FirstMissStreak)
                 Event.Kind = StreamEventKind.AntiWave;
             else
-                Event.Kind = Rng.Next(0, 2) == 0 ? StreamEventKind.AntiWave : StreamEventKind.GearLag;
+                Event.Kind = _armedKind != StreamEventKind.None
+                    ? _armedKind
+                    : (Rng.Next(0, 2) == 0 ? StreamEventKind.AntiWave : StreamEventKind.GearLag);
         }
 
         void ResolveEvent(bool success)

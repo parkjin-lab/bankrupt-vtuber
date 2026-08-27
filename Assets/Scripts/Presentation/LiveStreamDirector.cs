@@ -114,6 +114,8 @@ namespace BankruptVtuber
         Image _mentalGrain;
         Text _mentalWarn;
         RectTransform _mentalWarnBox;
+        RectTransform _eventWarnBox;
+        Text _eventWarn;
         RectTransform _forceEndRoot;
         float _mentalPunch;
         int _hudMental = 100;
@@ -422,6 +424,7 @@ namespace BankruptVtuber
 
             SyncNotes();
             TickStrike();
+            TickEventWarn();
             TickSuperchatPip();
             RefreshEventOverlay();
             if (_promoWasActive && !_session.PromoActive && _session.Promo.Resolved && _session.Promo.Success)
@@ -707,6 +710,11 @@ namespace BankruptVtuber
             _mentalWarn = UiKit.Label(warn, "MentalWarn", "멘탈 위험", 18, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Stretch(_mentalWarn.rectTransform);
             warn.gameObject.SetActive(false);
+            _eventWarnBox = UiKit.Panel(root, "EventWarnBox", new Color(0.58f, 0.08f, 0.16f, 0.94f));
+            UiKit.Layout(_eventWarnBox, new Vector2(0.18f, 0.62f), new Vector2(0.52f, 0.62f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 44));
+            _eventWarn = UiKit.Label(_eventWarnBox, "EventWarn", "안티 온다", 28, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Stretch(_eventWarn.rectTransform);
+            _eventWarnBox.gameObject.SetActive(false);
 
             var top = UiKit.Panel(root, "Top", new Color(0.08f, 0.04f, 0.1f, 0.90f));
             UiKit.Layout(top, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(0, 200));
@@ -1353,6 +1361,26 @@ namespace BankruptVtuber
             }
             float tension = Mathf.Clamp01(_session.MissStreak / (float)_session.Balance.missStreakMental);
             _tensionFill.rectTransform.anchorMax = new Vector2(tension, 1f);
+        }
+
+        void TickEventWarn()
+        {
+            if (_eventWarnBox == null)
+                return;
+            bool on = _session != null && _session.TryPeekEventWarn(out var kind);
+            _eventWarnBox.gameObject.SetActive(on);
+            if (!on)
+                return;
+            if (_eventWarn != null)
+                _eventWarn.text = StreamEventState.WarnCopy(kind);
+            var img = _eventWarnBox.GetComponent<Image>();
+            bool anti = kind == StreamEventKind.AntiWave;
+            float u = 0.5f + 0.5f * Mathf.Abs(Mathf.Sin(Time.time * 10f));
+            if (img != null)
+                img.color = anti
+                    ? new Color(0.72f, 0.08f, 0.16f, 0.88f + 0.10f * u)
+                    : new Color(0.22f, 0.30f, 0.38f, 0.88f + 0.10f * u);
+            _eventWarnBox.localScale = Vector3.one * (1f + 0.06f * u);
         }
 
         void TickStrike()

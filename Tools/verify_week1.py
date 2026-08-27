@@ -1393,6 +1393,7 @@ def check_project() -> None:
     check_note_pad_color()
     check_strike_marker()
     check_next_pulse()
+    check_event_warn()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -3537,6 +3538,64 @@ def check_next_pulse() -> None:
         fail("다음날 pulse moved Unity off 6000.5.9f1")
     else:
         ok("settlement 다음날 pulses 1.03 with a 다음 chip; routing stays")
+
+
+def check_event_warn() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    peek = session_cs.split("public bool TryPeekEventWarn", 1)[-1].split("public bool PromoActive", 1)[0]
+    start_ev = session_cs.split("void StartEvent", 1)[-1].split("void ResolveEvent", 1)[0]
+    tick = live_cs.split("void TickEventWarn", 1)[-1].split("void TickStrike", 1)[0]
+    kinds = event_cs.split("enum StreamEventKind", 1)[-1].split("enum StreamEventTrigger", 1)[0]
+
+    if "TryPeekEventWarn" not in session_cs or "TickEventWarn" not in live_cs:
+        fail("events have no 0.5s warning chip")
+    elif "eta > 0.5f" not in peek or "안티 온다" not in event_cs or "렉 온다" not in event_cs:
+        fail("warning is not 안티 온다 / 렉 온다 at 0.5s")
+    elif "WarnCopy" not in tick or "EventWarnBox" not in live_cs:
+        fail("warning chip is not shown on the live HUD")
+    elif "BeginEventAccident" not in live_cs or "0.2f" not in live_cs.split("void BeginEventAccident", 1)[-1][:500]:
+        fail("event warn dropped the existing sting")
+    elif "ApplyEventScar" not in live_cs or "EventCrack" not in live_cs or "SetPulse" not in live_cs:
+        fail("event warn dropped glow-key or fail-scar")
+    elif "사고 수습" not in event_cs or "RecoverCopy" not in live_cs:
+        fail("event warn dropped 사고 수습")
+    elif "MaybeStartEvent" in live_cs or "StartEvent(" in live_cs:
+        fail("LiveStream started firing extra events")
+    elif "eventEarliestSeconds =" in peek or "eventWindowSeconds =" in peek:
+        fail("event warn writes event timing")
+    elif "eventAntiFailMental" in peek or "eventLagFailFreezeSeconds" in peek:
+        fail("event warn writes fail penalties")
+    elif "Event.Window =" not in start_ev or "eventWindowSeconds" not in start_ev:
+        fail("event warn changed the QTE window assignment")
+    elif "eventEarliestSeconds: 35" not in balance or "eventAntiFailMental: 8" not in balance:
+        fail("event warn retuned event timing / fail numbers")
+    elif "eventLagFailFreezeSeconds: 3" not in balance or "eventWindowSeconds: 1.15" not in balance:
+        fail("event warn retuned lag freeze or window")
+    elif "RivalWave" in event_cs or kinds.count("=") > 3:
+        fail("a new StreamEvent kind was added")
+    elif "TickNextPulse" not in settle_cs or "TickStrike" not in live_cs:
+        fail("event warn dropped 다음날 pulse or strike marker")
+    elif "NotePadColor" not in live_cs or "TickGoLivePulse" not in week_cs:
+        fail("event warn dropped note pad colors or GO LIVE pulse")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("event warn broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising event warn / later weeks")
+    elif "billRent: 8000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("event warn retuned Week 1 bills or hype")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("event warn dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("event warn moved Unity off 6000.5.9f1")
+    else:
+        ok("events flash 안티 온다 / 렉 온다 0.5s early; sting / keys / scars stay")
 
 
 def check_mental_fatigue() -> None:

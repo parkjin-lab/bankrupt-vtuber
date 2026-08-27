@@ -69,5 +69,12 @@ namespace BankruptVtuber
 
         public static string RecoverCopy(StreamEventKind kind) =>
             kind == StreamEventKind.None ? "" : "사고 수습!";
+
+        public static string WarnCopy(StreamEventKind kind) => kind switch
+        {
+            StreamEventKind.AntiWave => "안티 온다",
+            StreamEventKind.GearLag => "렉 온다",
+            _ => ""
+        };
     }
 }
