@@ -30,6 +30,7 @@ namespace BankruptVtuber
         public const string BubblePill = "Art/bubble_pill";
         public const string ChatBubble = "Art/chat_bubble";
         public const string NoteChip = "Art/note_chip";
+        public const string HitRail = "Art/hit_rail";
         public const string SuperchatBanner = "Art/bubble_superchat";
         public const string TrollBubble = "Art/bubble_troll";
         public const string Sparkle = "Art/sparkle";

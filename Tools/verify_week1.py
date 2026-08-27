@@ -213,6 +213,7 @@ def check_project() -> None:
         "pad_superchat.png": "슈퍼챗 키캡",
         "chat_bubble.png": "채팅 버블",
         "note_chip.png": "노트 칩",
+        "hit_rail.png": "히트 레일",
         "badge_superchat.png": "superchat",
         "badge_troll.png": "troll",
     }
@@ -1430,6 +1431,7 @@ def check_project() -> None:
     check_pad_keycaps()
     check_chat_bubble()
     check_note_chip()
+    check_hit_rail()
 
 
 def check_content_types() -> None:
@@ -4935,6 +4937,74 @@ def check_note_chip() -> None:
         fail("note chip moved Unity off 6000.5.9f1")
     else:
         ok("traveling notes sit on a rhythm chip; pad tint / glow / strike / scoring stay")
+
+
+def check_hit_rail() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/hit_rail.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    lane = live_cs.split('_lane = UiKit.Panel', 1)[-1].split("var bottom = UiKit.Panel", 1)[0]
+    tick = live_cs.split("void TickStrike", 1)[-1].split("void SyncNotes", 1)[0]
+    hit = live_cs.split("_hit = UiKit.Panel", 1)[-1].split("_strike", 1)[0]
+    build = live_cs.split("_hit = UiKit.Panel", 1)[-1].split("var hitLabel", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 4000:
+        fail("히트 rail PNG is missing")
+    elif w < 128 or h < 240 or h <= w:
+        fail("히트 rail PNG is not a readable tall track")
+    elif color != 6:
+        fail("히트 rail PNG is not RGBA")
+    elif 'HitRail = "Art/hit_rail"' not in art_cs:
+        fail("ArtSprites does not hook Art/hit_rail")
+    elif "ArtSprites.HitRail" not in lane or '"HitRail"' not in lane:
+        fail("lane does not draw the hit rail under notes")
+    elif "SetAsFirstSibling" not in lane:
+        fail("hit rail is not drawn under the notes")
+    elif "new Vector2(0, LaneHit)" not in hit or "new Vector2(0, 10)" not in hit:
+        fail("hit rail moved or resized the hit line")
+    elif "new Vector2(0, LaneHit)" not in build or "new Vector2(0, 4)" not in build:
+        fail("hit rail dropped the thin strike marker at LaneHit")
+    elif "const float LaneHit = -210f" not in live_cs or "const float LaneTop = 260f" not in live_cs:
+        fail("hit rail moved the hit line or lane top")
+    elif "StreamRules.Judge" not in tick or "Judgement.Perfect" not in tick:
+        fail("hit rail dropped Perfect-window strike pulse")
+    elif "Palette.Gold" not in tick or "Color.white" not in tick:
+        fail("hit rail dropped white/gold strike pulse")
+    elif "ArtSprites.NoteChip" not in live_cs or "ArtSprites.ChatBubble" not in live_cs:
+        fail("hit rail dropped note chip or chat bubble")
+    elif "perfectWindow =" in live_cs or "goodWindow =" in live_cs:
+        fail("hit rail retuned judge windows")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("hit rail retuned hit windows")
+    elif "approachSeconds: 1.35" not in balance:
+        fail("hit rail retuned travel speed")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("hit rail retuned Judge scoring")
+    elif "LaneHit =" in tick or "HitTime =" in tick:
+        fail("hit rail writes hit position / times")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("hit rail broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising hit rail / later weeks")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("hit rail retuned Week 1 economy / hype")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("hit rail dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("hit rail moved Unity off 6000.5.9f1")
+    else:
+        ok("notes ride a hit rail; strike marker / Perfect pulse / windows stay")
 
 
 def check_save_roundtrip() -> None:

@@ -820,10 +820,16 @@ namespace BankruptVtuber
             var laneFade = _lane.gameObject.AddComponent<CanvasGroup>();
             laneFade.blocksRaycasts = false;
             laneFade.interactable = false;
+            var hitRail = UiKit.Image(_lane, "HitRail", Color.white);
+            UiKit.Stretch(hitRail.rectTransform);
+            ArtSprites.Apply(hitRail, ArtSprites.HitRail, Color.white, new Color(1f, 1f, 1f, 0.94f));
+            hitRail.preserveAspect = false;
+            hitRail.raycastTarget = false;
+            hitRail.transform.SetAsFirstSibling();
             _hypeChatGlow = UiKit.Image(_lane, "HypeChatGlow", new Color(1f, 0.86f, 0.28f, 0f));
             UiKit.Stretch(_hypeChatGlow.rectTransform);
             _hypeChatGlow.raycastTarget = false;
-            _hypeChatGlow.transform.SetAsFirstSibling();
+            _hypeChatGlow.transform.SetSiblingIndex(1);
 
             _hit = UiKit.Panel(_lane, "Hit", new Color(1f, 1f, 1f, 0.22f));
             UiKit.Layout(_hit, new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, LaneHit), new Vector2(0, 10));
