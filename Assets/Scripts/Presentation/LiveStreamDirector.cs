@@ -132,6 +132,10 @@ namespace BankruptVtuber
         float _shownIncome;
         float _stingFlash;
         float _viewerFlash;
+        Text _viewerPop;
+        float _viewerPopFlash;
+        float _hypeViewAcc;
+        bool _viewerJudged;
         int _lastCombo;
         int _tonightBills;
         int _bankruptAt;
@@ -339,6 +343,7 @@ namespace BankruptVtuber
                     float dv = _session.Viewers - _lastViewers;
                     int dm = _session.Mental - _lastMental;
                     ShowMissSting(dv, dm);
+                    _viewerJudged = true;
                     PlaySfx(_bad, 0.48f);
                     if (note.IsSuperchat)
                         BeginSuperchatCrack(note);
@@ -352,6 +357,13 @@ namespace BankruptVtuber
                     PlaySfx(_ok, 0.42f);
                 else
                     PlaySfx(_ok, 0.22f);
+                if (j != Judgement.Miss)
+                {
+                    float dv = _session.Viewers - _lastViewers;
+                    if (Mathf.Abs(dv) >= 0.049f)
+                        ShowViewerDelta(dv);
+                    _viewerJudged = true;
+                }
             }
 
             SyncNotes();
@@ -381,6 +393,22 @@ namespace BankruptVtuber
             if (_rivalDuel != null)
                 _rivalDuel.Tick(dt);
             RefreshCoach();
+            if (!_viewerJudged)
+            {
+                float idleDv = _session.Viewers - _lastViewers;
+                if (Mathf.Abs(idleDv) >= 0.25f)
+                    ShowViewerDelta(idleDv);
+                else if (_session.HypeActive && idleDv > 0f)
+                {
+                    _hypeViewAcc += idleDv;
+                    if (_hypeViewAcc >= 1f)
+                    {
+                        ShowViewerDelta(1f);
+                        _hypeViewAcc -= 1f;
+                    }
+                }
+            }
+            _viewerJudged = false;
             _lastViewers = _session.Viewers;
             _lastMental = _session.Mental;
             _avatar.Tick(dt);
@@ -404,6 +432,15 @@ namespace BankruptVtuber
                 _liveDot.color = new Color(1f, 1f, 1f, 0.4f + 0.6f * Mathf.Abs(Mathf.Sin(Time.time * 6f)));
             _stingFlash = Mathf.MoveTowards(_stingFlash, 0f, dt * 1.4f);
             _viewerFlash = Mathf.MoveTowards(_viewerFlash, 0f, dt * 1.8f);
+            _viewerPopFlash = Mathf.MoveTowards(_viewerPopFlash, 0f, dt * 1.6f);
+            if (_viewerPop != null)
+            {
+                var pc = _viewerPop.color;
+                pc.a = _viewerPopFlash;
+                _viewerPop.color = pc;
+                _viewerPop.rectTransform.anchoredPosition = new Vector2(8f, 6f + 22f * (1f - _viewerPopFlash));
+                _viewerPop.rectTransform.localScale = Vector3.one * (1f + 0.16f * _viewerPopFlash);
+            }
             if (_sting != null)
             {
                 var st = _sting.color;
@@ -577,6 +614,8 @@ namespace BankruptVtuber
             UiKit.Layout(liveL.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0.5f), new Vector2(28f, 0f), new Vector2(-16f, 0f));
 
             _viewers = Chip(top, "Viewers", "시청자", 0.16f, 0.40f, -6f);
+            _viewerPop = UiKit.Label(_viewers.transform.parent, "ViewerPop", "", 20, Palette.CashGreen, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_viewerPop.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(8f, 6f), new Vector2(150f, 28f));
             _rival = Chip(top, "Rival", "라이벌", 0.40f, 0.64f, -6f);
             _timer = Chip(top, "Timer", "남은 시간", 0.64f, 1f, -6f);
             _cash = Chip(top, "Cash", "현금", 0f, 0.25f, -64f);
@@ -1517,17 +1556,33 @@ namespace BankruptVtuber
             public Vector2 Start;
         }
 
+        void ShowViewerDelta(float viewerDelta)
+        {
+            if (_viewerPop == null || Mathf.Abs(viewerDelta) < 0.049f)
+                return;
+            bool up = viewerDelta > 0f;
+            _viewerPop.text = up
+                ? $"시청 +{viewerDelta:0.0}"
+                : $"시청 −{Mathf.Abs(viewerDelta):0.0}";
+            var c = up ? Palette.CashGreen : Palette.MoneyRed;
+            c.a = 1f;
+            _viewerPop.color = c;
+            _viewerPopFlash = 1f;
+            if (!up)
+                _viewerFlash = 1f;
+        }
+
         void ShowMissSting(float viewerDelta, int mentalDelta)
         {
-            float drop = Mathf.Abs(Mathf.Min(0f, viewerDelta));
-            string line = $"시청자 −{drop:0.0} / 멘탈";
+            ShowViewerDelta(viewerDelta);
             if (mentalDelta != 0)
-                line = $"시청자 −{drop:0.0} / 멘탈 {mentalDelta}";
-            _sting.text = line;
-            var c = Palette.MoneyRed;
-            c.a = 1f;
-            _sting.color = c;
-            _stingFlash = 1.15f;
+            {
+                _sting.text = $"멘탈 {mentalDelta}";
+                var c = Palette.MoneyRed;
+                c.a = 1f;
+                _sting.color = c;
+                _stingFlash = 1.15f;
+            }
             _viewerFlash = 1f;
         }
 

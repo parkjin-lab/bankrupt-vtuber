@@ -1342,6 +1342,7 @@ def check_project() -> None:
     check_hype_wash()
     check_mental_fatigue()
     check_superchat_fly()
+    check_viewer_pop()
 
 
 def check_content_types() -> None:
@@ -2386,6 +2387,46 @@ def check_superchat_fly() -> None:
         fail("superchat fly retuned Week 1 bills or hype")
     else:
         ok("Perfect superchat flies ₩ to 지금 수입; miss cracks; 민준 첫 도네 is stamp-only")
+
+
+def check_viewer_pop() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+
+    if "ShowViewerDelta" not in live_cs or "시청 +" not in live_cs or "시청 −" not in live_cs:
+        fail("viewer chip has no +/− popup")
+    elif "ViewerPop" not in live_cs or "_viewers" not in live_cs:
+        fail("viewer popup is not next to the viewer chip")
+    elif "ShowMissSting" not in live_cs or "ShowViewerDelta(viewerDelta)" not in live_cs:
+        fail("miss does not reuse the one viewer popup")
+    elif live_cs.count("ShowViewerDelta") < 3:
+        fail("viewer popup is not used for hit / miss / leftover ticks")
+    elif "ClampViewers" not in rules_cs or "ViewerDeltaFor" not in rules_cs:
+        fail("viewer popup retuned ClampViewers / deltas")
+    elif "perfectViewerDelta" not in rules_cs or "missViewerDelta" not in rules_cs:
+        fail("StreamRules viewer deltas were dropped")
+    elif "Tuning.PerfectViewerMul" not in session_cs or "ApplyRivalSteal" not in session_cs:
+        fail("content / rival viewer modifiers were dropped")
+    elif "BeginSuperchatFly" not in live_cs or "RefreshHypeShow" not in live_cs or "RefreshMentalShow" not in live_cs:
+        fail("viewer popup dropped superchat fly or washes")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("viewer popup broke pads, 입력됨, or added timeScale")
+    elif "StreamSafeArea" not in live_cs or '"Nick"' not in live_cs or "오늘 헤드라인" not in settle_cs:
+        fail("viewer popup dropped StreamSafeArea, nicks, or headline")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising viewers / later weeks")
+    elif "perfectViewerDelta: 0.5" not in balance or "greatViewerDelta: 0.2" not in balance:
+        fail("Perfect / Great viewer deltas were retuned")
+    elif "missViewerDelta: -1.2" not in balance or "goodViewerDelta: 0" not in balance:
+        fail("Miss / Good viewer deltas were retuned")
+    elif "hypeViewersPerSec: 1" not in balance or "billRent: 8000" not in balance:
+        fail("viewer popup retuned hype viewers or Week 1 bills")
+    else:
+        ok("시청 +/− pops next to the chip; miss reuses one popup; deltas unchanged")
 
 
 def check_save_roundtrip() -> None:
