@@ -1385,6 +1385,7 @@ def check_project() -> None:
     check_mental_count()
     check_morning_cash_short()
     check_note_hot()
+    check_content_card_mood()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -3095,6 +3096,59 @@ def check_note_hot() -> None:
         fail("note glow moved Unity off 6000.5.9f1")
     else:
         ok("notes brighten within 0.15s of the hit line; windows / travel / coach stay")
+
+
+def check_content_card_mood() -> None:
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    look_cs = (ROOT / "Assets/Scripts/Presentation/ContentShowLook.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Economy/ContentRules.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    content_asset = (ROOT / "Assets/Resources/Balance/ContentBalance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    pick = week_cs.split("void AddContentButton", 1)[-1].split("void OnPickContent", 1)[0]
+
+    if "ContentPickVibe" not in week_cs or "편하게 잡담" not in week_cs or "고음 승부" not in week_cs:
+        fail("content pick cards have no one-line Korean vibe")
+    elif "같이 깨자" not in week_cs or "같이 보자" not in week_cs:
+        fail("game / reaction cards have no vibe line")
+    elif "ContentPickIcon" not in week_cs or "ArtSprites.Superchat" not in week_cs or "ArtSprites.Sparkle" not in week_cs:
+        fail("content pick cards have no distinct icons")
+    elif "ArtSprites.Troll" not in week_cs or "ArtSprites.Avatar" not in week_cs:
+        fail("game / reaction cards have no icons")
+    elif "ContentPickAccent" not in week_cs or "Palette.Pink" not in week_cs or "Palette.Gold" not in week_cs:
+        fail("content pick cards have no accent colors")
+    elif "토크" not in week_cs or "게임" not in week_cs or "노래" not in week_cs or "리액션" not in week_cs:
+        fail("content pick renamed the four types")
+    elif "ContentRules.Pick" not in week_cs or "StreamContentType.Talk" not in week_cs:
+        fail("content pick changed which cards are offered")
+    elif "talkIncomeMultiplier =" in pick or "talkMentalCost =" in pick:
+        fail("content card mood rewrote content modifiers")
+    elif "talkIncomeMultiplier: 1" not in content_asset or "songMentalCost: 8" not in content_asset:
+        fail("content card mood retuned ContentBalance")
+    elif "IncomeMul" not in rules_cs or "MentalCost" not in rules_cs:
+        fail("content card mood dropped ContentRules tuning")
+    elif "ContentShowLook.For" not in week_cs or "ShowWash" not in week_cs:
+        fail("content card mood dropped the LiveStream color preview")
+    elif "오늘: 토크" not in look_cs or "reactionChatSpawnMul" in look_cs:
+        fail("content card mood retuned the live show skin")
+    elif "StreamSafeArea.Attach" not in week_cs:
+        fail("content card mood dropped StreamSafeArea")
+    elif "abs <= 0.15f" not in live_cs or "청구보다 부족" not in week_cs:
+        fail("content card mood dropped note glow or 청구보다 부족")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("content card mood broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising content cards / later weeks")
+    elif "billRent: 8000" not in balance:
+        fail("content card mood retuned Week 1 bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("content card mood dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("content card mood moved Unity off 6000.5.9f1")
+    else:
+        ok("WeekStart content cards are icon + accent + Korean vibe; modifiers stay")
 
 
 def check_mental_fatigue() -> None:

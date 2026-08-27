@@ -410,6 +410,33 @@ namespace BankruptVtuber
             _ => ""
         };
 
+        static string ContentPickVibe(StreamContentType type) => type switch
+        {
+            StreamContentType.Talk => "편하게 잡담",
+            StreamContentType.Game => "같이 깨자",
+            StreamContentType.Song => "고음 승부",
+            StreamContentType.Reaction => "같이 보자",
+            _ => ""
+        };
+
+        static string ContentPickIcon(StreamContentType type) => type switch
+        {
+            StreamContentType.Talk => ArtSprites.Superchat,
+            StreamContentType.Game => ArtSprites.Troll,
+            StreamContentType.Song => ArtSprites.Sparkle,
+            StreamContentType.Reaction => ArtSprites.Avatar,
+            _ => ArtSprites.BubblePill
+        };
+
+        static Color ContentPickAccent(StreamContentType type) => type switch
+        {
+            StreamContentType.Talk => Palette.Pink,
+            StreamContentType.Game => Palette.Troll,
+            StreamContentType.Song => Palette.Gold,
+            StreamContentType.Reaction => Palette.PastelDim,
+            _ => Palette.Muted
+        };
+
         void AddContentButton(StreamContentType type, int index)
         {
             var look = ContentShowLook.For(type);
@@ -417,7 +444,8 @@ namespace BankruptVtuber
             string name = ContentPickName(type);
             if (string.IsNullOrEmpty(name))
                 name = t.Name;
-            string caption = $"{name}\n수입 ×{t.IncomeMul:0.##}  멘탈 −{t.MentalCost}";
+            string vibe = ContentPickVibe(type);
+            string caption = $"{name}\n{vibe}\n수입 ×{t.IncomeMul:0.##}  멘탈 −{t.MentalCost}";
             var btn = UiKit.Button(_contentRoot, type.ToString(), caption, () => OnPickContent(type), look.Card, look.CardInk);
             float a = index / 4f;
             float b = (index + 1) / 4f;
@@ -433,16 +461,22 @@ namespace BankruptVtuber
             UiKit.Layout(wash.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -6), new Vector2(-20, 10));
             var veil = UiKit.Image(btn.transform, "ShowVeil", look.WashVeil);
             UiKit.Layout(veil.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -6), new Vector2(-20, 10));
+            var accent = UiKit.Image(btn.transform, "Accent", ContentPickAccent(type));
+            UiKit.Layout(accent.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(6f, 8f), new Vector2(12f, -16f));
+            var icon = UiKit.Image(btn.transform, "Icon", Color.white);
+            UiKit.Layout(icon.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(52f, 52f));
+            ArtSprites.Apply(icon, ContentPickIcon(type), ContentPickAccent(type), Color.white);
+            icon.raycastTarget = false;
             AddCardChip(btn.transform, 0, look.Type == StreamContentType.Talk ? Palette.Blue : look.Type == StreamContentType.Game ? Palette.Troll : look.Type == StreamContentType.Song ? Palette.Gold : Palette.Muted);
             AddCardChip(btn.transform, 1, look.Type == StreamContentType.Talk ? Palette.Green : look.CamFrame);
             var cap = btn.GetComponentInChildren<Text>();
             if (cap != null)
             {
-                cap.fontSize = 26;
-                cap.lineSpacing = 1.15f;
+                cap.fontSize = 22;
+                cap.lineSpacing = 1.12f;
                 cap.color = look.CardInk;
-                cap.rectTransform.offsetMin = new Vector2(8f, 8f);
-                cap.rectTransform.offsetMax = new Vector2(-8f, -18f);
+                cap.rectTransform.offsetMin = new Vector2(18f, 8f);
+                cap.rectTransform.offsetMax = new Vector2(-8f, -62f);
             }
         }
 
