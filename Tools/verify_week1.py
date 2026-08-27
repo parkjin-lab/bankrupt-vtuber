@@ -1383,6 +1383,7 @@ def check_project() -> None:
     check_combo_pop()
     check_pad_flash()
     check_mental_count()
+    check_morning_cash_short()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -2994,6 +2995,56 @@ def check_mental_count() -> None:
         fail("멘탈 count moved Unity off 6000.5.9f1")
     else:
         ok("settlement 멘탈 counts old→new in 0.35s when it dropped; rise ticks green")
+
+
+def check_morning_cash_short() -> None:
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    warn = week_cs.split("void RefreshCashShort", 1)[-1].split("static int PeekTodayBills", 1)[0]
+
+    if "RefreshCashShort" not in week_cs or "청구보다 부족" not in week_cs:
+        fail("broke morning has no 청구보다 부족 line")
+    elif "run.cash <" not in week_cs or "PeekTodayBills" not in warn:
+        fail("청구보다 부족 does not compare current cash to today's bill")
+    elif "Palette.MoneyRed" not in warn:
+        fail("short 현금 chip is not tinted warning-red")
+    elif "Palette.Gold" in warn:
+        fail("covered 현금 chip gained extra gold")
+    elif "run.cash =" in week_cs or "cash +=" in week_cs or "cash -=" in week_cs:
+        fail("morning cash warn writes cash")
+    elif "lastBills =" in week_cs:
+        fail("morning cash warn writes lastBills")
+    elif "ApplyDailyBills" not in week_cs or "GoLive()" not in week_cs:
+        fail("morning cash warn dropped bill apply or GO LIVE")
+    elif "마지막 날" not in week_cs or "LastDayBanner" not in week_cs or "RefreshLastDay" not in week_cs:
+        fail("morning cash warn dropped the last-day banner")
+    elif '"오늘 청구"' not in week_cs or "_billSlam = 0.25f" not in week_cs:
+        fail("morning cash warn dropped 오늘 청구 slam")
+    elif "TickMentalCount" not in settle_cs or "_mentalCountT / 0.35f" not in settle_cs:
+        fail("morning cash warn dropped settlement 멘탈 count")
+    elif "_flash = 0.08f" not in (ROOT / "Assets/Scripts/Input/StreamPadButton.cs").read_text(encoding="utf-8"):
+        fail("morning cash warn dropped pad press flash")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("morning cash warn broke pads, 입력됨, or added timeScale")
+    elif "UnlockUiInputForStream" not in week_cs or "StreamSafeArea" not in week_cs:
+        fail("morning cash warn dropped WeekStart input unlock or safe area")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising morning cash warn / later weeks")
+    elif "TonightBills" not in eco_cs:
+        fail("morning cash warn dropped EconomyRules.TonightBills")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("morning cash warn retuned Week 1 cash or bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("morning cash warn dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("morning cash warn moved Unity off 6000.5.9f1")
+    else:
+        ok("WeekStart tints 현금 warning-red + 청구보다 부족 when cash < today's bill")
 
 
 def check_mental_fatigue() -> None:

@@ -38,6 +38,8 @@ namespace BankruptVtuber
         float _cashSlam;
         RectTransform _billTile;
         float _billSlam;
+        Image _cashImg;
+        Text _cashShort;
 
         struct Bill
         {
@@ -130,6 +132,14 @@ namespace BankruptVtuber
             _billToday = MoneyChip(moneyBar, "BillChip", "오늘 청구", Palette.MoneyRed, 0f, 0.28f);
             _billTile = moneyBar.Find("BillChip") as RectTransform;
             _cash = MoneyChip(moneyBar, "CashChip", "현금", Palette.CashGreen, 0.28f, 0.52f);
+            var cashTile = moneyBar.Find("CashChip") as RectTransform;
+            if (cashTile != null)
+            {
+                _cashImg = cashTile.GetComponent<Image>();
+                _cashShort = UiKit.Label(cashTile, "CashShort", "청구보다 부족", 15, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+                UiKit.Layout(_cashShort.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 1f), new Vector2(0f, -2f), new Vector2(-8f, 20f));
+                _cashShort.gameObject.SetActive(false);
+            }
             _debt = MoneyChip(moneyBar, "DebtChip", "부채", Palette.MoneyRed, 0.52f, 0.76f);
             _mental = MoneyChip(moneyBar, "MentalChip", "멘탈", Palette.Pink, 0.76f, 1f);
 
@@ -284,6 +294,41 @@ namespace BankruptVtuber
             _contentHud.gameObject.SetActive(!string.IsNullOrEmpty(content));
             RefreshYesterday(run);
             RefreshLastDay(run);
+            RefreshCashShort();
+        }
+
+        void RefreshCashShort()
+        {
+            var gm = GameManager.Instance;
+            if (gm == null || gm.Run == null)
+                return;
+            var run = gm.Run;
+            int bills = PeekTodayBills(gm);
+            bool shortfall;
+            if (!run.billsAppliedThisDay)
+                shortfall = run.cash < bills;
+            else
+            {
+                int debtGrew = Mathf.Max(0, run.debt - run.debtAtDayStart);
+                int wallet = run.cash - debtGrew + bills - run.lastFanSupport;
+                shortfall = wallet < bills;
+            }
+            if (_cashShort != null)
+                _cashShort.gameObject.SetActive(shortfall);
+            if (shortfall)
+            {
+                if (_cash != null)
+                    _cash.color = Palette.MoneyRed;
+                if (_cashImg != null)
+                    _cashImg.color = Palette.MoneyRed;
+            }
+            else
+            {
+                if (_cash != null)
+                    _cash.color = Color.white;
+                if (_cashImg != null)
+                    _cashImg.color = Palette.CashGreen;
+            }
         }
 
         static int PeekTodayBills(GameManager gm)
@@ -625,7 +670,6 @@ namespace BankruptVtuber
             EconomyRules.ApplyDailyBills(gm.Run, b, gm.Week2, gm.Week3, gm.Week4, gm.Week5, gm.Fandom);
             gm.SaveRun();
             RefreshHud();
-            _cash.color = Color.white;
             _cashSlam = 1f;
             int today = gm.Run.lastBills + gm.Run.extraThreatAmount + gm.Run.lastConflictSurcharge + gm.Run.lastAutoCost;
             string support = gm.Run.lastFanSupport > 0
