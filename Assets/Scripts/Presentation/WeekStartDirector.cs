@@ -44,6 +44,8 @@ namespace BankruptVtuber
         float _billSlam;
         Image _cashImg;
         Text _cashShort;
+        AudioSource _morningBgm;
+        bool _leavingMorning;
 
         struct Bill
         {
@@ -63,6 +65,13 @@ namespace BankruptVtuber
             UiKit.EnsureEventSystem();
             UiKit.UnlockUiInputForStream();
             Build();
+            StartMorningBgm();
+        }
+
+        void OnDestroy()
+        {
+            if (_morningBgm != null)
+                _morningBgm.Stop();
         }
 
         void Start()
@@ -108,10 +117,11 @@ namespace BankruptVtuber
             }
 
             if (_ready
+                && !_leavingMorning
                 && !FandomRules.MustResolveConflict(GameManager.Instance.Run)
                 && !ContentRules.MustPick(GameManager.Instance.Run)
                 && StreamBindings.Confirm)
-                GameManager.Instance.GoLive();
+                LeaveMorning(() => GameManager.Instance.GoLive());
         }
 
         void TickGoLivePulse()
@@ -209,7 +219,7 @@ namespace BankruptVtuber
             _log = UiKit.Label(wavePanel, "Log", "청구서가 몰려옵니다…", 24, Palette.PastelDim, TextAnchor.LowerLeft);
             UiKit.Layout(_log.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 16), new Vector2(-40, 48));
 
-            _goLive = UiKit.Button(root, "GoLive", "방송 켜기  (Space)", () => GameManager.Instance.GoLive(), Palette.PinkDeep, Color.white);
+            _goLive = UiKit.Button(root, "GoLive", "방송 켜기  (Space)", () => LeaveMorning(() => GameManager.Instance.GoLive()), Palette.PinkDeep, Color.white);
             _goLiveRt = _goLive.GetComponent<RectTransform>();
             UiKit.Layout(_goLiveRt, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 36), new Vector2(360, 70));
             _goLivePip = UiKit.Image(_goLive.transform, "LivePip", Palette.MoneyRed);
@@ -850,6 +860,45 @@ namespace BankruptVtuber
             }
             card.anchoredPosition = new Vector2(x, 0);
             card.localRotation = Quaternion.identity;
+        }
+
+        void StartMorningBgm()
+        {
+            var clip = Resources.Load<AudioClip>("Audio/bgm_morning");
+            if (clip == null)
+                return;
+            _morningBgm = gameObject.AddComponent<AudioSource>();
+            _morningBgm.clip = clip;
+            _morningBgm.loop = true;
+            _morningBgm.playOnAwake = false;
+            _morningBgm.volume = 0.20f;
+            _morningBgm.Play();
+        }
+
+        void LeaveMorning(System.Action next)
+        {
+            if (_leavingMorning)
+                return;
+            _leavingMorning = true;
+            StartCoroutine(FadeMorningBgmThen(next));
+        }
+
+        IEnumerator FadeMorningBgmThen(System.Action next)
+        {
+            if (_morningBgm != null && _morningBgm.isPlaying)
+            {
+                float start = _morningBgm.volume;
+                float t = 0f;
+                const float fade = 0.2f;
+                while (t < fade)
+                {
+                    t += Time.deltaTime;
+                    _morningBgm.volume = Mathf.Lerp(start, 0f, t / fade);
+                    yield return null;
+                }
+                _morningBgm.Stop();
+            }
+            next?.Invoke();
         }
     }
 }

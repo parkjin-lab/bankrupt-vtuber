@@ -1448,6 +1448,7 @@ def check_project() -> None:
     check_content_icons()
     check_title_bgm()
     check_stream_bgm()
+    check_morning_bgm()
 
 
 def check_content_types() -> None:
@@ -5657,6 +5658,77 @@ def check_stream_bgm() -> None:
         fail("stream bed moved Unity off 6000.5.9f1")
     else:
         ok("LiveStream loops quiet bgm_stream under hits; fades 0.2s on 방송 종료; title stays title-only")
+
+
+def check_morning_bgm() -> None:
+    import wave
+
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    path = ROOT / "Assets/Resources/Audio/bgm_morning.wav"
+    start = week_cs.split("void StartMorningBgm", 1)[-1].split("void LeaveMorning", 1)[0]
+    fade = week_cs.split("IEnumerator FadeMorningBgmThen", 1)[-1]
+    confirm = week_cs.split("void Update()", 1)[-1].split("void TickGoLivePulse", 1)[0]
+    click = week_cs.split("_goLive = UiKit.Button", 1)[-1].split("_conflictRoot", 1)[0]
+
+    if not path.exists() or path.stat().st_size < 20000:
+        fail("bgm_morning.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("bgm_morning.wav is not a readable PCM loop")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 4.0 or dur > 16.0:
+            fail(f"bgm_morning.wav duration {dur:.3f}s is not a short looping morning bed")
+            return
+
+    if "Audio/bgm_morning" not in week_cs or "StartMorningBgm" not in week_cs:
+        fail("WeekStart does not load Audio/bgm_morning")
+    elif "loop = true" not in start or "_morningBgm.Play()" not in start:
+        fail("morning BGM does not loop on WeekStart")
+    elif "volume = 0.20f" not in start or "volume = 0.28f" not in title_cs:
+        fail("morning BGM is not quieter than title")
+    elif "const float fade = 0.2f" not in fade or "_morningBgm.Stop()" not in fade:
+        fail("morning BGM does not fade ~0.2s on leave")
+    elif "LeaveMorning" not in confirm or "GameManager.Instance.GoLive()" not in confirm:
+        fail("Space GO LIVE does not fade morning BGM")
+    elif "LeaveMorning" not in click or "() => GameManager.Instance.GoLive()" not in click:
+        fail("방송 켜기 click does not fade morning BGM")
+    elif "콘서트 방송" not in week_cs or "ConcertStreamReady" not in week_cs:
+        fail("morning BGM dropped concert start caption")
+    elif "Audio/bgm_morning" in title_cs or "Audio/bgm_morning" in live_cs or "Audio/bgm_morning" in settle_cs:
+        fail("morning BGM leaked onto Title / LiveStream / Settlement")
+    elif "Audio/bgm_title" not in title_cs or "Audio/bgm_title" in week_cs or "Audio/bgm_title" in live_cs:
+        fail("title BGM is no longer title-only")
+    elif "Audio/bgm_stream" not in live_cs or "Audio/bgm_stream" in week_cs or "Audio/bgm_stream" in title_cs:
+        fail("stream BGM is no longer live-only")
+    elif "_billSlam = 0.25f" not in week_cs or "_daySlam = 0.25f" not in week_cs:
+        fail("morning BGM dropped bill / n일차 slam")
+    elif "TickGoLivePulse" not in week_cs or "LivePip" not in week_cs or '"방송 켜기  (Space)"' not in week_cs:
+        fail("morning BGM dropped GO LIVE pulse")
+    elif "public void GoLive()" not in gm or "ShowEndCut" in debug_cs:
+        fail("morning BGM changed GoLive or F10 skip")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("morning BGM retuned Week 1 cash or bills")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("morning BGM broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising morning BGM / later weeks")
+    elif "F9" in title_cs or "F10" in title_cs or "PlaytestDebug" in title_cs:
+        fail("Title started advertising playtest keys")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("morning BGM dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("morning BGM moved Unity off 6000.5.9f1")
+    else:
+        ok("WeekStart loops tense bgm_morning; fades 0.2s on GO LIVE; title/stream stay isolated")
 
 
 def check_save_roundtrip() -> None:
