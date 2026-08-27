@@ -150,6 +150,10 @@ namespace BankruptVtuber
         float _viewerFlash;
         Text _viewerPop;
         float _viewerPopFlash;
+        Text _incomePop;
+        float _incomePopFlash;
+        int _incomeMarked;
+        float _incomeMarkedAt;
         float _hypeViewAcc;
         bool _viewerJudged;
         int _lastCombo;
@@ -222,6 +226,8 @@ namespace BankruptVtuber
                 _session.EnableConcert(gm.Week5);
             }
             _shownViewers = _session.Viewers;
+            _incomeMarked = _session.LiveIncome;
+            _incomeMarkedAt = _session.Elapsed;
             _lastViewers = _session.Viewers;
             _lastMental = _session.Mental;
             _hudMental = _session.Mental;
@@ -386,8 +392,12 @@ namespace BankruptVtuber
                     float dv = _session.Viewers - _lastViewers;
                     if (Mathf.Abs(dv) >= 0.049f)
                         ShowViewerDelta(dv);
+                    if (!note.IsSuperchat)
+                        ShowIncomeDelta(_session.LiveIncome - _incomeMarked);
                     _viewerJudged = true;
                 }
+                _incomeMarked = _session.LiveIncome;
+                _incomeMarkedAt = _session.Elapsed;
             }
 
             SyncNotes();
@@ -462,6 +472,7 @@ namespace BankruptVtuber
             _stingFlash = Mathf.MoveTowards(_stingFlash, 0f, dt * 1.4f);
             _viewerFlash = Mathf.MoveTowards(_viewerFlash, 0f, dt * 1.8f);
             _viewerPopFlash = Mathf.MoveTowards(_viewerPopFlash, 0f, dt * 1.6f);
+            _incomePopFlash = Mathf.MoveTowards(_incomePopFlash, 0f, dt * 1.6f);
             if (_viewerPop != null)
             {
                 var pc = _viewerPop.color;
@@ -469,6 +480,14 @@ namespace BankruptVtuber
                 _viewerPop.color = pc;
                 _viewerPop.rectTransform.anchoredPosition = new Vector2(8f, 6f + 22f * (1f - _viewerPopFlash));
                 _viewerPop.rectTransform.localScale = Vector3.one * (1f + 0.16f * _viewerPopFlash);
+            }
+            if (_incomePop != null)
+            {
+                var ic = _incomePop.color;
+                ic.a = _incomePopFlash;
+                _incomePop.color = ic;
+                _incomePop.rectTransform.anchoredPosition = new Vector2(8f, 6f + 22f * (1f - _incomePopFlash));
+                _incomePop.rectTransform.localScale = Vector3.one * (1f + 0.16f * _incomePopFlash);
             }
             if (_sting != null)
             {
@@ -667,6 +686,8 @@ namespace BankruptVtuber
             _mental = Chip(top, "Mental", "멘탈", 0.75f, 1f, -64f);
             _billToday = Chip(top, "TonightBills", "오늘 청구", 0f, 0.25f, -124f);
             _incomeNow = Chip(top, "TonightIncome", "지금 수입", 0.25f, 0.50f, -124f);
+            _incomePop = UiKit.Label(_incomeNow.transform.parent, "IncomePop", "", 20, Palette.CashGreen, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_incomePop.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(8f, 6f), new Vector2(160f, 28f));
             _remain = Chip(top, "Remain", "남은 금액", 0.50f, 0.78f, -124f);
             _bankruptLeft = Chip(top, "ToBankrupt", "파산까지", 0.78f, 1f, -124f);
             _bankruptRow = _bankruptLeft.transform.parent as RectTransform;
@@ -1757,6 +1778,28 @@ namespace BankruptVtuber
                 _coverSlam.color = c;
             }
             _avatar?.HappyPop();
+        }
+
+        void ShowIncomeDelta(int won)
+        {
+            if (_incomePop == null)
+                return;
+            if (won <= 0 && _session != null)
+            {
+                float span = Mathf.Max(0.08f, _session.Elapsed - _incomeMarkedAt);
+                won = StreamRules.TickIncome(
+                    _session.Viewers,
+                    span,
+                    _session.IncomeMultiplier,
+                    _session.Balance);
+            }
+            if (won <= 0)
+                return;
+            _incomePop.text = "+" + EconomyRules.FormatWon(won);
+            var c = Palette.CashGreen;
+            c.a = 1f;
+            _incomePop.color = c;
+            _incomePopFlash = 1f;
         }
 
         void ShowViewerDelta(float viewerDelta)

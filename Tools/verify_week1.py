@@ -1372,6 +1372,7 @@ def check_project() -> None:
     check_clock_urgency()
     check_on_air()
     check_perfect_good()
+    check_income_pop()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -2488,6 +2489,52 @@ def check_perfect_good() -> None:
         fail("Perfect/Good pop moved Unity off 6000.5.9f1")
     else:
         ok("Perfect is a gold 0.2s pop; Good is a smaller white GOOD; Miss stays red")
+
+
+def check_income_pop() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    hit = live_cs.split("if (j == Judgement.Miss)", 1)[-1].split("SyncNotes();", 1)[0]
+
+    if "ShowIncomeDelta" not in live_cs or "IncomePop" not in live_cs:
+        fail("successful notes have no +₩ popup on 지금 수입")
+    elif '"+" + EconomyRules.FormatWon' not in live_cs and 'text = "+" + EconomyRules.FormatWon' not in live_cs:
+        fail("+₩ popup does not use FormatWon")
+    elif "ShowIncomeDelta(_session.LiveIncome - _incomeMarked)" not in live_cs:
+        fail("+₩ popup is not the actual LiveIncome delta")
+    elif "if (!note.IsSuperchat)" not in hit or "ShowIncomeDelta" not in hit:
+        fail("superchat fly was duplicated as the +₩ popup")
+    elif "BeginSuperchatFly" not in live_cs:
+        fail("superchat fly was dropped")
+    elif "ShowIncomeDelta" in live_cs.split("if (j == Judgement.Miss)", 1)[1].split("else if (note.IsSuperchat)", 1)[0]:
+        fail("Miss shows a +₩ popup")
+    elif "incomePerViewerPerSec" not in rules_cs or "TickIncome += gained" not in session_cs:
+        fail("+₩ popup retuned tick income math")
+    elif "incomePerViewerPerSec: 3" not in balance:
+        fail("+₩ popup retuned ₩ per viewer")
+    elif "Palette.Gold" not in live_cs.split("void ShowJudge", 1)[-1] or "Color.white" not in live_cs.split("void ShowJudge", 1)[-1]:
+        fail("+₩ popup dropped Perfect gold / Good white")
+    elif "콤보 끊김" not in live_cs or '"ON AIR"' not in live_cs or "RefreshClockChip" not in live_cs:
+        fail("+₩ popup dropped combo-break, ON AIR, or last-10s clock")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("+₩ popup broke pads, 입력됨, or added timeScale")
+    elif "StreamSafeArea" not in live_cs or "오늘 헤드라인" not in settle_cs:
+        fail("+₩ popup dropped StreamSafeArea or 오늘 헤드라인")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising income pop / later weeks")
+    elif "billRent: 8000" not in balance or "superchatMinWon: 1000" not in balance:
+        fail("+₩ popup retuned Week 1 bills or superchat")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("+₩ popup dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("+₩ popup moved Unity off 6000.5.9f1")
+    else:
+        ok("successful notes pop +₩ next to 지금 수입; superchat fly stays; Miss does not")
 
 
 def check_mental_fatigue() -> None:
