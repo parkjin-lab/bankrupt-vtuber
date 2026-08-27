@@ -1409,6 +1409,7 @@ def check_project() -> None:
     check_continue_pulse()
     check_show_chip()
     check_settle_show_line()
+    check_vtuber_face()
 
 
 def check_content_types() -> None:
@@ -4334,6 +4335,63 @@ def check_settle_show_line() -> None:
         fail("settlement line moved Unity off 6000.5.9f1")
     else:
         ok("settlement names 오늘 토크/게임/노래/리액션 in accent; headline / payout stay")
+
+
+def check_vtuber_face() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    avatar_cs = (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+    chrome_cs = (ROOT / "Assets/Scripts/Presentation/StudioChrome.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    bind_cs = (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/pasan_nyang.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("webcam talent PNG is missing or empty")
+    elif w < 192 or h < 192 or w > 384 or h > 384:
+        fail("webcam talent PNG is not a readable ~256px face")
+    elif color != 6:
+        fail("webcam talent PNG is not RGBA (face would flatten to a blob)")
+    elif 'Avatar = "Art/pasan_nyang"' not in art_cs:
+        fail("ArtSprites no longer hooks Art/pasan_nyang")
+    elif "ArtSprites.Apply(_bust, ArtSprites.Avatar" not in avatar_cs:
+        fail("webcam bust is not the VTuber sprite")
+    elif "Color.white" not in avatar_cs or "Color.white" not in chrome_cs:
+        fail("webcam still tints the face into a colored rect")
+    elif "_punch" not in avatar_cs or "_nod" not in avatar_cs or "_shake" not in avatar_cs:
+        fail("webcam dropped Perfect punch / Good nod / Miss shake")
+    elif "SetTired" not in avatar_cs or "SetTired(tired, danger)" not in live_cs or "m <= 40" not in live_cs:
+        fail("webcam dropped tired/desat at mental ≤40")
+    elif "perfectWindow" not in rules_cs or "greatWindow" not in rules_cs:
+        fail("vtuber face retuned hit windows")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("vtuber face broke pads, 입력됨, or added timeScale")
+    elif "GetKeyUp(KeyCode.Space)" not in bind_cs:
+        fail("vtuber face broke Space release-once")
+    elif "ShowChip" not in live_cs or "PaintShowLine" not in (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8"):
+        fail("vtuber face dropped live show chip or settlement show line")
+    elif "TickContinuePulse" not in title_cs or "TickStartPulse" not in title_cs:
+        fail("vtuber face dropped Title start / continue pulses")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising vtuber face / later weeks")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("vtuber face retuned Week 1 cash or bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("vtuber face dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("vtuber face moved Unity off 6000.5.9f1")
+    else:
+        ok("webcam is a ~256px 2D VTuber face; punch / nod / shake / tired stay")
 
 
 def check_save_roundtrip() -> None:

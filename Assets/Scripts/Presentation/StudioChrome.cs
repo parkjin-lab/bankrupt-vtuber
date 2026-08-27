@@ -14,7 +14,7 @@ namespace BankruptVtuber
         public readonly Image Bust;
         public readonly Image Flash;
         public readonly Image[] Sparkles;
-        readonly Color _idle = new Color(1f, 0.86f, 0.92f, 1f);
+        readonly Color _idle = Color.white;
         float _bob;
         float _happy;
         float _hurt;
@@ -38,7 +38,7 @@ namespace BankruptVtuber
             UiKit.Stretch(Body, 28, 28, 56, 26);
             Bust = UiKit.Image(Body, "Bust", Color.white);
             UiKit.Stretch(Bust.rectTransform, 4, 4, 4, 4);
-            ArtSprites.Apply(Bust, ArtSprites.Avatar, _idle, _idle);
+            ArtSprites.Apply(Bust, ArtSprites.Avatar, _idle, Color.white);
             _tint = _idle;
 
             Flash = UiKit.Image(Root, "Flash", new Color(1f, 0.2f, 0.28f, 0f));

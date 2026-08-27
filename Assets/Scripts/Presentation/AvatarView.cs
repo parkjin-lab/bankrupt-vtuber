@@ -16,7 +16,7 @@ namespace BankruptVtuber
         readonly Image[] _sparkles;
         readonly Text _liveViewers;
         readonly Image _liveDot;
-        readonly Color _idleTint = new Color(1f, 0.86f, 0.92f, 1f);
+        readonly Color _idleTint = Color.white;
         public RectTransform Root => _root;
         Image _karaokeFill;
         Text _camTag;
@@ -58,7 +58,7 @@ namespace BankruptVtuber
 
             _bust = UiKit.Image(_body, "Bust", Color.white);
             UiKit.Stretch(_bust.rectTransform, 4, 4, 4, 4);
-            ArtSprites.Apply(_bust, ArtSprites.Avatar, _idleTint, _idleTint);
+            ArtSprites.Apply(_bust, ArtSprites.Avatar, _idleTint, Color.white);
 
             _blush = UiKit.Image(_body, "Blush", new Color(1f, 0.45f, 0.6f, 0f));
             UiKit.Layout(_blush.rectTransform, new Vector2(0.5f, 0.36f), new Vector2(0.5f, 0.36f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(180, 36));
