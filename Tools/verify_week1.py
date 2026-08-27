@@ -1387,6 +1387,7 @@ def check_project() -> None:
     check_note_hot()
     check_content_card_mood()
     check_title_broke_login()
+    check_superchat_pip()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -3196,6 +3197,56 @@ def check_title_broke_login() -> None:
         fail("broke login moved Unity off 6000.5.9f1")
     else:
         ok("Title wordmark pulses; continue cash/debt go panic red/gold")
+
+
+def check_superchat_pip() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    bind_cs = (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    tick = live_cs.split("void TickSuperchatPip", 1)[-1].split("void Echo", 1)[0] if "void TickSuperchatPip" in live_cs else ""
+
+    if "TickSuperchatPip" not in live_cs or "eta <= 0.4f" not in live_cs:
+        fail("superchat has no 0.4s pad telegraph")
+    elif '"슈퍼챗"' not in live_cs.split("void BuildSuperchatPip", 1)[-1].split("void TickSuperchatPip", 1)[0]:
+        fail("superchat pip is not labeled 슈퍼챗")
+    elif "_lanePads[4]" not in live_cs or "BuildSuperchatPip(_lanePads[4])" not in live_cs:
+        fail("슈퍼챗 pip is not on the superchat pad")
+    elif "IsSuperchat" not in tick or "Palette.Gold" not in tick:
+        fail("pip does not flash gold for incoming superchat notes")
+    elif "HitTime =" in tick or "SpawnNote" in tick:
+        fail("superchat pip writes spawn / hit times")
+    elif "BeginSuperchatCrack" not in live_cs or "BeginSuperchatFly" not in live_cs:
+        fail("superchat pip dropped miss crack or ₩ fly")
+    elif "StreamRules.SuperchatAmount(HypeActive, Rng, Balance)" not in session_cs:
+        fail("superchat pip retuned spawn amounts")
+    elif "superchatMinInterval =" in tick or "superchatMinWon =" in tick:
+        fail("superchat pip rewrote spawn rate / amounts")
+    elif "GetKeyUp(KeyCode.Space)" not in bind_cs:
+        fail("superchat pip broke Space release-once")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("superchat pip retuned hit windows")
+    elif "superchatMinInterval: 9" not in balance or "superchatMinWon: 1000" not in balance:
+        fail("superchat pip retuned spawn rate or amounts")
+    elif "superchatMinCount: 8" not in balance or "superchatMaxCount: 10" not in balance:
+        fail("superchat pip retuned superchat count")
+    elif "_wordmark" not in title_cs or "Sin(Time.time" not in title_cs:
+        fail("superchat pip dropped title wordmark pulse")
+    elif "abs <= 0.15f" not in live_cs or "입력됨" not in live_cs:
+        fail("superchat pip dropped note glow or 입력됨")
+    elif "AddColumnPad" not in live_cs or "timeScale" in live_cs:
+        fail("superchat pip broke pads or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising superchat pip / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("superchat pip dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("superchat pip moved Unity off 6000.5.9f1")
+    else:
+        ok("superchat flashes a gold 슈퍼챗 pip 0.4s early; miss still cracks")
 
 
 def check_mental_fatigue() -> None:

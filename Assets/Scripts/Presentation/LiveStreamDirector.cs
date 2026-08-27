@@ -150,6 +150,8 @@ namespace BankruptVtuber
         readonly HashSet<ChatNote> _heldNotes = new HashSet<ChatNote>();
         readonly List<WonFly> _wonFlies = new List<WonFly>(8);
         readonly List<ScCrack> _scCracks = new List<ScCrack>(4);
+        Image _scPipBg;
+        Text _scPip;
         RectTransform _fxRoot;
         float _incomePunch;
         float _judgeFlash;
@@ -418,6 +420,7 @@ namespace BankruptVtuber
             }
 
             SyncNotes();
+            TickSuperchatPip();
             RefreshEventOverlay();
             if (_promoWasActive && !_session.PromoActive && _session.Promo.Resolved && _session.Promo.Success)
                 FlashPromoSuccess();
@@ -806,6 +809,7 @@ namespace BankruptVtuber
             _lanePads[2] = AddColumnPad(padRow, 2, 5, "웃음", Palette.ForKind(ChatKind.Laugh), StreamPadButton.Mode.Kind, ChatKind.Laugh);
             _lanePads[3] = AddColumnPad(padRow, 3, 5, "감사", Palette.ForKind(ChatKind.Thanks), StreamPadButton.Mode.Kind, ChatKind.Thanks);
             _lanePads[4] = AddColumnPad(padRow, 4, 5, "슈퍼챗", Palette.Gold, StreamPadButton.Mode.Superchat);
+            BuildSuperchatPip(_lanePads[4]);
 
             _sting = UiKit.Label(root, "MissSting", "", 40, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_sting.rectTransform, new Vector2(0.22f, 0.48f), new Vector2(0.22f, 0.48f), new Vector2(0.5f, 0.5f), new Vector2(0, 0), new Vector2(420, 80));
@@ -986,6 +990,52 @@ namespace BankruptVtuber
             var cap = UiKit.Label(img.transform, "L", label, count >= 5 ? 22 : 28, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Stretch(cap.rectTransform);
             return StreamPadButton.Attach(img.gameObject, mode, kind, eventIndex);
+        }
+
+        void BuildSuperchatPip(StreamPadButton pad)
+        {
+            if (pad == null)
+                return;
+            var bg = UiKit.Image(pad.transform, "ScPip", Palette.Gold);
+            UiKit.Layout(bg.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(0f, 6f), new Vector2(128f, 30f));
+            ArtSprites.ApplySliced(bg, ArtSprites.SuperchatBanner, Palette.Gold);
+            bg.raycastTarget = false;
+            _scPipBg = bg;
+            _scPip = UiKit.Label(bg.transform, "T", "슈퍼챗", 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Stretch(_scPip.rectTransform);
+            bg.gameObject.SetActive(false);
+        }
+
+        void TickSuperchatPip()
+        {
+            bool warn = false;
+            if (_session != null)
+            {
+                for (int i = 0; i < _session.Notes.Count; i++)
+                {
+                    var n = _session.Notes[i];
+                    if (!n.IsSuperchat || n.Consumed)
+                        continue;
+                    float eta = n.HitTime - _session.Elapsed;
+                    if (eta <= 0.4f && eta >= -0.15f)
+                    {
+                        warn = true;
+                        break;
+                    }
+                }
+            }
+            if (_scPipBg == null)
+                return;
+            _scPipBg.gameObject.SetActive(warn);
+            if (!warn)
+                return;
+            float pulse = 1f + 0.14f * Mathf.Abs(Mathf.Sin(Time.time * 14f));
+            _scPipBg.rectTransform.localScale = Vector3.one * pulse;
+            var c = Palette.Gold;
+            c.a = 0.75f + 0.25f * Mathf.Abs(Mathf.Sin(Time.time * 14f));
+            _scPipBg.color = c;
+            if (_scPip != null)
+                _scPip.color = Palette.Ink;
         }
 
         void AddOverlayChoice(Transform parent, string confirm, string skip, out StreamPadButton yes, out StreamPadButton no)
