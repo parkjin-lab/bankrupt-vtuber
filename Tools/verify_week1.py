@@ -79,6 +79,18 @@ def check_project() -> None:
     else:
         ok("Unity version " + version.split()[1])
 
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    if "defaultScreenOrientation: 0" not in player:
+        fail("Android default orientation is not Portrait")
+    elif "allowedAutorotateToLandscapeRight: 1" in player or "allowedAutorotateToLandscapeLeft: 1" in player:
+        fail("landscape autorotate is still allowed")
+    elif "allowedAutorotateToPortrait: 1" not in player:
+        fail("portrait autorotate is not allowed")
+    elif "폰은 세로" not in (ROOT / "README.md").read_text(encoding="utf-8"):
+        fail("README missing 폰은 세로")
+    else:
+        ok("Android player is Portrait; landscape autorotate off")
+
     gfx = (ROOT / "ProjectSettings/GraphicsSettings.asset").read_text(encoding="utf-8")
     if "m_CustomRenderPipeline: {fileID: 0}" not in gfx:
         fail("expected built-in render pipeline (no URP asset)")
@@ -2174,6 +2186,10 @@ def check_portrait_safe_area() -> None:
         fail("portrait layout dropped prior screenshot cards")
     elif "Wrap" not in uikit_cs or "MakeScrollBody" not in uikit_cs:
         fail("card copy cannot wrap or scroll")
+    elif "defaultScreenOrientation: 0" not in (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(
+        encoding="utf-8"
+    ):
+        fail("StreamSafeArea portrait assume lost Android Portrait lock")
     else:
         ok("pads stay full-width; new cards wrap/stack; confirm stays on-screen")
 

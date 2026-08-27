@@ -10,7 +10,7 @@
 
 1. Unity Hub에서 **6000.5.9f1** (`b57deb96f08d`)을 설치한다.
 2. **Add** → 이 저장소 루트를 연다. Built-in 2D, URP/HDRP 없음.
-3. `Assets/Scenes/Title.unity`를 연 뒤 Play.
+3. `Assets/Scenes/Title.unity`를 연 뒤 Play. 폰은 세로. 안드로이드 빌드는 Portrait로 열린다.
 
 씬 네 장: `Title` → `WeekStart` → `LiveStream` → `Settlement`. 타이틀 버튼이 루프를 탄다. 세이브가 있으면 **이어하기 n일차** + 현금/부채(+ 어제 헤드라인). **새 방송 시작**은 **진행 중인 n일차를 지울까?** 확인 후 지운다.
 
