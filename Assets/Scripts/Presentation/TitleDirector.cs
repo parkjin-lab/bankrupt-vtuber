@@ -18,7 +18,9 @@ namespace BankruptVtuber
         Button _continue;
         Text _continueDay;
         Text _continueMoney;
+        Text _continueDebt;
         Text _continueHead;
+        Text _wordmark;
         Button _how;
         Text _hint;
         Text _wipeBody;
@@ -41,6 +43,11 @@ namespace BankruptVtuber
 
         void Update()
         {
+            if (_wordmark != null)
+            {
+                float u = 0.5f + 0.5f * Mathf.Sin(Time.time * 2.4f);
+                _wordmark.rectTransform.localScale = Vector3.one * (1f + 0.04f * u);
+            }
             if (_busy && !_prologuePlaying)
                 return;
 
@@ -90,8 +97,8 @@ namespace BankruptVtuber
             var lockup = UiKit.Panel(titleParent, "Lockup", Color.white);
             UiKit.Layout(lockup, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(56, -48), new Vector2(760, 200));
             ArtSprites.ApplySliced(lockup.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 1f, 1f, 0.92f));
-            var title = UiKit.Label(lockup, "GameTitle", "「파산 버튜버」", 64, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
-            UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(28, -18), new Vector2(-40, 86));
+            _wordmark = UiKit.Label(lockup, "GameTitle", "「파산 버튜버」", 64, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
+            UiKit.Layout(_wordmark.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(28, -18), new Vector2(-40, 86));
             var line = UiKit.Label(lockup, "Tagline", "빚더미에서 최고의 버튜버가 되어라.", 26, Palette.Pink, TextAnchor.UpperLeft);
             UiKit.Layout(line.rectTransform, new Vector2(0, 0), new Vector2(1, 0.48f), new Vector2(0, 0), new Vector2(28, 18), new Vector2(-40, 0));
             line.horizontalOverflow = HorizontalWrapMode.Wrap;
@@ -107,8 +114,12 @@ namespace BankruptVtuber
                 _continueDay.fontSize = 26;
                 UiKit.Layout(_continueDay.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(18, -10), new Vector2(-28, 34));
             }
-            _continueMoney = UiKit.Label(_continue.transform, "SaveMoney", "", 18, Palette.Ink, TextAnchor.UpperLeft, FontStyle.Bold);
-            UiKit.Layout(_continueMoney.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(18, -44), new Vector2(-28, 24));
+            var moneyPlate = UiKit.Panel(_continue.transform, "MoneyPlate", new Color(0.12f, 0.05f, 0.08f, 0.88f));
+            UiKit.Layout(moneyPlate, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -42f), new Vector2(-16f, 28f));
+            _continueMoney = UiKit.Label(moneyPlate, "SaveMoney", "", 18, Palette.MoneyRed, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_continueMoney.rectTransform, new Vector2(0f, 0f), new Vector2(0.52f, 1f), new Vector2(0f, 0.5f), new Vector2(10f, 0f), new Vector2(-6f, 0f));
+            _continueDebt = UiKit.Label(moneyPlate, "SaveDebt", "", 18, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_continueDebt.rectTransform, new Vector2(0.50f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(-10f, 0f));
             _continueHead = UiKit.Label(_continue.transform, "SaveHead", "", 16, Palette.Ink, TextAnchor.UpperLeft, FontStyle.Bold);
             UiKit.Layout(_continueHead.rectTransform, new Vector2(0, 0), new Vector2(1, 0.42f), new Vector2(0, 0), new Vector2(18, 8), new Vector2(-28, 0));
             UiKit.Wrap(_continueHead);
@@ -242,9 +253,18 @@ namespace BankruptVtuber
         {
             if (_continueDay != null)
                 _continueDay.text = "이어하기 " + peek.day + "일차";
+            int bills = EconomyRules.TonightBills(peek);
+            bool shortfall = bills > 0 && peek.cash < bills;
             if (_continueMoney != null)
-                _continueMoney.text = "현금 " + EconomyRules.FormatWon(peek.cash) +
-                                      " · 부채 " + EconomyRules.FormatWon(peek.debt);
+            {
+                _continueMoney.text = "현금 " + EconomyRules.FormatWon(peek.cash);
+                _continueMoney.color = shortfall ? Palette.MoneyRed : Palette.Pastel;
+            }
+            if (_continueDebt != null)
+            {
+                _continueDebt.text = "부채 " + EconomyRules.FormatWon(peek.debt);
+                _continueDebt.color = Palette.Gold;
+            }
             bool hasHead = peek.lastHeadline != null && peek.lastHeadline.Length > 0;
             if (_continueHead != null)
             {

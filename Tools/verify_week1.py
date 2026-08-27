@@ -1386,6 +1386,7 @@ def check_project() -> None:
     check_morning_cash_short()
     check_note_hot()
     check_content_card_mood()
+    check_title_broke_login()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -3149,6 +3150,52 @@ def check_content_card_mood() -> None:
         fail("content card mood moved Unity off 6000.5.9f1")
     else:
         ok("WeekStart content cards are icon + accent + Korean vibe; modifiers stay")
+
+
+def check_title_broke_login() -> None:
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+
+    if "_wordmark" not in title_cs or "Sin(Time.time" not in title_cs or "1f + 0.04f" not in title_cs:
+        fail("파산 버튜버 wordmark does not pulse")
+    elif '"「파산 버튜버」"' not in title_cs:
+        fail("title wordmark text changed")
+    elif "TonightBills" not in title_cs or "peek.cash <" not in title_cs:
+        fail("continue cash is not compared to a known next bill")
+    elif "Palette.MoneyRed" not in title_cs or "Palette.Gold" not in title_cs.split("_continueDebt", 1)[-1]:
+        fail("continue cash/debt are not panic red/gold")
+    elif '"현금 "' not in title_cs or '"부채 "' not in title_cs or "FormatWon" not in title_cs:
+        fail("continue row dropped saved cash/debt")
+    elif "이어하기 " not in title_cs or "TryLoad" not in title_cs:
+        fail("broke login dropped 이어하기 peek")
+    elif "진행 중인 " not in title_cs or "지울까?" not in title_cs or "ConfirmWipe" not in title_cs:
+        fail("broke login changed the new-game wipe confirm")
+    elif "OpenWipe" not in title_cs or "BeginNewRun" not in title_cs or "StartNewRun" not in title_cs:
+        fail("broke login unhooked wipe / new run")
+    elif "RunSave.Delete" not in gm or "startingCash: 45000" not in balance:
+        fail("broke login changed wipe flow or start numbers")
+    elif "편하게 잡담" not in week_cs or "고음 승부" not in week_cs:
+        fail("broke login dropped content pick vibes")
+    elif "abs <= 0.15f" not in live_cs or "청구보다 부족" not in week_cs:
+        fail("broke login dropped note glow or 청구보다 부족")
+    elif "UnlockUiInputForStream" not in title_cs or "StreamSafeArea.Attach" not in title_cs:
+        fail("broke login dropped EventSystem unlock or StreamSafeArea")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("broke login broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising later weeks / fandom")
+    elif "billRent: 8000" not in balance:
+        fail("broke login retuned Week 1 bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("broke login dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("broke login moved Unity off 6000.5.9f1")
+    else:
+        ok("Title wordmark pulses; continue cash/debt go panic red/gold")
 
 
 def check_mental_fatigue() -> None:
