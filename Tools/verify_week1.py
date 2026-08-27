@@ -1392,6 +1392,7 @@ def check_project() -> None:
     check_go_live_pulse()
     check_note_pad_color()
     check_strike_marker()
+    check_next_pulse()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -3480,6 +3481,62 @@ def check_strike_marker() -> None:
         fail("strike marker broke the Day-1 coach pause")
     else:
         ok("hit line has a thin white/gold strike; pulses in the Perfect window")
+
+
+def check_next_pulse() -> None:
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    pulse = settle_cs.split("void TickNextPulse", 1)[-1].split("static bool CanAdvance", 1)[0]
+    click = settle_cs.split("_next = UiKit.Button", 1)[-1].split("_restart = UiKit.Button", 1)[0]
+    confirm = settle_cs.split("void Update()", 1)[-1].split("void TickNextPulse", 1)[0]
+    advance = settle_cs.split("static bool CanAdvance", 1)[-1].split("void Build()", 1)[0]
+    render = settle_cs.split("switch (run.lastOutcome)", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+
+    if "TickNextPulse" not in settle_cs or "NextChip" not in settle_cs or '"다음"' not in settle_cs:
+        fail("다음날 button has no pulse / 다음 chip")
+    elif "1f + 0.03f" not in pulse or "Sin(Time.time" not in pulse:
+        fail("다음날 does not soft-pulse at 1.03")
+    elif "() => GameManager.Instance.NextMorning()" not in click:
+        fail("다음날 click no longer goes to next morning")
+    elif "CanAdvance(gm.Run)" not in confirm or "StreamBindings.Confirm" not in confirm:
+        fail("Space confirm no longer advances settlement")
+    elif "_letterOpen" not in confirm or "_conflictOpen" not in confirm:
+        fail("다음날 pulse skipped fan-letter / overlay gates")
+    elif "MustResolveConflict" not in advance or "WeekOutcome.Continue" not in advance:
+        fail("CanAdvance gates changed")
+    elif "CanEnterWeek2" not in advance or "CanEnterWeek5" not in advance:
+        fail("week-clear advance routing changed")
+    elif "WeekOutcome.Bankrupt" not in render or "_next.gameObject.SetActive(false)" not in render:
+        fail("bankrupt still must hide 다음날")
+    elif "WeekOutcome.WeekFailed" not in render or '"다음날  (Space)"' not in render:
+        fail("week-fail / continue captions changed")
+    elif "OnLetter" not in settle_cs or "팬레터 답장" not in settle_cs:
+        fail("다음날 pulse dropped fan-letter")
+    elif "TickStrike" not in live_cs or "NotePadColor" not in live_cs:
+        fail("다음날 pulse dropped strike marker or note pad colors")
+    elif "TickGoLivePulse" not in week_cs or "LivePip" not in week_cs:
+        fail("다음날 pulse dropped GO LIVE pulse")
+    elif "TickLeftCash" not in settle_cs or "남은 현금" not in settle_cs:
+        fail("다음날 pulse dropped 남은 현금")
+    elif "public void NextMorning()" not in gm:
+        fail("다음날 pulse changed GameManager.NextMorning")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("다음날 pulse broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising 다음날 pulse / later weeks")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("다음날 pulse retuned Week 1 cash or bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("다음날 pulse dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("다음날 pulse moved Unity off 6000.5.9f1")
+    else:
+        ok("settlement 다음날 pulses 1.03 with a 다음 chip; routing stays")
 
 
 def check_mental_fatigue() -> None:

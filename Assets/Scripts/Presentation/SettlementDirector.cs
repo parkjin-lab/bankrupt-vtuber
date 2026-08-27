@@ -8,6 +8,8 @@ namespace BankruptVtuber
         Text _body;
         Text _result;
         Button _next;
+        RectTransform _nextRt;
+        RectTransform _nextChip;
         Button _repay;
         Button _restart;
         Button _clipYes;
@@ -254,10 +256,26 @@ namespace BankruptVtuber
                 _clipSlam.color = sc;
                 _clipSlam.rectTransform.localScale = Vector3.one * (1f + 0.35f * _clipSlamFlash);
             }
+            TickNextPulse();
             if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen || _agencyOpen || _agencySplashOpen || _juniorOpen || _concertOpen || _concertResultOpen || _conflictOpen || _autoOpen)
                 return;
             if (CanAdvance(gm.Run) && StreamBindings.Confirm)
                 gm.NextMorning();
+        }
+
+        void TickNextPulse()
+        {
+            if (_nextRt == null)
+                return;
+            if (_next == null || !_next.gameObject.activeInHierarchy)
+            {
+                _nextRt.localScale = Vector3.one;
+                return;
+            }
+            float u = 0.5f + 0.5f * Mathf.Sin(Time.time * 2.2f);
+            _nextRt.localScale = Vector3.one * (1f + 0.03f * u);
+            if (_nextChip != null)
+                _nextChip.localScale = Vector3.one * (1f + 0.08f * u);
         }
 
         static bool CanAdvance(GameRunState run) =>
@@ -441,7 +459,18 @@ namespace BankruptVtuber
             UiKit.Layout(_repay.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-210, 0), new Vector2(360, 60));
 
             _next = UiKit.Button(_actionRow, "Next", "다음날  (Space)", () => GameManager.Instance.NextMorning(), Palette.PinkDeep, Color.white);
-            UiKit.Layout(_next.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(210, 0), new Vector2(360, 60));
+            _nextRt = _next.GetComponent<RectTransform>();
+            UiKit.Layout(_nextRt, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(210, 0), new Vector2(360, 60));
+            _nextChip = UiKit.Panel(_next.transform, "NextChip", Palette.Gold);
+            UiKit.Layout(_nextChip, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(28f, 0f), new Vector2(52f, 26f));
+            var chipImg = _nextChip.GetComponent<Image>();
+            if (chipImg != null)
+                chipImg.raycastTarget = false;
+            var chipT = UiKit.Label(_nextChip, "T", "다음", 14, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Stretch(chipT.rectTransform);
+            var nextCap = _next.transform.Find("Caption") as RectTransform;
+            if (nextCap != null)
+                nextCap.offsetMin = new Vector2(56f, 0f);
 
             _restart = UiKit.Button(_actionRow, "Restart", "처음부터", () => GameManager.Instance.RestartRun(), Palette.Troll, Color.white);
             UiKit.Layout(_restart.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(360, 60));
