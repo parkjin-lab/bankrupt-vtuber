@@ -58,6 +58,13 @@ namespace BankruptVtuber
         Text _stampEpitaph;
         float _mood;
         bool _cashUp;
+        bool _incomeCountStarted;
+        bool _incomeCounting;
+        int _incomeTarget;
+        int _incomeBill;
+        float _incomeCountT;
+        bool _coverCrossed;
+        float _incomeCoverFlash;
         GameObject _letterRoot;
         Text _letterFrom;
         Text _letterTag;
@@ -145,6 +152,7 @@ namespace BankruptVtuber
             _clearPortrait?.Tick(Time.deltaTime);
             _stampPortrait?.Tick(Time.deltaTime);
             _mood = Mathf.MoveTowards(_mood, 0f, Time.deltaTime * 0.55f);
+            TickIncomeCount(Time.deltaTime);
             if (_cashTile != null && _debtTile != null)
             {
                 float pulse = 1f + 0.12f * Mathf.Abs(Mathf.Sin(Time.time * 6f)) * (0.35f + _mood);
@@ -167,6 +175,17 @@ namespace BankruptVtuber
                 hc.a = _letterHeartFlash;
                 _letterHeart.color = hc;
                 _letterHeart.rectTransform.localScale = Vector3.one * (1f + 0.18f * _letterHeartFlash);
+            }
+            _incomeCoverFlash = Mathf.MoveTowards(_incomeCoverFlash, 0f, Time.deltaTime * 2.2f);
+            if (_tileIncome != null && _incomeCoverFlash > 0.02f)
+            {
+                _tileIncome.color = Color.Lerp(Color.white, Palette.Gold, _incomeCoverFlash);
+                _tileIncome.rectTransform.localScale = Vector3.one * (1f + 0.16f * _incomeCoverFlash);
+            }
+            else if (_tileIncome != null && !_incomeCounting)
+            {
+                _tileIncome.color = Color.white;
+                _tileIncome.rectTransform.localScale = Vector3.one;
             }
             _clipSlamFlash = Mathf.MoveTowards(_clipSlamFlash, 0f, Time.deltaTime * 0.7f);
             if (_clipSlam != null)
@@ -631,6 +650,28 @@ namespace BankruptVtuber
             _concertResultRoot.SetActive(false);
         }
 
+        void TickIncomeCount(float dt)
+        {
+            if (!_incomeCounting || _tileIncome == null)
+                return;
+            _incomeCountT += dt;
+            float u = Mathf.Clamp01(_incomeCountT / 0.6f);
+            int shown = Mathf.RoundToInt(Mathf.Lerp(0f, _incomeTarget, u));
+            if (u >= 1f)
+            {
+                shown = _incomeTarget;
+                _incomeCounting = false;
+            }
+            _tileIncome.text = EconomyRules.FormatWon(shown);
+            if (!_coverCrossed && _incomeTarget >= _incomeBill && shown >= _incomeBill)
+            {
+                _coverCrossed = true;
+                _cashUp = true;
+                _mood = 1f;
+                _incomeCoverFlash = 1f;
+            }
+        }
+
         void Render()
         {
             var gm = GameManager.Instance;
@@ -674,14 +715,29 @@ namespace BankruptVtuber
                     $"아크릴 재고         {run.goodsStock}개\n";
             }
             int charges = run.lastBills + run.extraThreatAmount + run.lastConflictSurcharge + run.lastAutoCost;
-            _tileIncome.text = EconomyRules.FormatWon(run.lastStreamIncome);
+            _incomeTarget = run.lastStreamIncome;
+            _incomeBill = run.lastBills;
+            if (!_incomeCountStarted)
+            {
+                _incomeCountStarted = true;
+                _incomeCounting = true;
+                _incomeCountT = 0f;
+                _coverCrossed = run.lastStreamIncome < run.lastBills;
+                _cashUp = false;
+                if (_tileIncome != null)
+                    _tileIncome.text = EconomyRules.FormatWon(0);
+            }
+            else if (!_incomeCounting && _tileIncome != null)
+            {
+                _tileIncome.text = EconomyRules.FormatWon(run.lastStreamIncome);
+                _cashUp = run.lastStreamIncome >= run.lastBills;
+            }
             _tileBills.text = "-" + EconomyRules.FormatWon(charges);
             _tileCash.text = EconomyRules.FormatWon(run.cash);
             _tileDebt.text = EconomyRules.FormatWon(run.debt);
             _tilePerfect.text = run.lastPerfects.ToString();
             _tileMiss.text = run.lastMisses.ToString();
             _tileViewers.text = Mathf.RoundToInt(run.lastStreamPeakViewers).ToString();
-            _cashUp = run.lastStreamIncome >= run.lastBills;
             _mood = 1f;
             if (_portrait != null)
                 _portrait.PoseEnding(_cashUp ? EndingKind.SoloLegend : EndingKind.Bankrupt);

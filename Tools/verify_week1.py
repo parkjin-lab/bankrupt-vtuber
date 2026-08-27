@@ -1374,6 +1374,7 @@ def check_project() -> None:
     check_perfect_good()
     check_income_pop()
     check_end_cut()
+    check_income_count()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -2578,6 +2579,48 @@ def check_end_cut() -> None:
         fail("end cut moved Unity off 6000.5.9f1")
     else:
         ok("90s end cuts with 0.5s 방송 종료; F10 still jumps to settlement")
+
+
+def check_income_count() -> None:
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    save_cs = (ROOT / "Assets/Scripts/Core/RunSave.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+
+    if "TickIncomeCount" not in settle_cs or "_incomeCountT / 0.6f" not in settle_cs:
+        fail("오늘 수입 does not count up over ~0.6s")
+    elif "FormatWon(0)" not in settle_cs or "FormatWon(shown)" not in settle_cs:
+        fail("income count does not start at 0 and use FormatWon")
+    elif "lastStreamIncome" not in settle_cs or "_incomeTarget = run.lastStreamIncome" not in settle_cs:
+        fail("income count does not use the real lastStreamIncome")
+    elif "shown >= _incomeBill" not in settle_cs or "_cashUp = true" not in settle_cs:
+        fail("crossing the bill does not reuse the existing cover-gold cash pulse")
+    elif "SlamBillCover" in settle_cs or "CoverSlam" in settle_cs:
+        fail("settlement grew a second 청구 커버 slam")
+    elif "SlamBillCover" not in live_cs:
+        fail("mid-stream cover slam was dropped")
+    elif "lastStreamIncome =" in settle_cs.split("void TickIncomeCount", 1)[-1].split("void Render", 1)[0]:
+        fail("income count writes save/payout numbers")
+    elif '"오늘 수입"' not in settle_cs or "오늘 헤드라인" not in settle_cs:
+        fail("income count dropped 오늘 수입 / 오늘 헤드라인")
+    elif "ShowEndCut" not in live_cs or "ShowIncomeDelta" not in live_cs:
+        fail("income count dropped 방송 종료 or +₩ popup")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("income count broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising settlement count / later weeks")
+    elif "billRent: 8000" not in balance:
+        fail("income count retuned Week 1 bills")
+    elif "lastStreamIncome" not in save_cs:
+        fail("income count dropped lastStreamIncome from the save")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("income count dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("income count moved Unity off 6000.5.9f1")
+    else:
+        ok("settlement 오늘 수입 counts 0→total in 0.6s; bill-cross reuses cash gold once")
 
 
 def check_mental_fatigue() -> None:
