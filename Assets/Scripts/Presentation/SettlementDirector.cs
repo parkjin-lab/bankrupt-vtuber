@@ -473,8 +473,11 @@ namespace BankruptVtuber
             SafePairLayout.Bind(autoCard, autoOn.GetComponent<RectTransform>(), autoOff.GetComponent<RectTransform>());
             _autoRoot.SetActive(false);
 
-            _rankBox = UiKit.Panel(root, "RankPanel", new Color(0.10f, 0.05f, 0.12f, 0.94f));
+            _rankBox = UiKit.Panel(root, "RankPanel", Color.white);
             UiKit.Layout(_rankBox, new Vector2(1, 0.58f), new Vector2(1, 0.58f), new Vector2(1, 0.5f), new Vector2(-16, 0), new Vector2(360, 340));
+            var rankImg = _rankBox.GetComponent<Image>();
+            ArtSprites.Apply(rankImg, ArtSprites.RankingBoard, new Color(0.10f, 0.05f, 0.12f, 0.94f), Color.white);
+            rankImg.preserveAspect = false;
             _rankPanel = UiKit.Label(_rankBox, "RankBody", "", 20, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
             UiKit.Stretch(_rankPanel.rectTransform, 16, 16, 14, 14);
             _rankPanel.lineSpacing = 1.2f;
@@ -771,11 +774,13 @@ namespace BankruptVtuber
             concertWash.raycastTarget = true;
             var concertCard = UiKit.Panel(_concertRoot.transform, "ConcertBookCard", Color.white);
             UiKit.Layout(concertCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
-            ArtSprites.ApplySliced(concertCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.86f, 0.94f, 0.98f));
+            var concertBookImg = concertCard.GetComponent<Image>();
+            ArtSprites.Apply(concertBookImg, ArtSprites.ConcertStage, new Color(1f, 0.86f, 0.94f, 0.98f), Color.white);
+            concertBookImg.preserveAspect = false;
             SafeFitCard.Bind(concertCard, 720f, 380f);
             var concertTitle = UiKit.Label(concertCard, "ConcertTitle", "콘서트 개최", 46, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(concertTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
-            _concertBody = UiKit.Label(concertCard, "ConcertBody", "", 28, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            _concertBody = UiKit.Label(concertCard, "ConcertBody", "", 28, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_concertBody.rectTransform, new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             var concertYes = UiKit.Button(concertCard, "ConcertGo", "개최", OnConcertYes, Palette.Gold, Palette.Ink);
             UiKit.Layout(concertYes.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 72));
@@ -794,10 +799,11 @@ namespace BankruptVtuber
             UiKit.Layout(resultCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 360));
             SafeFitCard.Bind(resultCard, 720f, 360f);
             _concertResultPanel = resultCard.GetComponent<Image>();
-            ArtSprites.ApplySliced(_concertResultPanel, ArtSprites.PanelDark, new Color(1f, 0.9f, 0.5f, 0.98f));
+            ArtSprites.Apply(_concertResultPanel, ArtSprites.ConcertStage, new Color(1f, 0.9f, 0.5f, 0.98f), Color.white);
+            _concertResultPanel.preserveAspect = false;
             _concertResultTitle = UiKit.Label(resultCard, "ConcertResultTitle", "", 48, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_concertResultTitle.rectTransform, new Vector2(0, 0.42f), new Vector2(1, 1), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-            _concertResultSub = UiKit.Label(resultCard, "ConcertResultSub", "", 24, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            _concertResultSub = UiKit.Label(resultCard, "ConcertResultSub", "", 24, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_concertResultSub.rectTransform, new Vector2(0, 0.18f), new Vector2(1, 0.48f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             var resultGo = UiKit.Button(resultCard, "ConcertResultAck", "정산으로", OnConcertResultAck, Palette.Gold, Palette.Ink);
             UiKit.Layout(resultGo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 28), new Vector2(320, 72));
@@ -1913,16 +1919,22 @@ namespace BankruptVtuber
                 _concertResultSub.text = $"멘탈 −{(w5 != null ? w5.concertFailMental : 25)}";
                 _concertResultSub.color = Palette.MoneyRed;
                 if (_concertResultPanel != null)
-                    ArtSprites.ApplySliced(_concertResultPanel, ArtSprites.PanelDark, new Color(1f, 0.72f, 0.74f, 0.98f));
+                {
+                    ArtSprites.Apply(_concertResultPanel, ArtSprites.ConcertStage, new Color(1f, 0.72f, 0.74f, 0.98f), new Color(1f, 0.78f, 0.80f, 1f));
+                    _concertResultPanel.preserveAspect = false;
+                }
             }
             else
             {
                 _concertResultTitle.text = EconomyRules.FormatWon(run.lastConcertPayout > 0 ? run.lastConcertPayout : pay);
                 _concertResultTitle.color = Palette.Gold;
                 _concertResultSub.text = EconomyRules.FormatWon(pay);
-                _concertResultSub.color = Palette.Ink;
+                _concertResultSub.color = Palette.Pastel;
                 if (_concertResultPanel != null)
-                    ArtSprites.ApplySliced(_concertResultPanel, ArtSprites.PanelDark, new Color(1f, 0.9f, 0.5f, 0.98f));
+                {
+                    ArtSprites.Apply(_concertResultPanel, ArtSprites.ConcertStage, new Color(1f, 0.9f, 0.5f, 0.98f), Color.white);
+                    _concertResultPanel.preserveAspect = false;
+                }
             }
             if (_bookConcert != null)
                 _bookConcert.gameObject.SetActive(false);

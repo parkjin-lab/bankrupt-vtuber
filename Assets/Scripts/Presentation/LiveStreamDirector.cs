@@ -1074,8 +1074,11 @@ namespace BankruptVtuber
             lineSlamC.a = 0f;
             _lineSlam.color = lineSlamC;
 
-            _concertRoot = UiKit.Panel(root, "ConcertCard", new Color(0.18f, 0.07f, 0.16f, 0.97f));
+            _concertRoot = UiKit.Panel(root, "ConcertCard", Color.white);
             UiKit.Layout(_concertRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
+            var concertLiveImg = _concertRoot.GetComponent<Image>();
+            ArtSprites.Apply(concertLiveImg, ArtSprites.ConcertStage, new Color(0.18f, 0.07f, 0.16f, 0.97f), Color.white);
+            concertLiveImg.preserveAspect = false;
             SafeFitCard.Bind(_concertRoot, 720f, 380f);
             _concertTitle = UiKit.Label(_concertRoot, "CTitle", "콘서트 퍼포먼스 타이밍", 40, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
             UiKit.Layout(_concertTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -18), new Vector2(-24, 52));

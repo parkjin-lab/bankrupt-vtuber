@@ -200,6 +200,8 @@ def check_project() -> None:
         "goods_stand.png": "아크릴",
         "agency_card.png": "에이전시",
         "sponsor_card.png": "스폰서",
+        "ranking_board.png": "랭킹",
+        "concert_stage.png": "콘서트",
         "bill_rent.png": "월세",
         "bill_electric.png": "전기",
         "bill_license.png": "라이선스",
@@ -1470,6 +1472,7 @@ def check_project() -> None:
     check_rival_portrait()
     check_goods_stand()
     check_week4_card_art()
+    check_week5_show_art()
 
 
 def check_content_types() -> None:
@@ -6594,6 +6597,92 @@ def check_week4_card_art() -> None:
         fail("week4 card art moved Unity off 6000.5.9f1")
     else:
         ok("agency / junior / sponsor sit on desk papers; unlock / numbers stay")
+
+
+def check_week5_show_art() -> None:
+    import struct
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    w5r_cs = (ROOT / "Assets/Scripts/Economy/Week5Rules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    rank_build = build.split('"RankPanel"', 1)[-1].split("_restart", 1)[0]
+    book_build = build.split('ConcertBookRoot"', 1)[-1].split('ConcertResultRoot"', 1)[0]
+    result_build = build.split('ConcertResultRoot"', 1)[-1].split("void TickDebtCount", 1)[0]
+    live_concert = live_cs.split('"ConcertCard"', 1)[-1].split('"CoverSlam"', 1)[0]
+    agency_build = build.split('AgencyRoot"', 1)[-1].split('AgencySplashRoot"', 1)[0]
+    line_build = live_cs.split('"LineCard"', 1)[-1].split('"ConcertCard"', 1)[0]
+    rank_fn = settle_cs.split("void FillRankPanel", 1)[-1].split("void ShowConcertCard", 1)[0]
+
+    for name, label, min_w, min_h, landscape in (
+        ("ranking_board.png", "랭킹", 200, 200, False),
+        ("concert_stage.png", "콘서트", 360, 200, True),
+    ):
+        png = ROOT / "Assets/Resources/Art" / name
+        data = png.read_bytes() if png.exists() else b""
+        w = h = color = 0
+        if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+            w, h = struct.unpack(">II", data[16:24])
+            color = data[25]
+        if not png.exists() or png.stat().st_size < 8000:
+            fail(f"{label} show art PNG is missing")
+            return
+        if w < min_w or h < min_h:
+            fail(f"{label} show art PNG is too small to read")
+            return
+        if landscape and w <= h:
+            fail(f"{label} show art PNG is not landscape stage")
+            return
+        if not landscape and h < w * 0.7:
+            fail(f"{label} show art PNG is not a readable board panel")
+            return
+        if color != 6:
+            fail(f"{label} show art PNG is not RGBA")
+            return
+
+    if 'RankingBoard = "Art/ranking_board"' not in art_cs or 'ConcertStage = "Art/concert_stage"' not in art_cs:
+        fail("ArtSprites missing ranking_board / concert_stage hooks")
+    elif "ArtSprites.RankingBoard" not in rank_build or '"RankPanel"' not in settle_cs:
+        fail("RankPanel does not hang Art/ranking_board")
+    elif "ArtSprites.ConcertStage" not in book_build or '"ConcertBookCard"' not in book_build:
+        fail("ConcertBookCard does not hang Art/concert_stage")
+    elif "ArtSprites.ConcertStage" not in result_build or '"ConcertResultCard"' not in result_build:
+        fail("ConcertResultCard does not hang Art/concert_stage")
+    elif "ArtSprites.ConcertStage" not in live_concert:
+        fail("live ConcertCard does not hang Art/concert_stage")
+    elif "챌린지 랭킹" not in rank_fn or "루나벨" not in rank_fn or "하츠비" not in rank_fn or "네온토끼" not in rank_fn:
+        fail("ranking art covered the ranking list copy")
+    elif "콘서트 개최" not in book_build or "개최" not in book_build or "나중에" not in book_build:
+        fail("concert art covered book copy")
+    elif "콘서트 퍼포먼스 타이밍" not in live_concert or "퍼포먼스 지금" not in live_cs:
+        fail("concert art covered live performance copy")
+    elif "BookConcert" not in settle_cs or "ApplyConcertResult" not in settle_cs:
+        fail("week5 show art unhooked BookConcert / ApplyConcertResult")
+    elif "ArtSprites.AgencyCard" not in agency_build or "ArtSprites.SponsorCard" not in line_build:
+        fail("week5 show art dropped agency / sponsor desk papers")
+    elif "rankingDailyFirstCash: 10000" not in w5_asset or "rankingPeakViewers: 100" not in w5_asset or "rankingDay: 22" not in w5_asset:
+        fail("week5 show art retuned ranking unlock / 1st pay")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset or "concertSuccessMultiplier: 1.3" not in w5_asset:
+        fail("week5 show art retuned concert cost / payout / 1.3x")
+    elif "concertUnlockCash: 150000" not in w5_asset or "CanBookConcert" not in w5r_cs:
+        fail("week5 show art changed concert unlock routing")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("week5 show art retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("week5 show art broke pads, 입력됨, or added timeScale")
+    elif "Week5" in title_cs or "콘서트" in title_cs or "랭킹" in title_cs or "토크" in title_cs:
+        fail("Title started advertising week5 show art / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("week5 show art dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("week5 show art moved Unity off 6000.5.9f1")
+    else:
+        ok("ranking / concert sit on show art; ranks / flow / numbers stay")
 
 
 def check_save_roundtrip() -> None:
