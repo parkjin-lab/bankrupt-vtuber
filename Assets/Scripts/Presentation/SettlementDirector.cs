@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -142,6 +143,8 @@ namespace BankruptVtuber
         RectTransform _offerRow;
         RectTransform _week5Row;
         RectTransform _actionRow;
+        AudioSource _settleBgm;
+        bool _leavingSettle;
 
         void Awake()
         {
@@ -149,6 +152,13 @@ namespace BankruptVtuber
             UiKit.EnsureEventSystem();
             UiKit.UnlockUiInputForStream();
             Build();
+            StartSettleBgm();
+        }
+
+        void OnDestroy()
+        {
+            if (_settleBgm != null)
+                _settleBgm.Stop();
         }
 
         void Start()
@@ -261,8 +271,8 @@ namespace BankruptVtuber
             TickNextPulse();
             if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen || _agencyOpen || _agencySplashOpen || _juniorOpen || _concertOpen || _concertResultOpen || _conflictOpen || _autoOpen)
                 return;
-            if (CanAdvance(gm.Run) && StreamBindings.Confirm)
-                gm.NextMorning();
+            if (!_leavingSettle && CanAdvance(gm.Run) && StreamBindings.Confirm)
+                LeaveSettle(() => gm.NextMorning());
         }
 
         void TickNextPulse()
@@ -472,7 +482,7 @@ namespace BankruptVtuber
             _repay = UiKit.Button(_actionRow, "Repay", "남은 현금으로 빚 갚기", OnRepay, Palette.Gold, Palette.Ink);
             UiKit.Layout(_repay.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-210, 0), new Vector2(360, 60));
 
-            _next = UiKit.Button(_actionRow, "Next", "다음날  (Space)", () => GameManager.Instance.NextMorning(), Palette.PinkDeep, Color.white);
+            _next = UiKit.Button(_actionRow, "Next", "다음날  (Space)", () => LeaveSettle(() => GameManager.Instance.NextMorning()), Palette.PinkDeep, Color.white);
             _nextRt = _next.GetComponent<RectTransform>();
             UiKit.Layout(_nextRt, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(210, 0), new Vector2(360, 60));
             _nextChip = UiKit.Panel(_next.transform, "NextChip", Palette.Gold);
@@ -486,7 +496,7 @@ namespace BankruptVtuber
             if (nextCap != null)
                 nextCap.offsetMin = new Vector2(56f, 0f);
 
-            _restart = UiKit.Button(_actionRow, "Restart", "처음부터", () => GameManager.Instance.RestartRun(), Palette.Troll, Color.white);
+            _restart = UiKit.Button(_actionRow, "Restart", "처음부터", () => LeaveSettle(() => GameManager.Instance.RestartRun()), Palette.Troll, Color.white);
             UiKit.Layout(_restart.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(360, 60));
             SafePairLayout.BindMany(_actionRow, false, true, _repay.GetComponent<RectTransform>(), _next.GetComponent<RectTransform>(), _restart.GetComponent<RectTransform>());
 
@@ -511,7 +521,7 @@ namespace BankruptVtuber
             _endingBody.lineSpacing = 1.25f;
             _retire = UiKit.Button(endingCard, "Retire", "후배에게 메인 양도", OnRetire, Palette.Gold, Palette.Ink);
             UiKit.Layout(_retire.GetComponent<RectTransform>(), new Vector2(0.68f, 0), new Vector2(0.68f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 56));
-            var endingRestart = UiKit.Button(endingCard, "EndingRestart", "처음부터", () => GameManager.Instance.RestartRun(), Palette.PinkDeep, Color.white);
+            var endingRestart = UiKit.Button(endingCard, "EndingRestart", "처음부터", () => LeaveSettle(() => GameManager.Instance.RestartRun()), Palette.PinkDeep, Color.white);
             UiKit.Layout(endingRestart.GetComponent<RectTransform>(), new Vector2(0.68f, 0), new Vector2(0.68f, 0), new Vector2(0.5f, 0), new Vector2(150, 28), new Vector2(300, 56));
             SafePairLayout.Bind(endingCard, _retire.GetComponent<RectTransform>(), endingRestart.GetComponent<RectTransform>());
             _endingRoot.SetActive(false);
@@ -539,7 +549,7 @@ namespace BankruptVtuber
             UiKit.Layout(_clearCash.rectTransform, new Vector2(0, 0), new Vector2(0.5f, 1), new Vector2(0, 0.5f), new Vector2(24, 0), new Vector2(-16, 0));
             _clearDebt = UiKit.Label(snap, "D", "부채 ₩0", 28, Palette.MoneyRed, TextAnchor.MiddleRight, FontStyle.Bold);
             UiKit.Layout(_clearDebt.rectTransform, new Vector2(0.5f, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-24, 0), new Vector2(-16, 0));
-            var clearGo = UiKit.Button(_clearRoot.transform, "ClearGo", "다음 주차 시작", () => GameManager.Instance.NextMorning(), Palette.Gold, Palette.Ink);
+            var clearGo = UiKit.Button(_clearRoot.transform, "ClearGo", "다음 주차 시작", () => LeaveSettle(() => GameManager.Instance.NextMorning()), Palette.Gold, Palette.Ink);
             UiKit.Layout(clearGo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 48), new Vector2(420, 72));
             _clearRoot.SetActive(false);
 
@@ -560,7 +570,7 @@ namespace BankruptVtuber
             _stampHeadline = UiKit.Label(_stampRoot.transform, "StampHeadline", "", 24, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_stampHeadline.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 132), new Vector2(720, 44));
             UiKit.Wrap(_stampHeadline);
-            var stampRestart = UiKit.Button(_stampRoot.transform, "StampRestart", "처음부터", () => GameManager.Instance.RestartRun(), Palette.Ink, Palette.Pastel);
+            var stampRestart = UiKit.Button(_stampRoot.transform, "StampRestart", "처음부터", () => LeaveSettle(() => GameManager.Instance.RestartRun()), Palette.Ink, Palette.Pastel);
             UiKit.Layout(stampRestart.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 48), new Vector2(360, 72));
             _stampRoot.SetActive(false);
 
@@ -1915,7 +1925,7 @@ namespace BankruptVtuber
 
         void OnConcertLive()
         {
-            GameManager.Instance.GoLive();
+            LeaveSettle(() => GameManager.Instance.GoLive());
         }
 
         void OnRetire()
@@ -2109,6 +2119,45 @@ namespace BankruptVtuber
             _auto.gameObject.SetActive(false);
             _soothe.gameObject.SetActive(false);
             _style.gameObject.SetActive(false);
+        }
+
+        void StartSettleBgm()
+        {
+            var clip = Resources.Load<AudioClip>("Audio/bgm_settlement");
+            if (clip == null)
+                return;
+            _settleBgm = gameObject.AddComponent<AudioSource>();
+            _settleBgm.clip = clip;
+            _settleBgm.loop = true;
+            _settleBgm.playOnAwake = false;
+            _settleBgm.volume = 0.16f;
+            _settleBgm.Play();
+        }
+
+        void LeaveSettle(System.Action next)
+        {
+            if (_leavingSettle)
+                return;
+            _leavingSettle = true;
+            StartCoroutine(FadeSettleBgmThen(next));
+        }
+
+        IEnumerator FadeSettleBgmThen(System.Action next)
+        {
+            if (_settleBgm != null && _settleBgm.isPlaying)
+            {
+                float start = _settleBgm.volume;
+                float t = 0f;
+                const float fade = 0.2f;
+                while (t < fade)
+                {
+                    t += Time.deltaTime;
+                    _settleBgm.volume = Mathf.Lerp(start, 0f, t / fade);
+                    yield return null;
+                }
+                _settleBgm.Stop();
+            }
+            next?.Invoke();
         }
     }
 }

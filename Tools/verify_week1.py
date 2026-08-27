@@ -1449,6 +1449,7 @@ def check_project() -> None:
     check_title_bgm()
     check_stream_bgm()
     check_morning_bgm()
+    check_settlement_bgm()
 
 
 def check_content_types() -> None:
@@ -5729,6 +5730,84 @@ def check_morning_bgm() -> None:
         fail("morning BGM moved Unity off 6000.5.9f1")
     else:
         ok("WeekStart loops tense bgm_morning; fades 0.2s on GO LIVE; title/stream stay isolated")
+
+
+def check_settlement_bgm() -> None:
+    import wave
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    path = ROOT / "Assets/Resources/Audio/bgm_settlement.wav"
+    start = settle_cs.split("void StartSettleBgm", 1)[-1].split("void LeaveSettle", 1)[0]
+    fade = settle_cs.split("IEnumerator FadeSettleBgmThen", 1)[-1]
+    confirm = settle_cs.split("void Update()", 1)[-1].split("void TickNextPulse", 1)[0]
+    click = settle_cs.split("_next = UiKit.Button", 1)[-1].split("_restart = UiKit.Button", 1)[0]
+    income = settle_cs.split("void TickIncomeCount", 1)[-1].split("void TickDebtCount", 1)[0]
+
+    if not path.exists() or path.stat().st_size < 20000:
+        fail("bgm_settlement.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("bgm_settlement.wav is not a readable PCM loop")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 4.0 or dur > 16.0:
+            fail(f"bgm_settlement.wav duration {dur:.3f}s is not a short looping desk bed")
+            return
+
+    if "Audio/bgm_settlement" not in settle_cs or "StartSettleBgm" not in settle_cs:
+        fail("Settlement does not load Audio/bgm_settlement")
+    elif "loop = true" not in start or "_settleBgm.Play()" not in start:
+        fail("settlement BGM does not loop on Settlement")
+    elif "volume = 0.16f" not in start or "volume = 0.28f" not in title_cs:
+        fail("settlement BGM is not quieter than title")
+    elif "const float fade = 0.2f" not in fade or "_settleBgm.Stop()" not in fade:
+        fail("settlement BGM does not fade ~0.2s on leave")
+    elif "LeaveSettle" not in confirm or "gm.NextMorning()" not in confirm:
+        fail("Space 다음날 does not fade settlement BGM")
+    elif "LeaveSettle" not in click or "() => GameManager.Instance.NextMorning()" not in click:
+        fail("다음날 click does not fade settlement BGM")
+    elif "LeaveSettle(() => GameManager.Instance.RestartRun())" not in settle_cs:
+        fail("bankrupt / 처음부터 does not fade settlement BGM")
+    elif "다음 주차 시작" not in settle_cs or "LeaveSettle(() => GameManager.Instance.NextMorning())" not in settle_cs:
+        fail("clear routing does not fade settlement BGM")
+    elif "OnLetter" not in settle_cs or "팬레터 답장" not in settle_cs or "SendLetter" not in settle_cs:
+        fail("settlement BGM dropped fan-letter")
+    elif "TickIncomeCount" not in settle_cs or "0.6f" not in income:
+        fail("settlement BGM dropped income count-up")
+    elif "청구 미달" not in settle_cs or "TickNextPulse" not in settle_cs or '"다음"' not in settle_cs:
+        fail("settlement BGM dropped 청구 미달 or 다음날 pulse")
+    elif "Audio/bgm_settlement" in title_cs or "Audio/bgm_settlement" in week_cs or "Audio/bgm_settlement" in live_cs:
+        fail("settlement BGM leaked onto Title / WeekStart / LiveStream")
+    elif "Audio/bgm_title" not in title_cs or "Audio/bgm_title" in settle_cs:
+        fail("title BGM is no longer title-only")
+    elif "Audio/bgm_morning" not in week_cs or "Audio/bgm_morning" in settle_cs:
+        fail("morning BGM is no longer WeekStart-only")
+    elif "Audio/bgm_stream" not in live_cs or "Audio/bgm_stream" in settle_cs:
+        fail("stream BGM is no longer live-only")
+    elif "public void NextMorning()" not in gm or "ShowEndCut" in debug_cs:
+        fail("settlement BGM changed NextMorning or F10 skip")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("settlement BGM retuned Week 1 cash or bills")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("settlement BGM broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising settlement BGM / later weeks")
+    elif "F9" in title_cs or "F10" in title_cs or "PlaytestDebug" in title_cs:
+        fail("Title started advertising playtest keys")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("settlement BGM dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("settlement BGM moved Unity off 6000.5.9f1")
+    else:
+        ok("Settlement loops tired bgm_settlement; fades 0.2s on leave; other beds stay isolated")
 
 
 def check_save_roundtrip() -> None:
