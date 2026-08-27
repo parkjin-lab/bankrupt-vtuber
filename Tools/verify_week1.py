@@ -2595,6 +2595,10 @@ def check_title_continue_preview() -> None:
         fail("Title continue broke pads, 입력됨, or added timeScale")
     elif "마지막 날" not in week_cs or "YesterdayLine" not in week_cs:
         fail("Title continue dropped last-day banner or 어제 headline")
+    elif "진행 중인 " not in title_cs or "지울까?" not in title_cs or "지우고 시작" not in title_cs or "취소" not in title_cs:
+        fail("wiping a save does not take a confirm card")
+    elif "OpenWipe" not in title_cs or "ConfirmWipe" not in title_cs or "BeginNewRun" not in title_cs:
+        fail("wipe confirm is not wired on 새 방송 시작")
     elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
         fail("Title started advertising later weeks / fandom")
     else:

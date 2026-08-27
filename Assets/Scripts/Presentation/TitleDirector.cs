@@ -11,6 +11,7 @@ namespace BankruptVtuber
     {
         GameObject _titleRoot;
         GameObject _howToRoot;
+        GameObject _wipeRoot;
         GameObject _prologueRoot;
         RectTransform _billStack;
         Button _start;
@@ -20,9 +21,11 @@ namespace BankruptVtuber
         Text _continueHead;
         Button _how;
         Text _hint;
+        Text _wipeBody;
         StudioPortrait _portrait;
         bool _busy;
         bool _howToOpen;
+        bool _wipeOpen;
         bool _prologuePlaying;
         bool _canSkipPrologue;
         bool _hasSave;
@@ -40,6 +43,12 @@ namespace BankruptVtuber
         {
             if (_busy && !_prologuePlaying)
                 return;
+
+            if (_wipeOpen && StreamBindings.Confirm)
+            {
+                CloseWipe();
+                return;
+            }
 
             if (_howToOpen && StreamBindings.Confirm)
             {
@@ -111,6 +120,7 @@ namespace BankruptVtuber
             UiKit.Layout(_hint.rectTransform, new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0), new Vector2(64, 28), new Vector2(520, 28));
 
             BuildHowTo(root);
+            BuildWipe(root);
             BuildPrologue(root);
         }
 
@@ -149,6 +159,31 @@ namespace BankruptVtuber
             UiKit.Layout(close.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 28), new Vector2(260, 56));
         }
 
+        void BuildWipe(Transform root)
+        {
+            var wash = UiKit.Image(root, "WipeWash", new Color(0.06f, 0.02f, 0.06f, 0.82f));
+            UiKit.Stretch(wash.rectTransform);
+            wash.raycastTarget = true;
+            _wipeRoot = wash.gameObject;
+            var card = UiKit.Panel(wash.transform, "WipeCard", Color.white);
+            UiKit.Layout(card, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 360));
+            ArtSprites.ApplySliced(card.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.90f, 0.92f, 0.98f));
+            SafeFitCard.Bind(card, 720f, 360f);
+            var title = UiKit.Label(card, "WipeTitle", "새 방송 시작", 36, Palette.MoneyRed, TextAnchor.UpperCenter, FontStyle.Bold);
+            UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -20), new Vector2(-24, 48));
+            _wipeBody = UiKit.Label(card, "WipeBody", "진행 중인 1일차를 지울까?", 26, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_wipeBody.rectTransform, new Vector2(0.08f, 0.38f), new Vector2(0.92f, 0.78f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            UiKit.Wrap(_wipeBody);
+            var pair = UiKit.Panel(card, "WipePair", new Color(0, 0, 0, 0));
+            UiKit.Layout(pair, new Vector2(0.06f, 0), new Vector2(0.94f, 0.32f), new Vector2(0.5f, 0), new Vector2(0, 16), Vector2.zero);
+            var wipe = UiKit.Button(pair, "WipeYes", "지우고 시작", ConfirmWipe, Palette.Troll, Color.white);
+            UiKit.Layout(wipe.GetComponent<RectTransform>(), new Vector2(0, 0.1f), new Vector2(0.48f, 0.9f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            var cancel = UiKit.Button(pair, "WipeNo", "취소", CloseWipe, Palette.StudioHi, Palette.Pastel);
+            UiKit.Layout(cancel.GetComponent<RectTransform>(), new Vector2(0.52f, 0.1f), new Vector2(1f, 0.9f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            SafePairLayout.Bind(pair, wipe.GetComponent<RectTransform>(), cancel.GetComponent<RectTransform>(), true, false);
+            _wipeRoot.SetActive(false);
+        }
+
         void BuildPrologue(Transform root)
         {
             var panel = UiKit.Panel(root, "Prologue", new Color(0.12f, 0.04f, 0.08f, 1f));
@@ -175,7 +210,7 @@ namespace BankruptVtuber
 
         void OpenHowTo()
         {
-            if (_busy || _prologuePlaying)
+            if (_busy || _prologuePlaying || _wipeOpen)
                 return;
             _howToOpen = true;
             _howToRoot.SetActive(true);
@@ -218,10 +253,43 @@ namespace BankruptVtuber
             }
         }
 
+        void OpenWipe()
+        {
+            if (_wipeRoot == null)
+                return;
+            int day = 1;
+            var peek = new GameRunState();
+            if (RunSave.TryLoad(peek) && peek.day > 0)
+                day = peek.day;
+            if (_wipeBody != null)
+                _wipeBody.text = "진행 중인 " + day + "일차를 지울까?";
+            _wipeOpen = true;
+            _wipeRoot.SetActive(true);
+            _wipeRoot.transform.SetAsLastSibling();
+        }
+
+        void CloseWipe()
+        {
+            _wipeOpen = false;
+            if (_wipeRoot != null)
+                _wipeRoot.SetActive(false);
+        }
+
+        void ConfirmWipe()
+        {
+            CloseWipe();
+            BeginNewRun();
+        }
+
         void OnContinue()
         {
             if (_busy || _prologuePlaying)
                 return;
+            if (_wipeOpen)
+            {
+                CloseWipe();
+                return;
+            }
             if (_howToOpen)
             {
                 CloseHowTo();
@@ -241,12 +309,25 @@ namespace BankruptVtuber
         {
             if (_busy || _prologuePlaying)
                 return;
+            if (_wipeOpen)
+                return;
             if (_howToOpen)
             {
                 CloseHowTo();
                 return;
             }
 
+            if (_hasSave)
+            {
+                OpenWipe();
+                return;
+            }
+
+            BeginNewRun();
+        }
+
+        void BeginNewRun()
+        {
             var gm = GameManager.Instance;
             if (gm == null)
                 return;
