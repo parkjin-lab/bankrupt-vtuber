@@ -1375,6 +1375,7 @@ def check_project() -> None:
     check_income_pop()
     check_end_cut()
     check_income_count()
+    check_shortfall()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -2621,6 +2622,49 @@ def check_income_count() -> None:
         fail("income count moved Unity off 6000.5.9f1")
     else:
         ok("settlement 오늘 수입 counts 0→total in 0.6s; bill-cross reuses cash gold once")
+
+
+def check_shortfall() -> None:
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    head_cs = (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    count = settle_cs.split("void TickIncomeCount", 1)[-1].split("void ShowShortfall", 1)[0]
+
+    if "ShowShortfall" not in settle_cs or "청구 미달" not in settle_cs:
+        fail("short night has no 청구 미달 chip")
+    elif "_shortFlash = 0.35f" not in settle_cs:
+        fail("청구 미달 flash is not 0.35s")
+    elif "_incomeTarget < _incomeBill" not in count or "ShowShortfall" not in count:
+        fail("청구 미달 does not fire after the count-up snap on a short night")
+    elif "ShowShortfall" in settle_cs.split("if (!_coverCrossed && _incomeTarget >= _incomeBill", 1)[-1].split("void ShowShortfall", 1)[0]:
+        fail("covered nights also flash 청구 미달")
+    elif "SlamBillCover" in settle_cs or "CoverSlam" in settle_cs:
+        fail("shortfall grew a fake 청구 커버 slam")
+    elif "_cashUp = true" not in settle_cs or "_incomeCoverFlash = 1f" not in settle_cs:
+        fail("covered nights lost the gold pulse")
+    elif "lastBills =" in settle_cs.split("void ShowShortfall", 1)[-1].split("void TickShortfall", 1)[0]:
+        fail("shortfall writes bill / save numbers")
+    elif "TickIncomeCount" not in settle_cs or "_incomeCountT / 0.6f" not in settle_cs:
+        fail("shortfall dropped the 0.6s income count")
+    elif "청구 미달" not in head_cs:
+        fail("headline lost 청구 미달")
+    elif "ShowEndCut" not in live_cs or "ShowIncomeDelta" not in live_cs:
+        fail("shortfall dropped 방송 종료 or +₩ popup")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("shortfall broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising shortfall / later weeks")
+    elif "billRent: 8000" not in balance:
+        fail("shortfall retuned Week 1 bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("shortfall dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("shortfall moved Unity off 6000.5.9f1")
+    else:
+        ok("short night flashes 청구 미달 after the count snap; covered nights stay gold")
 
 
 def check_mental_fatigue() -> None:

@@ -65,6 +65,12 @@ namespace BankruptVtuber
         float _incomeCountT;
         bool _coverCrossed;
         float _incomeCoverFlash;
+        RectTransform _billsTile;
+        Image _billsImg;
+        Text _billsCap;
+        Text _shortChip;
+        float _shortFlash;
+        bool _shortFired;
         GameObject _letterRoot;
         Text _letterFrom;
         Text _letterTag;
@@ -176,6 +182,7 @@ namespace BankruptVtuber
                 _letterHeart.color = hc;
                 _letterHeart.rectTransform.localScale = Vector3.one * (1f + 0.18f * _letterHeartFlash);
             }
+            TickShortfall(Time.deltaTime);
             _incomeCoverFlash = Mathf.MoveTowards(_incomeCoverFlash, 0f, Time.deltaTime * 2.2f);
             if (_tileIncome != null && _incomeCoverFlash > 0.02f)
             {
@@ -233,6 +240,17 @@ namespace BankruptVtuber
             _tileDebt = StudioChrome.RecapTile(recap, "Debt", "부채", Palette.MoneyRed, 0.75f, 1f, 0.48f, 0.52f, false);
             _cashTile = recap.Find("Cash") as RectTransform;
             _debtTile = recap.Find("Debt") as RectTransform;
+            _billsTile = recap.Find("Bills") as RectTransform;
+            if (_billsTile != null)
+            {
+                _billsImg = _billsTile.GetComponent<Image>();
+                var capT = _billsTile.Find("L");
+                if (capT != null)
+                    _billsCap = capT.GetComponent<Text>();
+            }
+            _shortChip = UiKit.Label(_billsTile != null ? _billsTile : recap, "ShortChip", "", 22, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_shortChip.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, 14f), new Vector2(-8f, 32f));
+            _shortChip.gameObject.SetActive(false);
             _tilePerfect = StudioChrome.RecapTile(recap, "Perfect", "PERFECT", Palette.Gold, 0f, 0.33f, 0f, 0.48f, true);
             _tileMiss = StudioChrome.RecapTile(recap, "Miss", "MISS", Palette.MoneyRed, 0.33f, 0.66f, 0f, 0.48f, false);
             _tileViewers = StudioChrome.RecapTile(recap, "Viewers", "시청자", Palette.Pink, 0.66f, 1f, 0f, 0.48f, true);
@@ -661,6 +679,8 @@ namespace BankruptVtuber
             {
                 shown = _incomeTarget;
                 _incomeCounting = false;
+                if (!_shortFired && _incomeTarget < _incomeBill)
+                    ShowShortfall();
             }
             _tileIncome.text = EconomyRules.FormatWon(shown);
             if (!_coverCrossed && _incomeTarget >= _incomeBill && shown >= _incomeBill)
@@ -669,6 +689,56 @@ namespace BankruptVtuber
                 _cashUp = true;
                 _mood = 1f;
                 _incomeCoverFlash = 1f;
+            }
+        }
+
+        void ShowShortfall()
+        {
+            _shortFired = true;
+            _shortFlash = 0.35f;
+            if (_shortChip != null)
+            {
+                _shortChip.text = "청구 미달";
+                _shortChip.gameObject.SetActive(true);
+            }
+        }
+
+        void TickShortfall(float dt)
+        {
+            _shortFlash = Mathf.MoveTowards(_shortFlash, 0f, dt);
+            bool on = _shortFlash > 0.001f;
+            if (_shortChip != null)
+            {
+                _shortChip.gameObject.SetActive(on);
+                if (on)
+                {
+                    var c = Palette.MoneyRed;
+                    c.a = Mathf.Clamp01(_shortFlash / 0.35f);
+                    _shortChip.color = c;
+                    _shortChip.rectTransform.localScale = Vector3.one * (1f + 0.22f * (_shortFlash / 0.35f));
+                }
+            }
+            if (_tileBills == null)
+                return;
+            if (on)
+            {
+                float u = _shortFlash / 0.35f;
+                _tileBills.color = Color.Lerp(Color.white, Palette.MoneyRed, u);
+                if (_billsCap != null)
+                    _billsCap.color = Color.Lerp(Color.white, Palette.MoneyRed, u);
+                if (_billsImg != null)
+                    _billsImg.color = Color.Lerp(Palette.MoneyRed, new Color(1f, 0.12f, 0.22f, 1f), u);
+                if (_billsTile != null)
+                    _billsTile.localScale = Vector3.one * (1f + 0.16f * u);
+            }
+            else if (_billsTile != null)
+            {
+                _tileBills.color = Color.white;
+                if (_billsCap != null)
+                    _billsCap.color = Color.white;
+                if (_billsImg != null)
+                    _billsImg.color = Palette.MoneyRed;
+                _billsTile.localScale = Vector3.one;
             }
         }
 
