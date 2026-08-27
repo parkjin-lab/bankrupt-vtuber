@@ -31,6 +31,8 @@ namespace BankruptVtuber
         Text _lastDayWeek;
         Text _lastDayNeed;
         Button _goLive;
+        RectTransform _goLiveRt;
+        Image _goLivePip;
         StudioPortrait _portrait;
         RectTransform _fanMinjun;
         RectTransform _fanHaeun;
@@ -87,6 +89,7 @@ namespace BankruptVtuber
                 float u = _billSlam / 0.25f;
                 _billTile.localScale = Vector3.one * (1f + 0.24f * u);
             }
+            TickGoLivePulse();
 
             if (_supportOpen)
             {
@@ -100,6 +103,23 @@ namespace BankruptVtuber
                 && !ContentRules.MustPick(GameManager.Instance.Run)
                 && StreamBindings.Confirm)
                 GameManager.Instance.GoLive();
+        }
+
+        void TickGoLivePulse()
+        {
+            if (_goLiveRt == null)
+                return;
+            if (_goLive == null || !_goLive.gameObject.activeInHierarchy)
+            {
+                _goLiveRt.localScale = Vector3.one;
+                return;
+            }
+            float u = 0.5f + 0.5f * Mathf.Sin(Time.time * 2.4f);
+            _goLiveRt.localScale = Vector3.one * (1f + 0.04f * u);
+            if (_goLivePip == null)
+                return;
+            var c = Palette.MoneyRed;
+            _goLivePip.color = new Color(c.r, c.g, c.b, 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(Time.time * 6f)));
         }
 
         void Build()
@@ -174,7 +194,14 @@ namespace BankruptVtuber
             UiKit.Layout(_log.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 16), new Vector2(-40, 48));
 
             _goLive = UiKit.Button(root, "GoLive", "방송 켜기  (Space)", () => GameManager.Instance.GoLive(), Palette.PinkDeep, Color.white);
-            UiKit.Layout(_goLive.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 36), new Vector2(360, 70));
+            _goLiveRt = _goLive.GetComponent<RectTransform>();
+            UiKit.Layout(_goLiveRt, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 36), new Vector2(360, 70));
+            _goLivePip = UiKit.Image(_goLive.transform, "LivePip", Palette.MoneyRed);
+            UiKit.Layout(_goLivePip.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(22f, 0f), new Vector2(16f, 16f));
+            _goLivePip.raycastTarget = false;
+            var goCap = _goLive.transform.Find("Caption") as RectTransform;
+            if (goCap != null)
+                goCap.offsetMin = new Vector2(28f, 0f);
             _goLive.gameObject.SetActive(false);
 
             var conflictGo = new GameObject("ConflictRoot", typeof(RectTransform));

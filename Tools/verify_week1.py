@@ -1389,6 +1389,7 @@ def check_project() -> None:
     check_title_broke_login()
     check_superchat_pip()
     check_left_cash()
+    check_go_live_pulse()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -3294,6 +3295,64 @@ def check_left_cash() -> None:
         fail("남은 현금 moved Unity off 6000.5.9f1")
     else:
         ok("settlement snaps 남은 현금 after counts; short vs tomorrow tints red")
+
+
+def check_go_live_pulse() -> None:
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    bind_cs = (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    pulse = week_cs.split("void TickGoLivePulse", 1)[-1].split("void Build()", 1)[0]
+    click = week_cs.split("_goLive = UiKit.Button", 1)[-1].split("_conflictRoot", 1)[0]
+    confirm = week_cs.split("void Update()", 1)[-1].split("void TickGoLivePulse", 1)[0]
+    pick = week_cs.split("void OnPickContent", 1)[-1].split("static void StyleConflictCard", 1)[0]
+
+    if "TickGoLivePulse" not in week_cs or "LivePip" not in week_cs:
+        fail("GO LIVE has no LIVE pulse / red pip")
+    elif "1f + 0.04f" not in pulse or "Sin(Time.time" not in pulse:
+        fail("GO LIVE does not soft-pulse at 1.04")
+    elif "Palette.MoneyRed" not in pulse or "_goLivePip" not in pulse:
+        fail("GO LIVE pip is not warning-red")
+    elif "() => GameManager.Instance.GoLive()" not in click:
+        fail("GO LIVE click no longer starts the stream")
+    elif "StreamBindings.Confirm" not in confirm or "GameManager.Instance.GoLive()" not in confirm:
+        fail("Space confirm no longer starts the stream")
+    elif "MustResolveConflict" not in confirm or "MustPick" not in confirm:
+        fail("GO LIVE pulse skipped conflict / content-pick gates")
+    elif "ContentRules.Pick" not in pick or "SetActive(true)" not in pick:
+        fail("content pick no longer reveals GO LIVE")
+    elif "ConcertStreamReady" not in week_cs or "콘서트 방송" not in week_cs:
+        fail("GO LIVE pulse dropped concert caption")
+    elif '"방송 켜기  (Space)"' not in week_cs:
+        fail("GO LIVE caption is no longer 방송 켜기")
+    elif "ApplyDailyBills" not in week_cs or "MustPick" not in week_cs:
+        fail("GO LIVE pulse reordered bills or content pick")
+    elif "TickLeftCash" not in settle_cs or "남은 현금" not in settle_cs:
+        fail("GO LIVE pulse dropped 남은 현금")
+    elif "eta <= 0.4f" not in live_cs or "BuildSuperchatPip" not in live_cs:
+        fail("GO LIVE pulse dropped superchat telegraph")
+    elif "_wordmark" not in title_cs or "청구보다 부족" not in week_cs:
+        fail("GO LIVE pulse dropped title pulse or 청구보다 부족")
+    elif "public void GoLive()" not in gm or "UnlockUiInputForStream" not in week_cs:
+        fail("GO LIVE pulse changed GameManager.GoLive or dropped UI unlock")
+    elif "GetKeyUp(KeyCode.Space)" not in bind_cs:
+        fail("GO LIVE pulse broke Space release-once")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("GO LIVE pulse broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising GO LIVE pulse / later weeks")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("GO LIVE pulse retuned Week 1 cash or bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("GO LIVE pulse dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("GO LIVE pulse moved Unity off 6000.5.9f1")
+    else:
+        ok("WeekStart 방송 켜기 pulses 1.04 with a red LIVE pip; click still GoLive")
 
 
 def check_mental_fatigue() -> None:
