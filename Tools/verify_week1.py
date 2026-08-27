@@ -1382,6 +1382,7 @@ def check_project() -> None:
     check_cam_punch()
     check_combo_pop()
     check_pad_flash()
+    check_mental_count()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -2937,6 +2938,62 @@ def check_pad_flash() -> None:
         fail("pad flash moved Unity off 6000.5.9f1")
     else:
         ok("pads flash brighter 0.08s on press; keyboard aliases match; bindings stay")
+
+
+def check_mental_count() -> None:
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    state_cs = (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8")
+    save_cs = (ROOT / "Assets/Scripts/Core/RunSave.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    tick = settle_cs.split("void TickMentalCount", 1)[-1].split("void TickIncomeCount", 1)[0]
+
+    if "TickMentalCount" not in settle_cs or "_mentalCountT / 0.35f" not in settle_cs:
+        fail("멘탈 does not count over ~0.35s")
+    elif "_mentalTo < _mentalFrom" not in settle_cs or "mentalAtDayStart" not in settle_cs:
+        fail("멘탈 count does not run only when tonight's mental dropped")
+    elif "_mentalTo > _mentalFrom" not in settle_cs or "_mentalTick = 1f" not in settle_cs:
+        fail("rising 멘탈 has no green tick")
+    elif "Palette.MoneyRed" not in settle_cs.split("_mentalCounting", 1)[-1].split("else if (_tileMental != null && _mentalTick", 1)[0]:
+        fail("falling 멘탈 is not tinted tired-red while it falls")
+    elif "Palette.CashGreen" not in settle_cs.split("_mentalTick > 0.02f", 1)[-1].split("else if (_tileMental != null)", 1)[0]:
+        fail("rising 멘탈 is not tinted green")
+    elif "mental =" in tick or "mentalAtDayStart =" in tick:
+        fail("멘탈 count writes mental math")
+    elif "mentalAtDayStart = mental" not in state_cs or "mentalAtDayStart" not in save_cs:
+        fail("멘탈 count does not remember the actual day-start mental")
+    elif "run.mental =" in settle_cs or "mental +=" in settle_cs or "mental -=" in settle_cs:
+        fail("멘탈 count reimplemented mental math")
+    elif "RefreshMentalShow" not in live_cs or "멘탈 위험" not in live_cs:
+        fail("멘탈 count dropped low-mental stream FX")
+    elif "TickDebtCount" not in settle_cs or "ShowShortfall" not in settle_cs or "청구 미달" not in settle_cs:
+        fail("멘탈 count dropped debt count or 청구 미달")
+    elif "_flash = 0.08f" not in (ROOT / "Assets/Scripts/Input/StreamPadButton.cs").read_text(encoding="utf-8"):
+        fail("멘탈 count dropped pad press flash")
+    elif "_comboPop = 0.1f" not in live_cs or "입력됨" not in live_cs:
+        fail("멘탈 count dropped combo pop or 입력됨")
+    elif "AddColumnPad" not in live_cs or "timeScale" in live_cs:
+        fail("멘탈 count broke pads or added timeScale")
+    elif "missStreakMentalPenalty" not in rules_cs or "totalMissMentalPenalty" not in rules_cs:
+        fail("멘탈 count retuned miss mental penalties")
+    elif "Mental <= 0" not in session_cs or "ForceEnded = true" not in session_cs:
+        fail("멘탈 count changed the force-end rule")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising mental count / later weeks")
+    elif "missStreakMental: 3" not in balance or "missStreakMentalPenalty: 12" not in balance:
+        fail("멘탈 count retuned miss-streak mental numbers")
+    elif "billRent: 8000" not in balance or "startingMental: 100" not in balance:
+        fail("멘탈 count retuned Week 1 bills or starting mental")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("멘탈 count dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("멘탈 count moved Unity off 6000.5.9f1")
+    else:
+        ok("settlement 멘탈 counts old→new in 0.35s when it dropped; rise ticks green")
 
 
 def check_mental_fatigue() -> None:

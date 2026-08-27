@@ -41,6 +41,7 @@ namespace BankruptVtuber
         Text _tilePerfect;
         Text _tileMiss;
         Text _tileViewers;
+        Text _tileMental;
         RectTransform _cashTile;
         RectTransform _debtTile;
         StudioPortrait _portrait;
@@ -71,6 +72,13 @@ namespace BankruptVtuber
         int _debtTo;
         float _debtCountT;
         float _debtDip;
+        bool _mentalCountStarted;
+        bool _mentalCounting;
+        int _mentalFrom;
+        int _mentalTo;
+        float _mentalCountT;
+        float _mentalTick;
+        string _bodyLead;
         RectTransform _billsTile;
         Image _billsImg;
         Text _billsCap;
@@ -166,6 +174,7 @@ namespace BankruptVtuber
             _mood = Mathf.MoveTowards(_mood, 0f, Time.deltaTime * 0.55f);
             TickIncomeCount(Time.deltaTime);
             TickDebtCount(Time.deltaTime);
+            TickMentalCount(Time.deltaTime);
             if (_cashTile != null && _debtTile != null)
             {
                 float pulse = 1f + 0.12f * Mathf.Abs(Mathf.Sin(Time.time * 6f)) * (0.35f + _mood);
@@ -205,6 +214,22 @@ namespace BankruptVtuber
             {
                 _tileDebt.color = Color.white;
                 _tileDebt.rectTransform.localScale = Vector3.one;
+            }
+            if (_tileMental != null && _mentalCounting)
+            {
+                _tileMental.color = Palette.MoneyRed;
+                _tileMental.rectTransform.localScale = Vector3.one * (1f + 0.12f * (1f - Mathf.Clamp01(_mentalCountT / 0.35f)));
+            }
+            else if (_tileMental != null && _mentalTick > 0.02f)
+            {
+                _mentalTick = Mathf.MoveTowards(_mentalTick, 0f, Time.deltaTime * 4f);
+                _tileMental.color = Color.Lerp(Color.white, Palette.CashGreen, _mentalTick);
+                _tileMental.rectTransform.localScale = Vector3.one * (1f + 0.10f * _mentalTick);
+            }
+            else if (_tileMental != null)
+            {
+                _tileMental.color = Color.white;
+                _tileMental.rectTransform.localScale = Vector3.one;
             }
             _incomeCoverFlash = Mathf.MoveTowards(_incomeCoverFlash, 0f, Time.deltaTime * 2.2f);
             if (_tileIncome != null && _incomeCoverFlash > 0.02f)
@@ -274,9 +299,10 @@ namespace BankruptVtuber
             _shortChip = UiKit.Label(_billsTile != null ? _billsTile : recap, "ShortChip", "", 22, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_shortChip.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, 14f), new Vector2(-8f, 32f));
             _shortChip.gameObject.SetActive(false);
-            _tilePerfect = StudioChrome.RecapTile(recap, "Perfect", "PERFECT", Palette.Gold, 0f, 0.33f, 0f, 0.48f, true);
-            _tileMiss = StudioChrome.RecapTile(recap, "Miss", "MISS", Palette.MoneyRed, 0.33f, 0.66f, 0f, 0.48f, false);
-            _tileViewers = StudioChrome.RecapTile(recap, "Viewers", "시청자", Palette.Pink, 0.66f, 1f, 0f, 0.48f, true);
+            _tilePerfect = StudioChrome.RecapTile(recap, "Perfect", "PERFECT", Palette.Gold, 0f, 0.25f, 0f, 0.48f, true);
+            _tileMiss = StudioChrome.RecapTile(recap, "Miss", "MISS", Palette.MoneyRed, 0.25f, 0.50f, 0f, 0.48f, false);
+            _tileViewers = StudioChrome.RecapTile(recap, "Viewers", "시청자", Palette.Pink, 0.50f, 0.75f, 0f, 0.48f, true);
+            _tileMental = StudioChrome.RecapTile(recap, "Mental", "멘탈", Palette.Pink, 0.75f, 1f, 0f, 0.48f, false);
 
             var panel = UiKit.Panel(root, "Sheet", Color.white);
             UiKit.Layout(panel, new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(980, 200));
@@ -706,6 +732,29 @@ namespace BankruptVtuber
             _tileDebt.text = EconomyRules.FormatWon(shown);
         }
 
+        void TickMentalCount(float dt)
+        {
+            if (!_mentalCounting)
+                return;
+            _mentalCountT += dt;
+            float u = Mathf.Clamp01(_mentalCountT / 0.35f);
+            int shown = Mathf.RoundToInt(Mathf.Lerp(_mentalFrom, _mentalTo, u));
+            if (u >= 1f)
+            {
+                shown = _mentalTo;
+                _mentalCounting = false;
+            }
+            ApplyMentalShown(shown);
+        }
+
+        void ApplyMentalShown(int shown)
+        {
+            if (_tileMental != null)
+                _tileMental.text = shown.ToString();
+            if (_body != null && _bodyLead != null)
+                _body.text = _bodyLead + shown;
+        }
+
         void TickIncomeCount(float dt)
         {
             if (!_incomeCounting || _tileIncome == null)
@@ -863,6 +912,37 @@ namespace BankruptVtuber
             }
             else if (!_debtCounting && _tileDebt != null)
                 _tileDebt.text = EconomyRules.FormatWon(run.debt);
+            _mentalFrom = run.mentalAtDayStart;
+            int nextMental = run.mental;
+            if (!_mentalCountStarted)
+            {
+                _mentalCountStarted = true;
+                _mentalTo = nextMental;
+                if (_mentalTo < _mentalFrom)
+                {
+                    _mentalCounting = true;
+                    _mentalCountT = 0f;
+                    if (_tileMental != null)
+                        _tileMental.text = _mentalFrom.ToString();
+                }
+                else
+                {
+                    if (_tileMental != null)
+                        _tileMental.text = _mentalTo.ToString();
+                    if (_mentalTo > _mentalFrom)
+                        _mentalTick = 1f;
+                }
+            }
+            else if (!_mentalCounting)
+            {
+                if (nextMental > _mentalTo)
+                    _mentalTick = 1f;
+                _mentalTo = nextMental;
+                if (_tileMental != null)
+                    _tileMental.text = _mentalTo.ToString();
+            }
+            else
+                _mentalTo = nextMental;
             _tilePerfect.text = run.lastPerfects.ToString();
             _tileMiss.text = run.lastMisses.ToString();
             _tileViewers.text = Mathf.RoundToInt(run.lastStreamPeakViewers).ToString();
@@ -947,7 +1027,12 @@ namespace BankruptVtuber
                 (ContentRules.HasPick(run)
                     ? $"\n콘텐츠 {ContentRules.DisplayName(gm.Content, run.contentPicked)}"
                     : "") +
-                $"\n\n현금 {EconomyRules.FormatWon(run.cash)}     부채 {EconomyRules.FormatWon(run.debt)}     멘탈 {run.mental}";
+                $"\n\n현금 {EconomyRules.FormatWon(run.cash)}     부채 {EconomyRules.FormatWon(run.debt)}     멘탈 ";
+            _bodyLead = _body.text;
+            int mentalShown = _mentalCounting ? _mentalFrom : _mentalTo;
+            _body.text = _bodyLead + mentalShown;
+            if (_tileMental != null && !_mentalCounting)
+                _tileMental.text = _mentalTo.ToString();
 
             run.lastOutcome = EconomyRules.Evaluate(run, b, w2, w3, w4, w5);
             ApplyHeadline(run);

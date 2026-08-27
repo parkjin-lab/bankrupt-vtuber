@@ -28,6 +28,7 @@ namespace BankruptVtuber
         public int lastBills;
         public int lastRepaid;
         public int debtAtDayStart;
+        public int mentalAtDayStart;
         public WeekOutcome lastOutcome = WeekOutcome.Continue;
 
         public int runSeed;
@@ -150,6 +151,7 @@ namespace BankruptVtuber
             debt = b.startingDebt;
             debtAtDayStart = debt;
             mental = b.startingMental;
+            mentalAtDayStart = mental;
             billsAppliedThisDay = false;
             streamDoneThisDay = false;
             ClearExtraThreat();
@@ -367,6 +369,7 @@ namespace BankruptVtuber
             Week3Rules.TryUnlockGoods(this, w3);
             FandomRules.OnMorning(this, b, fandom);
             debtAtDayStart = debt;
+            mentalAtDayStart = mental;
         }
     }
 }
