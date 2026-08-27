@@ -1340,6 +1340,7 @@ def check_project() -> None:
     check_day_headline()
     check_chat_nicks()
     check_hype_wash()
+    check_mental_fatigue()
 
 
 def check_content_types() -> None:
@@ -2287,6 +2288,56 @@ def check_hype_wash() -> None:
         fail("Week 1 bills were retuned by the hype wash")
     else:
         ok("hype eats the screen gold; combo 5 is a smaller sting; numbers unchanged")
+
+
+def check_mental_fatigue() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    avatar_cs = (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+
+    if "RefreshMentalShow" not in live_cs or "m <= 40" not in live_cs:
+        fail("low mental does not tire the studio wash")
+    elif "SetTired" not in avatar_cs or "SetTired(tired, danger)" not in live_cs:
+        fail("avatar has no tired pose")
+    elif "멘탈 위험" not in live_cs or "m <= 20" not in live_cs:
+        fail("mental ≤ 20 has no 멘탈 위험 chip")
+    elif "MentalGrain" not in live_cs or "GrainSprite" not in live_cs:
+        fail("low mental has no grain")
+    elif "강제 종료" not in live_cs or "ForceEnd" not in live_cs:
+        fail("mental 0 has no 강제 종료 sting")
+    elif "_mentalPunch" not in live_cs or "Palette.MoneyRed" not in live_cs:
+        fail("mental number does not punch red when it drops")
+    elif "ShowMissSting" not in live_cs or "시청자" not in live_cs:
+        fail("miss-streak 3 flash was dropped")
+    elif "missStreakMentalPenalty" not in rules_cs or "totalMissMentalPenalty" not in rules_cs:
+        fail("miss mental penalties were retuned")
+    elif "forceEndIncomeNumerator" not in eco_cs or "forceEndIncomeDenominator" not in eco_cs:
+        fail("force-end income ×0.5 math was retuned")
+    elif "Mental <= 0" not in session_cs or "ForceEnded = true" not in session_cs:
+        fail("mental 0 force-end rule was changed")
+    elif "RefreshHypeShow" not in live_cs or '"Nick"' not in live_cs or "오늘 헤드라인" not in settle_cs:
+        fail("mental wash dropped hype, nicks, or headline")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("mental wash broke pads, 입력됨, or added timeScale")
+    elif "StreamSafeArea" not in live_cs:
+        fail("mental wash dropped StreamSafeArea")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising mental / later weeks")
+    elif "missStreakMental: 3" not in balance or "missStreakMentalPenalty: 12" not in balance:
+        fail("miss-streak mental numbers were retuned")
+    elif "missStreakViewerPenalty: 4" not in balance or "totalMissMentalPenalty: 20" not in balance:
+        fail("miss viewer / total-miss mental numbers were retuned")
+    elif "forceEndIncomeNumerator: 1" not in balance or "forceEndIncomeDenominator: 2" not in balance:
+        fail("force-end income fraction was retuned")
+    elif "billRent: 8000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("mental wash retuned Week 1 bills or hype")
+    else:
+        ok("low mental looks exhausted; force-end / miss math unchanged")
 
 
 def check_save_roundtrip() -> None:

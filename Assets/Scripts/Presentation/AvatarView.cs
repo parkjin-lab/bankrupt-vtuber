@@ -31,6 +31,7 @@ namespace BankruptVtuber
         float _panic;
         float _shownViewers;
         bool _hypeOn;
+        float _tired;
 
         public AvatarView(RectTransform parent)
         {
@@ -232,6 +233,11 @@ namespace BankruptVtuber
             }
         }
 
+        public void SetTired(bool tired, bool danger)
+        {
+            _tired = !tired ? 0f : danger ? 1f : 0.55f;
+        }
+
         public void Tick(float dt)
         {
             _bob += dt;
@@ -244,23 +250,28 @@ namespace BankruptVtuber
             if (_hypeOn)
                 _happy = Mathf.Max(_happy, 0.88f);
 
-            float bobY = Mathf.Sin(_bob * (_closeCam ? 1.6f : 2.1f)) * (_closeCam ? 4f : 7f);
+            float bobAmp = (_closeCam ? 4f : 7f) * (1f - 0.7f * _tired);
+            float bobY = Mathf.Sin(_bob * (_closeCam ? 1.6f : 2.1f) * (1f - 0.45f * _tired)) * bobAmp;
             float popY = _pop * 22f;
             float x = Mathf.Sin(Time.time * 52f) * _shake * 12f;
             if (_panic > 0.01f)
                 x += Mathf.Sin(Time.time * 78f) * _panic * 16f;
-            _body.anchoredPosition = new Vector2(x, bobY + popY - _panic * 18f);
+            if (_tired > 0.01f)
+                x += Mathf.Sin(Time.time * 1.3f) * _tired * 4f;
+            _body.anchoredPosition = new Vector2(x, bobY + popY - _panic * 18f - _tired * 22f);
             float squash = _pop * 0.22f;
             if (_panic > 0.01f)
                 _body.localScale = new Vector3(1.08f + 0.06f * _panic, 0.82f - 0.08f * _panic, 1f);
             else
-                _body.localScale = new Vector3(1f + squash, 1f - squash * 0.55f, 1f);
+                _body.localScale = new Vector3(1f + squash + 0.06f * _tired, 1f - squash * 0.55f - 0.10f * _tired, 1f);
 
             var tint = _idleTint;
             if (_hurt > 0.01f)
                 tint = Color.Lerp(tint, new Color(1f, 0.55f, 0.58f, 1f), _hurt);
             if (_happy > 0.01f)
-                tint = Color.Lerp(tint, new Color(1f, 0.94f, 0.72f, 1f), _happy);
+                tint = Color.Lerp(tint, new Color(1f, 0.94f, 0.72f, 1f), _happy * (1f - 0.35f * _tired));
+            if (_tired > 0.01f)
+                tint = Color.Lerp(tint, new Color(0.58f, 0.54f, 0.60f, 1f), _tired);
             if (_panic > 0.01f)
                 tint = Color.Lerp(tint, new Color(1f, 0.38f, 0.42f, 1f), _panic);
             _bust.color = tint;

@@ -82,6 +82,13 @@ namespace BankruptVtuber
         Text _comboSting;
         float _comboStingFlash;
         bool _hypeWasOn;
+        Image _mentalGrain;
+        Text _mentalWarn;
+        RectTransform _mentalWarnBox;
+        RectTransform _forceEndRoot;
+        float _mentalPunch;
+        int _hudMental = 100;
+        bool _mentalWasTired;
         Text _showTitle;
         ContentShowLook _look = ContentShowLook.For(StreamContentType.None);
         float _bedDuck;
@@ -190,6 +197,7 @@ namespace BankruptVtuber
             _shownViewers = _session.Viewers;
             _lastViewers = _session.Viewers;
             _lastMental = _session.Mental;
+            _hudMental = _session.Mental;
             _lastCombo = _session.Combo;
             _tonightBills = EconomyRules.TonightBills(gm.Run);
             _bankruptAt = EconomyRules.BankruptDebt(gm.Run, gm.Balance, gm.Week2, gm.Week3, gm.Week4, gm.Week5);
@@ -429,7 +437,12 @@ namespace BankruptVtuber
             _stub.color = sc;
 
             _comboStingFlash = Mathf.MoveTowards(_comboStingFlash, 0f, dt * 1.7f);
+            if (_session.Mental < _hudMental)
+                _mentalPunch = 1f;
+            _hudMental = _session.Mental;
+            _mentalPunch = Mathf.MoveTowards(_mentalPunch, 0f, dt * 1.8f);
             RefreshHypeShow();
+            RefreshMentalShow();
             _bedDuck = Mathf.MoveTowards(_bedDuck, 0f, dt * 1.8f);
             if (_bed != null)
                 _bed.volume = Mathf.Lerp(_look.BedVolume, _look.BedVolume * 0.28f, _bedDuck);
@@ -491,7 +504,12 @@ namespace BankruptVtuber
             _judge.text = _session.ForceEnded ? "멘탈 붕괴 — 강제 종료" : "방송 종료";
             _judge.color = Color.white;
             _judgeFlash = 1f;
-            yield return new WaitForSeconds(1.1f);
+            if (_session.ForceEnded && _forceEndRoot != null)
+            {
+                _forceEndRoot.gameObject.SetActive(true);
+                _forceEndRoot.SetAsLastSibling();
+            }
+            yield return new WaitForSeconds(_session.ForceEnded ? 1.25f : 1.1f);
             Debug.Log("[파산 버튜버] stream payout " + paid);
             gm.GoSettlement();
         }
@@ -506,6 +524,11 @@ namespace BankruptVtuber
             UiKit.Stretch(_wash.rectTransform);
             _washVeil = UiKit.Image(canvasRoot, "WashVeil", new Color(0, 0, 0, 0));
             UiKit.Stretch(_washVeil.rectTransform);
+            _mentalGrain = UiKit.Image(canvasRoot, "MentalGrain", new Color(1f, 1f, 1f, 0f));
+            UiKit.Stretch(_mentalGrain.rectTransform);
+            _mentalGrain.sprite = GrainSprite();
+            _mentalGrain.type = Image.Type.Tiled;
+            _mentalGrain.raycastTarget = false;
 
             var safe = StreamSafeArea.Attach(canvasRoot);
             var root = safe;
@@ -519,6 +542,12 @@ namespace BankruptVtuber
             UiKit.Layout(_hypeCount.rectTransform, new Vector2(0.08f, 0.58f), new Vector2(0.52f, 0.58f), new Vector2(0.5f, 0.5f), new Vector2(0, -18), new Vector2(0, 40));
             _comboSting = UiKit.Label(root, "ComboSting", "", 28, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_comboSting.rectTransform, new Vector2(0.12f, 0.54f), new Vector2(0.48f, 0.54f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 36));
+            var warn = UiKit.Panel(root, "MentalWarnBox", new Color(0.52f, 0.08f, 0.16f, 0.94f));
+            _mentalWarnBox = warn;
+            UiKit.Layout(warn, new Vector2(0.74f, 1), new Vector2(1f, 1), new Vector2(1, 1), new Vector2(-16, -208), new Vector2(220, 34));
+            _mentalWarn = UiKit.Label(warn, "MentalWarn", "멘탈 위험", 18, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Stretch(_mentalWarn.rectTransform);
+            warn.gameObject.SetActive(false);
 
             var top = UiKit.Panel(root, "Top", new Color(0.08f, 0.04f, 0.1f, 0.90f));
             UiKit.Layout(top, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(0, 200));
@@ -734,6 +763,14 @@ namespace BankruptVtuber
             var concertSlamC = _concertSlam.color;
             concertSlamC.a = 0f;
             _concertSlam.color = concertSlamC;
+
+            _forceEndRoot = UiKit.Panel(canvasRoot, "ForceEnd", new Color(0.10f, 0.02f, 0.05f, 0.88f));
+            UiKit.Stretch(_forceEndRoot);
+            _forceEndRoot.gameObject.SetActive(false);
+            var fe = UiKit.Label(_forceEndRoot, "T", "강제 종료", 72, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(fe.rectTransform, new Vector2(0.5f, 0.54f), new Vector2(0.5f, 0.54f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 90));
+            var fs = UiKit.Label(_forceEndRoot, "S", "멘탈 붕괴", 28, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(fs.rectTransform, new Vector2(0.5f, 0.46f), new Vector2(0.5f, 0.46f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(520, 40));
         }
 
         StreamPadButton AddColumnPad(
@@ -935,7 +972,11 @@ namespace BankruptVtuber
                 }
             }
             _mental.text = $"{_session.Mental}/{_session.Balance.maxMental}";
-            _mental.color = _session.Mental <= 24 ? Palette.MoneyRed : Palette.Pink;
+            var mentalCol = _session.Mental <= 24 ? Palette.MoneyRed : Palette.Pink;
+            _mental.color = Color.Lerp(mentalCol, Color.white, _mentalPunch * 0.35f);
+            if (_mentalPunch > 0.02f)
+                _mental.color = Color.Lerp(_mental.color, Palette.MoneyRed, _mentalPunch);
+            _mental.rectTransform.localScale = Vector3.one * (1f + 0.32f * _mentalPunch);
             _timer.text = $"{Mathf.CeilToInt(_session.TimeLeft)}s";
             if (_session.IncomeFreezeLeft > 0f)
                 _combo.text = $"송출 끊김 {_session.IncomeFreezeLeft:0.0}s";
@@ -1352,6 +1393,67 @@ namespace BankruptVtuber
                 }
             }
             _hypeWasOn = hype;
+        }
+
+        void RefreshMentalShow()
+        {
+            if (_session == null)
+                return;
+            int m = _session.Mental;
+            bool tired = m <= 40;
+            bool danger = m <= 20;
+            _avatar?.SetTired(tired, danger);
+            if (_mentalWarnBox != null)
+                _mentalWarnBox.gameObject.SetActive(danger);
+            if (_mentalGrain != null)
+            {
+                float a = danger ? 0.28f : tired ? 0.10f : 0f;
+                _mentalGrain.color = new Color(1f, 1f, 1f, a);
+            }
+
+            bool hype = _session.HypeActive;
+            if (!hype && tired)
+            {
+                var baseWash = _look.Wash;
+                float gray = baseWash.grayscale;
+                var washed = Color.Lerp(baseWash, new Color(gray, gray, gray, 1f), danger ? 0.55f : 0.38f);
+                washed = Color.Lerp(washed, new Color(0.06f, 0.05f, 0.07f, 1f), danger ? 0.32f : 0.16f);
+                if (_wash != null)
+                    _wash.color = washed;
+                if (_washVeil != null)
+                {
+                    var veil = _look.WashVeil;
+                    _washVeil.color = Color.Lerp(veil, new Color(0.04f, 0.03f, 0.05f, danger ? 0.34f : 0.18f), 1f);
+                }
+                UiKit.EnsureCamera(_wash != null ? _wash.color : washed);
+            }
+            else if (!hype && _mentalWasTired && !tired)
+            {
+                if (_wash != null)
+                    _wash.color = _look.Wash;
+                if (_washVeil != null)
+                    _washVeil.color = _look.WashVeil;
+                UiKit.EnsureCamera(_look.Wash);
+            }
+            _mentalWasTired = tired;
+        }
+
+        static Sprite GrainSprite()
+        {
+            var tex = new Texture2D(64, 64, TextureFormat.RGBA32, false);
+            tex.wrapMode = TextureWrapMode.Repeat;
+            tex.filterMode = FilterMode.Point;
+            var rng = new System.Random(19);
+            for (int y = 0; y < 64; y++)
+            {
+                for (int x = 0; x < 64; x++)
+                {
+                    int n = rng.Next(0, 80);
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, n / 255f));
+                }
+            }
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, 64, 64), new Vector2(0.5f, 0.5f), 64f);
         }
 
         void ApplyContentShow(ContentShowLook look)
