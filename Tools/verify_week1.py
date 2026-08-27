@@ -1371,6 +1371,7 @@ def check_project() -> None:
     check_combo_break()
     check_clock_urgency()
     check_on_air()
+    check_perfect_good()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -2446,6 +2447,47 @@ def check_on_air() -> None:
         fail("ON AIR moved Unity off 6000.5.9f1")
     else:
         ok("stream opens with 0.6s ON AIR / 방송 시작; Day-1 coach still follows")
+
+
+def check_perfect_good() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    judge = live_cs.split("void ShowJudge", 1)[-1].split("void BeginSuperchatFly", 1)[0]
+
+    if "PERFECT" not in judge or "GOOD" not in judge:
+        fail("judge pop lost PERFECT / GOOD labels")
+    elif "Palette.Gold" not in judge or "_judgePopMax = 0.2f" not in judge:
+        fail("Perfect is not a gold 0.2s pop")
+    elif "Color.white" not in judge or "1.08f" not in judge:
+        fail("Good is not a smaller white pop")
+    elif "Palette.MoneyRed" not in judge or "_judgePopMax = 0.25f" not in judge:
+        fail("Miss lost the existing red 0.25s pop")
+    elif "콤보 끊김" not in live_cs or "comboWas >= 2" not in live_cs:
+        fail("Perfect/Good pop dropped combo-break")
+    elif "perfectWindow * " not in rules_cs or "b.greatWindow" not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("Perfect/Good pop retuned hit windows")
+    elif "perfectWindow: 0.07" not in balance or "greatWindow: 0.13" not in balance or "goodWindow: 0.22" not in balance:
+        fail("Perfect/Good pop retuned Week 1 hit windows")
+    elif '"ON AIR"' not in live_cs or "RefreshClockChip" not in live_cs:
+        fail("Perfect/Good pop dropped ON AIR or last-10s clock")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("Perfect/Good pop broke pads, 입력됨, or added timeScale")
+    elif "StreamSafeArea" not in live_cs or "오늘 헤드라인" not in settle_cs:
+        fail("Perfect/Good pop dropped StreamSafeArea or 오늘 헤드라인")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising judge pops / later weeks")
+    elif "billRent: 8000" not in balance:
+        fail("Perfect/Good pop retuned Week 1 bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("Perfect/Good pop dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("Perfect/Good pop moved Unity off 6000.5.9f1")
+    else:
+        ok("Perfect is a gold 0.2s pop; Good is a smaller white GOOD; Miss stays red")
 
 
 def check_mental_fatigue() -> None:

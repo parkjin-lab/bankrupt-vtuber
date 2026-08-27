@@ -1542,14 +1542,39 @@ namespace BankruptVtuber
             {
                 Judgement.Perfect => Palette.Gold,
                 Judgement.Great => Palette.Green,
-                Judgement.Good => Palette.Blue,
+                Judgement.Good => Color.white,
                 _ => Palette.MoneyRed
+            };
+            _judge.fontSize = j switch
+            {
+                Judgement.Perfect => 76,
+                Judgement.Great => 48,
+                Judgement.Good => 34,
+                _ => 64
             };
             _judgeFlash = 1f;
             _judgeBig = j == Judgement.Perfect || j == Judgement.Miss;
-            _judgePopMax = _judgeBig ? 0.25f : 0.12f;
+            if (j == Judgement.Perfect)
+            {
+                _judgePopMax = 0.2f;
+                _judge.rectTransform.localScale = Vector3.one * 1.72f;
+            }
+            else if (j == Judgement.Miss)
+            {
+                _judgePopMax = 0.25f;
+                _judge.rectTransform.localScale = Vector3.one * 1.58f;
+            }
+            else if (j == Judgement.Good)
+            {
+                _judgePopMax = 0.12f;
+                _judge.rectTransform.localScale = Vector3.one * 1.08f;
+            }
+            else
+            {
+                _judgePopMax = 0.12f;
+                _judge.rectTransform.localScale = Vector3.one * 1.22f;
+            }
             _judgePop = _judgePopMax;
-            _judge.rectTransform.localScale = Vector3.one * (_judgeBig ? 1.58f : 1.18f);
         }
 
         void BeginSuperchatFly(ChatNote note)
