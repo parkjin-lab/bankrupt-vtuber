@@ -1405,6 +1405,7 @@ def check_project() -> None:
     check_yesterday_headline()
     check_last_day_banner()
     check_title_continue_preview()
+    check_start_pulse()
 
 
 def check_content_types() -> None:
@@ -4106,6 +4107,62 @@ def check_title_continue_preview() -> None:
         fail("Title started advertising later weeks / fandom")
     else:
         ok("Title with a save shows 이어하기 n일차 + 현금/부채")
+
+
+def check_start_pulse() -> None:
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    pulse = title_cs.split("void TickStartPulse", 1)[-1].split("void OpenHowTo", 1)[0]
+    click = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    wipe = title_cs.split("void BuildWipe", 1)[-1].split("void BuildPrologue", 1)[0]
+    cont = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    start = title_cs.split("void OnStartBroadcast", 1)[-1].split("void BeginNewRun", 1)[0]
+
+    if "TickStartPulse" not in title_cs or "StartChip" not in title_cs or '"시작"' not in title_cs:
+        fail("새 방송 시작 has no pulse / 시작 chip")
+    elif "1f + 0.03f" not in pulse or "Sin(Time.time" not in pulse:
+        fail("새 방송 시작 does not soft-pulse at 1.03")
+    elif "OnStartBroadcast" not in click or "StartChip" not in click:
+        fail("시작 chip is not on the new-game button")
+    elif "OpenWipe" not in start or "BeginNewRun" not in start:
+        fail("새 방송 시작 click no longer wipes or starts")
+    elif "진행 중인 " not in wipe or "지울까?" not in wipe or "지우고 시작" not in wipe or "취소" not in wipe:
+        fail("save-wipe confirm is not exactly as-is")
+    elif "ConfirmWipe" not in title_cs or "CloseWipe" not in title_cs:
+        fail("wipe confirm wiring changed")
+    elif "MoneyPlate" not in title_cs or "이어하기 " not in title_cs or '"현금 "' not in cont or '"부채 "' not in cont:
+        fail("continue row is no longer as painted")
+    elif "peek.cash <" not in cont or "Palette.MoneyRed" not in cont or "Palette.Gold" not in cont:
+        fail("continue cash/debt panic colors changed")
+    elif '"어제: "' not in title_cs or "lastHeadline" not in title_cs:
+        fail("start pulse dropped continue yesterday headline")
+    elif "1f + 0.04f" not in title_cs or "_wordmark" not in title_cs:
+        fail("start pulse dropped the title wordmark pulse")
+    elif "TickGoLivePulse" not in week_cs or "TickNextPulse" not in settle_cs:
+        fail("start pulse dropped GO LIVE / 다음날 pulse")
+    elif "TickViewerChipPop" not in live_cs or "BillFill" not in live_cs:
+        fail("start pulse dropped viewer chip pop or 청구 fill")
+    elif "public void StartNewRun()" not in gm or "RunSave.Delete" not in gm:
+        fail("start pulse changed StartNewRun / wipe")
+    elif "UnlockUiInputForStream" not in title_cs or "StreamSafeArea.Attach" not in title_cs:
+        fail("start pulse dropped EventSystem unlock or StreamSafeArea")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("start pulse broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising start pulse / later weeks")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("start pulse retuned Week 1 cash or bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("start pulse dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("start pulse moved Unity off 6000.5.9f1")
+    else:
+        ok("Title 새 방송 시작 pulses 1.03 with a 시작 chip; wipe / continue stay")
 
 
 def check_save_roundtrip() -> None:

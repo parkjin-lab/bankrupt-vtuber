@@ -15,6 +15,8 @@ namespace BankruptVtuber
         GameObject _prologueRoot;
         RectTransform _billStack;
         Button _start;
+        RectTransform _startRt;
+        RectTransform _startChip;
         Button _continue;
         Text _continueDay;
         Text _continueMoney;
@@ -48,6 +50,7 @@ namespace BankruptVtuber
                 float u = 0.5f + 0.5f * Mathf.Sin(Time.time * 2.4f);
                 _wordmark.rectTransform.localScale = Vector3.one * (1f + 0.04f * u);
             }
+            TickStartPulse();
             if (_busy && !_prologuePlaying)
                 return;
 
@@ -105,6 +108,17 @@ namespace BankruptVtuber
 
             _start = UiKit.Button(titleParent, "Start", "방송 시작", OnStartBroadcast, Palette.PinkDeep, Color.white);
             StyleMenuButton(_start, new Vector2(56, -40), new Vector2(420, 78), Palette.PinkDeep);
+            _startRt = _start.GetComponent<RectTransform>();
+            _startChip = UiKit.Panel(_start.transform, "StartChip", Palette.Gold);
+            UiKit.Layout(_startChip, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(28f, 0f), new Vector2(52f, 26f));
+            var startChipImg = _startChip.GetComponent<Image>();
+            if (startChipImg != null)
+                startChipImg.raycastTarget = false;
+            var startChipT = UiKit.Label(_startChip, "T", "시작", 14, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Stretch(startChipT.rectTransform);
+            var startCap = _start.transform.Find("Caption") as RectTransform;
+            if (startCap != null)
+                startCap.offsetMin = new Vector2(56f, 0f);
             _continue = UiKit.Button(titleParent, "Continue", "이어서 하기", OnContinue, Palette.Gold, Palette.Ink);
             StyleMenuButton(_continue, new Vector2(56, -154), new Vector2(420, 128), Palette.Gold);
             _continueDay = _continue.GetComponentInChildren<Text>();
@@ -217,6 +231,21 @@ namespace BankruptVtuber
 
             var skip = UiKit.Label(panel, "Skip", "Space 로 건너뛰기", 18, Palette.Muted, TextAnchor.LowerCenter);
             UiKit.Layout(skip.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 22), new Vector2(360, 28));
+        }
+
+        void TickStartPulse()
+        {
+            if (_startRt == null)
+                return;
+            if (_start == null || !_start.gameObject.activeInHierarchy || _wipeOpen || _howToOpen || _prologuePlaying)
+            {
+                _startRt.localScale = Vector3.one;
+                return;
+            }
+            float u = 0.5f + 0.5f * Mathf.Sin(Time.time * 2.2f);
+            _startRt.localScale = Vector3.one * (1f + 0.03f * u);
+            if (_startChip != null)
+                _startChip.localScale = Vector3.one * (1f + 0.08f * u);
         }
 
         void OpenHowTo()
