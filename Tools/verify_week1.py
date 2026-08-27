@@ -1396,6 +1396,7 @@ def check_project() -> None:
     check_event_warn()
     check_day_slam()
     check_bill_chip()
+    check_bill_fill()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -3693,6 +3694,57 @@ def check_bill_chip() -> None:
         fail("청구 chip moved Unity off 6000.5.9f1")
     else:
         ok("HUD keeps 청구 ₩N all stream; gold on cover; slam stays once")
+
+
+def check_bill_fill() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    hud = live_cs.split("void RefreshHud", 1)[-1].split("void TickEventWarn", 1)[0]
+    fill = hud.split("if (_billFill != null)", 1)[-1].split("if (_session.HypeActive)", 1)[0]
+
+    if "_billFill" not in live_cs or "BillFill" not in live_cs:
+        fail("청구 chip has no thin fill bar")
+    elif "ticking / (float)_tonightBills" not in fill:
+        fail("fill bar is not live income / tonight bill")
+    elif "Palette.MoneyRed" not in fill or "Palette.Gold" not in fill:
+        fail("fill bar is not red while short / gold when full")
+    elif "SlamBillCover" in fill:
+        fail("fill bar added a second cover slam")
+    elif "new Vector2(180, 10)" not in live_cs:
+        fail("fill bar is not a thin bar next to the chip")
+    elif "const float LaneHit = -210f" not in live_cs or "TickStrike" not in live_cs:
+        fail("fill bar moved or stole the hit bar")
+    elif "SlamBillCover()" not in live_cs or "CoverSlam" not in live_cs:
+        fail("fill bar dropped the existing once cover slam")
+    elif "SlamBillCover" in settle_cs or "CoverSlam" in settle_cs:
+        fail("fill bar grew a fake settlement slam")
+    elif "lastBills =" in hud or "billRent =" in hud or "LiveIncome =" in fill:
+        fail("fill bar writes bill / payout amounts")
+    elif "PayoutIncome" in fill and "PayoutIncome =" in fill:
+        fail("fill bar writes payout")
+    elif "BillChip" not in live_cs or '"청구 "' not in live_cs:
+        fail("fill bar dropped the 청구 ₩N chip")
+    elif "TonightBills(gm.Run)" not in live_cs or "TonightBills" not in eco_cs:
+        fail("fill bar is not keyed off TonightBills")
+    elif "_dayHead" not in week_cs:
+        fail("fill bar dropped n일차 slam")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("fill bar broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising fill bar / later weeks")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("fill bar retuned Week 1 cash or bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("fill bar dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("fill bar moved Unity off 6000.5.9f1")
+    else:
+        ok("thin 청구 fill bar tracks live income; red short / gold full; slam stays once")
 
 
 def check_mental_fatigue() -> None:

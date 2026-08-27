@@ -25,6 +25,7 @@ namespace BankruptVtuber
         Text _billToday;
         Text _billChip;
         Image _billChipImg;
+        Image _billFill;
         Text _incomeNow;
         Text _remain;
         Text _hypeMul;
@@ -771,6 +772,13 @@ namespace BankruptVtuber
                 _billChipImg.raycastTarget = false;
             _billChip = UiKit.Label(billChip, "T", "청구 ₩0", 22, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Stretch(_billChip.rectTransform);
+            var billTrack = UiKit.Image(root, "BillFillTrack", new Color(1f, 1f, 1f, 0.14f));
+            UiKit.Layout(billTrack.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(710, -224), new Vector2(180, 10));
+            billTrack.raycastTarget = false;
+            _billFill = UiKit.Image(billTrack.rectTransform, "BillFill", Palette.MoneyRed);
+            UiKit.Stretch(_billFill.rectTransform);
+            _billFill.rectTransform.anchorMax = new Vector2(0f, 1f);
+            _billFill.raycastTarget = false;
 
             _avatar = new AvatarView(root as RectTransform);
             _rivalDuel = new RivalDuelView(root as RectTransform);
@@ -1308,6 +1316,12 @@ namespace BankruptVtuber
                 _billChipImg.color = covered || _billsCovered
                     ? Palette.Gold
                     : new Color(0.55f, 0.08f, 0.16f, 0.94f);
+            if (_billFill != null)
+            {
+                float fill = _tonightBills <= 0 ? 1f : Mathf.Clamp01(ticking / (float)_tonightBills);
+                _billFill.rectTransform.anchorMax = new Vector2(fill, 1f);
+                _billFill.color = covered || _billsCovered ? Palette.Gold : Palette.MoneyRed;
+            }
             if (_session.HypeActive)
                 _hypeMul.text = $"하이프 {_session.Balance.hypeIncomeMultiplier:0.#}x";
             else if (_session.PerfectCombo >= _session.Balance.comboIncomeThreshold)
