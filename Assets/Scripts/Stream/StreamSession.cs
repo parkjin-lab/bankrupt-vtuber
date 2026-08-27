@@ -8,6 +8,7 @@ namespace BankruptVtuber
         public ChatKind Kind;
         public string Text;
         public string User;
+        public int Id;
         public float SpawnTime;
         public float HitTime;
         public int SuperchatWon;
@@ -64,6 +65,7 @@ namespace BankruptVtuber
         int _superchatsSpawned;
         int _superchatTarget;
         int _userSerial;
+        int _runSeed;
         bool _pendingHypeEvent;
         bool _pendingMissEvent;
         Week3Balance _week3;
@@ -86,12 +88,6 @@ namespace BankruptVtuber
 
         public const int CoachSuccessTarget = 3;
         public const float CoachSeconds = 8f;
-
-        static readonly string[] FakeUsers =
-        {
-            "별하", "네코링", "고정닉A", "야식요정", "민초파", "라떼는", "밤샘러", "후원요정",
-            "트롤킹", "질문봇", "달콤이", "초롱이", "빚쟁이아님", "월세공포", "이모트창"
-        };
 
         public StreamSession(
             Week1Balance balance,
@@ -162,6 +158,11 @@ namespace BankruptVtuber
             _lineEnabled = true;
             Line.Reset();
             Line.Window = w4.lineWindowSeconds > 0.2f ? w4.lineWindowSeconds : 1.2f;
+        }
+
+        public void BindChatSeed(int runSeed)
+        {
+            _runSeed = runSeed;
         }
 
         public void BindNamedFans(string minjun, bool minjunWounded, string haeun, bool haeunWounded, int haeunHurtStreak = 0)
@@ -410,7 +411,8 @@ namespace BankruptVtuber
         void SpawnNote(ChatKind kind, bool superchat, int won)
         {
             _userSerial += 1;
-            string user = FakeUsers[_userSerial % FakeUsers.Length];
+            int id = _userSerial;
+            string user = ChatNicks.Pick(_runSeed, id);
             bool named = false;
             bool wounded = false;
             if (superchat && !string.IsNullOrEmpty(_fanMinjun) && _userSerial % 2 == 0)
@@ -433,6 +435,7 @@ namespace BankruptVtuber
                 SuperchatWon = won,
                 Text = Catalog.Pick(kind, Rng),
                 User = user,
+                Id = id,
                 NamedFan = named,
                 FanWounded = wounded,
                 SpawnTime = Elapsed,

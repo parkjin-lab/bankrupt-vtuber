@@ -1338,6 +1338,7 @@ def check_project() -> None:
     check_fandom_beats()
     check_portrait_safe_area()
     check_day_headline()
+    check_chat_nicks()
 
 
 def check_content_types() -> None:
@@ -2188,6 +2189,56 @@ def check_day_headline() -> None:
         fail("Week 1 bills were retuned by the headline")
     else:
         ok("settlement recap has a screenshot 오늘 헤드라인 from existing facts")
+
+
+def check_chat_nicks() -> None:
+    nicks_path = ROOT / "Assets/Scripts/Data/ChatNicks.cs"
+    nicks_cs = nicks_path.read_text(encoding="utf-8") if nicks_path.exists() else ""
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    catalog_cs = (ROOT / "Assets/Scripts/Data/ChatCatalog.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    required = ("밤샌사람", "월세토끼", "정산요정", "ㄹㅇ팬", "빚쟁이형")
+    pool = re.findall(r'"(.*?)"', nicks_cs.split("Pick(", 1)[0] if "Pick(" in nicks_cs else nicks_cs)
+
+    if not nicks_cs or "ChatNicks" not in nicks_cs:
+        fail("falling chat has no ChatNicks pool")
+    elif any(name not in nicks_cs for name in required):
+        fail("nick pool is missing 밤샌사람 / 월세토끼 / 정산요정 / ㄹㅇ팬 / 빚쟁이형")
+    elif len(set(pool)) < 18:
+        fail("nick pool is smaller than ~20 fake chat nicks")
+    elif any(not _has_hangul(name) for name in pool):
+        fail("a chat nick has no Hangul")
+    elif any(len(name) > 8 for name in pool):
+        fail("a chat nick is too long for the bubble")
+    elif "Pick(int runSeed, int noteId)" not in nicks_cs or "runSeed * 397" not in nicks_cs:
+        fail("nicks are not deterministic from runSeed + note id")
+    elif "ChatNicks.Pick(_runSeed, id)" not in session_cs or "BindChatSeed" not in session_cs:
+        fail("stream does not pick nicks from runSeed + note id")
+    elif "BindChatSeed(gm.Run.runSeed)" not in live_cs:
+        fail("LiveStream does not bind runSeed for nicks")
+    elif '"Nick"' not in live_cs or "FormatWon(note.SuperchatWon)" not in live_cs:
+        fail("bubbles do not show a nick label or superchat ₩")
+    elif "BindNamedFans" not in session_cs or "minjunName" not in live_cs or "haeunName" not in live_cs:
+        fail("민준/하은 special labels were dropped")
+    elif "NamedFan" not in live_cs or "슈퍼팬 · 첫 도네" not in live_cs:
+        fail("named-fan gold/pink copy was replaced")
+    elif "Catalog.Pick(kind, Rng)" not in session_cs or "RollRegularKind" not in session_cs:
+        fail("nick slice retuned chat spawn or ChatKind weights")
+    elif "string[] minjun" in catalog_cs or "talkPositive" in catalog_cs:
+        fail("ChatCatalog grew a new data shape for nicks")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("nick slice broke pads, 입력됨, or added timeScale")
+    elif "StreamSafeArea" not in live_cs or "오늘 헤드라인" not in settle_cs:
+        fail("nick slice dropped StreamSafeArea or 오늘 헤드라인")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising nicks / later weeks")
+    elif "chatSpawnStart: 1.55" not in balance or "billRent: 8000" not in balance:
+        fail("nick slice retuned spawn or Week 1 bills")
+    else:
+        ok("falling chat shows deterministic Korean nicks; 민준/하은 stay special")
 
 
 def check_save_roundtrip() -> None:

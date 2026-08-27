@@ -190,6 +190,7 @@ namespace BankruptVtuber
             var fandom = gm.Fandom;
             string minjun = gm.Run.minjunPresent && fandom != null ? fandom.minjunName : null;
             string haeun = gm.Run.haeunPresent && fandom != null ? fandom.haeunName : null;
+            _session.BindChatSeed(gm.Run.runSeed);
             _session.BindNamedFans(
                 minjun,
                 gm.Run.minjunPresent && gm.Run.minjunIgnoreSettlements > 0,
@@ -1141,7 +1142,7 @@ namespace BankruptVtuber
             float scale = _look.BubbleScale > 0.1f ? _look.BubbleScale : 1f;
             if (_look.LoudTroll && troll)
                 scale *= 1.12f;
-            float h = (named || super ? 92f : troll ? 72f : 64f) * scale;
+            float h = (named || super ? 96f : troll ? 82f : 78f) * scale;
             float w = (super || named ? 400f : 372f) * scale;
             UiKit.Layout(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(w, h));
             var img = card.GetComponent<Image>();
@@ -1183,18 +1184,28 @@ namespace BankruptVtuber
             var keyCol = super || troll || named ? Palette.Ink : Color.white;
             var keyT = UiKit.Label(card, "Key", key, super ? 16 : 18, keyCol, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(keyT.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(18, 0), new Vector2(56, 0));
-            string body = named
-                ? (super
-                    ? $"{note.User}  ·  {fanTag}\n{kind}  {EconomyRules.FormatWon(note.SuperchatWon)}  {note.Text}"
-                    : $"{note.User}  ·  {fanTag}\n{note.Text}")
+            string nickLine = note.User ?? "";
+            if (!named && super && note.SuperchatWon > 0)
+                nickLine = $"{note.User}  ·  {EconomyRules.FormatWon(note.SuperchatWon)}";
+            else if (named)
+                nickLine = $"{note.User}  ·  {fanTag}";
+            var nickCol = named
+                ? (super ? Palette.Ink : new Color(0.42f, 0.12f, 0.28f, 1f))
                 : super
-                    ? $"{note.User}  ·  {kind}  {EconomyRules.FormatWon(note.SuperchatWon)}\n{note.Text}"
-                    : $"{note.User}  ·  {kind}\n{note.Text}";
+                    ? Palette.Ink
+                    : troll
+                        ? new Color(1f, 0.92f, 0.94f, 0.95f)
+                        : Palette.Gold;
+            var nickT = UiKit.Label(card, "Nick", nickLine, named || super ? 15 : 14, nickCol, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(nickT.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(76, -6), new Vector2(-88, 22));
+            string body = named && super
+                ? $"{kind}  {EconomyRules.FormatWon(note.SuperchatWon)}  {note.Text}"
+                : note.Text;
             var msgCol = troll ? Color.white : Palette.Ink;
             if (named && note.FanWounded)
                 msgCol = new Color(msgCol.r, msgCol.g, msgCol.b, 0.55f);
             var msg = UiKit.Label(card, "Msg", body, super ? 16 : 17, msgCol, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UiKit.Layout(msg.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0.5f), new Vector2(76, 0), new Vector2(-88, 0));
+            UiKit.Layout(msg.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(76, 6), new Vector2(-88, -28));
             msg.horizontalOverflow = HorizontalWrapMode.Wrap;
             if (super)
                 card.localScale = Vector3.one * 1.38f;
@@ -1211,15 +1222,19 @@ namespace BankruptVtuber
                 var c = img.color;
                 img.color = new Color(c.r * 0.78f, c.g * 0.78f, c.b * 0.78f, 0.62f);
             }
-            var msg = rt.Find("Msg");
-            if (msg != null)
+            DimNamedLabel(rt.Find("Msg"));
+            DimNamedLabel(rt.Find("Nick"));
+        }
+
+        static void DimNamedLabel(Transform node)
+        {
+            if (node == null)
+                return;
+            var t = node.GetComponent<Text>();
+            if (t != null && t.color.a > 0.6f)
             {
-                var t = msg.GetComponent<Text>();
-                if (t != null && t.color.a > 0.6f)
-                {
-                    var c = t.color;
-                    t.color = new Color(c.r, c.g, c.b, 0.55f);
-                }
+                var c = t.color;
+                t.color = new Color(c.r, c.g, c.b, 0.55f);
             }
         }
 
