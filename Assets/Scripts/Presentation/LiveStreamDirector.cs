@@ -84,6 +84,8 @@ namespace BankruptVtuber
         Text _hypeCount;
         Text _comboSting;
         float _comboStingFlash;
+        Text _comboBreak;
+        float _comboBreakLeft;
         bool _hypeWasOn;
         Image _mentalGrain;
         Text _mentalWarn;
@@ -238,6 +240,7 @@ namespace BankruptVtuber
                 return;
 
             float dt = Time.deltaTime;
+            int comboWas = _session.Combo;
             _session.Tick(dt);
             if (_session.Combo >= 5 && _lastCombo < 5)
             {
@@ -346,6 +349,8 @@ namespace BankruptVtuber
                     float dv = _session.Viewers - _lastViewers;
                     int dm = _session.Mental - _lastMental;
                     ShowMissSting(dv, dm);
+                    if (comboWas >= 2)
+                        ShowComboBreak();
                     _viewerJudged = true;
                     PlaySfx(_bad, 0.48f);
                     if (note.IsSuperchat)
@@ -495,6 +500,8 @@ namespace BankruptVtuber
             _stub.color = sc;
 
             _comboStingFlash = Mathf.MoveTowards(_comboStingFlash, 0f, dt * 1.7f);
+            _comboBreakLeft = Mathf.MoveTowards(_comboBreakLeft, 0f, dt);
+            TickComboBreak();
             _incomePunch = Mathf.MoveTowards(_incomePunch, 0f, dt * 2.2f);
             TickSuperchatFx(dt);
             if (_session.Mental < _hudMental)
@@ -603,6 +610,8 @@ namespace BankruptVtuber
             UiKit.Layout(_hypeCount.rectTransform, new Vector2(0.08f, 0.58f), new Vector2(0.52f, 0.58f), new Vector2(0.5f, 0.5f), new Vector2(0, -18), new Vector2(0, 40));
             _comboSting = UiKit.Label(root, "ComboSting", "", 28, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_comboSting.rectTransform, new Vector2(0.12f, 0.54f), new Vector2(0.48f, 0.54f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 36));
+            _comboBreak = UiKit.Label(root, "ComboBreak", "", 40, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_comboBreak.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.58f, 0.16f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 44));
             var warn = UiKit.Panel(root, "MentalWarnBox", new Color(0.52f, 0.08f, 0.16f, 0.94f));
             _mentalWarnBox = warn;
             UiKit.Layout(warn, new Vector2(0.74f, 1), new Vector2(1f, 1), new Vector2(1, 1), new Vector2(-16, -208), new Vector2(220, 34));
@@ -1056,15 +1065,36 @@ namespace BankruptVtuber
                 _mental.color = Color.Lerp(_mental.color, Palette.MoneyRed, _mentalPunch);
             _mental.rectTransform.localScale = Vector3.one * (1f + 0.32f * _mentalPunch);
             _timer.text = $"{Mathf.CeilToInt(_session.TimeLeft)}s";
-            if (_session.IncomeFreezeLeft > 0f)
+            if (_comboBreakLeft > 0f)
+            {
+                _combo.text = "콤보 끊김";
+                _combo.color = Palette.MoneyRed;
+                _combo.fontSize = 34;
+            }
+            else if (_session.IncomeFreezeLeft > 0f)
+            {
+                _combo.fontSize = 22;
                 _combo.text = $"송출 끊김 {_session.IncomeFreezeLeft:0.0}s";
+                _combo.color = Palette.Pastel;
+            }
             else if (_session.IncomeShieldLeft > 0f)
+            {
+                _combo.fontSize = 22;
                 _combo.text = $"수익 보호막 {_session.IncomeShieldLeft:0.0}s";
+                _combo.color = Palette.Pastel;
+            }
             else if (_session.HypeActive)
+            {
+                _combo.fontSize = 22;
                 _combo.text = $"{_session.Tuning.Name}  ·  하이프 {_session.HypeLeft:0.0}s  ·  {_session.Balance.hypeIncomeMultiplier:0.#}x";
+                _combo.color = Palette.Gold;
+            }
             else
+            {
+                _combo.fontSize = 22;
                 _combo.text = $"{_session.Tuning.Name}  ·  COMBO {_session.Combo}   PERFECT {_session.PerfectCombo}";
-            _combo.color = _session.HypeActive ? Palette.Gold : Palette.Pastel;
+                _combo.color = Palette.Pastel;
+            }
             float tension = Mathf.Clamp01(_session.MissStreak / (float)_session.Balance.missStreakMental);
             _tensionFill.rectTransform.anchorMax = new Vector2(tension, 1f);
         }
@@ -1619,6 +1649,32 @@ namespace BankruptVtuber
                 _stingFlash = 1.15f;
             }
             _viewerFlash = 1f;
+        }
+
+        void ShowComboBreak()
+        {
+            _comboBreakLeft = 0.25f;
+            TickComboBreak();
+        }
+
+        void TickComboBreak()
+        {
+            if (_comboBreak == null)
+                return;
+            if (_comboBreakLeft > 0.001f)
+            {
+                _comboBreak.text = "콤보 끊김";
+                float u = _comboBreakLeft / 0.25f;
+                var c = Palette.MoneyRed;
+                c.a = Mathf.Clamp01(u);
+                _comboBreak.color = c;
+                _comboBreak.rectTransform.localScale = Vector3.one * (1f + 0.28f * u);
+            }
+            else
+            {
+                _comboBreak.text = "";
+                _comboBreak.rectTransform.localScale = Vector3.one;
+            }
         }
 
         void RefreshHypeShow()

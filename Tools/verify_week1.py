@@ -1368,6 +1368,7 @@ def check_project() -> None:
     check_day_headline()
     check_chat_nicks()
     check_hype_wash()
+    check_combo_break()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -2326,6 +2327,47 @@ def check_hype_wash() -> None:
         fail("Week 1 bills were retuned by the hype wash")
     else:
         ok("hype eats the screen gold; combo 5 is a smaller sting; numbers unchanged")
+
+
+def check_combo_break() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+
+    if "콤보 끊김" not in live_cs or "ShowComboBreak" not in live_cs:
+        fail("broken combo has no 콤보 끊김 sting")
+    elif "comboWas >= 2" not in live_cs:
+        fail("콤보 끊김 is not gated on combo ≥ 2")
+    elif "_comboBreakLeft = 0.25f" not in live_cs:
+        fail("콤보 끊김 is not a 0.25s sting")
+    elif "ComboBreak" not in live_cs or "Palette.MoneyRed" not in live_cs.split("void ShowComboBreak", 1)[-1].split("void TickComboBreak", 1)[0] and '"콤보 끊김"' not in live_cs:
+        fail("콤보 끊김 sting is not red")
+    elif "reset = true" not in rules_cs or "if (result.ResetCombo)" not in session_cs:
+        fail("combo break sting retuned miss/combo math")
+    elif "ComboSting" not in live_cs or "comboIncomeMultiplier" not in live_cs:
+        fail("combo break dropped the combo-5 sting")
+    elif "ShowMissSting" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("combo break dropped miss sting, pads, or added timeScale")
+    elif "AddColumnPad" not in live_cs or "StreamSafeArea" not in live_cs:
+        fail("combo break dropped pads or StreamSafeArea")
+    elif "오늘 헤드라인" not in settle_cs:
+        fail("combo break dropped 오늘 헤드라인")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising combo break / later weeks")
+    elif "hypeSeconds: 12" not in balance or "comboIncomeMultiplier: 1.5" not in balance:
+        fail("combo break retuned hype / combo numbers")
+    elif "billRent: 8000" not in balance:
+        fail("combo break retuned Week 1 bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("combo break dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("combo break moved Unity off 6000.5.9f1")
+    else:
+        ok("combo ≥ 2 miss flashes 콤보 끊김; combo-0 miss stays a normal Miss")
 
 
 def check_mental_fatigue() -> None:
