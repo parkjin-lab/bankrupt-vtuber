@@ -8,6 +8,7 @@ namespace BankruptVtuber
     {
         Text _cash;
         Text _debt;
+        Text _billToday;
         Text _mental;
         Text _log;
         Text _day;
@@ -35,6 +36,8 @@ namespace BankruptVtuber
         RectTransform _fanHaeun;
         bool _ready;
         float _cashSlam;
+        RectTransform _billTile;
+        float _billSlam;
 
         struct Bill
         {
@@ -61,6 +64,7 @@ namespace BankruptVtuber
             var gm = GameManager.Instance;
             if (gm == null)
                 return;
+            ExtraThreatRules.EnsureRolled(gm.Run, gm.Balance, gm.Week2, gm.Week3, gm.Week4, gm.Week5);
             RefreshHud();
             StartCoroutine(BillWave(gm));
         }
@@ -74,6 +78,12 @@ namespace BankruptVtuber
                 float u = _cashSlam;
                 _cash.rectTransform.localScale = Vector3.one * (1f + 0.18f * u);
                 _debt.rectTransform.localScale = Vector3.one * (1f + 0.22f * u);
+            }
+            _billSlam = Mathf.MoveTowards(_billSlam, 0f, Time.deltaTime);
+            if (_billTile != null)
+            {
+                float u = _billSlam / 0.25f;
+                _billTile.localScale = Vector3.one * (1f + 0.24f * u);
             }
 
             if (_supportOpen)
@@ -117,9 +127,11 @@ namespace BankruptVtuber
 
             var moneyBar = UiKit.Panel(root, "MoneyBar", new Color(0, 0, 0, 0));
             UiKit.Layout(moneyBar, new Vector2(0, 1), new Vector2(0.72f, 1), new Vector2(0, 1), new Vector2(24, -220), new Vector2(0, 88));
-            _cash = MoneyChip(moneyBar, "CashChip", "현금", Palette.CashGreen, 0f, 0.33f);
-            _debt = MoneyChip(moneyBar, "DebtChip", "부채", Palette.MoneyRed, 0.33f, 0.66f);
-            _mental = MoneyChip(moneyBar, "MentalChip", "멘탈", Palette.Pink, 0.66f, 1f);
+            _billToday = MoneyChip(moneyBar, "BillChip", "오늘 청구", Palette.MoneyRed, 0f, 0.28f);
+            _billTile = moneyBar.Find("BillChip") as RectTransform;
+            _cash = MoneyChip(moneyBar, "CashChip", "현금", Palette.CashGreen, 0.28f, 0.52f);
+            _debt = MoneyChip(moneyBar, "DebtChip", "부채", Palette.MoneyRed, 0.52f, 0.76f);
+            _mental = MoneyChip(moneyBar, "MentalChip", "멘탈", Palette.Pink, 0.76f, 1f);
 
             _lastDayRoot = UiKit.Panel(root, "LastDayBanner", new Color(0.55f, 0.08f, 0.16f, 0.96f));
             UiKit.Layout(_lastDayRoot, new Vector2(0.02f, 1), new Vector2(0.72f, 1), new Vector2(0, 1), new Vector2(0, -316), new Vector2(0, 88));
@@ -228,10 +240,11 @@ namespace BankruptVtuber
             panel.offsetMax = new Vector2(-6f, 0f);
             bool cash = name.Contains("Cash");
             bool debt = name.Contains("Debt");
+            bool bill = name.Contains("Bill");
             ArtSprites.ApplySliced(
                 panel.GetComponent<Image>(),
-                debt ? ArtSprites.ThreatBanner : cash ? ArtSprites.CashBanner : ArtSprites.PanelDark,
-                debt ? Palette.MoneyRed : cash ? Palette.CashGreen : new Color(0.92f, 0.45f, 0.62f, 1f));
+                debt || bill ? ArtSprites.ThreatBanner : cash ? ArtSprites.CashBanner : ArtSprites.PanelDark,
+                debt || bill ? Palette.MoneyRed : cash ? Palette.CashGreen : new Color(0.92f, 0.45f, 0.62f, 1f));
             UiKit.Label(panel, "L", label, 16, Color.white, TextAnchor.UpperLeft, FontStyle.Bold);
             var l = panel.Find("L") as RectTransform;
             UiKit.Layout(l, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(16, -6), new Vector2(-20, 20));
@@ -255,6 +268,8 @@ namespace BankruptVtuber
             _day.text = $"{week}주차  ·  {run.day}일차   /   {last}일{members}{goods}{agency}{junior}{sponsor}{rank}{concert}";
             _cash.text = EconomyRules.FormatWon(run.cash);
             _debt.text = EconomyRules.FormatWon(run.debt);
+            if (_billToday != null)
+                _billToday.text = EconomyRules.FormatWon(PeekTodayBills(GameManager.Instance));
             _mental.text = $"{run.mental}/100";
             _fandom.text = FandomRules.HudLine(run);
             string fans = FandomRules.SuperfanLine(run, GameManager.Instance.Fandom);
@@ -269,6 +284,20 @@ namespace BankruptVtuber
             _contentHud.gameObject.SetActive(!string.IsNullOrEmpty(content));
             RefreshYesterday(run);
             RefreshLastDay(run);
+        }
+
+        static int PeekTodayBills(GameManager gm)
+        {
+            if (gm == null || gm.Run == null)
+                return 0;
+            var run = gm.Run;
+            if (run.billsAppliedThisDay)
+                return EconomyRules.TonightBills(run);
+            int extra = Mathf.Max(0, run.extraThreatAmount);
+            int surcharge = Mathf.Max(0, run.pendingExtraSurcharge);
+            int auto = FandomRules.AutoCostToday(run, gm.Fandom);
+            return WeekSchedule.TotalFixedBills(run, gm.Balance, gm.Week2, gm.Week3, gm.Week4, gm.Week5)
+                + extra + surcharge + auto;
         }
 
         void RefreshYesterday(GameRunState run)
@@ -574,6 +603,8 @@ namespace BankruptVtuber
 
             RefreshYesterday(gm.Run);
             RefreshLastDay(gm.Run);
+            RefreshHud();
+            _billSlam = 0.25f;
             if (_yesterday != null && _yesterday.gameObject.activeSelf)
                 yield return new WaitForSeconds(0.55f);
             if (_lastDayRoot != null && _lastDayRoot.gameObject.activeSelf)

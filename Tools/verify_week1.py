@@ -1376,6 +1376,7 @@ def check_project() -> None:
     check_end_cut()
     check_income_count()
     check_shortfall()
+    check_morning_bill()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -2665,6 +2666,51 @@ def check_shortfall() -> None:
         fail("shortfall moved Unity off 6000.5.9f1")
     else:
         ok("short night flashes 청구 미달 after the count snap; covered nights stay gold")
+
+
+def check_morning_bill() -> None:
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+
+    if '"오늘 청구"' not in week_cs or "BillChip" not in week_cs:
+        fail("WeekStart does not show a 오늘 청구 tile")
+    elif "_billSlam = 0.25f" not in week_cs:
+        fail("오늘 청구 does not slam in 0.25s")
+    elif "ThreatBanner" not in week_cs.split("BillChip", 1)[-1].split("void RefreshHud", 1)[0] and "bill ? ArtSprites.ThreatBanner" not in week_cs:
+        fail("오늘 청구 is not on a red-tinted tile")
+    elif "PeekTodayBills" not in week_cs or "TonightBills" not in week_cs:
+        fail("오늘 청구 does not read the existing today-bill total")
+    elif "lastBills =" in week_cs:
+        fail("morning bill tile writes lastBills")
+    elif "ApplyDailyBills" not in week_cs or "SpawnIncoming" not in week_cs:
+        fail("morning bill tile dropped the existing bill wave")
+    elif "마지막 날" not in week_cs or "LastDayBanner" not in week_cs or "RefreshLastDay" not in week_cs:
+        fail("morning bill tile dropped the last-day banner")
+    elif "ShowShortfall" not in settle_cs or "청구 미달" not in settle_cs:
+        fail("morning bill tile dropped settlement 청구 미달")
+    elif "TickIncomeCount" not in settle_cs or "ShowEndCut" not in live_cs:
+        fail("morning bill tile dropped income count or 방송 종료")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("morning bill tile broke pads, 입력됨, or added timeScale")
+    elif "UnlockUiInputForStream" not in week_cs or "StreamSafeArea" not in week_cs:
+        fail("morning bill tile dropped WeekStart input unlock or safe area")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising morning bills / later weeks")
+    elif "TonightBills" not in eco_cs:
+        fail("morning bill tile dropped EconomyRules.TonightBills")
+    elif "billRent: 8000" not in balance:
+        fail("morning bill tile retuned Week 1 bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("morning bill tile dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("morning bill tile moved Unity off 6000.5.9f1")
+    else:
+        ok("WeekStart 오늘 청구 slams 0.25s on a red tile; last-day banner stays")
 
 
 def check_mental_fatigue() -> None:
