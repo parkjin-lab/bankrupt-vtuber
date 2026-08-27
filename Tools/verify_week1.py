@@ -3918,6 +3918,8 @@ def check_viewer_chip_pop() -> None:
         fail("viewer chip pop retuned ClampViewers / deltas")
     elif "perfectViewerDelta" not in rules_cs or "missViewerDelta" not in rules_cs:
         fail("StreamRules viewer deltas were dropped")
+    elif "Tuning.PerfectViewerMul" not in session_cs or "ApplyRivalSteal" not in session_cs:
+        fail("content / rival viewer modifiers were dropped")
     elif "Viewers =" in show or "Viewers =" in paint:
         fail("viewer chip pop writes viewer math")
     elif "BillFill" not in live_cs or "new Vector2(180, 10)" not in live_cs:
