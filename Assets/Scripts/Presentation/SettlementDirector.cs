@@ -71,6 +71,17 @@ namespace BankruptVtuber
         GameObject _goodsRoot;
         Text _goodsBody;
         bool _goodsOpen;
+        GameObject _agencyRoot;
+        Text _agencyBody;
+        bool _agencyOpen;
+        bool _agencyDismissed;
+        GameObject _agencySplashRoot;
+        Text _agencySplashBody;
+        bool _agencySplashOpen;
+        GameObject _juniorRoot;
+        Text _juniorBody;
+        bool _juniorOpen;
+        bool _juniorDismissed;
 
         void Awake()
         {
@@ -138,7 +149,7 @@ namespace BankruptVtuber
                 _clipSlam.color = sc;
                 _clipSlam.rectTransform.localScale = Vector3.one * (1f + 0.35f * _clipSlamFlash);
             }
-            if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen)
+            if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen || _agencyOpen || _agencySplashOpen || _juniorOpen)
                 return;
             if (CanAdvance(gm.Run) && StreamBindings.Confirm)
                 gm.NextMorning();
@@ -393,6 +404,65 @@ namespace BankruptVtuber
             var goodsGo = UiKit.Button(goodsCard, "GoodsAck", "정산으로", OnGoodsAck, Palette.Gold, Palette.Ink);
             UiKit.Layout(goodsGo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 28), new Vector2(320, 72));
             _goodsRoot.SetActive(false);
+
+            _agencyRoot = new GameObject("AgencyRoot", typeof(RectTransform));
+            _agencyRoot.transform.SetParent(root, false);
+            UiKit.Stretch(_agencyRoot.GetComponent<RectTransform>());
+            var agencyWash = UiKit.Image(_agencyRoot.transform, "AgencyWash", new Color(0.08f, 0.05f, 0.02f, 0.78f));
+            UiKit.Stretch(agencyWash.rectTransform);
+            agencyWash.raycastTarget = true;
+            var agencyCard = UiKit.Panel(_agencyRoot.transform, "AgencyCard", Color.white);
+            UiKit.Layout(agencyCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 400));
+            ArtSprites.ApplySliced(agencyCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.92f, 0.55f, 0.98f));
+            var agencyTitle = UiKit.Label(agencyCard, "AgencyTitle", "에이전시 설립", 46, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(agencyTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
+            _agencyBody = UiKit.Label(agencyCard, "AgencyBody", "", 26, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_agencyBody.rectTransform, new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _agencyBody.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _agencyBody.lineSpacing = 1.25f;
+            var agencyYes = UiKit.Button(agencyCard, "AgencyGo", "설립", OnAgencyYes, Palette.Gold, Palette.Ink);
+            UiKit.Layout(agencyYes.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 72));
+            var agencyNo = UiKit.Button(agencyCard, "AgencyLater", "나중에", OnAgencyLater, Palette.StudioHi, Palette.Pastel);
+            UiKit.Layout(agencyNo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 72));
+            _agencyRoot.SetActive(false);
+
+            _agencySplashRoot = new GameObject("AgencySplashRoot", typeof(RectTransform));
+            _agencySplashRoot.transform.SetParent(root, false);
+            UiKit.Stretch(_agencySplashRoot.GetComponent<RectTransform>());
+            var agencyOpenWash = UiKit.Image(_agencySplashRoot.transform, "AgencyOpenWash", new Color(0.08f, 0.05f, 0.02f, 0.78f));
+            UiKit.Stretch(agencyOpenWash.rectTransform);
+            agencyOpenWash.raycastTarget = true;
+            var agencyOpenCard = UiKit.Panel(_agencySplashRoot.transform, "AgencyOpenCard", Color.white);
+            UiKit.Layout(agencyOpenCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
+            ArtSprites.ApplySliced(agencyOpenCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.9f, 0.5f, 0.98f));
+            var agencyOpenTitle = UiKit.Label(agencyOpenCard, "AgencyOpenTitle", "에이전시 오픈", 52, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(agencyOpenTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
+            _agencySplashBody = UiKit.Label(agencyOpenCard, "AgencyOpenBody", "", 26, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_agencySplashBody.rectTransform, new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _agencySplashBody.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _agencySplashBody.lineSpacing = 1.25f;
+            var agencyOpenGo = UiKit.Button(agencyOpenCard, "AgencyOpenAck", "정산으로", OnAgencySplashAck, Palette.Gold, Palette.Ink);
+            UiKit.Layout(agencyOpenGo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 28), new Vector2(320, 72));
+            _agencySplashRoot.SetActive(false);
+
+            _juniorRoot = new GameObject("JuniorRoot", typeof(RectTransform));
+            _juniorRoot.transform.SetParent(root, false);
+            UiKit.Stretch(_juniorRoot.GetComponent<RectTransform>());
+            var juniorWash = UiKit.Image(_juniorRoot.transform, "JuniorWash", new Color(0.08f, 0.04f, 0.1f, 0.76f));
+            UiKit.Stretch(juniorWash.rectTransform);
+            juniorWash.raycastTarget = true;
+            var juniorCard = UiKit.Panel(_juniorRoot.transform, "JuniorCard", Color.white);
+            UiKit.Layout(juniorCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 360));
+            ArtSprites.ApplySliced(juniorCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.86f, 0.94f, 0.98f));
+            var juniorTitle = UiKit.Label(juniorCard, "JuniorTitle", "후배 스카우트", 46, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(juniorTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
+            _juniorBody = UiKit.Label(juniorCard, "JuniorBody", "", 26, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_juniorBody.rectTransform, new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            var juniorYes = UiKit.Button(juniorCard, "JuniorGo", "스카우트", OnJuniorYes, Palette.PinkDeep, Color.white);
+            UiKit.Layout(juniorYes.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 72));
+            var juniorNo = UiKit.Button(juniorCard, "JuniorLater", "나중에", OnJuniorLater, Palette.StudioHi, Palette.Pastel);
+            UiKit.Layout(juniorNo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 72));
+            _juniorRoot.SetActive(false);
         }
 
         void Render()
@@ -473,7 +543,7 @@ namespace BankruptVtuber
                     ? $"주니어 스카우트    -{EconomyRules.FormatWon(run.lastJuniorScoutCost)}\n"
                     : "") +
                 (run.lastJuniorPay > 0
-                    ? $"주니어 수입         {EconomyRules.FormatWon(run.lastJuniorPay)}\n"
+                    ? $"후배 방송           +{EconomyRules.FormatWon(run.lastJuniorPay)}\n"
                     : "") +
                 (run.lastJuniorTrainFail ? "주니어 훈련 실패   멘탈 −8\n" : "") +
                 (run.lastSponsorDaily > 0
@@ -540,9 +610,9 @@ namespace BankruptVtuber
             bool week5Offer = offerConcert || concertReady;
             _clipYes.gameObject.SetActive(false);
             _clipNo.gameObject.SetActive(false);
-            _foundAgency.gameObject.SetActive(offerFound);
-            _scout.gameObject.SetActive(offerScout);
-            _signSponsor.gameObject.SetActive(offerSponsor);
+            _foundAgency.gameObject.SetActive(offerFound && !_agencyOpen && !_agencySplashOpen);
+            _scout.gameObject.SetActive(offerScout && !_juniorOpen && !_agencyOpen && !_agencySplashOpen);
+            _signSponsor.gameObject.SetActive(offerSponsor && !_agencyOpen && !_agencySplashOpen && !_juniorOpen);
             _bookConcert.gameObject.SetActive(offerConcert);
             _concertLive.gameObject.SetActive(concertReady);
             if (_produce != null)
@@ -551,7 +621,7 @@ namespace BankruptVtuber
                 if (produceCap != null && w3 != null)
                     produceCap.text = $"아크릴 1개 생산  {EconomyRules.FormatWon(w3.goodsProduceCost)}  ·  판매 {EconomyRules.FormatWon(w3.goodsPrice)}";
             }
-            _produce.gameObject.SetActive(run.goodsUnlocked && !offerClip && !week4Offer && !week5Offer && !_goodsOpen && run.cash >= (w3 != null ? w3.goodsProduceCost : 2500));
+            _produce.gameObject.SetActive(run.goodsUnlocked && !offerClip && !week4Offer && !week5Offer && !_goodsOpen && !_agencyOpen && !_agencySplashOpen && !_juniorOpen && run.cash >= (w3 != null ? w3.goodsProduceCost : 2500));
             bool rankOn = Week5Rules.RankingUnlocked(run, w5);
             _rankBox.gameObject.SetActive(rankOn);
             if (rankOn)
@@ -800,7 +870,7 @@ namespace BankruptVtuber
 
         void AdvanceBeats()
         {
-            if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen)
+            if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen || _agencyOpen || _agencySplashOpen || _juniorOpen)
                 return;
             var gm = GameManager.Instance;
             if (gm == null || gm.Run == null)
@@ -824,7 +894,24 @@ namespace BankruptVtuber
                 return;
             }
             if (gm.Run.goodsJustUnlocked)
+            {
                 ShowGoodsSplash();
+                return;
+            }
+            if (FandomRules.MustResolveConflict(gm.Run))
+                return;
+            if (gm.Run.agencyJustFounded)
+            {
+                ShowAgencySplash();
+                return;
+            }
+            if (!_agencyDismissed && Week4Rules.CanFoundAgency(gm.Run, gm.Week4))
+            {
+                ShowAgencyCard();
+                return;
+            }
+            if (!_juniorDismissed && Week4Rules.CanScoutJunior(gm.Run, gm.Week4))
+                ShowJuniorCard();
         }
 
         void ShowMemberSplash()
@@ -938,10 +1025,125 @@ namespace BankruptVtuber
             Render();
         }
 
+        void ShowAgencyCard()
+        {
+            var w4 = GameManager.Instance.Week4;
+            int cost = w4 != null ? w4.agencyFoundCost : 40000;
+            int daily = w4 != null ? w4.agencyDailyCost : 15000;
+            int bills = w4 != null ? w4.TotalDailyBills + w4.agencyDailyCost : 53000;
+            if (_agencyBody != null)
+                _agencyBody.text = $"에이전시 설립 {EconomyRules.FormatWon(cost)}\n이후 일 +{EconomyRules.FormatWon(daily)}\n고정비 {EconomyRules.FormatWon(bills)}";
+            if (_agencyRoot != null)
+            {
+                _agencyRoot.SetActive(true);
+                _agencyRoot.transform.SetAsLastSibling();
+            }
+            _agencyOpen = true;
+            HideWeek4QuietButtons();
+        }
+
+        void CloseAgencyCard()
+        {
+            _agencyOpen = false;
+            if (_agencyRoot != null)
+                _agencyRoot.SetActive(false);
+        }
+
+        void OnAgencyYes()
+        {
+            OnFoundAgency();
+        }
+
+        void OnAgencyLater()
+        {
+            _agencyDismissed = true;
+            CloseAgencyCard();
+            Render();
+            AdvanceBeats();
+        }
+
+        void ShowAgencySplash()
+        {
+            var w4 = GameManager.Instance.Week4;
+            int daily = w4 != null ? w4.agencyDailyCost : 15000;
+            int bills = w4 != null ? w4.TotalDailyBills + w4.agencyDailyCost : 53000;
+            if (_agencySplashBody != null)
+                _agencySplashBody.text = $"이후 일 +{EconomyRules.FormatWon(daily)}\n고정비 {EconomyRules.FormatWon(bills)}";
+            if (_agencySplashRoot != null)
+            {
+                _agencySplashRoot.SetActive(true);
+                _agencySplashRoot.transform.SetAsLastSibling();
+            }
+            _agencySplashOpen = true;
+            HideWeek4QuietButtons();
+        }
+
+        void OnAgencySplashAck()
+        {
+            var run = GameManager.Instance != null ? GameManager.Instance.Run : null;
+            if (run != null)
+                run.agencyJustFounded = false;
+            _agencySplashOpen = false;
+            if (_agencySplashRoot != null)
+                _agencySplashRoot.SetActive(false);
+            Render();
+            AdvanceBeats();
+        }
+
+        void ShowJuniorCard()
+        {
+            var w4 = GameManager.Instance.Week4;
+            int cost = w4 != null ? w4.juniorScoutCost : 25000;
+            if (_juniorBody != null)
+                _juniorBody.text = $"{EconomyRules.FormatWon(cost)}";
+            if (_juniorRoot != null)
+            {
+                _juniorRoot.SetActive(true);
+                _juniorRoot.transform.SetAsLastSibling();
+            }
+            _juniorOpen = true;
+            HideWeek4QuietButtons();
+        }
+
+        void CloseJuniorCard()
+        {
+            _juniorOpen = false;
+            if (_juniorRoot != null)
+                _juniorRoot.SetActive(false);
+        }
+
+        void OnJuniorYes()
+        {
+            OnScout();
+        }
+
+        void OnJuniorLater()
+        {
+            _juniorDismissed = true;
+            CloseJuniorCard();
+            Render();
+            AdvanceBeats();
+        }
+
+        void HideWeek4QuietButtons()
+        {
+            if (_foundAgency != null)
+                _foundAgency.gameObject.SetActive(false);
+            if (_scout != null)
+                _scout.gameObject.SetActive(false);
+            if (_signSponsor != null)
+                _signSponsor.gameObject.SetActive(false);
+            if (_produce != null)
+                _produce.gameObject.SetActive(false);
+        }
+
         void OnFoundAgency()
         {
             var gm = GameManager.Instance;
-            Week4Rules.FoundAgency(gm.Run, gm.Week4);
+            bool ok = Week4Rules.FoundAgency(gm.Run, gm.Week4);
+            CloseAgencyCard();
+            if (ok)
+                ShowAgencySplash();
             Render();
         }
 
@@ -949,7 +1151,10 @@ namespace BankruptVtuber
         {
             var gm = GameManager.Instance;
             Week4Rules.ScoutJunior(gm.Run, gm.Week4);
+            CloseJuniorCard();
+            _juniorDismissed = true;
             Render();
+            AdvanceBeats();
         }
 
         void OnSignSponsor()

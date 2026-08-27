@@ -68,6 +68,7 @@ namespace BankruptVtuber
         public float lastStreamPeakViewers;
 
         public bool agencyFounded;
+        public bool agencyJustFounded;
         public bool juniorScouted;
         public bool sponsorEverSigned;
         public bool sponsorActive;
@@ -208,6 +209,7 @@ namespace BankruptVtuber
         void ClearWeek4Progress()
         {
             agencyFounded = false;
+            agencyJustFounded = false;
             juniorScouted = false;
             sponsorEverSigned = false;
             sponsorActive = false;

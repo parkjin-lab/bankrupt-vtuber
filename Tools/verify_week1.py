@@ -1333,6 +1333,7 @@ def check_project() -> None:
     check_week2_beats()
     check_rival_duel()
     check_week3_goods_beats()
+    check_week4_agency_beats()
 
 
 def check_content_types() -> None:
@@ -1873,6 +1874,70 @@ def check_week3_goods_beats() -> None:
         fail("a second QTE was added")
     else:
         ok("produce button stays; rival / membership / clip / Week 1 stay")
+
+
+def check_week4_agency_beats() -> None:
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    w4r_cs = (ROOT / "Assets/Scripts/Economy/Week4Rules.cs").read_text(encoding="utf-8")
+    w4_asset = (ROOT / "Assets/Resources/Balance/Week4Balance.asset").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    run_cs = (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8")
+    beats = settle_cs.split("void AdvanceBeats", 1)[-1].split("void ShowMemberSplash", 1)[0]
+    found = w4r_cs.split("public static bool FoundAgency", 1)[-1].split("public static bool CanScoutJunior", 1)[0]
+    can_found = w4r_cs.split("public static bool CanFoundAgency", 1)[-1].split("public static bool FoundAgency", 1)[0]
+
+    agency_card = settle_cs.split("void ShowAgencyCard", 1)[-1][:700] if "void ShowAgencyCard" in settle_cs else ""
+    if "에이전시 설립" not in settle_cs or "이후 일" not in agency_card or "고정비" not in agency_card:
+        fail("agency found card is missing")
+    elif "에이전시 오픈" not in settle_cs or "agencyJustFounded" not in run_cs or "agencyJustFounded = true" not in found:
+        fail("agency open splash is not a one-shot after FoundAgency")
+    elif "후배 스카우트" not in settle_cs or "ShowJuniorCard" not in settle_cs:
+        fail("junior scout card is missing")
+    elif "후배 방송" not in settle_cs or "lastJuniorPay" not in settle_cs:
+        fail("settlement does not show 후배 방송 +₩ on success days")
+    elif "스폰서 멘트" not in live_cs or "계약 유지" not in live_cs or "계약 파기" not in live_cs:
+        fail("sponsor line card is not the loud 스폰서 멘트 beat")
+    elif "FlashLineResult" not in live_cs or "ApplySponsorLine" not in live_cs:
+        fail("sponsor line flash does not use existing ApplySponsorLine")
+    elif "FoundAgency" not in settle_cs or "ScoutJunior" not in settle_cs:
+        fail("cards do not spend via existing FoundAgency / ScoutJunior")
+    else:
+        ok("Week 4 agency / junior / sponsor line are screenshot beats")
+
+    if "firstDay" not in can_found or "goodsUnlocked" not in can_found or "agencyUnlockCash" not in can_found:
+        fail("agency unlock lost cash / debt / acrylic / day gates")
+    elif "CanScoutJunior" not in beats or "agencyFounded" not in w4r_cs.split("CanScoutJunior", 1)[-1][:250]:
+        fail("junior card is not gated on existing CanScoutJunior")
+    elif beats.find("goodsJustUnlocked") > beats.find("CanFoundAgency"):
+        fail("agency card is not after the Week 3 goods splash")
+    elif "EnableSponsorLine" not in live_cs.split("void Start", 1)[-1].split("void Update", 1)[0]:
+        fail("sponsor line is no longer the existing mid-stream window")
+    elif "agencyFoundCost: 40000" not in w4_asset or "agencyDailyCost: 15000" not in w4_asset:
+        fail("agency found / daily cost were retuned")
+    elif "agencyUnlockCash: 100000" not in w4_asset or "agencyUnlockDebtMax: 40000" not in w4_asset:
+        fail("agency unlock gates were retuned")
+    elif "juniorScoutCost: 25000" not in w4_asset or "juniorDailySuccess: 4000" not in w4_asset:
+        fail("junior scout / pay were retuned")
+    elif "sponsorLineBonus: 3000" not in w4_asset or "sponsorFailCash: 15000" not in w4_asset or "sponsorFailMental: 12" not in w4_asset:
+        fail("sponsor line numbers were retuned")
+    elif "sponsorPeakViewers: 70" not in w4_asset or "sponsorDaily: 10000" not in w4_asset:
+        fail("sponsor deal numbers were retuned")
+    else:
+        ok("Week 1–3 stay gated; Week4Balance numbers unchanged")
+
+    if "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("Week 4 beats broke pads, 입력됨, or added timeScale")
+    elif "아크릴 스탠드 해금" not in settle_cs or "라이벌 승" not in (ROOT / "Assets/Scripts/Presentation/RivalDuelView.cs").read_text(encoding="utf-8"):
+        fail("Week 4 beats dropped goods splash or rival duel")
+    elif "멤버십 해금" not in settle_cs or "오늘 클립 올릴까" not in settle_cs or "주니어 스카우트" not in settle_cs:
+        fail("Week 4 beats dropped Week 2 cards or the junior button")
+    elif "Week4" in title_cs or "에이전시" in title_cs or "스폰서" in title_cs:
+        fail("Title started advertising Week 4 agency")
+    elif "billRent: 8000" not in (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8"):
+        fail("Week 1 bills were retuned by Week 4 beats")
+    else:
+        ok("agency / junior / sponsor stay Week 4-only; prior beats stay")
 
 
 def check_save_roundtrip() -> None:

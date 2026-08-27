@@ -44,6 +44,9 @@ namespace BankruptVtuber
         Text _promoSlam;
         float _promoSlamFlash;
         bool _promoWasActive;
+        Text _lineSlam;
+        float _lineSlamFlash;
+        bool _lineWasActive;
         RectTransform _lineRoot;
         Text _lineTitle;
         Text _lineBody;
@@ -324,6 +327,9 @@ namespace BankruptVtuber
             if (_promoWasActive && !_session.PromoActive && _session.Promo.Resolved && _session.Promo.Success)
                 FlashPromoSuccess();
             _promoWasActive = _session.PromoActive;
+            if (_lineWasActive && !_session.LineActive && _session.Line.Resolved)
+                FlashLineResult();
+            _lineWasActive = _session.LineActive;
             RefreshPromoOverlay();
             RefreshLineOverlay();
             RefreshConcertOverlay();
@@ -384,6 +390,14 @@ namespace BankruptVtuber
                 pc.a = _promoSlamFlash;
                 _promoSlam.color = pc;
                 _promoSlam.rectTransform.localScale = Vector3.one * (1f + 0.32f * _promoSlamFlash);
+            }
+            _lineSlamFlash = Mathf.MoveTowards(_lineSlamFlash, 0f, dt * 0.7f);
+            if (_lineSlam != null)
+            {
+                var lc = _lineSlam.color;
+                lc.a = _lineSlamFlash;
+                _lineSlam.color = lc;
+                _lineSlam.rectTransform.localScale = Vector3.one * (1f + 0.32f * _lineSlamFlash);
             }
             var sc = _stub.color;
             sc.a = Mathf.MoveTowards(sc.a, 0f, dt * 0.7f);
@@ -656,16 +670,21 @@ namespace BankruptVtuber
             promoSlamC.a = 0f;
             _promoSlam.color = promoSlamC;
 
-            _lineRoot = UiKit.Panel(root, "LineCard", new Color(0.14f, 0.09f, 0.16f, 0.96f));
-            UiKit.Layout(_lineRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(560, 280));
-            _lineTitle = UiKit.Label(_lineRoot, "LTitle", "스폰서 멘트 타이밍", 34, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
-            UiKit.Layout(_lineTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -16), new Vector2(-24, 44));
-            _lineBody = UiKit.Label(_lineRoot, "LBody", "← / ↑  스폰서 멘트 넣기\n→ / ↓  놓치면 계약 종료", 20, Palette.Pastel, TextAnchor.MiddleCenter);
-            UiKit.Layout(_lineBody.rectTransform, new Vector2(0, 0.28f), new Vector2(1, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-28, 0));
-            _lineTimer = UiKit.Label(_lineRoot, "LTimer", "", 18, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_lineTimer.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 78), new Vector2(0, 24));
+            _lineRoot = UiKit.Panel(root, "LineCard", new Color(0.18f, 0.08f, 0.16f, 0.97f));
+            UiKit.Layout(_lineRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(720, 380));
+            _lineTitle = UiKit.Label(_lineRoot, "LTitle", "스폰서 멘트 타이밍", 40, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
+            UiKit.Layout(_lineTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -18), new Vector2(-24, 52));
+            _lineBody = UiKit.Label(_lineRoot, "LBody", "스폰서 멘트\n계약 유지 +₩3,000\n실패 시 계약 파기", 26, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_lineBody.rectTransform, new Vector2(0, 0.30f), new Vector2(1, 0.78f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-36, 0));
+            _lineTimer = UiKit.Label(_lineRoot, "LTimer", "", 20, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_lineTimer.rectTransform, new Vector2(0, 0.22f), new Vector2(1, 0.30f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             AddOverlayChoice(_lineRoot, "멘트 넣기", "놓치기");
             _lineRoot.gameObject.SetActive(false);
+            _lineSlam = UiKit.Label(root, "LineSlam", "계약 유지 +₩3,000", 48, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_lineSlam.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(820, 80));
+            var lineSlamC = _lineSlam.color;
+            lineSlamC.a = 0f;
+            _lineSlam.color = lineSlamC;
 
             _concertRoot = UiKit.Panel(root, "ConcertCard", new Color(0.16f, 0.07f, 0.18f, 0.96f));
             UiKit.Layout(_concertRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(560, 280));
@@ -991,8 +1010,37 @@ namespace BankruptVtuber
             if (on)
             {
                 _eventDim.gameObject.SetActive(true);
+                var w4 = GameManager.Instance != null ? GameManager.Instance.Week4 : null;
+                int keep = w4 != null ? w4.sponsorLineBonus : 3000;
+                _lineBody.text = $"스폰서 멘트\n계약 유지 +{EconomyRules.FormatWon(keep)}\n실패 시 계약 파기";
                 _lineTimer.text = $"{_session.Line.TimeLeft:0.00}s";
             }
+        }
+
+        void FlashLineResult()
+        {
+            if (_lineSlam == null)
+                return;
+            var w4 = GameManager.Instance != null ? GameManager.Instance.Week4 : null;
+            int keep = w4 != null ? w4.sponsorLineBonus : 3000;
+            int lose = w4 != null ? w4.sponsorFailCash : 15000;
+            int mental = w4 != null ? w4.sponsorFailMental : 12;
+            bool ok = _session != null && _session.Line.Success;
+            if (ok)
+            {
+                _lineSlam.text = $"계약 유지 +{EconomyRules.FormatWon(keep)}";
+                _lineSlam.color = Palette.Gold;
+            }
+            else
+            {
+                _lineSlam.text = $"계약 파기 현금 −{EconomyRules.FormatWon(lose)} 멘탈 −{mental}";
+                _lineSlam.color = Palette.MoneyRed;
+            }
+            var c = _lineSlam.color;
+            c.a = 1f;
+            _lineSlam.color = c;
+            _lineSlam.transform.SetAsLastSibling();
+            _lineSlamFlash = 1.2f;
         }
 
         void RefreshConcertOverlay()

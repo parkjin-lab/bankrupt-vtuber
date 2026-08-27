@@ -282,6 +282,7 @@ namespace BankruptVtuber
                 lastGoodsPromoSuccess = run.lastGoodsPromoSuccess,
                 lastStreamPeakViewers = run.lastStreamPeakViewers,
                 agencyFounded = run.agencyFounded,
+                agencyJustFounded = run.agencyJustFounded,
                 juniorScouted = run.juniorScouted,
                 sponsorEverSigned = run.sponsorEverSigned,
                 sponsorActive = run.sponsorActive,
@@ -405,6 +406,7 @@ namespace BankruptVtuber
             run.lastGoodsPromoSuccess = data.lastGoodsPromoSuccess;
             run.lastStreamPeakViewers = data.lastStreamPeakViewers;
             run.agencyFounded = data.agencyFounded;
+            run.agencyJustFounded = data.agencyJustFounded;
             run.juniorScouted = data.juniorScouted;
             run.sponsorEverSigned = data.sponsorEverSigned;
             run.sponsorActive = data.sponsorActive;
@@ -613,6 +615,7 @@ namespace BankruptVtuber
             public bool lastGoodsPromoSuccess;
             public float lastStreamPeakViewers;
             public bool agencyFounded;
+            public bool agencyJustFounded;
             public bool juniorScouted;
             public bool sponsorEverSigned;
             public bool sponsorActive;

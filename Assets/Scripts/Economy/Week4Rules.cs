@@ -24,6 +24,7 @@ namespace BankruptVtuber
                 return false;
             run.cash -= w4.agencyFoundCost;
             run.agencyFounded = true;
+            run.agencyJustFounded = true;
             run.lastAgencyFoundCost = w4.agencyFoundCost;
             EconomyRules.ConvertNegativeCashToDebt(run);
             return true;
