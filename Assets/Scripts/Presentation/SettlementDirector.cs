@@ -65,6 +65,12 @@ namespace BankruptVtuber
         float _incomeCountT;
         bool _coverCrossed;
         float _incomeCoverFlash;
+        bool _debtCountStarted;
+        bool _debtCounting;
+        int _debtFrom;
+        int _debtTo;
+        float _debtCountT;
+        float _debtDip;
         RectTransform _billsTile;
         Image _billsImg;
         Text _billsCap;
@@ -159,6 +165,7 @@ namespace BankruptVtuber
             _stampPortrait?.Tick(Time.deltaTime);
             _mood = Mathf.MoveTowards(_mood, 0f, Time.deltaTime * 0.55f);
             TickIncomeCount(Time.deltaTime);
+            TickDebtCount(Time.deltaTime);
             if (_cashTile != null && _debtTile != null)
             {
                 float pulse = 1f + 0.12f * Mathf.Abs(Mathf.Sin(Time.time * 6f)) * (0.35f + _mood);
@@ -183,6 +190,22 @@ namespace BankruptVtuber
                 _letterHeart.rectTransform.localScale = Vector3.one * (1f + 0.18f * _letterHeartFlash);
             }
             TickShortfall(Time.deltaTime);
+            if (_tileDebt != null && _debtCounting)
+            {
+                _tileDebt.color = Palette.MoneyRed;
+                _tileDebt.rectTransform.localScale = Vector3.one * (1f + 0.12f * (1f - Mathf.Clamp01(_debtCountT / 0.4f)));
+            }
+            else if (_tileDebt != null && _debtDip > 0.02f)
+            {
+                _debtDip = Mathf.MoveTowards(_debtDip, 0f, Time.deltaTime * 3.2f);
+                _tileDebt.color = Color.Lerp(Color.white, Palette.CashGreen, _debtDip);
+                _tileDebt.rectTransform.localScale = Vector3.one * (1f - 0.06f * _debtDip);
+            }
+            else if (_tileDebt != null)
+            {
+                _tileDebt.color = Color.white;
+                _tileDebt.rectTransform.localScale = Vector3.one;
+            }
             _incomeCoverFlash = Mathf.MoveTowards(_incomeCoverFlash, 0f, Time.deltaTime * 2.2f);
             if (_tileIncome != null && _incomeCoverFlash > 0.02f)
             {
@@ -668,6 +691,21 @@ namespace BankruptVtuber
             _concertResultRoot.SetActive(false);
         }
 
+        void TickDebtCount(float dt)
+        {
+            if (!_debtCounting || _tileDebt == null)
+                return;
+            _debtCountT += dt;
+            float u = Mathf.Clamp01(_debtCountT / 0.4f);
+            int shown = Mathf.RoundToInt(Mathf.Lerp(_debtFrom, _debtTo, u));
+            if (u >= 1f)
+            {
+                shown = _debtTo;
+                _debtCounting = false;
+            }
+            _tileDebt.text = EconomyRules.FormatWon(shown);
+        }
+
         void TickIncomeCount(float dt)
         {
             if (!_incomeCounting || _tileIncome == null)
@@ -804,7 +842,27 @@ namespace BankruptVtuber
             }
             _tileBills.text = "-" + EconomyRules.FormatWon(charges);
             _tileCash.text = EconomyRules.FormatWon(run.cash);
-            _tileDebt.text = EconomyRules.FormatWon(run.debt);
+            _debtTo = run.debt;
+            _debtFrom = run.debtAtDayStart;
+            if (!_debtCountStarted)
+            {
+                _debtCountStarted = true;
+                if (_debtTo > _debtFrom)
+                {
+                    _debtCounting = true;
+                    _debtCountT = 0f;
+                    if (_tileDebt != null)
+                        _tileDebt.text = EconomyRules.FormatWon(_debtFrom);
+                }
+                else if (_tileDebt != null)
+                {
+                    _tileDebt.text = EconomyRules.FormatWon(_debtTo);
+                    if (_debtTo < _debtFrom)
+                        _debtDip = 1f;
+                }
+            }
+            else if (!_debtCounting && _tileDebt != null)
+                _tileDebt.text = EconomyRules.FormatWon(run.debt);
             _tilePerfect.text = run.lastPerfects.ToString();
             _tileMiss.text = run.lastMisses.ToString();
             _tileViewers.text = Mathf.RoundToInt(run.lastStreamPeakViewers).ToString();

@@ -1377,6 +1377,7 @@ def check_project() -> None:
     check_income_count()
     check_shortfall()
     check_morning_bill()
+    check_debt_count()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -2711,6 +2712,49 @@ def check_morning_bill() -> None:
         fail("morning bill tile moved Unity off 6000.5.9f1")
     else:
         ok("WeekStart 오늘 청구 slams 0.25s on a red tile; last-day banner stays")
+
+
+def check_debt_count() -> None:
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    state_cs = (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8")
+    save_cs = (ROOT / "Assets/Scripts/Core/RunSave.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    tick = settle_cs.split("void TickDebtCount", 1)[-1].split("void TickIncomeCount", 1)[0]
+
+    if "TickDebtCount" not in settle_cs or "_debtCountT / 0.4f" not in settle_cs:
+        fail("부채 does not count up over ~0.4s")
+    elif "_debtTo > _debtFrom" not in settle_cs or "debtAtDayStart" not in settle_cs:
+        fail("부채 count does not run only when tonight's debt rose")
+    elif "Palette.MoneyRed" not in settle_cs.split("_debtCounting", 1)[-1].split("else if (_tileDebt != null && _debtDip", 1)[0]:
+        fail("rising 부채 is not tinted red while it climbs")
+    elif "debt =" in tick or "debtAtDayStart =" in tick:
+        fail("부채 count writes debt math")
+    elif "debtAtDayStart = debt" not in state_cs or "debtAtDayStart" not in save_cs:
+        fail("부채 count does not remember the actual day-start debt")
+    elif "ConvertNegativeCashToDebt" in settle_cs:
+        fail("부채 count reimplemented debt math")
+    elif "TickIncomeCount" not in settle_cs or "ShowShortfall" not in settle_cs or "청구 미달" not in settle_cs:
+        fail("부채 count dropped income count or 청구 미달")
+    elif '"오늘 청구"' not in week_cs or "_billSlam = 0.25f" not in week_cs:
+        fail("부채 count dropped WeekStart 오늘 청구 slam")
+    elif "ShowEndCut" not in live_cs or "ShowIncomeDelta" not in live_cs:
+        fail("부채 count dropped 방송 종료 or +₩ popup")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("부채 count broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising debt count / later weeks")
+    elif "billRent: 8000" not in balance or "startingDebt: 50000" not in balance:
+        fail("부채 count retuned Week 1 debt or bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("부채 count dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("부채 count moved Unity off 6000.5.9f1")
+    else:
+        ok("settlement 부채 counts old→new in 0.4s when debt rose; flat/drop just shows")
 
 
 def check_mental_fatigue() -> None:

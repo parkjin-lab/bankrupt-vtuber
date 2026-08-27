@@ -247,6 +247,7 @@ namespace BankruptVtuber
                 lastStreamEventSuccess = run.lastStreamEventSuccess,
                 lastBills = run.lastBills,
                 lastRepaid = run.lastRepaid,
+                debtAtDayStart = run.debtAtDayStart,
                 lastOutcome = (int)run.lastOutcome,
                 runSeed = run.runSeed,
                 extraThreatRolled = run.extraThreatRolled,
@@ -379,6 +380,7 @@ namespace BankruptVtuber
             run.lastStreamEventSuccess = data.lastStreamEventSuccess;
             run.lastBills = data.lastBills;
             run.lastRepaid = data.lastRepaid;
+            run.debtAtDayStart = data.debtAtDayStart;
             run.lastOutcome = (WeekOutcome)data.lastOutcome;
             run.runSeed = data.runSeed;
             run.membershipUnlocked = data.membershipUnlocked;
@@ -584,6 +586,7 @@ namespace BankruptVtuber
             public bool lastStreamEventSuccess;
             public int lastBills;
             public int lastRepaid;
+            public int debtAtDayStart;
             public int lastOutcome;
             public int runSeed;
             public bool extraThreatRolled;
