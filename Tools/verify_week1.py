@@ -1339,6 +1339,7 @@ def check_project() -> None:
     check_portrait_safe_area()
     check_day_headline()
     check_chat_nicks()
+    check_hype_wash()
 
 
 def check_content_types() -> None:
@@ -2239,6 +2240,53 @@ def check_chat_nicks() -> None:
         fail("nick slice retuned spawn or Week 1 bills")
     else:
         ok("falling chat shows deterministic Korean nicks; 민준/하은 stay special")
+
+
+def check_hype_wash() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    avatar_cs = (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    nicks_cs = (ROOT / "Assets/Scripts/Data/ChatNicks.cs").read_text(encoding="utf-8") if (ROOT / "Assets/Scripts/Data/ChatNicks.cs").exists() else ""
+
+    if "RefreshHypeShow" not in live_cs or "HypeBanner" not in live_cs:
+        fail("hype does not eat the screen")
+    elif "하이프" not in live_cs or "hypeIncomeMultiplier" not in live_cs:
+        fail("하이프 2.5x ticker was dropped")
+    elif "HypeLeft" not in live_cs or "HypeCount" not in live_cs:
+        fail("hype countdown is not visible")
+    elif "SetHype" not in avatar_cs or "SetHype(true)" not in live_cs:
+        fail("avatar has no hype sparkle / happy pose")
+    elif "HypeChatGlow" not in live_cs:
+        fail("chat bubbles do not brighten during hype")
+    elif "ComboSting" not in live_cs or "comboIncomeMultiplier" not in live_cs:
+        fail("combo 5 has no smaller 1.5x sting")
+    elif "_comboStingFlash * 0.20f" not in live_cs:
+        fail("combo 5 sting is as loud as the full hype wash")
+    elif "_look.Wash" not in live_cs or "SetHype(false)" not in live_cs:
+        fail("hype end does not snap back to today's content wash")
+    elif "if (hypeActive)" not in rules_cs or "return b.hypeIncomeMultiplier;" not in rules_cs:
+        fail("StreamRules.IncomeMultiplier math was retuned")
+    elif "Combo >= 5" not in live_cs or "PlayOneShot" not in live_cs:
+        fail("combo-5 SFX was dropped")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("hype wash broke pads, 입력됨, or added timeScale")
+    elif "StreamSafeArea" not in live_cs or '"Nick"' not in live_cs or "오늘 헤드라인" not in settle_cs:
+        fail("hype wash dropped StreamSafeArea, nicks, or 오늘 헤드라인")
+    elif "밤샌사람" not in nicks_cs:
+        fail("hype wash dropped chat nicks")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising hype / later weeks")
+    elif "hypeSeconds: 12" not in balance or "hypeIncomeMultiplier: 2.5" not in balance:
+        fail("hype numbers were retuned")
+    elif "comboIncomeMultiplier: 1.5" not in balance or "hypePerfectCombo: 9" not in balance:
+        fail("combo / hype thresholds were retuned")
+    elif "billRent: 8000" not in balance:
+        fail("Week 1 bills were retuned by the hype wash")
+    else:
+        ok("hype eats the screen gold; combo 5 is a smaller sting; numbers unchanged")
 
 
 def check_save_roundtrip() -> None:

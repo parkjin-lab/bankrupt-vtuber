@@ -76,6 +76,12 @@ namespace BankruptVtuber
         Image _wash;
         Image _washVeil;
         Image _chatPanel;
+        Image _hypeChatGlow;
+        Text _hypeBanner;
+        Text _hypeCount;
+        Text _comboSting;
+        float _comboStingFlash;
+        bool _hypeWasOn;
         Text _showTitle;
         ContentShowLook _look = ContentShowLook.For(StreamContentType.None);
         float _bedDuck;
@@ -214,7 +220,11 @@ namespace BankruptVtuber
             float dt = Time.deltaTime;
             _session.Tick(dt);
             if (_session.Combo >= 5 && _lastCombo < 5)
+            {
                 PlaySfx(_comboCue, 0.52f);
+                if (!_session.HypeActive)
+                    _comboStingFlash = 1f;
+            }
             _lastCombo = _session.Combo;
             if (UnityEngine.EventSystems.EventSystem.current != null)
                 UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null);
@@ -418,9 +428,8 @@ namespace BankruptVtuber
             sc.a = Mathf.MoveTowards(sc.a, 0f, dt * 0.7f);
             _stub.color = sc;
 
-            var hype = _hypeFlash.color;
-            hype.a = _session.HypeActive ? 0.16f + Mathf.Sin(Time.time * 8f) * 0.05f : 0f;
-            _hypeFlash.color = hype;
+            _comboStingFlash = Mathf.MoveTowards(_comboStingFlash, 0f, dt * 1.7f);
+            RefreshHypeShow();
             _bedDuck = Mathf.MoveTowards(_bedDuck, 0f, dt * 1.8f);
             if (_bed != null)
                 _bed.volume = Mathf.Lerp(_look.BedVolume, _look.BedVolume * 0.28f, _bedDuck);
@@ -504,6 +513,12 @@ namespace BankruptVtuber
             _hypeFlash = UiKit.Image(root, "HypeFlash", new Color(1f, 0.82f, 0.25f, 0f));
             UiKit.Stretch(_hypeFlash.rectTransform);
             _hypeFlash.raycastTarget = false;
+            _hypeBanner = UiKit.Label(root, "HypeBanner", "", 62, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_hypeBanner.rectTransform, new Vector2(0.08f, 0.58f), new Vector2(0.52f, 0.58f), new Vector2(0.5f, 0.5f), new Vector2(0, 36), new Vector2(0, 72));
+            _hypeCount = UiKit.Label(root, "HypeCount", "", 34, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_hypeCount.rectTransform, new Vector2(0.08f, 0.58f), new Vector2(0.52f, 0.58f), new Vector2(0.5f, 0.5f), new Vector2(0, -18), new Vector2(0, 40));
+            _comboSting = UiKit.Label(root, "ComboSting", "", 28, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_comboSting.rectTransform, new Vector2(0.12f, 0.54f), new Vector2(0.48f, 0.54f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 36));
 
             var top = UiKit.Panel(root, "Top", new Color(0.08f, 0.04f, 0.1f, 0.90f));
             UiKit.Layout(top, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(0, 200));
@@ -562,6 +577,10 @@ namespace BankruptVtuber
             var laneFade = _lane.gameObject.AddComponent<CanvasGroup>();
             laneFade.blocksRaycasts = false;
             laneFade.interactable = false;
+            _hypeChatGlow = UiKit.Image(_lane, "HypeChatGlow", new Color(1f, 0.86f, 0.28f, 0f));
+            UiKit.Stretch(_hypeChatGlow.rectTransform);
+            _hypeChatGlow.raycastTarget = false;
+            _hypeChatGlow.transform.SetAsFirstSibling();
 
             _hit = UiKit.Panel(_lane, "Hit", new Color(1f, 1f, 1f, 0.22f));
             UiKit.Layout(_hit, new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, LaneHit), new Vector2(0, 10));
@@ -890,6 +909,7 @@ namespace BankruptVtuber
             else
                 _hypeMul.text = "";
             _hypeMul.color = Palette.Gold;
+            _hypeMul.fontSize = _session.HypeActive ? 22 : 14;
             int room = _bankruptAt - run.debt;
             bool atRisk = run.cash + shown < _tonightBills;
             if (_bankruptRow != null)
@@ -1138,6 +1158,8 @@ namespace BankruptVtuber
                 color = Color.Lerp(Palette.Troll, Palette.MoneyRed, 0.35f);
             if (_look.GoldSparkle && !troll && !named)
                 color = Color.Lerp(color, Palette.Gold, 0.28f);
+            if (_session != null && _session.HypeActive && !named)
+                color = Color.Lerp(color, Palette.Gold, 0.22f);
             var card = UiKit.Panel(_lane, "Note", Color.white);
             float scale = _look.BubbleScale > 0.1f ? _look.BubbleScale : 1f;
             if (_look.LoudTroll && troll)
@@ -1273,6 +1295,63 @@ namespace BankruptVtuber
             _sting.color = c;
             _stingFlash = 1.15f;
             _viewerFlash = 1f;
+        }
+
+        void RefreshHypeShow()
+        {
+            bool hype = _session != null && _session.HypeActive;
+            float pulse = Mathf.Abs(Mathf.Sin(Time.time * 8f));
+            if (hype)
+            {
+                var goldWash = new Color(0.54f, 0.38f, 0.06f, 1f);
+                if (_wash != null)
+                    _wash.color = Color.Lerp(_look.Wash, goldWash, 0.86f);
+                if (_washVeil != null)
+                    _washVeil.color = new Color(1f, 0.84f, 0.22f, 0.40f + 0.10f * pulse);
+                if (_hypeFlash != null)
+                    _hypeFlash.color = new Color(1f, 0.86f, 0.22f, 0.46f + 0.12f * pulse);
+                if (_hypeChatGlow != null)
+                    _hypeChatGlow.color = new Color(1f, 0.88f, 0.32f, 0.16f + 0.06f * pulse);
+                if (_hypeBanner != null)
+                    _hypeBanner.text = $"하이프 {_session.Balance.hypeIncomeMultiplier:0.#}x";
+                if (_hypeCount != null)
+                    _hypeCount.text = $"{_session.HypeLeft:0.0}s";
+                if (_comboSting != null)
+                    _comboSting.text = "";
+                _avatar?.SetHype(true);
+                UiKit.EnsureCamera(_wash != null ? _wash.color : goldWash);
+            }
+            else
+            {
+                if (_hypeWasOn)
+                {
+                    if (_wash != null)
+                        _wash.color = _look.Wash;
+                    if (_washVeil != null)
+                        _washVeil.color = _look.WashVeil;
+                    UiKit.EnsureCamera(_look.Wash);
+                    _avatar?.SetHype(false);
+                }
+                if (_hypeFlash != null)
+                    _hypeFlash.color = new Color(1f, 0.82f, 0.25f, _comboStingFlash * 0.20f);
+                if (_hypeChatGlow != null)
+                    _hypeChatGlow.color = new Color(1f, 0.86f, 0.28f, 0f);
+                if (_hypeBanner != null)
+                    _hypeBanner.text = "";
+                if (_hypeCount != null)
+                    _hypeCount.text = "";
+                if (_comboSting != null)
+                {
+                    _comboSting.text = _comboStingFlash > 0.02f
+                        ? $"콤보 {_session.Balance.comboIncomeMultiplier:0.#}x"
+                        : "";
+                    var c = Palette.Gold;
+                    c.a = _comboStingFlash;
+                    _comboSting.color = c;
+                    _comboSting.rectTransform.localScale = Vector3.one * (1f + 0.18f * _comboStingFlash);
+                }
+            }
+            _hypeWasOn = hype;
         }
 
         void ApplyContentShow(ContentShowLook look)

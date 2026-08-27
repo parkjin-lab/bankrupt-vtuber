@@ -30,6 +30,7 @@ namespace BankruptVtuber
         float _spark;
         float _panic;
         float _shownViewers;
+        bool _hypeOn;
 
         public AvatarView(RectTransform parent)
         {
@@ -221,6 +222,16 @@ namespace BankruptVtuber
             _shownViewers = viewers;
         }
 
+        public void SetHype(bool on)
+        {
+            _hypeOn = on;
+            if (on)
+            {
+                _happy = 1f;
+                _spark = 1f;
+            }
+        }
+
         public void Tick(float dt)
         {
             _bob += dt;
@@ -228,8 +239,10 @@ namespace BankruptVtuber
             _shake = Mathf.MoveTowards(_shake, 0f, dt * 3.2f);
             _happy = Mathf.MoveTowards(_happy, 0f, dt * 1.8f);
             _hurt = Mathf.MoveTowards(_hurt, 0f, dt * 2.4f);
-            _spark = Mathf.MoveTowards(_spark, 0f, dt * 1.5f);
+            _spark = Mathf.MoveTowards(_spark, _hypeOn ? 0.92f : 0f, dt * 1.5f);
             _panic = Mathf.MoveTowards(_panic, 0f, dt * 1.15f);
+            if (_hypeOn)
+                _happy = Mathf.Max(_happy, 0.88f);
 
             float bobY = Mathf.Sin(_bob * (_closeCam ? 1.6f : 2.1f)) * (_closeCam ? 4f : 7f);
             float popY = _pop * 22f;
