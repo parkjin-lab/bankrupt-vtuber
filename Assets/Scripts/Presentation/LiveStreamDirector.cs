@@ -101,6 +101,8 @@ namespace BankruptVtuber
         float _comboStingFlash;
         Text _comboBreak;
         float _comboBreakLeft;
+        float _comboPop;
+        bool _comboPopBig;
         bool _hypeWasOn;
         Image _mentalGrain;
         Text _mentalWarn;
@@ -273,6 +275,11 @@ namespace BankruptVtuber
                 PlaySfx(_comboCue, 0.52f);
                 if (!_session.HypeActive)
                     _comboStingFlash = 1f;
+            }
+            if (_session.Combo > _lastCombo)
+            {
+                _comboPop = 0.1f;
+                _comboPopBig = _session.Combo >= 5;
             }
             _lastCombo = _session.Combo;
             if (UnityEngine.EventSystems.EventSystem.current != null)
@@ -546,6 +553,7 @@ namespace BankruptVtuber
             _comboStingFlash = Mathf.MoveTowards(_comboStingFlash, 0f, dt * 1.7f);
             _comboBreakLeft = Mathf.MoveTowards(_comboBreakLeft, 0f, dt);
             TickComboBreak();
+            TickComboPop();
             _incomePunch = Mathf.MoveTowards(_incomePunch, 0f, dt * 2.2f);
             TickSuperchatFx(dt);
             if (_session.Mental < _hudMental)
@@ -1880,6 +1888,16 @@ namespace BankruptVtuber
         {
             _comboBreakLeft = 0.25f;
             TickComboBreak();
+        }
+
+        void TickComboPop()
+        {
+            _comboPop = Mathf.MoveTowards(_comboPop, 0f, Time.deltaTime);
+            if (_combo == null)
+                return;
+            float u = _comboPop / 0.1f;
+            float amp = _comboPopBig ? 0.22f : 0.15f;
+            _combo.rectTransform.localScale = Vector3.one * (1f + amp * u);
         }
 
         void TickComboBreak()

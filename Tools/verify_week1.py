@@ -1380,6 +1380,7 @@ def check_project() -> None:
     check_debt_count()
     check_hype_chat()
     check_cam_punch()
+    check_combo_pop()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -2848,6 +2849,51 @@ def check_cam_punch() -> None:
         fail("cam punch moved Unity off 6000.5.9f1")
     else:
         ok("Perfect punches the webcam 1.08 + flash 0.12s; Good nods; Miss stays")
+
+
+def check_combo_pop() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    avatar_cs = (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    pop = live_cs.split("void TickComboPop", 1)[-1].split("void TickComboBreak", 1)[0]
+
+    if "TickComboPop" not in live_cs or "_comboPop = 0.1f" not in live_cs:
+        fail("combo chip does not pop 0.1s when combo goes up")
+    elif "0.15f" not in pop or "0.22f" not in pop:
+        fail("combo pop is not 1.15 / 1.22 at combo 5+")
+    elif "_session.Combo > _lastCombo" not in live_cs:
+        fail("combo pop is not keyed off combo going up")
+    elif "_comboStingFlash = 1f" not in live_cs or "ShowComboBreak" not in live_cs:
+        fail("combo pop dropped combo-5 sting or 콤보 끊김")
+    elif "_comboBreakLeft = 0.25f" not in live_cs:
+        fail("combo pop retimed 콤보 끊김")
+    elif "reset = true" not in rules_cs or "if (result.ResetCombo)" not in session_cs:
+        fail("combo pop retuned combo math")
+    elif "hypePerfectCombo: 9" not in balance or "HypeLeft = Balance.hypeSeconds" not in session_cs:
+        fail("combo pop retuned hype trigger")
+    elif "_punch = 0.12f" not in avatar_cs:
+        fail("combo pop dropped Perfect webcam punch")
+    elif "interval *= 0.5f" not in session_cs:
+        fail("combo pop dropped hype chat 2x")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("combo pop broke pads, 입력됨, or added timeScale")
+    elif "오늘 헤드라인" not in settle_cs:
+        fail("combo pop dropped 오늘 헤드라인")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising combo pop / later weeks")
+    elif "comboIncomeMultiplier: 1.5" not in balance or "billRent: 8000" not in balance:
+        fail("combo pop retuned combo payout or Week 1 bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("combo pop dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("combo pop moved Unity off 6000.5.9f1")
+    else:
+        ok("combo chip pops 1.15 on the way up, 1.22 at 5+; stings stay")
 
 
 def check_mental_fatigue() -> None:
