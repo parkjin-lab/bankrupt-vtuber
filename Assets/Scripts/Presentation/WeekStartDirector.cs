@@ -135,6 +135,11 @@ namespace BankruptVtuber
         {
             var canvas = UiKit.CreateCanvas("WeekStartCanvas", transform);
             StudioChrome.Wash(canvas.transform);
+            var backdrop = UiKit.Image(canvas.transform, "MorningBackdrop", Color.white);
+            UiKit.Stretch(backdrop.rectTransform);
+            ArtSprites.Apply(backdrop, ArtSprites.MorningRoom, Palette.Studio, Color.white);
+            backdrop.preserveAspect = false;
+            backdrop.raycastTarget = false;
             var root = StreamSafeArea.Attach(canvas.transform);
             _portrait = new StudioPortrait(root, new Vector2(0.90f, 0.82f), new Vector2(220, 280), true);
 

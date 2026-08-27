@@ -205,6 +205,7 @@ def check_project() -> None:
         "stream_overlay.png": "라이브 오버레이",
         "title_studio.png": "타이틀 스튜디오",
         "settlement_desk.png": "정산 책상",
+        "morning_room.png": "아침 방",
         "badge_superchat.png": "superchat",
         "badge_troll.png": "troll",
     }
@@ -1418,6 +1419,7 @@ def check_project() -> None:
     check_stream_overlay()
     check_title_studio()
     check_settlement_desk()
+    check_morning_room()
 
 
 def check_content_types() -> None:
@@ -4640,6 +4642,74 @@ def check_settlement_desk() -> None:
         fail("settlement desk moved Unity off 6000.5.9f1")
     else:
         ok("Settlement sits on an after-stream desk; counts / 미달 / 다음날 stay")
+
+
+def check_morning_room() -> None:
+    import struct
+
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    head_cs = (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/morning_room.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
+    pulse = week_cs.split("void TickGoLivePulse", 1)[-1].split("void Build()", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("아침 room PNG is missing")
+    elif w < 360 or h < 540 or h <= w:
+        fail("아침 room PNG is not a readable portrait room")
+    elif color != 6:
+        fail("아침 room PNG is not RGBA (morning would stay a dark stack)")
+    elif 'MorningRoom = "Art/morning_room"' not in art_cs:
+        fail("ArtSprites does not hook Art/morning_room")
+    elif '"MorningBackdrop"' not in build or "ArtSprites.MorningRoom" not in build:
+        fail("WeekStart does not hang the morning room behind the cards")
+    elif "_daySlam = 0.25f" not in week_cs or "_daySlam / 0.25f" not in week_cs:
+        fail("morning room dropped the n일차 slam")
+    elif "ArtSprites.BillNotice" not in money or '"오늘 청구"' not in week_cs:
+        fail("morning room dropped the 오늘 청구 고지서")
+    elif "청구보다 부족" not in week_cs or "RefreshCashShort" not in week_cs:
+        fail("morning room dropped 청구보다 부족")
+    elif "AddContentButton" not in week_cs or "StreamContentType.Talk" not in build:
+        fail("morning room dropped content pick cards")
+    elif "마지막 날" not in week_cs or "LastDayBanner" not in week_cs or "RefreshLastDay" not in week_cs:
+        fail("morning room dropped the last-day banner")
+    elif "YesterdayLine" not in week_cs or '"어제: "' not in head_cs:
+        fail("morning room dropped the 어제 headline")
+    elif "TickGoLivePulse" not in week_cs or "1f + 0.04f" not in pulse or "LivePip" not in week_cs:
+        fail("morning room dropped GO LIVE pulse")
+    elif "GameManager.Instance.GoLive()" not in week_cs or "public void GoLive()" not in gm:
+        fail("morning room changed GO LIVE behavior")
+    elif "PeekTodayBills" not in week_cs or "lastBills =" in week_cs or "billRent =" in build:
+        fail("morning room writes bill amounts")
+    elif "ArtSprites.TitleStudio" not in title_cs or "ArtSprites.SettlementDesk" not in settle_cs:
+        fail("morning room dropped title studio or settlement desk")
+    elif "ArtSprites.StreamOverlay" not in live_cs:
+        fail("morning room dropped the live overlay")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("morning room retuned Week 1 cash or bills")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("morning room broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising morning room / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("morning room dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("morning room moved Unity off 6000.5.9f1")
+    else:
+        ok("WeekStart sits on a 청구 아침 room; slam / 고지서 / GO LIVE stay")
 
 
 def check_save_roundtrip() -> None:
