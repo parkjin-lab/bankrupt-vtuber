@@ -283,12 +283,14 @@ def check_project() -> None:
         fail("LiveStream missing LIVE + ticking viewers")
     else:
         ok("LiveStream overlay has LIVE, ticking viewers, cash/debt")
-    if "sfx_perfect" not in live_cs or "sfx_miss" not in live_cs or "sfx_super" not in live_cs or "sfx_combo" not in live_cs:
-        fail("distinct generated SFX clips missing")
+    if "Audio/sfx_perfect" not in live_cs or "Audio/sfx_good" not in live_cs or "Audio/sfx_miss" not in live_cs:
+        fail("distinct Perfect/Good/Miss Resource SFX clips missing")
+    elif "sfx_super" not in live_cs or "sfx_combo" not in live_cs or "sfx_onair" not in live_cs:
+        fail("superchat / combo / on-air SFX missing")
     elif "Combo >= 5" not in live_cs or "PlayOneShot" not in live_cs:
         fail("combo-5 cue or AudioSource PlayOneShot missing")
     else:
-        ok("Perfect/Miss/superchat/combo-5 SFX fire from generated clips")
+        ok("Perfect/Good/Miss Resource SFX; superchat/combo-5/on-air stay")
     if "new Vector2(128, 128)" not in week_cs or "ArtSprites.BillRent" not in week_cs:
         fail("WeekStart bill sprites are still tiny")
     else:
@@ -1432,6 +1434,7 @@ def check_project() -> None:
     check_chat_bubble()
     check_note_chip()
     check_hit_rail()
+    check_judge_sfx()
 
 
 def check_content_types() -> None:
@@ -5005,6 +5008,76 @@ def check_hit_rail() -> None:
         fail("hit rail moved Unity off 6000.5.9f1")
     else:
         ok("notes ride a hit rail; strike marker / Perfect pulse / windows stay")
+
+
+def check_judge_sfx() -> None:
+    import wave
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    judge = live_cs.split("if (_session.LastJudgement.HasValue", 1)[-1].split("SyncNotes();", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    clips = {
+        "sfx_perfect.wav": (0.05, 0.20),
+        "sfx_good.wav": (0.04, 0.20),
+        "sfx_miss.wav": (0.08, 0.25),
+        "sfx_combo_break.wav": (0.10, 0.30),
+    }
+    durations = {}
+    for name, (lo, hi) in clips.items():
+        path = ROOT / "Assets/Resources/Audio" / name
+        if not path.exists() or path.stat().st_size < 1500:
+            fail(f"judge SFX {name} is missing")
+            return
+        with wave.open(str(path), "rb") as w:
+            if w.getnchannels() < 1 or w.getframerate() < 22050:
+                fail(f"judge SFX {name} is not a readable PCM clip")
+                return
+            dur = w.getnframes() / float(w.getframerate())
+            durations[name] = dur
+            if dur < lo or dur > hi:
+                fail(f"judge SFX {name} duration {dur:.3f}s is not a short distinct clip")
+                return
+
+    if durations["sfx_perfect.wav"] >= durations["sfx_miss.wav"]:
+        fail("Perfect tick is not shorter/brighter than Miss thud")
+    elif "Audio/sfx_perfect" not in live_cs or "Audio/sfx_good" not in live_cs or "Audio/sfx_miss" not in live_cs:
+        fail("LiveStream does not load Audio/sfx_perfect|good|miss")
+    elif "Audio/sfx_combo_break" not in live_cs:
+        fail("combo-break SFX is not loaded")
+    elif "PlaySfx(_perfect" not in judge or "PlaySfx(_good" not in judge or "PlaySfx(_miss" not in judge:
+        fail("Perfect / Good / Miss do not play distinct clips")
+    elif "PlaySfx(_comboBreakSfx" not in judge:
+        fail("combo-break does not play its thud")
+    elif "PlaySfx(_sc" not in judge or "sfx_onair" not in live_cs:
+        fail("judge SFX dropped superchat or on-air clips")
+    elif "_ok = ToneClip" in apply or "_bad = BuzzerClip" in apply:
+        fail("content show still overwrites distinct judge SFX")
+    elif "perfectWindow =" in live_cs or "goodWindow =" in live_cs:
+        fail("judge SFX retuned judge windows")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("judge SFX retuned hit windows")
+    elif "approachSeconds: 1.35" not in balance:
+        fail("judge SFX retuned travel speed")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("judge SFX retuned Judge scoring")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("judge SFX retuned Week 1 economy")
+    elif "ArtSprites.HitRail" not in live_cs or "ArtSprites.NoteChip" not in live_cs:
+        fail("judge SFX dropped hit rail or note chip")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("judge SFX broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising judge SFX / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("judge SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("judge SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("Perfect/Good/Miss are distinct Resource SFX; combo-break thud; windows stay")
 
 
 def check_save_roundtrip() -> None:

@@ -101,6 +101,10 @@ namespace BankruptVtuber
         AudioSource _bed;
         AudioClip _ok;
         AudioClip _bad;
+        AudioClip _perfect;
+        AudioClip _good;
+        AudioClip _miss;
+        AudioClip _comboBreakSfx;
         AudioClip _sc;
         AudioClip _comboCue;
         AudioClip _clockTick;
@@ -204,8 +208,20 @@ namespace BankruptVtuber
             _bed = gameObject.AddComponent<AudioSource>();
             _bed.playOnAwake = false;
             _bed.loop = true;
-            _ok = ToneClip("sfx_perfect", new[] { 880f, 1320f }, 0.07f, 0.22f);
-            _bad = BuzzerClip("sfx_miss", 0.12f, 0.20f);
+            _perfect = Resources.Load<AudioClip>("Audio/sfx_perfect");
+            _good = Resources.Load<AudioClip>("Audio/sfx_good");
+            _miss = Resources.Load<AudioClip>("Audio/sfx_miss");
+            _comboBreakSfx = Resources.Load<AudioClip>("Audio/sfx_combo_break");
+            if (_perfect == null)
+                _perfect = ToneClip("sfx_perfect", new[] { 880f, 1320f }, 0.07f, 0.22f);
+            if (_good == null)
+                _good = ToneClip("sfx_good", new[] { 520f, 780f }, 0.08f, 0.14f);
+            if (_miss == null)
+                _miss = BuzzerClip("sfx_miss", 0.12f, 0.20f);
+            if (_comboBreakSfx == null)
+                _comboBreakSfx = _miss;
+            _ok = _perfect;
+            _bad = _miss;
             _sc = ToneClip("sfx_super", new[] { 523f, 659f, 784f, 1046f }, 0.06f, 0.20f);
             _comboCue = ToneClip("sfx_combo", new[] { 698f, 880f, 1174f }, 0.07f, 0.24f);
             _clockTick = ToneClip("sfx_clock", new[] { 1320f }, 0.045f, 0.18f);
@@ -403,9 +419,13 @@ namespace BankruptVtuber
                     int dm = _session.Mental - _lastMental;
                     ShowMissSting(dv, dm);
                     if (comboWas >= 2)
+                    {
                         ShowComboBreak();
+                        PlaySfx(_comboBreakSfx, 0.48f);
+                    }
+                    else
+                        PlaySfx(_miss, 0.48f);
                     _viewerJudged = true;
-                    PlaySfx(_bad, 0.48f);
                     if (note.IsSuperchat)
                         BeginSuperchatCrack(note);
                 }
@@ -415,9 +435,9 @@ namespace BankruptVtuber
                     BeginSuperchatFly(note);
                 }
                 else if (j == Judgement.Perfect)
-                    PlaySfx(_ok, 0.42f);
+                    PlaySfx(_perfect, 0.42f);
                 else
-                    PlaySfx(_ok, 0.22f);
+                    PlaySfx(_good, 0.22f);
                 if (j != Judgement.Miss)
                 {
                     float dv = _session.Viewers - _lastViewers;
@@ -2389,14 +2409,6 @@ namespace BankruptVtuber
             PaintShowChip(look.Type);
             UiKit.EnsureCamera(look.Wash);
             _avatar?.ApplyShow(look);
-            if (look.Type == StreamContentType.Talk)
-                _ok = ToneClip("sfx_perfect", new[] { 660f, 880f }, 0.08f, 0.16f);
-            else if (look.Type == StreamContentType.Song)
-                _ok = ToneClip("sfx_perfect", new[] { 1046f, 1480f, 1760f }, 0.06f, 0.22f);
-            if (look.Type == StreamContentType.Game)
-                _bad = BuzzerClip("sfx_miss", 0.18f, 0.28f);
-            else if (look.Type == StreamContentType.Talk)
-                _bad = BuzzerClip("sfx_miss", 0.09f, 0.14f);
             if (_bed != null)
             {
                 _bed.clip = BedClip(look.Type);
