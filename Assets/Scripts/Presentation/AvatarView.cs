@@ -32,6 +32,9 @@ namespace BankruptVtuber
         float _shownViewers;
         bool _hypeOn;
         float _tired;
+        float _punch;
+        float _nod;
+        float _baseScale = 1f;
 
         public AvatarView(RectTransform parent)
         {
@@ -121,6 +124,7 @@ namespace BankruptVtuber
                 BuildReactionFrame();
                 TagCam("리액션 캠", Palette.PastelDim);
             }
+            _baseScale = _root.localScale.x;
         }
 
         void TagCam(string copy, Color color)
@@ -191,10 +195,21 @@ namespace BankruptVtuber
 
         public void React(Judgement j, bool superchat)
         {
-            if (j == Judgement.Perfect || j == Judgement.Great)
+            if (j == Judgement.Perfect)
+            {
+                _punch = 0.12f;
+                _pop = 1f;
+                _happy = 1f;
+            }
+            else if (j == Judgement.Great)
             {
                 _pop = 1f;
-                _happy = j == Judgement.Perfect ? 1f : 0.7f;
+                _happy = 0.7f;
+            }
+            else if (j == Judgement.Good)
+            {
+                _nod = 0.16f;
+                _happy = 0.4f;
             }
             else if (j == Judgement.Miss)
             {
@@ -248,6 +263,8 @@ namespace BankruptVtuber
         {
             _bob += dt;
             _pop = Mathf.MoveTowards(_pop, 0f, dt * 3.6f);
+            _punch = Mathf.MoveTowards(_punch, 0f, dt);
+            _nod = Mathf.MoveTowards(_nod, 0f, dt);
             _shake = Mathf.MoveTowards(_shake, 0f, dt * 3.2f);
             _happy = Mathf.MoveTowards(_happy, 0f, dt * 1.8f);
             _hurt = Mathf.MoveTowards(_hurt, 0f, dt * 2.4f);
@@ -264,7 +281,12 @@ namespace BankruptVtuber
                 x += Mathf.Sin(Time.time * 78f) * _panic * 16f;
             if (_tired > 0.01f)
                 x += Mathf.Sin(Time.time * 1.3f) * _tired * 4f;
-            _body.anchoredPosition = new Vector2(x, bobY + popY - _panic * 18f - _tired * 22f);
+            float nodU = _nod / 0.16f;
+            float nodY = -12f * nodU;
+            _body.anchoredPosition = new Vector2(x, bobY + popY + nodY - _panic * 18f - _tired * 22f);
+            _body.localEulerAngles = new Vector3(0f, 0f, -7f * nodU);
+            float punchU = _punch / 0.12f;
+            _root.localScale = Vector3.one * (_baseScale * (1f + 0.08f * punchU));
             float squash = _pop * 0.22f;
             if (_panic > 0.01f)
                 _body.localScale = new Vector3(1.08f + 0.06f * _panic, 0.82f - 0.08f * _panic, 1f);
@@ -282,7 +304,10 @@ namespace BankruptVtuber
                 tint = Color.Lerp(tint, new Color(1f, 0.38f, 0.42f, 1f), _panic);
             _bust.color = tint;
             _blush.color = new Color(1f, 0.45f, 0.62f, _happy * 0.28f);
-            _flash.color = new Color(1f, 0.12f, 0.22f, Mathf.Max(_hurt * 0.28f, _panic * 0.5f));
+            if (punchU > 0.001f)
+                _flash.color = new Color(1f, 0.96f, 0.88f, 0.55f * punchU);
+            else
+                _flash.color = new Color(1f, 0.12f, 0.22f, Mathf.Max(_hurt * 0.28f, _panic * 0.5f));
             _liveDot.color = new Color(1f, 1f, 1f, 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(Time.time * 6f)));
             _liveViewers.text = $"시청자 {Mathf.RoundToInt(_shownViewers)}";
 

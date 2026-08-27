@@ -1379,6 +1379,7 @@ def check_project() -> None:
     check_morning_bill()
     check_debt_count()
     check_hype_chat()
+    check_cam_punch()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -2804,6 +2805,49 @@ def check_hype_chat() -> None:
         fail("hype chat moved Unity off 6000.5.9f1")
     else:
         ok("hype window spawns regular chat ~2x; catalog/nicks and hype numbers stay")
+
+
+def check_cam_punch() -> None:
+    avatar_cs = (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    react = avatar_cs.split("public void React", 1)[-1].split("public void Panic", 1)[0]
+
+    if "_punch = 0.12f" not in react or "0.08f * punchU" not in avatar_cs:
+        fail("Perfect does not punch the webcam 1.08 for 0.12s")
+    elif "Judgement.Good" not in react or "_nod" not in react:
+        fail("Good has no smaller webcam nod")
+    elif "Judgement.Miss" not in react or "_shake = 1f" not in react or "_hurt = 1f" not in react:
+        fail("Miss lost the existing webcam shake / scar")
+    elif "ApplyEventScar" not in live_cs:
+        fail("cam punch dropped the existing event scar path")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("cam punch retuned hit windows")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("cam punch retuned Week 1 hit windows")
+    elif "interval *= 0.5f" not in session_cs:
+        fail("cam punch dropped hype chat 2x")
+    elif "React(j, note.IsSuperchat)" not in live_cs:
+        fail("webcam React is no longer wired from live hits")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("cam punch broke pads, 입력됨, or added timeScale")
+    elif "TickDebtCount" not in settle_cs or "ShowShortfall" not in settle_cs:
+        fail("cam punch dropped debt count or 청구 미달")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising cam punch / later weeks")
+    elif "billRent: 8000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("cam punch retuned Week 1 bills or hype")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("cam punch dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("cam punch moved Unity off 6000.5.9f1")
+    else:
+        ok("Perfect punches the webcam 1.08 + flash 0.12s; Good nods; Miss stays")
 
 
 def check_mental_fatigue() -> None:
