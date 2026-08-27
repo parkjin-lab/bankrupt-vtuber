@@ -626,7 +626,9 @@ namespace BankruptVtuber
             memberWash.raycastTarget = true;
             var memberCard = UiKit.Panel(_memberRoot.transform, "MemberCard", Color.white);
             UiKit.Layout(memberCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
-            ArtSprites.ApplySliced(memberCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.92f, 0.55f, 0.98f));
+            var memberImg = memberCard.GetComponent<Image>();
+            ArtSprites.Apply(memberImg, ArtSprites.MembershipCard, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            memberImg.preserveAspect = false;
             SafeFitCard.Bind(memberCard, 720f, 380f);
             var memberTitle = UiKit.Label(memberCard, "MemberTitle", "멤버십 해금", 52, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(memberTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
@@ -646,7 +648,9 @@ namespace BankruptVtuber
             clipWash.raycastTarget = true;
             var clipCard = UiKit.Panel(_clipRoot.transform, "ClipCard", Color.white);
             UiKit.Layout(clipCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 360));
-            ArtSprites.ApplySliced(clipCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.94f, 0.72f, 0.98f));
+            var clipImg = clipCard.GetComponent<Image>();
+            ArtSprites.Apply(clipImg, ArtSprites.ClipCard, new Color(1f, 0.94f, 0.72f, 0.98f), Color.white);
+            clipImg.preserveAspect = false;
             SafeFitCard.Bind(clipCard, 720f, 360f);
             var clipTag = UiKit.Label(clipCard, "ClipTag", "클립 업로드", 22, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
             UiKit.Layout(clipTag.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -20), new Vector2(-40, 28));

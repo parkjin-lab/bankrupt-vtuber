@@ -209,6 +209,8 @@ def check_project() -> None:
         "ending_clear.png": "주차 클리어",
         "ending_bankrupt.png": "파산",
         "letter_card.png": "팬레터",
+        "membership_card.png": "멤버십",
+        "clip_card.png": "클립",
         "pad_left.png": "← 키캡",
         "pad_down.png": "↓ 키캡",
         "pad_right.png": "→ 키캡",
@@ -1459,6 +1461,7 @@ def check_project() -> None:
     check_pad_sfx()
     check_golive_sfx()
     check_mental_sfx()
+    check_week2_card_art()
 
 
 def check_content_types() -> None:
@@ -6235,6 +6238,84 @@ def check_mental_sfx() -> None:
         fail("mental SFX moved Unity off 6000.5.9f1")
     else:
         ok("멘탈 위험 plays sfx_mental once on chip-on; wash / thresholds stay")
+
+
+def check_week2_card_art() -> None:
+    import struct
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    w2_asset = (ROOT / "Assets/Resources/Balance/Week2Balance.asset").read_text(encoding="utf-8")
+    w2r_cs = (ROOT / "Assets/Scripts/Economy/Week2Rules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    member_build = build.split('MemberRoot"', 1)[-1].split('ClipRoot"', 1)[0]
+    clip_build = build.split('ClipRoot"', 1)[-1].split('GoodsRoot"', 1)[0]
+    letter_build = build.split('LetterRoot"', 1)[-1].split('MemberRoot"', 1)[0]
+
+    for name, label, min_h in (
+        ("membership_card.png", "멤버십", 220),
+        ("clip_card.png", "클립", 200),
+    ):
+        png = ROOT / "Assets/Resources/Art" / name
+        data = png.read_bytes() if png.exists() else b""
+        w = h = color = 0
+        if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+            w, h = struct.unpack(">II", data[16:24])
+            color = data[25]
+        if not png.exists() or png.stat().st_size < 8000:
+            fail(f"{label} card PNG is missing")
+            return
+        if w < 360 or h < min_h or w <= h:
+            fail(f"{label} card PNG is not a readable landscape desk item")
+            return
+        if color != 6:
+            fail(f"{label} card PNG is not RGBA")
+            return
+
+    if 'MembershipCard = "Art/membership_card"' not in art_cs or 'ClipCard = "Art/clip_card"' not in art_cs:
+        fail("ArtSprites missing membership_card / clip_card hooks")
+    elif "ArtSprites.MembershipCard" not in member_build or '"MemberCard"' not in member_build:
+        fail("MemberCard does not hang Art/membership_card")
+    elif "ArtSprites.ClipCard" not in clip_build or '"ClipCard"' not in clip_build:
+        fail("ClipCard does not hang Art/clip_card")
+    elif "preserveAspect = false" not in member_build or "preserveAspect = false" not in clip_build:
+        fail("week2 cards keep aspect and letterbox the desk items")
+    elif "멤버십 해금" not in member_build or "정산으로" not in member_build:
+        fail("membership art covered unlock copy")
+    elif "오늘 클립 올릴까" not in clip_build or "올린다" not in clip_build or "패스" not in clip_build:
+        fail("clip art covered 올린다 / 패스 copy")
+    elif "클립 업로드" not in settle_cs or "올리지 않기" not in settle_cs:
+        fail("clip art dropped existing clip copy")
+    elif "AttemptClip" not in settle_cs or "DeclineClip" not in settle_cs:
+        fail("clip art unhooked AttemptClip / DeclineClip")
+    elif "ArtSprites.LetterCard" not in letter_build or "답장하기" not in letter_build:
+        fail("week2 card art dropped letter paper")
+    elif "Audio/bgm_settlement" not in settle_cs or "TickIncomeCount" not in settle_cs:
+        fail("week2 card art dropped settlement BGM or income count-up")
+    elif "startingMembers: 8" not in w2_asset or "membershipPassivePerMember: 150" not in w2_asset:
+        fail("week2 card art retuned membership numbers")
+    elif "clipCash: 30000" not in w2_asset or "clipChance: 30" not in w2_asset or "clipPerfectsRequired: 25" not in w2_asset:
+        fail("week2 card art retuned clip numbers")
+    elif "unlockPeakViewers: 40" not in w2_asset or "unlockSuccessfulStreams: 4" not in w2_asset:
+        fail("week2 card art retuned unlock thresholds")
+    elif "CanOfferClip" not in w2r_cs or "AttemptClip" not in w2r_cs:
+        fail("week2 card art changed clip routing")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("week2 card art retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("week2 card art broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising week2 card art / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("week2 card art dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("week2 card art moved Unity off 6000.5.9f1")
+    else:
+        ok("membership / clip sit on desk-item art; unlock / clip rules stay")
 
 
 def check_save_roundtrip() -> None:
