@@ -691,6 +691,11 @@ namespace BankruptVtuber
 
             _wash = UiKit.Image(canvasRoot, "Wash", Palette.Studio);
             UiKit.Stretch(_wash.rectTransform);
+            var overlay = UiKit.Image(canvasRoot, "StreamOverlay", Color.white);
+            UiKit.Stretch(overlay.rectTransform);
+            ArtSprites.Apply(overlay, ArtSprites.StreamOverlay, Palette.Studio, Color.white);
+            overlay.preserveAspect = false;
+            overlay.raycastTarget = false;
             _washVeil = UiKit.Image(canvasRoot, "WashVeil", new Color(0, 0, 0, 0));
             UiKit.Stretch(_washVeil.rectTransform);
             _mentalGrain = UiKit.Image(canvasRoot, "MentalGrain", new Color(1f, 1f, 1f, 0f));
@@ -726,7 +731,7 @@ namespace BankruptVtuber
             UiKit.Stretch(_eventWarn.rectTransform);
             _eventWarnBox.gameObject.SetActive(false);
 
-            var top = UiKit.Panel(root, "Top", new Color(0.08f, 0.04f, 0.1f, 0.90f));
+            var top = UiKit.Panel(root, "Top", new Color(0.08f, 0.04f, 0.1f, 0.36f));
             UiKit.Layout(top, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(0, 200));
 
             var liveBox = UiKit.Panel(top, "LiveHud", new Color(0.86f, 0.12f, 0.22f, 0.96f));
@@ -802,7 +807,7 @@ namespace BankruptVtuber
             _avatar = new AvatarView(root as RectTransform);
             _rivalDuel = new RivalDuelView(root as RectTransform);
 
-            var chatPanel = UiKit.Panel(root, "Chat", new Color(0.07f, 0.05f, 0.1f, 0.88f));
+            var chatPanel = UiKit.Panel(root, "Chat", new Color(0.07f, 0.05f, 0.1f, 0.40f));
             _chatPanel = chatPanel.GetComponent<Image>();
             _chatRoot = chatPanel;
             UiKit.Layout(chatPanel, new Vector2(1, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-18, 0), new Vector2(420, -220));
@@ -829,7 +834,7 @@ namespace BankruptVtuber
             var hitLabel = UiKit.Label(_lane, "HitL", "타이밍", 16, Palette.Pastel, TextAnchor.MiddleRight);
             UiKit.Layout(hitLabel.rectTransform, new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-4, LaneHit + 18), new Vector2(80, 20));
 
-            var bottom = UiKit.Panel(root, "Bottom", new Color(0.08f, 0.04f, 0.1f, 0.82f));
+            var bottom = UiKit.Panel(root, "Bottom", new Color(0.08f, 0.04f, 0.1f, 0.36f));
             UiKit.Layout(bottom, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 200));
 
             _combo = UiKit.Label(bottom, "Combo", "COMBO 0", 22, Palette.Pastel, TextAnchor.MiddleLeft, FontStyle.Bold);

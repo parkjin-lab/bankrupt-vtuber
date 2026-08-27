@@ -202,6 +202,7 @@ def check_project() -> None:
         "bill_food.png": "식비",
         "bill_gear.png": "장비",
         "bill_notice.png": "고지서",
+        "stream_overlay.png": "라이브 오버레이",
         "badge_superchat.png": "superchat",
         "badge_troll.png": "troll",
     }
@@ -1412,6 +1413,7 @@ def check_project() -> None:
     check_settle_show_line()
     check_vtuber_face()
     check_bill_notice()
+    check_stream_overlay()
 
 
 def check_content_types() -> None:
@@ -4441,6 +4443,68 @@ def check_bill_notice() -> None:
         fail("bill notice moved Unity off 6000.5.9f1")
     else:
         ok("오늘 청구 uses a 고지서 sprite; slam / 부족 / fill / cover stay")
+
+
+def check_stream_overlay() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    bind_cs = (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    avatar_cs = (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/stream_overlay.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    hud = live_cs.split("void RefreshHud", 1)[-1].split("void TickEventWarn", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("라이브 overlay PNG is missing")
+    elif w < 360 or h < 540 or h <= w:
+        fail("라이브 overlay PNG is not a readable portrait frame")
+    elif color != 6:
+        fail("라이브 overlay PNG is not RGBA (frame would flatten to a box)")
+    elif 'StreamOverlay = "Art/stream_overlay"' not in art_cs:
+        fail("ArtSprites does not hook Art/stream_overlay")
+    elif '"StreamOverlay"' not in build or "ArtSprites.StreamOverlay" not in build:
+        fail("LiveStream does not hang the overlay behind the HUD")
+    elif "AddColumnPad" not in live_cs or '"Hit"' not in live_cs or "Strike" not in live_cs:
+        fail("stream overlay dropped pads, hit bar, or strike")
+    elif "BillChip" not in live_cs or "ArtSprites.BillNotice" not in live_cs:
+        fail("stream overlay dropped the 청구 chip")
+    elif "ShowChip" not in live_cs or "_billFill" not in live_cs or "SlamBillCover()" not in live_cs:
+        fail("stream overlay dropped show chip, fill bar, or cover slam")
+    elif "ArtSprites.Avatar" not in avatar_cs or "ArtSprites.BillNotice" not in week_cs:
+        fail("stream overlay dropped the webcam face or 고지서")
+    elif "perfectWindow" not in rules_cs or "greatWindow" not in rules_cs:
+        fail("stream overlay retuned hit windows")
+    elif "lastStreamIncome =" in hud or "TonightBills =" in hud:
+        fail("stream overlay writes payout or bill amounts")
+    elif "public static int Payout" in eco_cs and "lastStreamIncome =" in live_cs.split("void RefreshHud", 1)[-1][:800]:
+        fail("stream overlay wrote live payout")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("stream overlay broke pads, 입력됨, or added timeScale")
+    elif "GetKeyUp(KeyCode.Space)" not in bind_cs:
+        fail("stream overlay broke Space release-once")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising stream overlay / later weeks")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("stream overlay retuned Week 1 cash or bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("stream overlay dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("stream overlay moved Unity off 6000.5.9f1")
+    else:
+        ok("라이브 chrome is a 2D overlay frame; chips / pads / hit / FX stay")
 
 
 def check_save_roundtrip() -> None:
