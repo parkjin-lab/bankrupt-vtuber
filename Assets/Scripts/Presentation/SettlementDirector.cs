@@ -68,6 +68,9 @@ namespace BankruptVtuber
         Text _clipSlam;
         float _clipSlamFlash;
         bool _clipOpen;
+        GameObject _goodsRoot;
+        Text _goodsBody;
+        bool _goodsOpen;
 
         void Awake()
         {
@@ -135,7 +138,7 @@ namespace BankruptVtuber
                 _clipSlam.color = sc;
                 _clipSlam.rectTransform.localScale = Vector3.one * (1f + 0.35f * _clipSlamFlash);
             }
-            if (_letterOpen || _memberOpen || _clipOpen)
+            if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen)
                 return;
             if (CanAdvance(gm.Run) && StreamBindings.Confirm)
                 gm.NextMorning();
@@ -371,6 +374,25 @@ namespace BankruptVtuber
             slamC.a = 0f;
             _clipSlam.color = slamC;
             _clipRoot.SetActive(false);
+
+            _goodsRoot = new GameObject("GoodsRoot", typeof(RectTransform));
+            _goodsRoot.transform.SetParent(root, false);
+            UiKit.Stretch(_goodsRoot.GetComponent<RectTransform>());
+            var goodsWash = UiKit.Image(_goodsRoot.transform, "GoodsWash", new Color(0.08f, 0.04f, 0.1f, 0.78f));
+            UiKit.Stretch(goodsWash.rectTransform);
+            goodsWash.raycastTarget = true;
+            var goodsCard = UiKit.Panel(_goodsRoot.transform, "GoodsCard", Color.white);
+            UiKit.Layout(goodsCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 400));
+            ArtSprites.ApplySliced(goodsCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.86f, 0.94f, 0.98f));
+            var goodsTitle = UiKit.Label(goodsCard, "GoodsTitle", "아크릴 스탠드 해금", 46, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(goodsTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
+            _goodsBody = UiKit.Label(goodsCard, "GoodsBody", "", 26, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_goodsBody.rectTransform, new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _goodsBody.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _goodsBody.lineSpacing = 1.25f;
+            var goodsGo = UiKit.Button(goodsCard, "GoodsAck", "정산으로", OnGoodsAck, Palette.Gold, Palette.Ink);
+            UiKit.Layout(goodsGo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 28), new Vector2(320, 72));
+            _goodsRoot.SetActive(false);
         }
 
         void Render()
@@ -410,7 +432,7 @@ namespace BankruptVtuber
             {
                 goodsLine =
                     (run.lastGoodsSold > 0
-                        ? $"아크릴 판매         {run.lastGoodsSold}개  {EconomyRules.FormatWon(run.lastGoodsRevenue)}" +
+                        ? $"아크릴 {run.lastGoodsSold}개 팔림   {EconomyRules.FormatWon(run.lastGoodsRevenue)}" +
                           (run.lastGoodsPromoSuccess ? "  · 홍보 1.5x\n" : "\n")
                         : "") +
                     $"아크릴 재고         {run.goodsStock}개\n";
@@ -523,7 +545,13 @@ namespace BankruptVtuber
             _signSponsor.gameObject.SetActive(offerSponsor);
             _bookConcert.gameObject.SetActive(offerConcert);
             _concertLive.gameObject.SetActive(concertReady);
-            _produce.gameObject.SetActive(run.goodsUnlocked && !offerClip && !week4Offer && !week5Offer && run.cash >= (w3 != null ? w3.goodsProduceCost : 2500));
+            if (_produce != null)
+            {
+                var produceCap = _produce.GetComponentInChildren<Text>();
+                if (produceCap != null && w3 != null)
+                    produceCap.text = $"아크릴 1개 생산  {EconomyRules.FormatWon(w3.goodsProduceCost)}  ·  판매 {EconomyRules.FormatWon(w3.goodsPrice)}";
+            }
+            _produce.gameObject.SetActive(run.goodsUnlocked && !offerClip && !week4Offer && !week5Offer && !_goodsOpen && run.cash >= (w3 != null ? w3.goodsProduceCost : 2500));
             bool rankOn = Week5Rules.RankingUnlocked(run, w5);
             _rankBox.gameObject.SetActive(rankOn);
             if (rankOn)
@@ -772,7 +800,7 @@ namespace BankruptVtuber
 
         void AdvanceBeats()
         {
-            if (_letterOpen || _memberOpen || _clipOpen)
+            if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen)
                 return;
             var gm = GameManager.Instance;
             if (gm == null || gm.Run == null)
@@ -791,7 +819,12 @@ namespace BankruptVtuber
                 return;
             }
             if (Week2Rules.CanOfferClip(gm.Run, gm.Week2))
+            {
                 ShowClipCard();
+                return;
+            }
+            if (gm.Run.goodsJustUnlocked)
+                ShowGoodsSplash();
         }
 
         void ShowMemberSplash()
@@ -866,6 +899,36 @@ namespace BankruptVtuber
             Week2Rules.DeclineClip(GameManager.Instance.Run);
             CloseClipCard();
             Render();
+        }
+
+        void ShowGoodsSplash()
+        {
+            var w3 = GameManager.Instance.Week3;
+            int stock = w3 != null ? w3.goodsUnlockStock : 20;
+            int cost = w3 != null ? w3.goodsProduceCost : 2500;
+            int price = w3 != null ? w3.goodsPrice : 7000;
+            if (_goodsBody != null)
+                _goodsBody.text = $"재고 {stock}\n원가 {EconomyRules.FormatWon(cost)}\n판매 {EconomyRules.FormatWon(price)}";
+            if (_goodsRoot != null)
+            {
+                _goodsRoot.SetActive(true);
+                _goodsRoot.transform.SetAsLastSibling();
+            }
+            _goodsOpen = true;
+            if (_produce != null)
+                _produce.gameObject.SetActive(false);
+        }
+
+        void OnGoodsAck()
+        {
+            var run = GameManager.Instance != null ? GameManager.Instance.Run : null;
+            if (run != null)
+                run.goodsJustUnlocked = false;
+            _goodsOpen = false;
+            if (_goodsRoot != null)
+                _goodsRoot.SetActive(false);
+            Render();
+            AdvanceBeats();
         }
 
         void OnProduce()

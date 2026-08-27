@@ -66,6 +66,7 @@ namespace BankruptVtuber
                 return;
             run.goodsUnlocked = true;
             run.goodsStock = w3.goodsUnlockStock;
+            run.goodsJustUnlocked = true;
         }
 
         public static bool ProduceGoods(GameRunState run, Week3Balance w3, int count = 1)

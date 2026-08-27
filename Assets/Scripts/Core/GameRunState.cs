@@ -59,6 +59,7 @@ namespace BankruptVtuber
         public bool lastRivalWon;
         public int lastRivalCash;
         public bool goodsUnlocked;
+        public bool goodsJustUnlocked;
         public int goodsStock;
         public bool goodsSoldAppliedThisDay;
         public int lastGoodsSold;
@@ -195,6 +196,7 @@ namespace BankruptVtuber
             lastRivalWon = false;
             lastRivalCash = 0;
             goodsUnlocked = false;
+            goodsJustUnlocked = false;
             goodsStock = 0;
             goodsSoldAppliedThisDay = false;
             lastGoodsSold = 0;

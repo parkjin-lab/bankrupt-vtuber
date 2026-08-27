@@ -41,6 +41,9 @@ namespace BankruptVtuber
         Text _promoTitle;
         Text _promoBody;
         Text _promoTimer;
+        Text _promoSlam;
+        float _promoSlamFlash;
+        bool _promoWasActive;
         RectTransform _lineRoot;
         Text _lineTitle;
         Text _lineBody;
@@ -318,6 +321,9 @@ namespace BankruptVtuber
 
             SyncNotes();
             RefreshEventOverlay();
+            if (_promoWasActive && !_session.PromoActive && _session.Promo.Resolved && _session.Promo.Success)
+                FlashPromoSuccess();
+            _promoWasActive = _session.PromoActive;
             RefreshPromoOverlay();
             RefreshLineOverlay();
             RefreshConcertOverlay();
@@ -370,6 +376,14 @@ namespace BankruptVtuber
                 var ec = _echo.color;
                 ec.a = _echoFlash;
                 _echo.color = ec;
+            }
+            _promoSlamFlash = Mathf.MoveTowards(_promoSlamFlash, 0f, dt * 0.7f);
+            if (_promoSlam != null)
+            {
+                var pc = _promoSlam.color;
+                pc.a = _promoSlamFlash;
+                _promoSlam.color = pc;
+                _promoSlam.rectTransform.localScale = Vector3.one * (1f + 0.32f * _promoSlamFlash);
             }
             var sc = _stub.color;
             sc.a = Mathf.MoveTowards(sc.a, 0f, dt * 0.7f);
@@ -626,16 +640,21 @@ namespace BankruptVtuber
             UiKit.Layout(_eventStingLabel.rectTransform, new Vector2(0, 0.4f), new Vector2(1, 0.6f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _eventSting.gameObject.SetActive(false);
 
-            _promoRoot = UiKit.Panel(root, "PromoCard", new Color(0.12f, 0.08f, 0.18f, 0.96f));
-            UiKit.Layout(_promoRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(560, 280));
-            _promoTitle = UiKit.Label(_promoRoot, "PTitle", "굿즈 홍보 타이밍", 34, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
-            UiKit.Layout(_promoTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -16), new Vector2(-24, 44));
-            _promoBody = UiKit.Label(_promoRoot, "PBody", "← / ↑  지금 아크릴 스탠드 홍보\n→ / ↓  넘어가기", 20, Palette.Pastel, TextAnchor.MiddleCenter);
-            UiKit.Layout(_promoBody.rectTransform, new Vector2(0, 0.28f), new Vector2(1, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-28, 0));
-            _promoTimer = UiKit.Label(_promoRoot, "PTimer", "", 18, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_promoTimer.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 78), new Vector2(0, 24));
+            _promoRoot = UiKit.Panel(root, "PromoCard", new Color(0.18f, 0.08f, 0.16f, 0.97f));
+            UiKit.Layout(_promoRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(720, 380));
+            _promoTitle = UiKit.Label(_promoRoot, "PTitle", "굿즈 홍보 타이밍", 40, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
+            UiKit.Layout(_promoTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -18), new Vector2(-24, 52));
+            _promoBody = UiKit.Label(_promoRoot, "PBody", "지금 아크릴 홍보?\n성공 시 오늘 판매 1.5배", 28, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_promoBody.rectTransform, new Vector2(0, 0.30f), new Vector2(1, 0.78f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-36, 0));
+            _promoTimer = UiKit.Label(_promoRoot, "PTimer", "", 20, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_promoTimer.rectTransform, new Vector2(0, 0.22f), new Vector2(1, 0.30f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             AddOverlayChoice(_promoRoot, "홍보하기", "넘어가기");
             _promoRoot.gameObject.SetActive(false);
+            _promoSlam = UiKit.Label(root, "PromoSlam", "홍보 성공 1.5x", 56, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_promoSlam.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(720, 80));
+            var promoSlamC = _promoSlam.color;
+            promoSlamC.a = 0f;
+            _promoSlam.color = promoSlamC;
 
             _lineRoot = UiKit.Panel(root, "LineCard", new Color(0.14f, 0.09f, 0.16f, 0.96f));
             UiKit.Layout(_lineRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(560, 280));
@@ -944,8 +963,25 @@ namespace BankruptVtuber
             if (on)
             {
                 _eventDim.gameObject.SetActive(true);
+                var w3 = GameManager.Instance != null ? GameManager.Instance.Week3 : null;
+                float mul = w3 != null ? w3.goodsPromoMultiplier : 1.5f;
+                _promoBody.text = $"지금 아크릴 홍보?\n성공 시 오늘 판매 {mul:0.#}배";
                 _promoTimer.text = $"{_session.Promo.TimeLeft:0.00}s";
             }
+        }
+
+        void FlashPromoSuccess()
+        {
+            var w3 = GameManager.Instance != null ? GameManager.Instance.Week3 : null;
+            float mul = w3 != null ? w3.goodsPromoMultiplier : 1.5f;
+            if (_promoSlam == null)
+                return;
+            _promoSlam.text = $"홍보 성공 {mul:0.#}x";
+            var c = Palette.Gold;
+            c.a = 1f;
+            _promoSlam.color = c;
+            _promoSlam.transform.SetAsLastSibling();
+            _promoSlamFlash = 1.2f;
         }
 
         void RefreshLineOverlay()

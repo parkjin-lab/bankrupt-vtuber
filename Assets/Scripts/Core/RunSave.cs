@@ -274,6 +274,7 @@ namespace BankruptVtuber
                 lastRivalWon = run.lastRivalWon,
                 lastRivalCash = run.lastRivalCash,
                 goodsUnlocked = run.goodsUnlocked,
+                goodsJustUnlocked = run.goodsJustUnlocked,
                 goodsStock = run.goodsStock,
                 goodsSoldAppliedThisDay = run.goodsSoldAppliedThisDay,
                 lastGoodsSold = run.lastGoodsSold,
@@ -396,6 +397,7 @@ namespace BankruptVtuber
             run.lastRivalWon = data.lastRivalWon;
             run.lastRivalCash = data.lastRivalCash;
             run.goodsUnlocked = data.goodsUnlocked;
+            run.goodsJustUnlocked = data.goodsJustUnlocked;
             run.goodsStock = data.goodsStock;
             run.goodsSoldAppliedThisDay = data.goodsSoldAppliedThisDay;
             run.lastGoodsSold = data.lastGoodsSold;
@@ -603,6 +605,7 @@ namespace BankruptVtuber
             public bool lastRivalWon;
             public int lastRivalCash;
             public bool goodsUnlocked;
+            public bool goodsJustUnlocked;
             public int goodsStock;
             public bool goodsSoldAppliedThisDay;
             public int lastGoodsSold;

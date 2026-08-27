@@ -1332,6 +1332,7 @@ def check_project() -> None:
     check_chat_catalog()
     check_week2_beats()
     check_rival_duel()
+    check_week3_goods_beats()
 
 
 def check_content_types() -> None:
@@ -1805,6 +1806,73 @@ def check_rival_duel() -> None:
         fail("Week 1 bills were retuned by the rival duel")
     else:
         ok("non-rival days and Week 1 stay unchanged")
+
+
+def check_week3_goods_beats() -> None:
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    run_cs = (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8")
+    promo_cs = (ROOT / "Assets/Scripts/Stream/GoodsPromo.cs").read_text(encoding="utf-8")
+    beats = settle_cs.split("void AdvanceBeats", 1)[-1].split("void ShowMemberSplash", 1)[0]
+    unlock = w3r_cs.split("public static void TryUnlockGoods", 1)[-1].split("public static bool ProduceGoods", 1)[0]
+
+    splash = settle_cs.split("void ShowGoodsSplash", 1)[-1][:700] if "void ShowGoodsSplash" in settle_cs else ""
+    if "아크릴 스탠드 해금" not in settle_cs or "재고" not in splash or "원가" not in splash or "판매" not in splash:
+        fail("acrylic unlock splash is missing")
+    elif "goodsJustUnlocked" not in run_cs or "goodsJustUnlocked" not in settle_cs or "goodsJustUnlocked = true" not in w3r_cs:
+        fail("first goods unlock is not a one-shot splash")
+    elif "지금 아크릴 홍보" not in live_cs or "성공 시 오늘 판매" not in live_cs:
+        fail("goods promo card is not the loud 지금 아크릴 홍보 beat")
+    elif "홍보 성공" not in live_cs or "FlashPromoSuccess" not in live_cs:
+        fail("promo success flash is missing")
+    elif "개 팔림" not in settle_cs:
+        fail("settlement does not show 아크릴 n개 팔림")
+    elif "TryPromo" not in live_cs or "PromoConfirmDown" not in live_cs or "PromoSkipDown" not in live_cs:
+        fail("promo no longer uses existing ←/↑ confirm and →/↓ skip")
+    elif "TryUnlockGoods" not in w3r_cs or "ProduceGoods" not in w3r_cs:
+        fail("existing goods unlock / produce was removed")
+    else:
+        ok("Week 3 acrylic unlock splash and promo card are screenshot beats")
+
+    if "InWeek3" not in unlock:
+        fail("goods unlock lost its Week 3 gate")
+    elif "EnablePromo" not in live_cs.split("void Start", 1)[-1].split("void Update", 1)[0] or "InWeek3" not in live_cs.split("void Start", 1)[-1].split("void Update", 1)[0]:
+        fail("promo is no longer gated to Week 3 + goods unlock")
+    elif beats.find("CanOfferClip") > beats.find("goodsJustUnlocked") and "goodsJustUnlocked" in beats:
+        fail("goods splash is not after the Week 2 clip card")
+    elif "InWeek2" not in (ROOT / "Assets/Scripts/Economy/Week2Rules.cs").read_text(encoding="utf-8").split("CanOfferClip", 1)[-1][:300]:
+        fail("clip offer is no longer Week 2 only")
+    elif "goodsUnlockCash: 60000" not in w3_asset or "goodsUnlockStock: 20" not in w3_asset:
+        fail("goods unlock cash / stock were retuned")
+    elif "goodsProduceCost: 2500" not in w3_asset or "goodsPrice: 7000" not in w3_asset:
+        fail("goods produce / price were retuned")
+    elif "goodsSoldMembersFactor: 0.4" not in w3_asset or "goodsSoldPeakFactor: 0.08" not in w3_asset:
+        fail("daily goods sales formula was retuned")
+    elif "goodsPromoMultiplier: 1.5" not in w3_asset or "promoFallbackSeconds: 55" not in w3_asset:
+        fail("promo 1.5x / 55s window was retuned")
+    elif "membershipUnlocked" not in unlock or "goodsUnlockCash" not in unlock:
+        fail("goods unlock is not membership + cash >= 60000")
+    else:
+        ok("Week 1–2 stay gated; Week3Balance goods numbers unchanged")
+
+    if "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("goods beats broke pads, 입력됨, or added timeScale")
+    elif "라이벌 승" not in (ROOT / "Assets/Scripts/Presentation/RivalDuelView.cs").read_text(encoding="utf-8") or "멤버십 해금" not in settle_cs or "오늘 클립 올릴까" not in settle_cs:
+        fail("goods beats dropped rival duel or Week 2 cards")
+    elif "아크릴 1개 생산" not in settle_cs:
+        fail("extra produce button was removed")
+    elif "Week3" in title_cs or "아크릴" in title_cs or "굿즈" in title_cs:
+        fail("Title started advertising Week 3 goods")
+    elif "billRent: 8000" not in (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8"):
+        fail("Week 1 bills were retuned by Week 3 goods beats")
+    elif "enum StreamEventKind" not in promo_cs and "GearLag = 2" not in (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8"):
+        fail("a second QTE was added")
+    else:
+        ok("produce button stays; rival / membership / clip / Week 1 stay")
 
 
 def check_save_roundtrip() -> None:
