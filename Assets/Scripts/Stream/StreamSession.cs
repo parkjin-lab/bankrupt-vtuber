@@ -388,6 +388,8 @@ namespace BankruptVtuber
 
             float t = 1f - TimeLeft / Balance.streamSeconds;
             float interval = Lerp(Balance.chatSpawnStart, Balance.chatSpawnEnd, t) * Tuning.ChatSpawnMul;
+            if (HypeActive)
+                interval *= 0.5f;
             _nextChatAt = Elapsed + interval;
 
             SpawnNote(ContentRules.RollRegularKind(Tuning, Rng), superchat: false, 0);
@@ -510,6 +512,7 @@ namespace BankruptVtuber
                 HypeLeft = Balance.hypeSeconds;
                 HadHype = true;
                 _pendingHypeEvent = true;
+                _nextChatAt = Elapsed;
             }
 
             if (result.ExtraViewerLoss > 0)

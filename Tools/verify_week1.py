@@ -1378,6 +1378,7 @@ def check_project() -> None:
     check_shortfall()
     check_morning_bill()
     check_debt_count()
+    check_hype_chat()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -2755,6 +2756,54 @@ def check_debt_count() -> None:
         fail("부채 count moved Unity off 6000.5.9f1")
     else:
         ok("settlement 부채 counts old→new in 0.4s when debt rose; flat/drop just shows")
+
+
+def check_hype_chat() -> None:
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    catalog_cs = (ROOT / "Assets/Scripts/Data/ChatCatalog.cs").read_text(encoding="utf-8")
+    nicks_cs = (ROOT / "Assets/Scripts/Data/ChatNicks.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    spawn = session_cs.split("void MaybeSpawnRegular", 1)[-1].split("void MaybeSpawnSuperchat", 1)[0]
+
+    if "HypeActive" not in spawn or "interval *= 0.5f" not in spawn:
+        fail("hype does not spawn regular chat at ~2x")
+    elif "Catalog.Pick" not in session_cs or "ChatNicks.Pick" not in session_cs:
+        fail("hype chat does not reuse ChatCatalog / nicks")
+    elif "RollRegularKind" not in spawn:
+        fail("hype chat spawned a new kind instead of regular notes")
+    elif "hypeSeconds =" in spawn or "hypeIncomeMultiplier =" in spawn or "hypePerfectCombo =" in spawn:
+        fail("hype chat retuned trigger / duration / payout")
+    elif "if (hypeActive)" not in rules_cs or "return b.hypeIncomeMultiplier;" not in rules_cs:
+        fail("hype chat retuned IncomeMultiplier")
+    elif "HypeLeft = Balance.hypeSeconds" not in session_cs:
+        fail("hype duration assignment moved off hypeSeconds")
+    elif "RefreshHypeShow" not in live_cs or "HypeBanner" not in live_cs:
+        fail("hype chat dropped the gold wash")
+    elif "TickDebtCount" not in settle_cs or "ShowShortfall" not in settle_cs:
+        fail("hype chat dropped debt count or 청구 미달")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("hype chat broke pads, 입력됨, or added timeScale")
+    elif "밤샌사람" not in nicks_cs or "Pick" not in catalog_cs:
+        fail("hype chat dropped nicks or catalog pick")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising hype chat / later weeks")
+    elif "chatSpawnStart: 1.55" not in balance or "chatSpawnEnd: 1.05" not in balance:
+        fail("hype chat retuned the base spawn table")
+    elif "hypeSeconds: 12" not in balance or "hypeIncomeMultiplier: 2.5" not in balance or "hypePerfectCombo: 9" not in balance:
+        fail("hype chat retuned hype numbers")
+    elif "billRent: 8000" not in balance:
+        fail("hype chat retuned Week 1 bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("hype chat dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("hype chat moved Unity off 6000.5.9f1")
+    else:
+        ok("hype window spawns regular chat ~2x; catalog/nicks and hype numbers stay")
 
 
 def check_mental_fatigue() -> None:
