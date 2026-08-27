@@ -1468,6 +1468,7 @@ def check_project() -> None:
     check_pad_sfx()
     check_golive_sfx()
     check_nextday_sfx()
+    check_title_sfx()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -6361,6 +6362,86 @@ def check_nextday_sfx() -> None:
         fail("다음날 SFX moved Unity off 6000.5.9f1")
     else:
         ok("다음날 plays sfx_nextday once; pulse / fade / result stings stay")
+
+
+def check_title_sfx() -> None:
+    import wave
+
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    leave = title_cs.split("void LeaveTitle", 1)[-1].split("IEnumerator FadeTitleBgmThen", 1)[0]
+    fade = title_cs.split("IEnumerator FadeTitleBgmThen", 1)[-1]
+    play = title_cs.split("void PlayTitleSfx", 1)[-1].split("void LeaveTitle", 1)[0]
+    start = title_cs.split("void OnStartBroadcast", 1)[-1].split("void BeginNewRun", 1)[0]
+    cont = title_cs.split("void OnContinue", 1)[-1].split("void OnStartBroadcast", 1)[0]
+    wipe = title_cs.split("void ConfirmWipe", 1)[-1].split("void OnContinue", 1)[0]
+    start_pulse = title_cs.split("void TickStartPulse", 1)[-1].split("void TickContinuePulse", 1)[0]
+    cont_pulse = title_cs.split("void TickContinuePulse", 1)[-1].split("void OpenHowTo", 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_title.wav"
+
+    if not path.exists() or path.stat().st_size < 2000:
+        fail("sfx_title.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("sfx_title.wav is not a readable PCM confirm")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.12 or dur > 0.40:
+            fail(f"sfx_title.wav duration {dur:.3f}s is not a short lobby confirm")
+            return
+
+    if "Audio/sfx_title" not in title_cs or "PlayTitleSfx" not in title_cs:
+        fail("Title does not load / play Audio/sfx_title")
+    elif "PlayTitleSfx();" not in leave or leave.count("PlayTitleSfx();") != 1:
+        fail("title confirm is not a single shot on leave")
+    elif play.count("PlayOneShot") != 1:
+        fail("title confirm can fire more than one shot")
+    elif "PlayTitleSfx" in start_pulse or "PlayTitleSfx" in cont_pulse:
+        fail("title confirm plays on the pulse tick")
+    elif "LeaveTitle(BeginNewRun)" not in start or "OpenWipe" not in start:
+        fail("title SFX changed new-game wipe / start")
+    elif "LeaveTitle" not in cont or "ContinueRun()" not in cont:
+        fail("title SFX changed continue load")
+    elif "LeaveTitle(BeginNewRun)" not in wipe or "CloseWipe" not in wipe:
+        fail("title SFX dropped the new-game confirm wipe")
+    elif "TickStartPulse" not in title_cs or '"시작"' not in title_cs or "1f + 0.03f" not in start_pulse:
+        fail("title SFX changed the 1.03 start pulse / 시작 chip")
+    elif "TickContinuePulse" not in title_cs or '"이어"' not in title_cs or "1f + 0.03f" not in cont_pulse:
+        fail("title SFX changed the 1.03 continue pulse / 이어 chip")
+    elif "HasValidSave" not in title_cs or "진행 중인 " not in title_cs or "지울까?" not in title_cs or "지우고 시작" not in title_cs:
+        fail("title SFX changed save check / wipe copy")
+    elif "const float fade = 0.2f" not in fade or "Audio/bgm_title" not in title_cs:
+        fail("title SFX dropped title BGM fade")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("title SFX retuned start numbers")
+    elif "Audio/sfx_title" in week_cs or "Audio/sfx_title" in live_cs or "Audio/sfx_title" in settle_cs:
+        fail("title confirm leaked onto WeekStart / LiveStream / Settlement")
+    elif "Audio/sfx_golive" not in week_cs or "PlayGoLiveSfx" not in week_cs:
+        fail("title SFX dropped GO LIVE confirm")
+    elif "Audio/sfx_nextday" not in settle_cs or "PlayNextDaySfx" not in settle_cs:
+        fail("title SFX dropped 다음날 confirm")
+    elif "public void StartNewRun()" not in gm or "public bool ContinueRun()" not in gm:
+        fail("title SFX changed StartNewRun / ContinueRun")
+    elif "billRent: 8000" not in balance:
+        fail("title SFX retuned Week 1 bills")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("title SFX broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising title SFX / later weeks")
+    elif "F9" in title_cs or "F10" in title_cs or "PlaytestDebug" in title_cs:
+        fail("Title started advertising playtest keys")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("title SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("title SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("title lobby plays sfx_title once on leave; pulse / wipe / fade stay")
 
 
 def check_mental_sfx() -> None:

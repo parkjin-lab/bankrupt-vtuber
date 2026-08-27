@@ -36,6 +36,8 @@ namespace BankruptVtuber
         bool _canSkipPrologue;
         bool _hasSave;
         AudioSource _titleBgm;
+        AudioSource _titleSfx;
+        AudioClip _titleCue;
         bool _leavingTitle;
 
         void Awake()
@@ -523,6 +525,15 @@ namespace BankruptVtuber
             _titleBgm.playOnAwake = false;
             _titleBgm.volume = 0.28f;
             _titleBgm.Play();
+            _titleSfx = gameObject.AddComponent<AudioSource>();
+            _titleSfx.playOnAwake = false;
+            _titleCue = Resources.Load<AudioClip>("Audio/sfx_title");
+        }
+
+        void PlayTitleSfx()
+        {
+            if (_titleSfx != null && _titleCue != null)
+                _titleSfx.PlayOneShot(_titleCue, 0.46f);
         }
 
         void LeaveTitle(System.Action next)
@@ -531,6 +542,7 @@ namespace BankruptVtuber
                 return;
             _leavingTitle = true;
             _busy = true;
+            PlayTitleSfx();
             StartCoroutine(FadeTitleBgmThen(next));
         }
 
