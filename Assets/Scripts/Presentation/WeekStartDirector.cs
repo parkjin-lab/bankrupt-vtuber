@@ -464,14 +464,10 @@ namespace BankruptVtuber
             _ => ""
         };
 
-        static string ContentPickIcon(StreamContentType type) => type switch
+        static string ContentPickIcon(StreamContentType type)
         {
-            StreamContentType.Talk => ArtSprites.ContentTalk,
-            StreamContentType.Game => ArtSprites.ContentGame,
-            StreamContentType.Song => ArtSprites.ContentSong,
-            StreamContentType.Reaction => ArtSprites.ContentReaction,
-            _ => ArtSprites.BubblePill
-        };
+            return ArtSprites.ForContent(type) ?? ArtSprites.BubblePill;
+        }
 
         static Color ContentPickAccent(StreamContentType type) => type switch
         {

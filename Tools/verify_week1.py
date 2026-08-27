@@ -3187,9 +3187,11 @@ def check_content_card_mood() -> None:
         fail("content pick cards have no one-line Korean vibe")
     elif "같이 깨자" not in week_cs or "같이 보자" not in week_cs:
         fail("game / reaction cards have no vibe line")
-    elif "ContentPickIcon" not in week_cs or "ArtSprites.ContentTalk" not in week_cs or "ArtSprites.ContentSong" not in week_cs:
+    elif "ContentPickIcon" not in week_cs or "ArtSprites.ForContent" not in week_cs:
         fail("content pick cards have no distinct show icons")
-    elif "ArtSprites.ContentGame" not in week_cs or "ArtSprites.ContentReaction" not in week_cs:
+    elif 'ContentTalk = "Art/content_talk"' not in (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8") or 'ContentSong = "Art/content_song"' not in (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8"):
+        fail("content pick cards dropped talk/song art hooks")
+    elif 'ContentGame = "Art/content_game"' not in (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8") or 'ContentReaction = "Art/content_reaction"' not in (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8"):
         fail("game / reaction cards have no show icons")
     elif "ContentPickAccent" not in week_cs or "Palette.Pink" not in week_cs or "Palette.Gold" not in week_cs:
         fail("content pick cards have no accent colors")
@@ -4309,6 +4311,8 @@ def check_show_chip() -> None:
         fail("show chip is not the content card accent colors")
     elif "Palette.Pink" not in accent or "Palette.Troll" not in accent or "Palette.Gold" not in accent or "Palette.PastelDim" not in accent:
         fail("show chip drifted from WeekStart card accents")
+    elif "ArtSprites.ForContent" not in paint or '"Icon"' not in live_cs or "_showChipIcon" not in live_cs:
+        fail("show chip does not reuse morning content icons")
     elif "PaintShowChip(look.Type)" not in apply:
         fail("show chip is not keyed off tonight's pick")
     elif "look.OverlayTitle" not in apply or "look.Wash" not in apply or "look.BedVolume" not in apply:
@@ -4340,7 +4344,7 @@ def check_show_chip() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("show chip moved Unity off 6000.5.9f1")
     else:
-        ok("live show chip names 토크/게임/노래/리액션 in card accent; skins stay")
+        ok("live show chip names 토크/게임/노래/리액션 with morning icons; skins stay")
 
 
 def check_settle_show_line() -> None:
@@ -4365,6 +4369,8 @@ def check_settle_show_line() -> None:
         fail("settlement line is not the content card accent colors")
     elif "Palette.Pink" not in accent or "Palette.Troll" not in accent:
         fail("settlement line drifted from WeekStart card accents")
+    elif "ArtSprites.ForContent" not in paint or "ShowLineIcon" not in settle_cs:
+        fail("settlement line does not reuse morning content icons")
     elif "contentPicked" not in paint or "HasPick" not in paint:
         fail("settlement line is not keyed off tonight's pick")
     elif "DayHeadline.Remember" not in head or "DayHeadline.Build" not in head:
@@ -4396,7 +4402,7 @@ def check_settle_show_line() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("settlement line moved Unity off 6000.5.9f1")
     else:
-        ok("settlement names 오늘 토크/게임/노래/리액션 in accent; headline / payout stay")
+        ok("settlement names 오늘 토크/게임/노래/리액션 with morning icons; headline / payout stay")
 
 
 def check_vtuber_face() -> None:
@@ -5475,10 +5481,12 @@ def check_content_icons() -> None:
         fail("ArtSprites missing content_talk/game hooks")
     elif 'ContentSong = "Art/content_song"' not in art_cs or 'ContentReaction = "Art/content_reaction"' not in art_cs:
         fail("ArtSprites missing content_song/reaction hooks")
-    elif "ArtSprites.ContentTalk" not in icons or "ArtSprites.ContentGame" not in icons:
-        fail("content pick icons are not wired to talk/game art")
-    elif "ArtSprites.ContentSong" not in icons or "ArtSprites.ContentReaction" not in icons:
-        fail("content pick icons are not wired to song/reaction art")
+    elif "ArtSprites.ForContent" not in icons:
+        fail("content pick icons are not wired through ForContent")
+    elif "StreamContentType.Talk" not in art_cs or "StreamContentType.Game" not in art_cs:
+        fail("ForContent missing talk/game mapping")
+    elif "StreamContentType.Song" not in art_cs or "StreamContentType.Reaction" not in art_cs:
+        fail("ForContent missing song/reaction mapping")
     elif "ArtSprites.Apply" not in pick or '"Icon"' not in pick:
         fail("content cards do not draw the show icon")
     elif "ContentPickAccent" not in week_cs or "Palette.Pink" not in week_cs or "Palette.Troll" not in week_cs:

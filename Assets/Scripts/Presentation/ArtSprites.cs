@@ -35,6 +35,16 @@ namespace BankruptVtuber
         public const string ContentGame = "Art/content_game";
         public const string ContentSong = "Art/content_song";
         public const string ContentReaction = "Art/content_reaction";
+
+        public static string ForContent(StreamContentType type) => type switch
+        {
+            StreamContentType.Talk => ContentTalk,
+            StreamContentType.Game => ContentGame,
+            StreamContentType.Song => ContentSong,
+            StreamContentType.Reaction => ContentReaction,
+            _ => null
+        };
+
         public const string SuperchatBanner = "Art/bubble_superchat";
         public const string TrollBubble = "Art/bubble_troll";
         public const string Sparkle = "Art/sparkle";

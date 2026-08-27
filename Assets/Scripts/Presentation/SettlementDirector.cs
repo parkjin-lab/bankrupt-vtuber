@@ -34,6 +34,7 @@ namespace BankruptVtuber
         Text _headlineTag;
         Text _headline;
         Text _showLine;
+        Image _showLineIcon;
         Text _clearHeadline;
         Text _stampHeadline;
         Text _endingHeadline;
@@ -303,8 +304,13 @@ namespace BankruptVtuber
             UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(36, -16), new Vector2(400, 56));
             _headlineTag = UiKit.Label(root, "HeadlineTag", "오늘 헤드라인", 18, Palette.Gold, TextAnchor.UpperLeft, FontStyle.Bold);
             UiKit.Layout(_headlineTag.rectTransform, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(40, -68), new Vector2(0, 22));
-            _showLine = UiKit.Label(root, "ShowLine", "", 18, Palette.Pink, TextAnchor.MiddleRight, FontStyle.Bold);
-            UiKit.Layout(_showLine.rectTransform, new Vector2(0.40f, 1), new Vector2(0.78f, 1), new Vector2(1, 1), new Vector2(-8, -68), new Vector2(0, 22));
+            var showLineRow = UiKit.Panel(root, "ShowLineRow", new Color(0, 0, 0, 0));
+            UiKit.Layout(showLineRow, new Vector2(0.78f, 1), new Vector2(0.78f, 1), new Vector2(1, 1), new Vector2(-8, -68), new Vector2(168, 22));
+            _showLineIcon = UiKit.Image(showLineRow, "ShowLineIcon", Color.white);
+            UiKit.Layout(_showLineIcon.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(12f, 0f), new Vector2(20f, 20f));
+            _showLineIcon.raycastTarget = false;
+            _showLine = UiKit.Label(showLineRow, "ShowLine", "", 18, Palette.Pink, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_showLine.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0.5f), new Vector2(28f, 0f), new Vector2(-4f, 0f));
             _headline = UiKit.Label(root, "Headline", "", 32, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
             UiKit.Layout(_headline.rectTransform, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(40, -90), new Vector2(0, 56));
             UiKit.Wrap(_headline);
@@ -2031,10 +2037,23 @@ namespace BankruptVtuber
                 return;
             bool has = ContentRules.HasPick(run);
             _showLine.gameObject.SetActive(has);
+            if (_showLineIcon != null)
+                _showLineIcon.gameObject.SetActive(has);
             if (!has)
                 return;
             _showLine.text = ShowLineName(run.contentPicked);
             _showLine.color = ShowLineAccent(run.contentPicked);
+            if (_showLineIcon == null)
+                return;
+            string icon = ArtSprites.ForContent(run.contentPicked);
+            if (icon != null)
+            {
+                ArtSprites.Apply(_showLineIcon, icon, Color.white, Color.white);
+                _showLineIcon.preserveAspect = true;
+                _showLineIcon.enabled = true;
+            }
+            else
+                _showLineIcon.enabled = false;
         }
 
         static string ShowLineName(StreamContentType type) => type switch
