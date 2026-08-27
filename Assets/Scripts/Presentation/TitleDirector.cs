@@ -64,8 +64,8 @@ namespace BankruptVtuber
         void Build()
         {
             var canvas = UiKit.CreateCanvas("TitleCanvas", transform);
-            var root = canvas.transform;
-            StudioChrome.Wash(root);
+            StudioChrome.Wash(canvas.transform);
+            var root = StreamSafeArea.Attach(canvas.transform);
 
             _titleRoot = new GameObject("TitleRoot", typeof(RectTransform));
             _titleRoot.transform.SetParent(root, false);
@@ -103,6 +103,7 @@ namespace BankruptVtuber
             var panel = UiKit.Panel(root, "HowTo", Color.white);
             UiKit.Layout(panel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760, 540));
             ArtSprites.ApplySliced(panel.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 1f, 1f, 0.98f));
+            SafeFitCard.Bind(panel, 760f, 540f);
             _howToRoot = panel.gameObject;
             _howToRoot.SetActive(false);
 
@@ -118,9 +119,15 @@ namespace BankruptVtuber
                 "1–4    방송 중 이벤트\n" +
                 "A/S/D/F · WASD  같은 판정\n" +
                 "화면 버튼   긍정/공감/웃음/감사";
-            var keys = UiKit.Label(panel, "Keys", body, 28, Palette.PastelDim, TextAnchor.UpperLeft);
-            UiKit.Layout(keys.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -20), new Vector2(-80, -90));
+            var keysView = UiKit.Panel(panel, "KeysView", new Color(0, 0, 0, 0));
+            UiKit.Stretch(keysView, 32f, 32f, 72f, 100f);
+            var keysImg = keysView.GetComponent<Image>();
+            if (keysImg != null)
+                keysImg.raycastTarget = true;
+            var keys = UiKit.Label(keysView, "Keys", body, 28, Palette.PastelDim, TextAnchor.UpperLeft);
+            UiKit.Stretch(keys.rectTransform);
             keys.lineSpacing = 1.25f;
+            UiKit.MakeScrollBody(keys);
 
             var close = UiKit.Button(panel, "Close", "닫기  (Space)", CloseHowTo, Palette.PinkDeep, Color.white);
             UiKit.Layout(close.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 28), new Vector2(260, 56));

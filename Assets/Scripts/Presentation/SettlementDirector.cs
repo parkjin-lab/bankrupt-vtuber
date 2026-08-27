@@ -100,6 +100,9 @@ namespace BankruptVtuber
         GameObject _autoRoot;
         Text _autoBody;
         bool _autoOpen;
+        RectTransform _offerRow;
+        RectTransform _week5Row;
+        RectTransform _actionRow;
 
         void Awake()
         {
@@ -184,8 +187,8 @@ namespace BankruptVtuber
         void Build()
         {
             var canvas = UiKit.CreateCanvas("SettlementCanvas", transform);
-            var root = canvas.transform;
-            StudioChrome.Wash(root);
+            StudioChrome.Wash(canvas.transform);
+            var root = StreamSafeArea.Attach(canvas.transform);
             _portrait = new StudioPortrait(root, new Vector2(0.90f, 0.82f), new Vector2(210, 268), false);
 
             var title = UiKit.Label(root, "Title", "정산", 48, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
@@ -205,6 +208,7 @@ namespace BankruptVtuber
 
             var panel = UiKit.Panel(root, "Sheet", Color.white);
             UiKit.Layout(panel, new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(980, 200));
+            SafeFitCard.Bind(panel, 980f, 220f, 16f);
             ArtSprites.ApplySliced(panel.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 1f, 1f, 0.92f));
             _body = UiKit.Label(panel, "Body", "", 18, Palette.Pastel, TextAnchor.UpperLeft);
             UiKit.Stretch(_body.rectTransform, 22, 22, 16, 16);
@@ -213,35 +217,49 @@ namespace BankruptVtuber
             _body.lineSpacing = 1.08f;
 
             _result = UiKit.Label(root, "Result", "", 30, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_result.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 168), new Vector2(1200, 50));
+            UiKit.Layout(_result.rectTransform, new Vector2(0.04f, 0), new Vector2(0.96f, 0), new Vector2(0.5f, 0), new Vector2(0, 168), new Vector2(0, 50));
+            UiKit.Wrap(_result);
 
-            _clipYes = UiKit.Button(root, "ClipYes", "클립 업로드", OnClipYes, Palette.Gold, Palette.Ink);
-            UiKit.Layout(_clipYes.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-190, 118), new Vector2(320, 56));
-            _clipNo = UiKit.Button(root, "ClipNo", "올리지 않기", OnClipNo, Palette.StudioHi, Palette.Pastel);
-            UiKit.Layout(_clipNo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(190, 118), new Vector2(320, 56));
+            _offerRow = UiKit.Panel(root, "OfferRow", new Color(0, 0, 0, 0));
+            UiKit.Layout(_offerRow, new Vector2(0.04f, 0), new Vector2(0.96f, 0), new Vector2(0.5f, 0), new Vector2(0, 118), new Vector2(0, 72));
+            _clipYes = UiKit.Button(_offerRow, "ClipYes", "클립 업로드", OnClipYes, Palette.Gold, Palette.Ink);
+            UiKit.Layout(_clipYes.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-190, 0), new Vector2(320, 56));
+            _clipNo = UiKit.Button(_offerRow, "ClipNo", "올리지 않기", OnClipNo, Palette.StudioHi, Palette.Pastel);
+            UiKit.Layout(_clipNo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(190, 0), new Vector2(320, 56));
             _clipNote = UiKit.Label(root, "ClipNote", "", 18, Palette.Gold, TextAnchor.MiddleCenter);
             UiKit.Layout(_clipNote.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 118), new Vector2(720, 28));
+            UiKit.Wrap(_clipNote);
 
-            _produce = UiKit.Button(root, "Produce", "아크릴 1개 생산  ₩2,500", OnProduce, Palette.Gold, Palette.Ink);
-            UiKit.Layout(_produce.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 118), new Vector2(360, 56));
+            _produce = UiKit.Button(_offerRow, "Produce", "아크릴 1개 생산  ₩2,500", OnProduce, Palette.Gold, Palette.Ink);
+            UiKit.Layout(_produce.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(360, 56));
             _produce.gameObject.SetActive(false);
 
-            _foundAgency = UiKit.Button(root, "FoundAgency", "에이전시 설립  ₩40,000", OnFoundAgency, Palette.Gold, Palette.Ink);
-            UiKit.Layout(_foundAgency.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-360, 118), new Vector2(300, 56));
+            _foundAgency = UiKit.Button(_offerRow, "FoundAgency", "에이전시 설립  ₩40,000", OnFoundAgency, Palette.Gold, Palette.Ink);
+            UiKit.Layout(_foundAgency.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-360, 0), new Vector2(300, 56));
             _foundAgency.gameObject.SetActive(false);
-            _scout = UiKit.Button(root, "Scout", "주니어 스카우트  ₩25,000", OnScout, Palette.PinkDeep, Color.white);
-            UiKit.Layout(_scout.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 118), new Vector2(300, 56));
+            _scout = UiKit.Button(_offerRow, "Scout", "주니어 스카우트  ₩25,000", OnScout, Palette.PinkDeep, Color.white);
+            UiKit.Layout(_scout.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(300, 56));
             _scout.gameObject.SetActive(false);
-            _signSponsor = UiKit.Button(root, "Sponsor", "스폰서 계약", OnSignSponsor, Palette.Gold, Palette.Ink);
-            UiKit.Layout(_signSponsor.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(360, 118), new Vector2(300, 56));
+            _signSponsor = UiKit.Button(_offerRow, "Sponsor", "스폰서 계약", OnSignSponsor, Palette.Gold, Palette.Ink);
+            UiKit.Layout(_signSponsor.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(360, 0), new Vector2(300, 56));
             _signSponsor.gameObject.SetActive(false);
+            SafePairLayout.BindMany(_offerRow, false, true,
+                _clipYes.GetComponent<RectTransform>(),
+                _clipNo.GetComponent<RectTransform>(),
+                _produce.GetComponent<RectTransform>(),
+                _foundAgency.GetComponent<RectTransform>(),
+                _scout.GetComponent<RectTransform>(),
+                _signSponsor.GetComponent<RectTransform>());
 
-            _bookConcert = UiKit.Button(root, "BookConcert", "콘서트 개최  ₩80,000", OnBookConcert, Palette.Gold, Palette.Ink);
-            UiKit.Layout(_bookConcert.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-210, 184), new Vector2(360, 56));
+            _week5Row = UiKit.Panel(root, "Week5Row", new Color(0, 0, 0, 0));
+            UiKit.Layout(_week5Row, new Vector2(0.04f, 0), new Vector2(0.96f, 0), new Vector2(0.5f, 0), new Vector2(0, 200), new Vector2(0, 72));
+            _bookConcert = UiKit.Button(_week5Row, "BookConcert", "콘서트 개최  ₩80,000", OnBookConcert, Palette.Gold, Palette.Ink);
+            UiKit.Layout(_bookConcert.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-210, 0), new Vector2(360, 56));
             _bookConcert.gameObject.SetActive(false);
-            _concertLive = UiKit.Button(root, "ConcertLive", "콘서트 방송", OnConcertLive, Palette.PinkDeep, Color.white);
-            UiKit.Layout(_concertLive.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(210, 184), new Vector2(360, 56));
+            _concertLive = UiKit.Button(_week5Row, "ConcertLive", "콘서트 방송", OnConcertLive, Palette.PinkDeep, Color.white);
+            UiKit.Layout(_concertLive.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(210, 0), new Vector2(360, 56));
             _concertLive.gameObject.SetActive(false);
+            SafePairLayout.Bind(_week5Row, _bookConcert.GetComponent<RectTransform>(), _concertLive.GetComponent<RectTransform>());
 
             _letter = UiKit.Button(root, "FanLetter", "팬레터 답장", OnLetter, Palette.PinkDeep, Color.white);
             UiKit.Layout(_letter.GetComponent<RectTransform>(), new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0), new Vector2(48, 52), new Vector2(240, 56));
@@ -262,19 +280,24 @@ namespace BankruptVtuber
             UiKit.Stretch(conflictWash.rectTransform);
             conflictWash.raycastTarget = true;
             var conflictTitle = UiKit.Label(_conflictOverlay.transform, "CTitle", "콘텐츠 편중 갈등", 42, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
-            UiKit.Layout(conflictTitle.rectTransform, new Vector2(0.5f, 0.84f), new Vector2(0.5f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(920, 52));
+            UiKit.Layout(conflictTitle.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -16), new Vector2(920, 52));
             var conflictHint = UiKit.Label(_conflictOverlay.transform, "CBody", "오늘 안에 고르세요.", 22, Palette.Pastel, TextAnchor.UpperCenter);
-            UiKit.Layout(conflictHint.rectTransform, new Vector2(0.5f, 0.78f), new Vector2(0.5f, 0.78f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 32));
-            _conflictSoothe = UiKit.Button(_conflictOverlay.transform, "ConflictSoothe", "특별방송으로 달래기", OnSootheConflict, Palette.PinkDeep, Color.white);
-            UiKit.Layout(_conflictSoothe.GetComponent<RectTransform>(), new Vector2(0.5f, 0.48f), new Vector2(0.5f, 0.48f), new Vector2(0.5f, 0.5f), new Vector2(-300, 8), new Vector2(500, 340));
+            UiKit.Layout(conflictHint.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -64), new Vector2(720, 32));
+            var conflictPair = UiKit.Panel(_conflictOverlay.transform, "ConflictPair", new Color(0, 0, 0, 0));
+            UiKit.Layout(conflictPair, new Vector2(0.04f, 0.14f), new Vector2(0.96f, 0.86f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _conflictSoothe = UiKit.Button(conflictPair, "ConflictSoothe", "특별방송으로 달래기", OnSootheConflict, Palette.PinkDeep, Color.white);
+            UiKit.Layout(_conflictSoothe.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-300, 8), new Vector2(500, 340));
             ArtSprites.ApplySliced(_conflictSoothe.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.78f, 0.88f, 0.98f));
             StyleConflictCard(_conflictSoothe);
-            _conflictStyle = UiKit.Button(_conflictOverlay.transform, "ConflictStyle", "내 스타일대로", OnStyleConflict, Palette.Troll, Color.white);
-            UiKit.Layout(_conflictStyle.GetComponent<RectTransform>(), new Vector2(0.5f, 0.48f), new Vector2(0.5f, 0.48f), new Vector2(0.5f, 0.5f), new Vector2(300, 8), new Vector2(500, 340));
+            _conflictStyle = UiKit.Button(conflictPair, "ConflictStyle", "내 스타일대로", OnStyleConflict, Palette.Troll, Color.white);
+            UiKit.Layout(_conflictStyle.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(300, 8), new Vector2(500, 340));
             ArtSprites.ApplySliced(_conflictStyle.GetComponent<Image>(), ArtSprites.PanelDark, new Color(0.92f, 0.42f, 0.48f, 0.98f));
             StyleConflictCard(_conflictStyle);
+            var settleConflictPair = SafePairLayout.Bind(conflictPair, _conflictSoothe.GetComponent<RectTransform>(), _conflictStyle.GetComponent<RectTransform>(), true, false);
+            settleConflictPair.MinEach = 480f;
             _conflictOverlayResult = UiKit.Label(_conflictOverlay.transform, "CResult", "", 30, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_conflictOverlayResult.rectTransform, new Vector2(0.5f, 0.16f), new Vector2(0.5f, 0.16f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1100, 48));
+            UiKit.Layout(_conflictOverlayResult.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 16), new Vector2(1100, 48));
+            UiKit.Wrap(_conflictOverlayResult);
             _conflictOverlay.SetActive(false);
 
             _autoRoot = new GameObject("AutoRoot", typeof(RectTransform));
@@ -286,14 +309,17 @@ namespace BankruptVtuber
             var autoCard = UiKit.Panel(_autoRoot.transform, "AutoCard", Color.white);
             UiKit.Layout(autoCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
             ArtSprites.ApplySliced(autoCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.92f, 0.55f, 0.98f));
+            SafeFitCard.Bind(autoCard, 720f, 380f);
             var autoTitle = UiKit.Label(autoCard, "AutoTitle", "기본 자동응답", 46, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(autoTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
             _autoBody = UiKit.Label(autoCard, "AutoBody", "", 26, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_autoBody.rectTransform, new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            UiKit.Wrap(_autoBody);
             var autoOn = UiKit.Button(autoCard, "AutoOn", "켜기", OnAutoOn, Palette.Gold, Palette.Ink);
             UiKit.Layout(autoOn.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 72));
             var autoOff = UiKit.Button(autoCard, "AutoOff", "끄기", OnAutoOff, Palette.StudioHi, Palette.Pastel);
             UiKit.Layout(autoOff.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 72));
+            SafePairLayout.Bind(autoCard, autoOn.GetComponent<RectTransform>(), autoOff.GetComponent<RectTransform>());
             _autoRoot.SetActive(false);
 
             _rankBox = UiKit.Panel(root, "RankPanel", new Color(0.10f, 0.05f, 0.12f, 0.94f));
@@ -301,16 +327,20 @@ namespace BankruptVtuber
             _rankPanel = UiKit.Label(_rankBox, "RankBody", "", 20, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
             UiKit.Stretch(_rankPanel.rectTransform, 16, 16, 14, 14);
             _rankPanel.lineSpacing = 1.2f;
+            UiKit.Wrap(_rankPanel);
             _rankBox.gameObject.SetActive(false);
 
-            _repay = UiKit.Button(root, "Repay", "남은 현금으로 빚 갚기", OnRepay, Palette.Gold, Palette.Ink);
-            UiKit.Layout(_repay.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-210, 52), new Vector2(360, 60));
+            _actionRow = UiKit.Panel(root, "ActionRow", new Color(0, 0, 0, 0));
+            UiKit.Layout(_actionRow, new Vector2(0.04f, 0), new Vector2(0.96f, 0), new Vector2(0.5f, 0), new Vector2(0, 16), new Vector2(0, 68));
+            _repay = UiKit.Button(_actionRow, "Repay", "남은 현금으로 빚 갚기", OnRepay, Palette.Gold, Palette.Ink);
+            UiKit.Layout(_repay.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-210, 0), new Vector2(360, 60));
 
-            _next = UiKit.Button(root, "Next", "다음날  (Space)", () => GameManager.Instance.NextMorning(), Palette.PinkDeep, Color.white);
-            UiKit.Layout(_next.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(210, 52), new Vector2(360, 60));
+            _next = UiKit.Button(_actionRow, "Next", "다음날  (Space)", () => GameManager.Instance.NextMorning(), Palette.PinkDeep, Color.white);
+            UiKit.Layout(_next.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(210, 0), new Vector2(360, 60));
 
-            _restart = UiKit.Button(root, "Restart", "처음부터", () => GameManager.Instance.RestartRun(), Palette.Troll, Color.white);
-            UiKit.Layout(_restart.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 52), new Vector2(360, 60));
+            _restart = UiKit.Button(_actionRow, "Restart", "처음부터", () => GameManager.Instance.RestartRun(), Palette.Troll, Color.white);
+            UiKit.Layout(_restart.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(360, 60));
+            SafePairLayout.BindMany(_actionRow, false, true, _repay.GetComponent<RectTransform>(), _next.GetComponent<RectTransform>(), _restart.GetComponent<RectTransform>());
 
             _endingRoot = new GameObject("EndingRoot", typeof(RectTransform));
             _endingRoot.transform.SetParent(root, false);
@@ -320,6 +350,7 @@ namespace BankruptVtuber
             var endingCard = UiKit.Panel(_endingRoot.transform, "EndingCard", Color.white);
             UiKit.Layout(endingCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1080, 460));
             ArtSprites.ApplySliced(endingCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 1f, 1f, 0.98f));
+            SafeFitCard.Bind(endingCard, 1080f, 520f);
             _endingPortrait = new StudioPortrait(endingCard, new Vector2(0.18f, 0.52f), new Vector2(320, 400), false);
             _endingTitle = UiKit.Label(endingCard, "ETitle", "", 52, Palette.Gold, TextAnchor.UpperLeft, FontStyle.Bold);
             UiKit.Layout(_endingTitle.rectTransform, new Vector2(0.38f, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(12, -36), new Vector2(-40, 72));
@@ -331,6 +362,7 @@ namespace BankruptVtuber
             UiKit.Layout(_retire.GetComponent<RectTransform>(), new Vector2(0.68f, 0), new Vector2(0.68f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 56));
             var endingRestart = UiKit.Button(endingCard, "EndingRestart", "처음부터", () => GameManager.Instance.RestartRun(), Palette.PinkDeep, Color.white);
             UiKit.Layout(endingRestart.GetComponent<RectTransform>(), new Vector2(0.68f, 0), new Vector2(0.68f, 0), new Vector2(0.5f, 0), new Vector2(150, 28), new Vector2(300, 56));
+            SafePairLayout.Bind(endingCard, _retire.GetComponent<RectTransform>(), endingRestart.GetComponent<RectTransform>());
             _endingRoot.SetActive(false);
 
             _clearRoot = new GameObject("ClearRoot", typeof(RectTransform));
@@ -343,10 +375,11 @@ namespace BankruptVtuber
             var clearTag = UiKit.Label(_clearRoot.transform, "ClearTag", "주차 클리어", 28, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(clearTag.rectTransform, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -36), new Vector2(480, 40));
             _clearTitle = UiKit.Label(_clearRoot.transform, "ClearTitle", "1주차 생존", 72, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_clearTitle.rectTransform, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -100), new Vector2(1100, 90));
+            UiKit.Layout(_clearTitle.rectTransform, new Vector2(0.04f, 1), new Vector2(0.96f, 1), new Vector2(0.5f, 1), new Vector2(0, -100), new Vector2(0, 90));
+            UiKit.Wrap(_clearTitle);
             _clearPortrait = new StudioPortrait(_clearRoot.transform, new Vector2(0.5f, 0.46f), new Vector2(340, 420), false);
             var snap = UiKit.Panel(_clearRoot.transform, "ClearSnap", Color.white);
-            UiKit.Layout(snap, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 156), new Vector2(720, 88));
+            UiKit.Layout(snap, new Vector2(0.08f, 0), new Vector2(0.92f, 0), new Vector2(0.5f, 0), new Vector2(0, 156), new Vector2(0, 88));
             ArtSprites.ApplySliced(snap.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 1f, 1f, 0.94f));
             _clearCash = UiKit.Label(snap, "C", "현금 ₩0", 28, Palette.CashGreen, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(_clearCash.rectTransform, new Vector2(0, 0), new Vector2(0.5f, 1), new Vector2(0, 0.5f), new Vector2(24, 0), new Vector2(-16, 0));
@@ -371,7 +404,7 @@ namespace BankruptVtuber
             UiKit.Layout(_stampEpitaph.rectTransform, new Vector2(0.58f, 0.28f), new Vector2(0.58f, 0.28f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760, 64));
             _stampEpitaph.horizontalOverflow = HorizontalWrapMode.Wrap;
             var stampRestart = UiKit.Button(_stampRoot.transform, "StampRestart", "처음부터", () => GameManager.Instance.RestartRun(), Palette.Ink, Palette.Pastel);
-            UiKit.Layout(stampRestart.GetComponent<RectTransform>(), new Vector2(0.58f, 0), new Vector2(0.58f, 0), new Vector2(0.5f, 0), new Vector2(0, 48), new Vector2(360, 72));
+            UiKit.Layout(stampRestart.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 48), new Vector2(360, 72));
             _stampRoot.SetActive(false);
 
             _letterRoot = new GameObject("LetterRoot", typeof(RectTransform));
@@ -383,6 +416,7 @@ namespace BankruptVtuber
             var paper = UiKit.Panel(_letterRoot.transform, "LetterCard", Color.white);
             UiKit.Layout(paper, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 440));
             ArtSprites.ApplySliced(paper.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.92f, 0.94f, 0.98f));
+            SafeFitCard.Bind(paper, 720f, 440f);
             var letterTitle = UiKit.Label(paper, "LetterTitle", "팬레터", 22, Palette.Pink, TextAnchor.UpperLeft, FontStyle.Bold);
             UiKit.Layout(letterTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(28, -16), new Vector2(-56, 28));
             _letterFrom = UiKit.Label(paper, "LetterFrom", "", 40, Palette.Ink, TextAnchor.UpperLeft, FontStyle.Bold);
@@ -397,6 +431,7 @@ namespace BankruptVtuber
             UiKit.Layout(reply.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 72));
             var later = UiKit.Button(paper, "Later", "나중에", OnLetterLater, Palette.StudioHi, Palette.Pastel);
             UiKit.Layout(later.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 72));
+            SafePairLayout.Bind(paper, reply.GetComponent<RectTransform>(), later.GetComponent<RectTransform>());
             _letterHeart = UiKit.Label(root, "LetterHeart", "", 36, Palette.Pink, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_letterHeart.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(640, 56));
             var heartC = _letterHeart.color;
@@ -413,6 +448,7 @@ namespace BankruptVtuber
             var memberCard = UiKit.Panel(_memberRoot.transform, "MemberCard", Color.white);
             UiKit.Layout(memberCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
             ArtSprites.ApplySliced(memberCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.92f, 0.55f, 0.98f));
+            SafeFitCard.Bind(memberCard, 720f, 380f);
             var memberTitle = UiKit.Label(memberCard, "MemberTitle", "멤버십 해금", 52, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(memberTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
             _memberBody = UiKit.Label(memberCard, "MemberBody", "", 26, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -432,6 +468,7 @@ namespace BankruptVtuber
             var clipCard = UiKit.Panel(_clipRoot.transform, "ClipCard", Color.white);
             UiKit.Layout(clipCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 360));
             ArtSprites.ApplySliced(clipCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.94f, 0.72f, 0.98f));
+            SafeFitCard.Bind(clipCard, 720f, 360f);
             var clipTag = UiKit.Label(clipCard, "ClipTag", "클립 업로드", 22, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
             UiKit.Layout(clipTag.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -20), new Vector2(-40, 28));
             var clipAsk = UiKit.Label(clipCard, "ClipAsk", "오늘 클립 올릴까?", 44, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -440,6 +477,7 @@ namespace BankruptVtuber
             UiKit.Layout(clipYes.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 72));
             var clipNo = UiKit.Button(clipCard, "ClipPass", "패스", OnClipNo, Palette.StudioHi, Palette.Pastel);
             UiKit.Layout(clipNo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 72));
+            SafePairLayout.Bind(clipCard, clipYes.GetComponent<RectTransform>(), clipNo.GetComponent<RectTransform>());
             _clipSlam = UiKit.Label(root, "ClipSlam", "", 56, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_clipSlam.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(820, 80));
             var slamC = _clipSlam.color;
@@ -456,6 +494,7 @@ namespace BankruptVtuber
             var goodsCard = UiKit.Panel(_goodsRoot.transform, "GoodsCard", Color.white);
             UiKit.Layout(goodsCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 400));
             ArtSprites.ApplySliced(goodsCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.86f, 0.94f, 0.98f));
+            SafeFitCard.Bind(goodsCard, 720f, 400f);
             var goodsTitle = UiKit.Label(goodsCard, "GoodsTitle", "아크릴 스탠드 해금", 46, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(goodsTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
             _goodsBody = UiKit.Label(goodsCard, "GoodsBody", "", 26, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -475,6 +514,7 @@ namespace BankruptVtuber
             var agencyCard = UiKit.Panel(_agencyRoot.transform, "AgencyCard", Color.white);
             UiKit.Layout(agencyCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 400));
             ArtSprites.ApplySliced(agencyCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.92f, 0.55f, 0.98f));
+            SafeFitCard.Bind(agencyCard, 720f, 400f);
             var agencyTitle = UiKit.Label(agencyCard, "AgencyTitle", "에이전시 설립", 46, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(agencyTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
             _agencyBody = UiKit.Label(agencyCard, "AgencyBody", "", 26, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -485,6 +525,7 @@ namespace BankruptVtuber
             UiKit.Layout(agencyYes.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 72));
             var agencyNo = UiKit.Button(agencyCard, "AgencyLater", "나중에", OnAgencyLater, Palette.StudioHi, Palette.Pastel);
             UiKit.Layout(agencyNo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 72));
+            SafePairLayout.Bind(agencyCard, agencyYes.GetComponent<RectTransform>(), agencyNo.GetComponent<RectTransform>());
             _agencyRoot.SetActive(false);
 
             _agencySplashRoot = new GameObject("AgencySplashRoot", typeof(RectTransform));
@@ -496,6 +537,7 @@ namespace BankruptVtuber
             var agencyOpenCard = UiKit.Panel(_agencySplashRoot.transform, "AgencyOpenCard", Color.white);
             UiKit.Layout(agencyOpenCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
             ArtSprites.ApplySliced(agencyOpenCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.9f, 0.5f, 0.98f));
+            SafeFitCard.Bind(agencyOpenCard, 720f, 380f);
             var agencyOpenTitle = UiKit.Label(agencyOpenCard, "AgencyOpenTitle", "에이전시 오픈", 52, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(agencyOpenTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
             _agencySplashBody = UiKit.Label(agencyOpenCard, "AgencyOpenBody", "", 26, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -515,6 +557,7 @@ namespace BankruptVtuber
             var juniorCard = UiKit.Panel(_juniorRoot.transform, "JuniorCard", Color.white);
             UiKit.Layout(juniorCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 360));
             ArtSprites.ApplySliced(juniorCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.86f, 0.94f, 0.98f));
+            SafeFitCard.Bind(juniorCard, 720f, 360f);
             var juniorTitle = UiKit.Label(juniorCard, "JuniorTitle", "후배 스카우트", 46, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(juniorTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
             _juniorBody = UiKit.Label(juniorCard, "JuniorBody", "", 26, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -523,6 +566,7 @@ namespace BankruptVtuber
             UiKit.Layout(juniorYes.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 72));
             var juniorNo = UiKit.Button(juniorCard, "JuniorLater", "나중에", OnJuniorLater, Palette.StudioHi, Palette.Pastel);
             UiKit.Layout(juniorNo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 72));
+            SafePairLayout.Bind(juniorCard, juniorYes.GetComponent<RectTransform>(), juniorNo.GetComponent<RectTransform>());
             _juniorRoot.SetActive(false);
 
             _concertRoot = new GameObject("ConcertBookRoot", typeof(RectTransform));
@@ -534,6 +578,7 @@ namespace BankruptVtuber
             var concertCard = UiKit.Panel(_concertRoot.transform, "ConcertBookCard", Color.white);
             UiKit.Layout(concertCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
             ArtSprites.ApplySliced(concertCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.86f, 0.94f, 0.98f));
+            SafeFitCard.Bind(concertCard, 720f, 380f);
             var concertTitle = UiKit.Label(concertCard, "ConcertTitle", "콘서트 개최", 46, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(concertTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
             _concertBody = UiKit.Label(concertCard, "ConcertBody", "", 28, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -542,6 +587,7 @@ namespace BankruptVtuber
             UiKit.Layout(concertYes.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 72));
             var concertNo = UiKit.Button(concertCard, "ConcertLater", "나중에", OnConcertLater, Palette.StudioHi, Palette.Pastel);
             UiKit.Layout(concertNo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 72));
+            SafePairLayout.Bind(concertCard, concertYes.GetComponent<RectTransform>(), concertNo.GetComponent<RectTransform>());
             _concertRoot.SetActive(false);
 
             _concertResultRoot = new GameObject("ConcertResultRoot", typeof(RectTransform));
@@ -552,6 +598,7 @@ namespace BankruptVtuber
             resultWash.raycastTarget = true;
             var resultCard = UiKit.Panel(_concertResultRoot.transform, "ConcertResultCard", Color.white);
             UiKit.Layout(resultCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 360));
+            SafeFitCard.Bind(resultCard, 720f, 360f);
             _concertResultPanel = resultCard.GetComponent<Image>();
             ArtSprites.ApplySliced(_concertResultPanel, ArtSprites.PanelDark, new Color(1f, 0.9f, 0.5f, 0.98f));
             _concertResultTitle = UiKit.Label(resultCard, "ConcertResultTitle", "", 48, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -850,18 +897,7 @@ namespace BankruptVtuber
 
         void PlaceTripleButtons()
         {
-            var run = GameManager.Instance.Run;
-            if (run.cash > 0 && run.debt > 0)
-            {
-                UiKit.Layout(_repay.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-360, 52), new Vector2(300, 60));
-                UiKit.Layout(_next.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 52), new Vector2(300, 60));
-                UiKit.Layout(_restart.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(360, 52), new Vector2(300, 60));
-            }
-            else
-            {
-                UiKit.Layout(_next.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-210, 52), new Vector2(360, 60));
-                UiKit.Layout(_restart.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(210, 52), new Vector2(360, 60));
-            }
+            // Positions come from SafePairLayout on ActionRow (side-by-side or stacked).
         }
 
         void OnLetter()
@@ -947,6 +983,7 @@ namespace BankruptVtuber
                 return;
             cap.fontSize = 30;
             cap.lineSpacing = 1.2f;
+            cap.horizontalOverflow = HorizontalWrapMode.Wrap;
             cap.rectTransform.offsetMin = new Vector2(24f, 20f);
             cap.rectTransform.offsetMax = new Vector2(-24f, -20f);
         }

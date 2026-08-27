@@ -172,6 +172,51 @@ namespace BankruptVtuber
             rt.offsetMax = new Vector2(-r, -t);
         }
 
+        public static void Wrap(Text text)
+        {
+            if (text == null)
+                return;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+        }
+
+        public static ScrollRect MakeScrollBody(Text body)
+        {
+            if (body == null)
+                return null;
+            Wrap(body);
+            var view = body.transform.parent as RectTransform;
+            if (view == null)
+                return null;
+            var mask = view.GetComponent<Mask>();
+            if (mask == null)
+            {
+                mask = view.gameObject.AddComponent<Mask>();
+                mask.showMaskGraphic = false;
+            }
+            var scroll = view.GetComponent<ScrollRect>();
+            if (scroll == null)
+                scroll = view.gameObject.AddComponent<ScrollRect>();
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 24f;
+            scroll.viewport = view;
+            var bodyRt = body.rectTransform;
+            bodyRt.anchorMin = new Vector2(0f, 1f);
+            bodyRt.anchorMax = new Vector2(1f, 1f);
+            bodyRt.pivot = new Vector2(0.5f, 1f);
+            bodyRt.offsetMin = new Vector2(0f, -bodyRt.rect.height);
+            bodyRt.offsetMax = Vector2.zero;
+            var fitter = body.GetComponent<ContentSizeFitter>();
+            if (fitter == null)
+                fitter = body.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            scroll.content = bodyRt;
+            return scroll;
+        }
+
         public static void EnsureEventSystem()
         {
             if (UnityEngine.Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() != null)

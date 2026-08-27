@@ -497,12 +497,7 @@ namespace BankruptVtuber
             _washVeil = UiKit.Image(canvasRoot, "WashVeil", new Color(0, 0, 0, 0));
             UiKit.Stretch(_washVeil.rectTransform);
 
-            var safe = UiKit.Panel(canvasRoot, "Safe", new Color(0, 0, 0, 0));
-            UiKit.Stretch(safe);
-            var safeImg = safe.GetComponent<Image>();
-            if (safeImg != null)
-                safeImg.raycastTarget = false;
-            safe.gameObject.AddComponent<StreamSafeArea>();
+            var safe = StreamSafeArea.Attach(canvasRoot);
             var root = safe;
 
             _hypeFlash = UiKit.Image(root, "HypeFlash", new Color(1f, 0.82f, 0.25f, 0f));
@@ -628,7 +623,8 @@ namespace BankruptVtuber
             _eventDim.raycastTarget = false;
 
             _eventRoot = UiKit.Panel(root, "EventCard", new Color(0.16f, 0.07f, 0.12f, 0.96f));
-            UiKit.Layout(_eventRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(560, 280));
+            UiKit.Layout(_eventRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(560, 280));
+            SafeFitCard.Bind(_eventRoot, 560f, 280f);
             _eventTitle = UiKit.Label(_eventRoot, "ETitle", "", 34, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
             UiKit.Layout(_eventTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -16), new Vector2(-24, 44));
             _eventBody = UiKit.Label(_eventRoot, "EBody", "", 20, Palette.Pastel, TextAnchor.UpperCenter);
@@ -669,7 +665,8 @@ namespace BankruptVtuber
             _eventSting.gameObject.SetActive(false);
 
             _promoRoot = UiKit.Panel(root, "PromoCard", new Color(0.18f, 0.08f, 0.16f, 0.97f));
-            UiKit.Layout(_promoRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(720, 380));
+            UiKit.Layout(_promoRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
+            SafeFitCard.Bind(_promoRoot, 720f, 380f);
             _promoTitle = UiKit.Label(_promoRoot, "PTitle", "굿즈 홍보 타이밍", 40, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
             UiKit.Layout(_promoTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -18), new Vector2(-24, 52));
             _promoBody = UiKit.Label(_promoRoot, "PBody", "지금 아크릴 홍보?\n성공 시 오늘 판매 1.5배", 28, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -685,7 +682,8 @@ namespace BankruptVtuber
             _promoSlam.color = promoSlamC;
 
             _lineRoot = UiKit.Panel(root, "LineCard", new Color(0.18f, 0.08f, 0.16f, 0.97f));
-            UiKit.Layout(_lineRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(720, 380));
+            UiKit.Layout(_lineRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
+            SafeFitCard.Bind(_lineRoot, 720f, 380f);
             _lineTitle = UiKit.Label(_lineRoot, "LTitle", "스폰서 멘트 타이밍", 40, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
             UiKit.Layout(_lineTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -18), new Vector2(-24, 52));
             _lineBody = UiKit.Label(_lineRoot, "LBody", "스폰서 멘트\n계약 유지 +₩3,000\n실패 시 계약 파기", 26, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -701,7 +699,8 @@ namespace BankruptVtuber
             _lineSlam.color = lineSlamC;
 
             _concertRoot = UiKit.Panel(root, "ConcertCard", new Color(0.18f, 0.07f, 0.16f, 0.97f));
-            UiKit.Layout(_concertRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(720, 380));
+            UiKit.Layout(_concertRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
+            SafeFitCard.Bind(_concertRoot, 720f, 380f);
             _concertTitle = UiKit.Label(_concertRoot, "CTitle", "콘서트 퍼포먼스 타이밍", 40, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
             UiKit.Layout(_concertTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -18), new Vector2(-24, 52));
             _concertBody = UiKit.Label(_concertRoot, "CBody", "퍼포먼스 지금?\n성공 시 정산 ×1.3", 28, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);

@@ -1,13 +1,25 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace BankruptVtuber
 {
     /// <summary>
-    /// Fits a RectTransform to Screen.safeArea so pads sit above the Android nav bar.
+    /// Fits a RectTransform to Screen.safeArea so pads and cards sit above the Android nav bar.
     /// </summary>
     public class StreamSafeArea : MonoBehaviour
     {
         RectTransform _rt;
+
+        public static RectTransform Attach(Transform canvas)
+        {
+            var safe = UiKit.Panel(canvas, "Safe", new Color(0, 0, 0, 0));
+            UiKit.Stretch(safe);
+            var img = safe.GetComponent<Image>();
+            if (img != null)
+                img.raycastTarget = false;
+            safe.gameObject.AddComponent<StreamSafeArea>();
+            return safe;
+        }
 
         void Awake()
         {

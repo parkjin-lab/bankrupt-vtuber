@@ -1336,6 +1336,7 @@ def check_project() -> None:
     check_week4_agency_beats()
     check_week5_finale_beats()
     check_fandom_beats()
+    check_portrait_safe_area()
 
 
 def check_content_types() -> None:
@@ -2096,6 +2097,59 @@ def check_fandom_beats() -> None:
         fail("Week 1 bills were retuned by fandom beats")
     else:
         ok("fandom beats stay on existing rules; prior presentation stays")
+
+
+def check_portrait_safe_area() -> None:
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    safe_cs = (ROOT / "Assets/Scripts/Presentation/StreamSafeArea.cs").read_text(encoding="utf-8")
+    fit_cs = (ROOT / "Assets/Scripts/Presentation/SafeFitCard.cs").read_text(encoding="utf-8") if (ROOT / "Assets/Scripts/Presentation/SafeFitCard.cs").exists() else ""
+    pair_cs = (ROOT / "Assets/Scripts/Presentation/SafePairLayout.cs").read_text(encoding="utf-8") if (ROOT / "Assets/Scripts/Presentation/SafePairLayout.cs").exists() else ""
+    uikit_cs = (ROOT / "Assets/Scripts/Presentation/UiKit.cs").read_text(encoding="utf-8")
+
+    if "Screen.safeArea" not in safe_cs or "Attach" not in safe_cs:
+        fail("StreamSafeArea lost Screen.safeArea / Attach")
+    elif "StreamSafeArea.Attach" not in title_cs or "StreamSafeArea.Attach" not in week_cs or "StreamSafeArea.Attach" not in settle_cs:
+        fail("Title / WeekStart / Settlement are not inside StreamSafeArea")
+    elif "StreamSafeArea.Attach" not in live_cs and "AddComponent<StreamSafeArea>" not in live_cs:
+        fail("LiveStream pads left StreamSafeArea")
+    elif "SafeFitCard" not in fit_cs or "SafePairLayout" not in pair_cs:
+        fail("portrait fit / stack helpers are missing")
+    elif "SafeFitCard.Bind" not in settle_cs or "SafePairLayout.Bind" not in settle_cs:
+        fail("settlement overlay cards are not fitted / stacked")
+    elif "SafeFitCard.Bind" not in week_cs or "SafePairLayout.Bind" not in week_cs:
+        fail("WeekStart conflict / support / wave are not fitted")
+    elif "SafeFitCard.Bind" not in title_cs or "MakeScrollBody" not in title_cs:
+        fail("Title 조작 설명 is not a fitted scrolling card")
+    elif "EndingCard" in settle_cs and "SafeFitCard.Bind(endingCard" not in settle_cs:
+        fail("ending card is not fitted into safeArea")
+    elif "ClearGo" not in settle_cs or "StampRestart" not in settle_cs:
+        fail("week-clear / bankrupt confirm buttons missing")
+    else:
+        ok("Title / WeekStart / Settlement / overlays sit inside StreamSafeArea")
+
+    if "AddColumnPad" not in live_cs or "index / (float)count" not in live_cs:
+        fail("LiveStream pads left the full-width equal-column row")
+    elif "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("portrait layout broke 입력됨 or added timeScale")
+    elif "ChoiceRow" not in live_cs or "PromoConfirm" not in live_cs:
+        fail("promo / sponsor / concert confirm-skip left the tappable row")
+    elif "Event" not in live_cs.split("AddColumnPad(eventRow", 1)[0][-80:] and "AddColumnPad(eventRow" not in live_cs:
+        fail("event 1–4 pads are gone")
+    elif "SafeFitCard.Bind(_promoRoot" not in live_cs or "SafeFitCard.Bind(_concertRoot" not in live_cs:
+        fail("live promo / concert cards are not fitted")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising later weeks")
+    elif "billRent: 8000" not in (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8"):
+        fail("Week 1 bills were retuned by portrait layout")
+    elif "멤버십 해금" not in settle_cs or "콘텐츠 편중 갈등" not in week_cs or "팬 지원금" not in week_cs:
+        fail("portrait layout dropped prior screenshot cards")
+    elif "Wrap" not in uikit_cs or "MakeScrollBody" not in uikit_cs:
+        fail("card copy cannot wrap or scroll")
+    else:
+        ok("pads stay full-width; new cards wrap/stack; confirm stays on-screen")
 
 
 def check_save_roundtrip() -> None:
