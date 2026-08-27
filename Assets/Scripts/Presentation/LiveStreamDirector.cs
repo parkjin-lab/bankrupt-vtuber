@@ -56,6 +56,9 @@ namespace BankruptVtuber
         Text _concertTitle;
         Text _concertBody;
         Text _concertTimer;
+        Text _concertSlam;
+        float _concertSlamFlash;
+        bool _concertWasActive;
         readonly Image[] _eventKeys = new Image[4];
         readonly Text[] _eventKeyLabels = new Text[4];
         readonly StreamPadButton[] _lanePads = new StreamPadButton[5];
@@ -330,6 +333,9 @@ namespace BankruptVtuber
             if (_lineWasActive && !_session.LineActive && _session.Line.Resolved)
                 FlashLineResult();
             _lineWasActive = _session.LineActive;
+            if (_concertWasActive && !_session.ConcertActive && _session.Concert.Resolved && _session.Concert.Success)
+                FlashConcertSuccess();
+            _concertWasActive = _session.ConcertActive;
             RefreshPromoOverlay();
             RefreshLineOverlay();
             RefreshConcertOverlay();
@@ -398,6 +404,14 @@ namespace BankruptVtuber
                 lc.a = _lineSlamFlash;
                 _lineSlam.color = lc;
                 _lineSlam.rectTransform.localScale = Vector3.one * (1f + 0.32f * _lineSlamFlash);
+            }
+            _concertSlamFlash = Mathf.MoveTowards(_concertSlamFlash, 0f, dt * 0.7f);
+            if (_concertSlam != null)
+            {
+                var cc = _concertSlam.color;
+                cc.a = _concertSlamFlash;
+                _concertSlam.color = cc;
+                _concertSlam.rectTransform.localScale = Vector3.one * (1f + 0.32f * _concertSlamFlash);
             }
             var sc = _stub.color;
             sc.a = Mathf.MoveTowards(sc.a, 0f, dt * 0.7f);
@@ -686,16 +700,21 @@ namespace BankruptVtuber
             lineSlamC.a = 0f;
             _lineSlam.color = lineSlamC;
 
-            _concertRoot = UiKit.Panel(root, "ConcertCard", new Color(0.16f, 0.07f, 0.18f, 0.96f));
-            UiKit.Layout(_concertRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(560, 280));
-            _concertTitle = UiKit.Label(_concertRoot, "CTitle", "콘서트 퍼포먼스 타이밍", 34, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
-            UiKit.Layout(_concertTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -16), new Vector2(-24, 44));
-            _concertBody = UiKit.Label(_concertRoot, "CBody", "← / ↑  성공 — 정산 배율 1.3x\n→ / ↓  놓치면 배율 없음", 20, Palette.Pastel, TextAnchor.MiddleCenter);
-            UiKit.Layout(_concertBody.rectTransform, new Vector2(0, 0.28f), new Vector2(1, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-28, 0));
-            _concertTimer = UiKit.Label(_concertRoot, "CTimer", "", 18, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_concertTimer.rectTransform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 78), new Vector2(0, 24));
+            _concertRoot = UiKit.Panel(root, "ConcertCard", new Color(0.18f, 0.07f, 0.16f, 0.97f));
+            UiKit.Layout(_concertRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), new Vector2(-80, 10), new Vector2(720, 380));
+            _concertTitle = UiKit.Label(_concertRoot, "CTitle", "콘서트 퍼포먼스 타이밍", 40, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
+            UiKit.Layout(_concertTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -18), new Vector2(-24, 52));
+            _concertBody = UiKit.Label(_concertRoot, "CBody", "퍼포먼스 지금?\n성공 시 정산 ×1.3", 28, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_concertBody.rectTransform, new Vector2(0, 0.30f), new Vector2(1, 0.78f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-36, 0));
+            _concertTimer = UiKit.Label(_concertRoot, "CTimer", "", 20, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_concertTimer.rectTransform, new Vector2(0, 0.22f), new Vector2(1, 0.30f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             AddOverlayChoice(_concertRoot, "성공", "넘기기");
             _concertRoot.gameObject.SetActive(false);
+            _concertSlam = UiKit.Label(root, "ConcertSlam", "정산 ×1.3", 56, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_concertSlam.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(720, 80));
+            var concertSlamC = _concertSlam.color;
+            concertSlamC.a = 0f;
+            _concertSlam.color = concertSlamC;
         }
 
         StreamPadButton AddColumnPad(
@@ -1050,8 +1069,25 @@ namespace BankruptVtuber
             if (on)
             {
                 _eventDim.gameObject.SetActive(true);
+                var w5 = GameManager.Instance != null ? GameManager.Instance.Week5 : null;
+                float mul = w5 != null ? w5.concertSuccessMultiplier : 1.3f;
+                _concertBody.text = $"퍼포먼스 지금?\n성공 시 정산 ×{mul:0.#}";
                 _concertTimer.text = $"{_session.Concert.TimeLeft:0.00}s";
             }
+        }
+
+        void FlashConcertSuccess()
+        {
+            if (_concertSlam == null)
+                return;
+            var w5 = GameManager.Instance != null ? GameManager.Instance.Week5 : null;
+            float mul = w5 != null ? w5.concertSuccessMultiplier : 1.3f;
+            _concertSlam.text = $"정산 ×{mul:0.#}";
+            var c = Palette.Gold;
+            c.a = 1f;
+            _concertSlam.color = c;
+            _concertSlam.transform.SetAsLastSibling();
+            _concertSlamFlash = 1.2f;
         }
 
         void RefreshEventOverlay()

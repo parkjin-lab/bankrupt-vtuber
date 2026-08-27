@@ -82,6 +82,16 @@ namespace BankruptVtuber
         Text _juniorBody;
         bool _juniorOpen;
         bool _juniorDismissed;
+        GameObject _concertRoot;
+        Text _concertBody;
+        bool _concertOpen;
+        bool _concertDismissed;
+        GameObject _concertResultRoot;
+        Image _concertResultPanel;
+        Text _concertResultTitle;
+        Text _concertResultSub;
+        bool _concertResultOpen;
+        bool _concertResultDismissed;
 
         void Awake()
         {
@@ -149,7 +159,7 @@ namespace BankruptVtuber
                 _clipSlam.color = sc;
                 _clipSlam.rectTransform.localScale = Vector3.one * (1f + 0.35f * _clipSlamFlash);
             }
-            if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen || _agencyOpen || _agencySplashOpen || _juniorOpen)
+            if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen || _agencyOpen || _agencySplashOpen || _juniorOpen || _concertOpen || _concertResultOpen)
                 return;
             if (CanAdvance(gm.Run) && StreamBindings.Confirm)
                 gm.NextMorning();
@@ -235,11 +245,11 @@ namespace BankruptVtuber
             _style = UiKit.Button(root, "Style", "내 스타일대로", OnStyleConflict, Palette.Troll, Color.white);
             UiKit.Layout(_style.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(190, 184), new Vector2(320, 56));
 
-            _rankBox = UiKit.Panel(root, "RankPanel", new Color(0.10f, 0.05f, 0.12f, 0.92f));
-            UiKit.Layout(_rankBox, new Vector2(1, 0.55f), new Vector2(1, 0.55f), new Vector2(1, 0.5f), new Vector2(-20, 0), new Vector2(280, 220));
-            _rankPanel = UiKit.Label(_rankBox, "RankBody", "", 18, Palette.Pastel, TextAnchor.UpperLeft);
+            _rankBox = UiKit.Panel(root, "RankPanel", new Color(0.10f, 0.05f, 0.12f, 0.94f));
+            UiKit.Layout(_rankBox, new Vector2(1, 0.58f), new Vector2(1, 0.58f), new Vector2(1, 0.5f), new Vector2(-16, 0), new Vector2(360, 340));
+            _rankPanel = UiKit.Label(_rankBox, "RankBody", "", 20, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
             UiKit.Stretch(_rankPanel.rectTransform, 16, 16, 14, 14);
-            _rankPanel.lineSpacing = 1.15f;
+            _rankPanel.lineSpacing = 1.2f;
             _rankBox.gameObject.SetActive(false);
 
             _repay = UiKit.Button(root, "Repay", "남은 현금으로 빚 갚기", OnRepay, Palette.Gold, Palette.Ink);
@@ -463,6 +473,43 @@ namespace BankruptVtuber
             var juniorNo = UiKit.Button(juniorCard, "JuniorLater", "나중에", OnJuniorLater, Palette.StudioHi, Palette.Pastel);
             UiKit.Layout(juniorNo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 72));
             _juniorRoot.SetActive(false);
+
+            _concertRoot = new GameObject("ConcertBookRoot", typeof(RectTransform));
+            _concertRoot.transform.SetParent(root, false);
+            UiKit.Stretch(_concertRoot.GetComponent<RectTransform>());
+            var concertWash = UiKit.Image(_concertRoot.transform, "ConcertWash", new Color(0.08f, 0.04f, 0.1f, 0.78f));
+            UiKit.Stretch(concertWash.rectTransform);
+            concertWash.raycastTarget = true;
+            var concertCard = UiKit.Panel(_concertRoot.transform, "ConcertBookCard", Color.white);
+            UiKit.Layout(concertCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
+            ArtSprites.ApplySliced(concertCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.86f, 0.94f, 0.98f));
+            var concertTitle = UiKit.Label(concertCard, "ConcertTitle", "콘서트 개최", 46, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(concertTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
+            _concertBody = UiKit.Label(concertCard, "ConcertBody", "", 28, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_concertBody.rectTransform, new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            var concertYes = UiKit.Button(concertCard, "ConcertGo", "개최", OnConcertYes, Palette.Gold, Palette.Ink);
+            UiKit.Layout(concertYes.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 72));
+            var concertNo = UiKit.Button(concertCard, "ConcertLater", "나중에", OnConcertLater, Palette.StudioHi, Palette.Pastel);
+            UiKit.Layout(concertNo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 72));
+            _concertRoot.SetActive(false);
+
+            _concertResultRoot = new GameObject("ConcertResultRoot", typeof(RectTransform));
+            _concertResultRoot.transform.SetParent(root, false);
+            UiKit.Stretch(_concertResultRoot.GetComponent<RectTransform>());
+            var resultWash = UiKit.Image(_concertResultRoot.transform, "ConcertResultWash", new Color(0.08f, 0.04f, 0.1f, 0.78f));
+            UiKit.Stretch(resultWash.rectTransform);
+            resultWash.raycastTarget = true;
+            var resultCard = UiKit.Panel(_concertResultRoot.transform, "ConcertResultCard", Color.white);
+            UiKit.Layout(resultCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 360));
+            _concertResultPanel = resultCard.GetComponent<Image>();
+            ArtSprites.ApplySliced(_concertResultPanel, ArtSprites.PanelDark, new Color(1f, 0.9f, 0.5f, 0.98f));
+            _concertResultTitle = UiKit.Label(resultCard, "ConcertResultTitle", "", 48, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_concertResultTitle.rectTransform, new Vector2(0, 0.42f), new Vector2(1, 1), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _concertResultSub = UiKit.Label(resultCard, "ConcertResultSub", "", 24, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_concertResultSub.rectTransform, new Vector2(0, 0.18f), new Vector2(1, 0.48f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            var resultGo = UiKit.Button(resultCard, "ConcertResultAck", "정산으로", OnConcertResultAck, Palette.Gold, Palette.Ink);
+            UiKit.Layout(resultGo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 28), new Vector2(320, 72));
+            _concertResultRoot.SetActive(false);
         }
 
         void Render()
@@ -559,7 +606,7 @@ namespace BankruptVtuber
                 (run.lastConcertCost > 0 && run.concertBooked
                     ? $"콘서트 개최        -{EconomyRules.FormatWon(run.lastConcertCost)}\n"
                     : "") +
-                (run.lastConcertFailed ? "콘서트 실패         개최비 소멸 · 멘탈 −25 · 시작 시청자 −10\n" : "") +
+                (run.lastConcertFailed ? "콘서트 실패         개최비만 날림 · 멘탈 −25 · 시작 시청자 −10\n" : "") +
                 (run.lastConcertPayout > 0
                     ? $"콘서트 정산         {EconomyRules.FormatWon(run.lastConcertPayout)}" +
                       (run.lastConcertPerformanceSuccess ? "  · 퍼포먼스 1.3x\n" : "\n")
@@ -613,24 +660,19 @@ namespace BankruptVtuber
             _foundAgency.gameObject.SetActive(offerFound && !_agencyOpen && !_agencySplashOpen);
             _scout.gameObject.SetActive(offerScout && !_juniorOpen && !_agencyOpen && !_agencySplashOpen);
             _signSponsor.gameObject.SetActive(offerSponsor && !_agencyOpen && !_agencySplashOpen && !_juniorOpen);
-            _bookConcert.gameObject.SetActive(offerConcert);
-            _concertLive.gameObject.SetActive(concertReady);
+            _bookConcert.gameObject.SetActive(offerConcert && !_concertOpen && !_concertResultOpen);
+            _concertLive.gameObject.SetActive(concertReady && !_concertOpen && !_concertResultOpen);
             if (_produce != null)
             {
                 var produceCap = _produce.GetComponentInChildren<Text>();
                 if (produceCap != null && w3 != null)
                     produceCap.text = $"아크릴 1개 생산  {EconomyRules.FormatWon(w3.goodsProduceCost)}  ·  판매 {EconomyRules.FormatWon(w3.goodsPrice)}";
             }
-            _produce.gameObject.SetActive(run.goodsUnlocked && !offerClip && !week4Offer && !week5Offer && !_goodsOpen && !_agencyOpen && !_agencySplashOpen && !_juniorOpen && run.cash >= (w3 != null ? w3.goodsProduceCost : 2500));
+            _produce.gameObject.SetActive(run.goodsUnlocked && !offerClip && !week4Offer && !week5Offer && !_goodsOpen && !_agencyOpen && !_agencySplashOpen && !_juniorOpen && !_concertOpen && !_concertResultOpen && run.cash >= (w3 != null ? w3.goodsProduceCost : 2500));
             bool rankOn = Week5Rules.RankingUnlocked(run, w5);
             _rankBox.gameObject.SetActive(rankOn);
             if (rankOn)
-            {
-                string daily = run.lastDailyRank > 0
-                    ? $"오늘 {run.lastDailyRank}위  {run.lastRankingScore}\n누적 {run.finalRank}위\n\n"
-                    : "누적\n\n";
-                _rankPanel.text = "챌린지 랭킹\n" + daily + Week5Rules.RankingBoard(run);
-            }
+                FillRankPanel(run, w5);
             if (run.lastClipAttempted)
                 _clipNote.text = run.lastClipSuccess
                     ? "클립 성공 — ₩30,000 · 시작 시청자 +10"
@@ -870,11 +912,16 @@ namespace BankruptVtuber
 
         void AdvanceBeats()
         {
-            if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen || _agencyOpen || _agencySplashOpen || _juniorOpen)
+            if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen || _agencyOpen || _agencySplashOpen || _juniorOpen || _concertOpen || _concertResultOpen)
                 return;
             var gm = GameManager.Instance;
             if (gm == null || gm.Run == null)
                 return;
+            if (!_concertResultDismissed && gm.Run.concertResultApplied && (gm.Run.lastConcertFailed || gm.Run.lastConcertPayout > 0))
+            {
+                ShowConcertResult();
+                return;
+            }
             if (ShouldShowEnding(gm.Run, gm.Week5))
                 return;
             if (!_letterDismissed && FandomRules.ShouldOfferLetter(gm.Run))
@@ -911,7 +958,12 @@ namespace BankruptVtuber
                 return;
             }
             if (!_juniorDismissed && Week4Rules.CanScoutJunior(gm.Run, gm.Week4))
+            {
                 ShowJuniorCard();
+                return;
+            }
+            if (!_concertDismissed && Week5Rules.CanBookConcert(gm.Run, gm.Week5))
+                ShowConcertCard();
         }
 
         void ShowMemberSplash()
@@ -1164,11 +1216,116 @@ namespace BankruptVtuber
             Render();
         }
 
+        void FillRankPanel(GameRunState run, Week5Balance w5)
+        {
+            int you = run.lastRankingScore;
+            int n0 = run.lastNpcScore != null && run.lastNpcScore.Length > 0 ? run.lastNpcScore[0] : 0;
+            int n1 = run.lastNpcScore != null && run.lastNpcScore.Length > 1 ? run.lastNpcScore[1] : 0;
+            int n2 = run.lastNpcScore != null && run.lastNpcScore.Length > 2 ? run.lastNpcScore[2] : 0;
+            string first = run.lastDailyRank == 1
+                ? $"\n1위 +{EconomyRules.FormatWon(w5 != null ? w5.rankingDailyFirstCash : 10000)}"
+                : "";
+            _rankPanel.text =
+                "챌린지 랭킹\n" +
+                $"나         {you}\n" +
+                $"루나벨     {n0}\n" +
+                $"하츠비     {n1}\n" +
+                $"네온토끼   {n2}" +
+                first;
+        }
+
+        void ShowConcertCard()
+        {
+            var w5 = GameManager.Instance.Week5;
+            int cost = w5 != null ? w5.concertCost : 80000;
+            if (_concertBody != null)
+                _concertBody.text = $"콘서트 개최 {EconomyRules.FormatWon(cost)}";
+            if (_concertRoot != null)
+            {
+                _concertRoot.SetActive(true);
+                _concertRoot.transform.SetAsLastSibling();
+            }
+            _concertOpen = true;
+            if (_bookConcert != null)
+                _bookConcert.gameObject.SetActive(false);
+            if (_produce != null)
+                _produce.gameObject.SetActive(false);
+        }
+
+        void CloseConcertCard()
+        {
+            _concertOpen = false;
+            if (_concertRoot != null)
+                _concertRoot.SetActive(false);
+        }
+
+        void OnConcertYes()
+        {
+            OnBookConcert();
+        }
+
+        void OnConcertLater()
+        {
+            _concertDismissed = true;
+            CloseConcertCard();
+            Render();
+            AdvanceBeats();
+        }
+
+        void ShowConcertResult()
+        {
+            var gm = GameManager.Instance;
+            var run = gm.Run;
+            var w5 = gm.Week5;
+            int pay = w5 != null ? w5.concertBasePayout : 200000;
+            if (_concertResultRoot != null)
+            {
+                _concertResultRoot.SetActive(true);
+                _concertResultRoot.transform.SetAsLastSibling();
+            }
+            _concertResultOpen = true;
+            if (run.lastConcertFailed)
+            {
+                _concertResultTitle.text = "개최비만 날림";
+                _concertResultTitle.color = Palette.MoneyRed;
+                _concertResultSub.text = $"멘탈 −{(w5 != null ? w5.concertFailMental : 25)}";
+                _concertResultSub.color = Palette.MoneyRed;
+                if (_concertResultPanel != null)
+                    ArtSprites.ApplySliced(_concertResultPanel, ArtSprites.PanelDark, new Color(1f, 0.72f, 0.74f, 0.98f));
+            }
+            else
+            {
+                _concertResultTitle.text = EconomyRules.FormatWon(run.lastConcertPayout > 0 ? run.lastConcertPayout : pay);
+                _concertResultTitle.color = Palette.Gold;
+                _concertResultSub.text = EconomyRules.FormatWon(pay);
+                _concertResultSub.color = Palette.Ink;
+                if (_concertResultPanel != null)
+                    ArtSprites.ApplySliced(_concertResultPanel, ArtSprites.PanelDark, new Color(1f, 0.9f, 0.5f, 0.98f));
+            }
+            if (_bookConcert != null)
+                _bookConcert.gameObject.SetActive(false);
+            if (_produce != null)
+                _produce.gameObject.SetActive(false);
+        }
+
+        void OnConcertResultAck()
+        {
+            _concertResultDismissed = true;
+            _concertResultOpen = false;
+            if (_concertResultRoot != null)
+                _concertResultRoot.SetActive(false);
+            Render();
+            AdvanceBeats();
+        }
+
         void OnBookConcert()
         {
             var gm = GameManager.Instance;
             Week5Rules.BookConcert(gm.Run, gm.Week5);
+            CloseConcertCard();
+            _concertDismissed = true;
             Render();
+            AdvanceBeats();
         }
 
         void OnConcertLive()

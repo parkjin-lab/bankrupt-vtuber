@@ -1334,6 +1334,7 @@ def check_project() -> None:
     check_rival_duel()
     check_week3_goods_beats()
     check_week4_agency_beats()
+    check_week5_finale_beats()
 
 
 def check_content_types() -> None:
@@ -1938,6 +1939,66 @@ def check_week4_agency_beats() -> None:
         fail("Week 1 bills were retuned by Week 4 beats")
     else:
         ok("agency / junior / sponsor stay Week 4-only; prior beats stay")
+
+
+def check_week5_finale_beats() -> None:
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    w5r_cs = (ROOT / "Assets/Scripts/Economy/Week5Rules.cs").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    w5_cs = (ROOT / "Assets/Scripts/Data/Week5Balance.cs").read_text(encoding="utf-8")
+    beats = settle_cs.split("void AdvanceBeats", 1)[-1].split("void ShowMemberSplash", 1)[0]
+    rank_fn = settle_cs.split("void FillRankPanel", 1)[-1][:900] if "void FillRankPanel" in settle_cs else ""
+
+    if "챌린지 랭킹" not in settle_cs or "루나벨" not in rank_fn or "하츠비" not in rank_fn or "네온토끼" not in rank_fn:
+        fail("ranking panel is not you vs 루나벨 / 하츠비 / 네온토끼")
+    elif "1위 +" not in rank_fn or "rankingDailyFirstCash" not in rank_fn:
+        fail("daily 1st +₩10,000 is missing from the ranking panel")
+    elif "lastRankingScore" not in rank_fn or "lastNpcScore" not in rank_fn:
+        fail("ranking panel does not show today's scores")
+    elif "콘서트 개최" not in settle_cs or "ShowConcertCard" not in settle_cs:
+        fail("concert book card is missing")
+    elif "퍼포먼스 지금" not in live_cs or "정산 ×" not in live_cs or "FlashConcertSuccess" not in live_cs:
+        fail("concert performance card is not the loud 퍼포먼스 지금? beat")
+    elif "개최비만 날림" not in settle_cs or "ShowConcertResult" not in settle_cs:
+        fail("concert success/fail settlement slam is missing")
+    elif "BookConcert" not in settle_cs or "ApplyConcertResult" not in (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8") + settle_cs:
+        fail("concert card does not use existing BookConcert / ApplyConcertResult")
+    else:
+        ok("Week 5 ranking board and concert card are screenshot beats")
+
+    unlock = w5r_cs.split("public static bool RankingUnlocked", 1)[-1].split("public static int DailyScore", 1)[0]
+    book = w5r_cs.split("public static bool CanBookConcert", 1)[-1].split("public static bool BookConcert", 1)[0]
+    if "rankingDay" not in unlock or "rankingPeakViewers" not in unlock:
+        fail("ranking lost peak >= 100 / day >= 22 gates")
+    elif "concertUnlockDay" not in book or "concertUnlockCash" not in book or "concertUnlockPeak" not in book:
+        fail("concert book lost cash / peak / day gates")
+    elif "EnableConcert" not in live_cs.split("void Start", 1)[-1].split("void Update", 1)[0]:
+        fail("concert performance is no longer the existing mid-stream window")
+    elif "EndingRoot" not in settle_cs or "후배에게 메인 양도" not in settle_cs:
+        fail("existing ending pose cards were removed")
+    elif "rankingDailyFirstCash: 10000" not in w5_asset or "rankingPeakViewers: 100" not in w5_asset or "rankingDay: 22" not in w5_asset:
+        fail("ranking unlock / 1st pay were retuned")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset or "concertSuccessMultiplier: 1.3" not in w5_asset:
+        fail("concert cost / payout / 1.3x were retuned")
+    elif "concertUnlockCash: 150000" not in w5_asset or "concertUnlockPeak: 90" not in w5_asset:
+        fail("concert unlock gates were retuned")
+    elif "루나벨" not in w5_cs or "하츠비" not in w5_cs or "네온토끼" not in w5_cs:
+        fail("NPC names were renamed")
+    else:
+        ok("Week 1–4 stay gated; Week5Balance numbers unchanged")
+
+    if "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("Week 5 beats broke pads, 입력됨, or added timeScale")
+    elif "에이전시 오픈" not in settle_cs or "아크릴 스탠드 해금" not in settle_cs or "멤버십 해금" not in settle_cs:
+        fail("Week 5 beats dropped prior settlement cards")
+    elif "Week5" in title_cs or "콘서트" in title_cs or "랭킹" in title_cs:
+        fail("Title started advertising Week 5 ranking/concert")
+    elif "billRent: 8000" not in (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8"):
+        fail("Week 1 bills were retuned by Week 5 beats")
+    else:
+        ok("ranking / concert stay Week 5-only; endings and prior beats stay")
 
 
 def check_save_roundtrip() -> None:
