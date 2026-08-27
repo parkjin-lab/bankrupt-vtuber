@@ -785,7 +785,10 @@ namespace BankruptVtuber
             UiKit.Layout(billChip, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(460, -214), new Vector2(240, 40));
             _billChipImg = billChip.GetComponent<Image>();
             if (_billChipImg != null)
+            {
+                ArtSprites.ApplySliced(_billChipImg, ArtSprites.BillNotice, Color.white, new Vector4(28f, 16f, 28f, 16f));
                 _billChipImg.raycastTarget = false;
+            }
             _billChip = UiKit.Label(billChip, "T", "청구 ₩0", 22, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Stretch(_billChip.rectTransform);
             var billTrack = UiKit.Image(root, "BillFillTrack", new Color(1f, 1f, 1f, 0.14f));
@@ -1331,7 +1334,7 @@ namespace BankruptVtuber
             if (_billChipImg != null)
                 _billChipImg.color = covered || _billsCovered
                     ? Palette.Gold
-                    : new Color(0.55f, 0.08f, 0.16f, 0.94f);
+                    : Color.white;
             if (_billFill != null)
             {
                 float fill = _tonightBills <= 0 ? 1f : Mathf.Clamp01(ticking / (float)_tonightBills);

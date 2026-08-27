@@ -291,8 +291,8 @@ namespace BankruptVtuber
             bool bill = name.Contains("Bill");
             ArtSprites.ApplySliced(
                 panel.GetComponent<Image>(),
-                debt || bill ? ArtSprites.ThreatBanner : cash ? ArtSprites.CashBanner : ArtSprites.PanelDark,
-                debt || bill ? Palette.MoneyRed : cash ? Palette.CashGreen : new Color(0.92f, 0.45f, 0.62f, 1f));
+                debt ? ArtSprites.ThreatBanner : bill ? ArtSprites.BillNotice : cash ? ArtSprites.CashBanner : ArtSprites.PanelDark,
+                debt ? Palette.MoneyRed : bill ? Color.white : cash ? Palette.CashGreen : new Color(0.92f, 0.45f, 0.62f, 1f));
             UiKit.Label(panel, "L", label, 16, Color.white, TextAnchor.UpperLeft, FontStyle.Bold);
             var l = panel.Find("L") as RectTransform;
             UiKit.Layout(l, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(16, -6), new Vector2(-20, 20));

@@ -201,6 +201,7 @@ def check_project() -> None:
         "bill_license.png": "라이선스",
         "bill_food.png": "식비",
         "bill_gear.png": "장비",
+        "bill_notice.png": "고지서",
         "badge_superchat.png": "superchat",
         "badge_troll.png": "troll",
     }
@@ -1410,6 +1411,7 @@ def check_project() -> None:
     check_show_chip()
     check_settle_show_line()
     check_vtuber_face()
+    check_bill_notice()
 
 
 def check_content_types() -> None:
@@ -4392,6 +4394,53 @@ def check_vtuber_face() -> None:
         fail("vtuber face moved Unity off 6000.5.9f1")
     else:
         ok("webcam is a ~256px 2D VTuber face; punch / nod / shake / tired stay")
+
+
+def check_bill_notice() -> None:
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/bill_notice.png"
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+    chip = live_cs.split('var billChip = UiKit.Panel', 1)[-1].split("var billTrack", 1)[0]
+    hud = live_cs.split("void RefreshHud", 1)[-1].split("void TickEventWarn", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("고지서 sprite is missing")
+    elif 'BillNotice = "Art/bill_notice"' not in art_cs:
+        fail("ArtSprites does not hook Art/bill_notice")
+    elif "ArtSprites.BillNotice" not in money or '"오늘 청구"' not in week_cs:
+        fail("WeekStart 오늘 청구 is not on the 고지서 sprite")
+    elif "ArtSprites.BillNotice" not in chip or "BillChip" not in live_cs:
+        fail("live 청구 chip is not on the 고지서 sprite")
+    elif "_billSlam = 0.25f" not in week_cs or "청구보다 부족" not in week_cs:
+        fail("bill notice dropped slam or 청구보다 부족")
+    elif "new Vector2(180, 10)" not in live_cs or "ticking / (float)_tonightBills" not in hud:
+        fail("bill notice dropped the 청구 fill bar")
+    elif "SlamBillCover()" not in live_cs or "CoverSlam" not in live_cs:
+        fail("bill notice dropped the once cover slam")
+    elif "PeekTodayBills" not in week_cs or "TonightBills" not in eco_cs:
+        fail("bill notice stopped reading tonight's bill total")
+    elif "lastBills =" in week_cs or "billRent =" in hud or "TonightBills =" in hud:
+        fail("bill notice writes bill amounts")
+    elif "ArtSprites.Avatar" not in (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8"):
+        fail("bill notice dropped the VTuber webcam face")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("bill notice broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising 고지서 / later weeks")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("bill notice retuned Week 1 cash or bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("bill notice dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("bill notice moved Unity off 6000.5.9f1")
+    else:
+        ok("오늘 청구 uses a 고지서 sprite; slam / 부족 / fill / cover stay")
 
 
 def check_save_roundtrip() -> None:
