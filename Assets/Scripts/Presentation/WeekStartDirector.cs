@@ -466,10 +466,10 @@ namespace BankruptVtuber
 
         static string ContentPickIcon(StreamContentType type) => type switch
         {
-            StreamContentType.Talk => ArtSprites.Superchat,
-            StreamContentType.Game => ArtSprites.Troll,
-            StreamContentType.Song => ArtSprites.Sparkle,
-            StreamContentType.Reaction => ArtSprites.Avatar,
+            StreamContentType.Talk => ArtSprites.ContentTalk,
+            StreamContentType.Game => ArtSprites.ContentGame,
+            StreamContentType.Song => ArtSprites.ContentSong,
+            StreamContentType.Reaction => ArtSprites.ContentReaction,
             _ => ArtSprites.BubblePill
         };
 
@@ -509,8 +509,9 @@ namespace BankruptVtuber
             var accent = UiKit.Image(btn.transform, "Accent", ContentPickAccent(type));
             UiKit.Layout(accent.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(6f, 8f), new Vector2(12f, -16f));
             var icon = UiKit.Image(btn.transform, "Icon", Color.white);
-            UiKit.Layout(icon.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(52f, 52f));
-            ArtSprites.Apply(icon, ContentPickIcon(type), ContentPickAccent(type), Color.white);
+            UiKit.Layout(icon.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(72f, 72f));
+            ArtSprites.Apply(icon, ContentPickIcon(type), Color.white, Color.white);
+            icon.preserveAspect = true;
             icon.raycastTarget = false;
             AddCardChip(btn.transform, 0, look.Type == StreamContentType.Talk ? Palette.Blue : look.Type == StreamContentType.Game ? Palette.Troll : look.Type == StreamContentType.Song ? Palette.Gold : Palette.Muted);
             AddCardChip(btn.transform, 1, look.Type == StreamContentType.Talk ? Palette.Green : look.CamFrame);
@@ -521,7 +522,7 @@ namespace BankruptVtuber
                 cap.lineSpacing = 1.12f;
                 cap.color = look.CardInk;
                 cap.rectTransform.offsetMin = new Vector2(18f, 8f);
-                cap.rectTransform.offsetMax = new Vector2(-8f, -62f);
+                cap.rectTransform.offsetMax = new Vector2(-8f, -82f);
             }
         }
 

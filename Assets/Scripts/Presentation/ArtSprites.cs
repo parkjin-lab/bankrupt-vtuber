@@ -31,6 +31,10 @@ namespace BankruptVtuber
         public const string ChatBubble = "Art/chat_bubble";
         public const string NoteChip = "Art/note_chip";
         public const string HitRail = "Art/hit_rail";
+        public const string ContentTalk = "Art/content_talk";
+        public const string ContentGame = "Art/content_game";
+        public const string ContentSong = "Art/content_song";
+        public const string ContentReaction = "Art/content_reaction";
         public const string SuperchatBanner = "Art/bubble_superchat";
         public const string TrollBubble = "Art/bubble_troll";
         public const string Sparkle = "Art/sparkle";

@@ -214,6 +214,10 @@ def check_project() -> None:
         "chat_bubble.png": "채팅 버블",
         "note_chip.png": "노트 칩",
         "hit_rail.png": "히트 레일",
+        "content_talk.png": "토크 아이콘",
+        "content_game.png": "게임 아이콘",
+        "content_song.png": "노래 아이콘",
+        "content_reaction.png": "리액션 아이콘",
         "badge_superchat.png": "superchat",
         "badge_troll.png": "troll",
     }
@@ -1441,6 +1445,7 @@ def check_project() -> None:
     check_bill_cover_sfx()
     check_hype_sfx()
     check_event_sfx()
+    check_content_icons()
 
 
 def check_content_types() -> None:
@@ -3182,10 +3187,10 @@ def check_content_card_mood() -> None:
         fail("content pick cards have no one-line Korean vibe")
     elif "같이 깨자" not in week_cs or "같이 보자" not in week_cs:
         fail("game / reaction cards have no vibe line")
-    elif "ContentPickIcon" not in week_cs or "ArtSprites.Superchat" not in week_cs or "ArtSprites.Sparkle" not in week_cs:
-        fail("content pick cards have no distinct icons")
-    elif "ArtSprites.Troll" not in week_cs or "ArtSprites.Avatar" not in week_cs:
-        fail("game / reaction cards have no icons")
+    elif "ContentPickIcon" not in week_cs or "ArtSprites.ContentTalk" not in week_cs or "ArtSprites.ContentSong" not in week_cs:
+        fail("content pick cards have no distinct show icons")
+    elif "ArtSprites.ContentGame" not in week_cs or "ArtSprites.ContentReaction" not in week_cs:
+        fail("game / reaction cards have no show icons")
     elif "ContentPickAccent" not in week_cs or "Palette.Pink" not in week_cs or "Palette.Gold" not in week_cs:
         fail("content pick cards have no accent colors")
     elif "토크" not in week_cs or "게임" not in week_cs or "노래" not in week_cs or "리액션" not in week_cs:
@@ -5428,6 +5433,78 @@ def check_event_sfx() -> None:
         fail("event SFX moved Unity off 6000.5.9f1")
     else:
         ok("anti / lag fire distinct SFX once; telegraph silent; penalties stay")
+
+
+def check_content_icons() -> None:
+    import struct
+
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    content_asset = (ROOT / "Assets/Resources/Balance/ContentBalance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    pick = week_cs.split("void AddContentButton", 1)[-1].split("void OnPickContent", 1)[0]
+    icons = week_cs.split("static string ContentPickIcon", 1)[-1].split("static Color ContentPickAccent", 1)[0]
+
+    pngs = {
+        "content_talk.png": "토크",
+        "content_game.png": "게임",
+        "content_song.png": "노래",
+        "content_reaction.png": "리액션",
+    }
+    for name, label in pngs.items():
+        path = ROOT / "Assets/Resources/Art" / name
+        data = path.read_bytes() if path.exists() else b""
+        if not path.exists() or path.stat().st_size < 4000:
+            fail(f"content icon {name} ({label}) is missing")
+            return
+        if len(data) < 26 or data[:8] != b"\x89PNG\r\n\x1a\n":
+            fail(f"content icon {name} is not PNG")
+            return
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+        if w < 128 or h < 128 or abs(w - h) > 16:
+            fail(f"content icon {name} is not a readable square icon")
+            return
+        if color != 6:
+            fail(f"content icon {name} is not RGBA")
+            return
+
+    if 'ContentTalk = "Art/content_talk"' not in art_cs or 'ContentGame = "Art/content_game"' not in art_cs:
+        fail("ArtSprites missing content_talk/game hooks")
+    elif 'ContentSong = "Art/content_song"' not in art_cs or 'ContentReaction = "Art/content_reaction"' not in art_cs:
+        fail("ArtSprites missing content_song/reaction hooks")
+    elif "ArtSprites.ContentTalk" not in icons or "ArtSprites.ContentGame" not in icons:
+        fail("content pick icons are not wired to talk/game art")
+    elif "ArtSprites.ContentSong" not in icons or "ArtSprites.ContentReaction" not in icons:
+        fail("content pick icons are not wired to song/reaction art")
+    elif "ArtSprites.Apply" not in pick or '"Icon"' not in pick:
+        fail("content cards do not draw the show icon")
+    elif "ContentPickAccent" not in week_cs or "Palette.Pink" not in week_cs or "Palette.Troll" not in week_cs:
+        fail("content icons dropped accent colors")
+    elif "편하게 잡담" not in week_cs or "같이 깨자" not in week_cs or "고음 승부" not in week_cs or "같이 보자" not in week_cs:
+        fail("content icons dropped Korean vibe lines")
+    elif "토크" not in week_cs or "게임" not in week_cs or "노래" not in week_cs or "리액션" not in week_cs:
+        fail("content icons dropped Korean labels")
+    elif "ContentRules.Pick" not in week_cs or "OnPickContent" not in week_cs:
+        fail("content icons changed pick/confirm")
+    elif "talkIncomeMultiplier: 1" not in content_asset or "gameIncomeMultiplier: 1.15" not in content_asset:
+        fail("content icons retuned income multipliers")
+    elif "songMentalCost: 8" not in content_asset or "talkMentalCost: 6" not in content_asset:
+        fail("content icons retuned mental costs")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("content icons retuned Week 1 economy")
+    elif "Audio/sfx_anti" not in (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8"):
+        fail("content icons dropped anti/lag SFX")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising content icons / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("content icons dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("content icons moved Unity off 6000.5.9f1")
+    else:
+        ok("content picks have distinct 2D show icons; accents / vibes / multipliers stay")
 
 
 def check_save_roundtrip() -> None:
