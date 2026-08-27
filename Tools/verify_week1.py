@@ -1335,6 +1335,7 @@ def check_project() -> None:
     check_week3_goods_beats()
     check_week4_agency_beats()
     check_week5_finale_beats()
+    check_fandom_beats()
 
 
 def check_content_types() -> None:
@@ -1999,6 +2000,102 @@ def check_week5_finale_beats() -> None:
         fail("Week 1 bills were retuned by Week 5 beats")
     else:
         ok("ranking / concert stay Week 5-only; endings and prior beats stay")
+
+
+def check_fandom_beats() -> None:
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    fandom_rules = (ROOT / "Assets/Scripts/Economy/FandomRules.cs").read_text(encoding="utf-8")
+    fandom_cs = (ROOT / "Assets/Scripts/Data/FandomBalance.cs").read_text(encoding="utf-8")
+    fandom_asset = (ROOT / "Assets/Resources/Balance/FandomBalance.asset").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    wave = week_cs.split("IEnumerator BillWave", 1)[-1].split("void SpawnIncoming", 1)[0]
+    beats = settle_cs.split("void AdvanceBeats", 1)[-1].split("void ShowMemberSplash", 1)[0]
+    soothe = fandom_rules.split("public static bool SootheConflict", 1)[-1].split("public static bool StyleConflict", 1)[0]
+    style = fandom_rules.split("public static bool StyleConflict", 1)[-1].split("public static bool CanToggleAuto", 1)[0]
+    support = fandom_rules.split("public static int RollSupport", 1)[-1].split("public static string HudLine", 1)[0]
+    auto = fandom_rules.split("public static bool CanToggleAuto", 1)[-1].split("public static void SetAutoReply", 1)[0]
+    auto_cost = fandom_rules.split("public static int AutoCostToday", 1)[-1].split("public static int RollSupport", 1)[0]
+
+    if "콘텐츠 편중 갈등" not in week_cs or "특별방송으로 달래기" not in week_cs or "내 스타일대로" not in week_cs:
+        fail("WeekStart lost the day 11 콘텐츠 편중 갈등 two-card")
+    elif "conflictSootheMental" not in week_cs or "conflictSootheLoyalty" not in week_cs:
+        fail("soothe card does not write existing mental / loyalty deltas")
+    elif "conflictStyleT2" not in week_cs or "conflictStyleLoyalty" not in week_cs or "conflictExtraSurcharge" not in week_cs:
+        fail("style card does not write existing T2 / loyalty / extra-threat deltas")
+    elif "달랬다" not in week_cs or "다음 위협" not in week_cs:
+        fail("conflict pick has no one-line result")
+    elif "ConflictWash" not in week_cs or "MustResolveConflict" not in wave:
+        fail("conflict is not a must-pick wash (can skip)")
+    elif "나중에" in week_cs.split("콘텐츠 편중 갈등", 1)[-1].split("오늘 콘텐츠", 1)[0]:
+        fail("conflict card gained a skip / 나중에")
+    elif "콘텐츠 편중 갈등" not in settle_cs or "특별방송으로 달래기" not in settle_cs or "내 스타일대로" not in settle_cs:
+        fail("Settlement lost the same two-card conflict")
+    elif "ShowConflictCard" not in beats or "MustResolveConflict" not in beats:
+        fail("Settlement does not force the conflict card that day")
+    else:
+        ok("day 11 콘텐츠 편중 갈등 is a must-pick two-card with written deltas")
+
+    if "conflictSootheMental" not in soothe or "conflictSootheLoyalty" not in soothe:
+        fail("SootheConflict deltas were retuned")
+    elif "conflictStyleT2" not in style or "conflictStyleLoyalty" not in style or "conflictExtraSurcharge" not in style:
+        fail("StyleConflict deltas were retuned")
+    elif "conflictDay: 11" not in fandom_asset or "conflictSootheMental: 10" not in fandom_asset:
+        fail("FandomBalance conflict day / soothe numbers were retuned")
+    elif "conflictStyleT2: 2" not in fandom_asset or "conflictStyleLoyalty: 10" not in fandom_asset or "conflictExtraSurcharge: 2000" not in fandom_asset:
+        fail("FandomBalance style numbers were retuned")
+    elif "conflictDay" not in fandom_rules.split("public static void OnMorning", 1)[-1][:800]:
+        fail("conflict is no longer gated on FandomBalance.conflictDay")
+    else:
+        ok("conflict still uses existing FandomBalance deltas; Week 1–2 stay quiet")
+
+    if "팬 지원금" not in week_cs or "SupportCard" not in week_cs or "SupportRoot" not in week_cs:
+        fail("WeekStart has no gold 팬 지원금 splash")
+    elif "RollSupport" not in wave or "billsAppliedThisDay" not in wave:
+        fail("support splash does not peek the existing RollSupport before bills")
+    elif "peek > 0" not in wave and "peek>0" not in wave:
+        fail("support splash is not gated on a real roll")
+    elif "lastFanSupport > 0" not in week_cs:
+        fail("bill slam lost the real 팬 지원금 chip")
+    elif "loyalty < f.supportLoyaltyMin" not in support or "loyalty / 2" not in support:
+        fail("RollSupport chance / loyalty gate was retuned")
+    elif "supportBase" not in support or "supportPerT3" not in support or "supportPerT4" not in support:
+        fail("RollSupport amount left FandomBalance")
+    elif "supportLoyaltyMin: 60" not in fandom_asset or "supportBase: 3000" not in fandom_asset:
+        fail("팬 지원금 loyalty / base were retuned")
+    elif "supportPerT3: 200" not in fandom_asset or "supportPerT4: 4000" not in fandom_asset:
+        fail("팬 지원금 T3/T4 amounts were retuned")
+    elif "supportMin: 3000" not in fandom_asset or "supportMax: 20000" not in fandom_asset:
+        fail("팬 지원금 min/max were retuned")
+    else:
+        ok("팬 지원금 gold splash only when the existing roll succeeds")
+
+    if "기본 자동응답" not in settle_cs or "AutoCard" not in settle_cs or "autoReplyPrompted" not in settle_cs:
+        fail("Week 4 auto-reply is still a quiet toggle")
+    elif "autoDailyCost" not in settle_cs or "켜기" not in settle_cs or "끄기" not in settle_cs:
+        fail("auto-reply card is missing 켜기/끄기 or the existing daily fee")
+    elif "ShowAutoCard" not in beats or "CanToggleAuto" not in beats:
+        fail("auto-reply card is not shown once when agency exists")
+    elif "agencyFounded" not in auto or "InWeek4" not in auto or "InWeek5" not in auto:
+        fail("CanToggleAuto is no longer Week 4+ agency")
+    elif "autoDailyCost" not in auto_cost or "autoDailyCost: 8000" not in fandom_asset or "autoDailyCost = 8000" not in fandom_cs:
+        fail("기본 자동응답 daily fee was retuned")
+    else:
+        ok("기본 자동응답 is a once-only on/off card; ₩8,000/day unchanged")
+
+    if "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("fandom beats broke pads, 입력됨, or added timeScale")
+    elif "멤버십 해금" not in settle_cs or "아크릴 스탠드 해금" not in settle_cs or "에이전시 오픈" not in settle_cs:
+        fail("fandom beats dropped prior settlement cards")
+    elif "챌린지 랭킹" not in settle_cs or "라이벌 승" not in (ROOT / "Assets/Scripts/Presentation/RivalDuelView.cs").read_text(encoding="utf-8"):
+        fail("fandom beats dropped ranking or rival duel")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs or "리액션" in title_cs or "ContentBalance" in title_cs:
+        fail("Title started advertising fandom / content / later weeks")
+    elif "billRent: 8000" not in (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8"):
+        fail("Week 1 bills were retuned by fandom beats")
+    else:
+        ok("fandom beats stay on existing rules; prior presentation stays")
 
 
 def check_save_roundtrip() -> None:

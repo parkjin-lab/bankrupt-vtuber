@@ -34,6 +34,7 @@ namespace BankruptVtuber
             run.conflictResolved = false;
             run.conflictPending = false;
             run.autoReplyOn = false;
+            run.autoReplyPrompted = false;
             run.lastMinjunLeft = false;
             run.lastHaeunLeft = false;
             run.lastHadSuccessfulSuperchat = false;

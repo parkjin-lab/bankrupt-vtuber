@@ -342,6 +342,7 @@ namespace BankruptVtuber
                 conflictResolved = run.conflictResolved,
                 conflictPending = run.conflictPending,
                 autoReplyOn = run.autoReplyOn,
+                autoReplyPrompted = run.autoReplyPrompted,
                 lastMinjunLeft = run.lastMinjunLeft,
                 lastHaeunLeft = run.lastHaeunLeft,
                 lastHadSuccessfulSuperchat = run.lastHadSuccessfulSuperchat,
@@ -466,6 +467,7 @@ namespace BankruptVtuber
             run.conflictResolved = data.conflictResolved;
             run.conflictPending = data.conflictPending;
             run.autoReplyOn = data.autoReplyOn;
+            run.autoReplyPrompted = data.autoReplyPrompted;
             run.lastMinjunLeft = data.lastMinjunLeft;
             run.lastHaeunLeft = data.lastHaeunLeft;
             run.lastHadSuccessfulSuperchat = data.lastHadSuccessfulSuperchat;
@@ -675,6 +677,7 @@ namespace BankruptVtuber
             public bool conflictResolved;
             public bool conflictPending;
             public bool autoReplyOn;
+            public bool autoReplyPrompted;
             public bool lastMinjunLeft;
             public bool lastHaeunLeft;
             public bool lastHadSuccessfulSuperchat;

@@ -92,6 +92,14 @@ namespace BankruptVtuber
         Text _concertResultSub;
         bool _concertResultOpen;
         bool _concertResultDismissed;
+        GameObject _conflictOverlay;
+        Button _conflictSoothe;
+        Button _conflictStyle;
+        Text _conflictOverlayResult;
+        bool _conflictOpen;
+        GameObject _autoRoot;
+        Text _autoBody;
+        bool _autoOpen;
 
         void Awake()
         {
@@ -159,7 +167,7 @@ namespace BankruptVtuber
                 _clipSlam.color = sc;
                 _clipSlam.rectTransform.localScale = Vector3.one * (1f + 0.35f * _clipSlamFlash);
             }
-            if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen || _agencyOpen || _agencySplashOpen || _juniorOpen || _concertOpen || _concertResultOpen)
+            if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen || _agencyOpen || _agencySplashOpen || _juniorOpen || _concertOpen || _concertResultOpen || _conflictOpen || _autoOpen)
                 return;
             if (CanAdvance(gm.Run) && StreamBindings.Confirm)
                 gm.NextMorning();
@@ -244,6 +252,49 @@ namespace BankruptVtuber
             UiKit.Layout(_soothe.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-190, 184), new Vector2(320, 56));
             _style = UiKit.Button(root, "Style", "내 스타일대로", OnStyleConflict, Palette.Troll, Color.white);
             UiKit.Layout(_style.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(190, 184), new Vector2(320, 56));
+            _soothe.gameObject.SetActive(false);
+            _style.gameObject.SetActive(false);
+
+            _conflictOverlay = new GameObject("ConflictRoot", typeof(RectTransform));
+            _conflictOverlay.transform.SetParent(root, false);
+            UiKit.Stretch(_conflictOverlay.GetComponent<RectTransform>());
+            var conflictWash = UiKit.Image(_conflictOverlay.transform, "ConflictWash", new Color(0.08f, 0.03f, 0.08f, 0.84f));
+            UiKit.Stretch(conflictWash.rectTransform);
+            conflictWash.raycastTarget = true;
+            var conflictTitle = UiKit.Label(_conflictOverlay.transform, "CTitle", "콘텐츠 편중 갈등", 42, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
+            UiKit.Layout(conflictTitle.rectTransform, new Vector2(0.5f, 0.84f), new Vector2(0.5f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(920, 52));
+            var conflictHint = UiKit.Label(_conflictOverlay.transform, "CBody", "오늘 안에 고르세요.", 22, Palette.Pastel, TextAnchor.UpperCenter);
+            UiKit.Layout(conflictHint.rectTransform, new Vector2(0.5f, 0.78f), new Vector2(0.5f, 0.78f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 32));
+            _conflictSoothe = UiKit.Button(_conflictOverlay.transform, "ConflictSoothe", "특별방송으로 달래기", OnSootheConflict, Palette.PinkDeep, Color.white);
+            UiKit.Layout(_conflictSoothe.GetComponent<RectTransform>(), new Vector2(0.5f, 0.48f), new Vector2(0.5f, 0.48f), new Vector2(0.5f, 0.5f), new Vector2(-300, 8), new Vector2(500, 340));
+            ArtSprites.ApplySliced(_conflictSoothe.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.78f, 0.88f, 0.98f));
+            StyleConflictCard(_conflictSoothe);
+            _conflictStyle = UiKit.Button(_conflictOverlay.transform, "ConflictStyle", "내 스타일대로", OnStyleConflict, Palette.Troll, Color.white);
+            UiKit.Layout(_conflictStyle.GetComponent<RectTransform>(), new Vector2(0.5f, 0.48f), new Vector2(0.5f, 0.48f), new Vector2(0.5f, 0.5f), new Vector2(300, 8), new Vector2(500, 340));
+            ArtSprites.ApplySliced(_conflictStyle.GetComponent<Image>(), ArtSprites.PanelDark, new Color(0.92f, 0.42f, 0.48f, 0.98f));
+            StyleConflictCard(_conflictStyle);
+            _conflictOverlayResult = UiKit.Label(_conflictOverlay.transform, "CResult", "", 30, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_conflictOverlayResult.rectTransform, new Vector2(0.5f, 0.16f), new Vector2(0.5f, 0.16f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1100, 48));
+            _conflictOverlay.SetActive(false);
+
+            _autoRoot = new GameObject("AutoRoot", typeof(RectTransform));
+            _autoRoot.transform.SetParent(root, false);
+            UiKit.Stretch(_autoRoot.GetComponent<RectTransform>());
+            var autoWash = UiKit.Image(_autoRoot.transform, "AutoWash", new Color(0.08f, 0.05f, 0.02f, 0.78f));
+            UiKit.Stretch(autoWash.rectTransform);
+            autoWash.raycastTarget = true;
+            var autoCard = UiKit.Panel(_autoRoot.transform, "AutoCard", Color.white);
+            UiKit.Layout(autoCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
+            ArtSprites.ApplySliced(autoCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.92f, 0.55f, 0.98f));
+            var autoTitle = UiKit.Label(autoCard, "AutoTitle", "기본 자동응답", 46, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(autoTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
+            _autoBody = UiKit.Label(autoCard, "AutoBody", "", 26, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_autoBody.rectTransform, new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            var autoOn = UiKit.Button(autoCard, "AutoOn", "켜기", OnAutoOn, Palette.Gold, Palette.Ink);
+            UiKit.Layout(autoOn.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 72));
+            var autoOff = UiKit.Button(autoCard, "AutoOff", "끄기", OnAutoOff, Palette.StudioHi, Palette.Pastel);
+            UiKit.Layout(autoOff.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 72));
+            _autoRoot.SetActive(false);
 
             _rankBox = UiKit.Panel(root, "RankPanel", new Color(0.10f, 0.05f, 0.12f, 0.94f));
             UiKit.Layout(_rankBox, new Vector2(1, 0.58f), new Vector2(1, 0.58f), new Vector2(1, 0.5f), new Vector2(-16, 0), new Vector2(360, 340));
@@ -686,11 +737,11 @@ namespace BankruptVtuber
             _letter.gameObject.SetActive(false);
             _letter.interactable = FandomRules.CanSendLetter(run);
             _letter.GetComponentInChildren<Text>().text = run.fanLetterSentThisDay ? "팬레터 완료" : "팬레터 답장";
-            _auto.gameObject.SetActive(!ending && FandomRules.CanToggleAuto(run));
+            _auto.gameObject.SetActive(!ending && FandomRules.CanToggleAuto(run) && !_autoOpen && !_conflictOpen);
             if (_auto.gameObject.activeSelf)
                 _auto.GetComponentInChildren<Text>().text = run.autoReplyOn ? "기본 자동응답 끄기" : "기본 자동응답 켜기";
-            _soothe.gameObject.SetActive(!ending && conflict);
-            _style.gameObject.SetActive(!ending && conflict);
+            _soothe.gameObject.SetActive(false);
+            _style.gameObject.SetActive(false);
             if (conflict)
             {
                 _clipYes.gameObject.SetActive(false);
@@ -889,19 +940,123 @@ namespace BankruptVtuber
             Render();
         }
 
+        static void StyleConflictCard(Button btn)
+        {
+            var cap = btn.GetComponentInChildren<Text>();
+            if (cap == null)
+                return;
+            cap.fontSize = 30;
+            cap.lineSpacing = 1.2f;
+            cap.rectTransform.offsetMin = new Vector2(24f, 20f);
+            cap.rectTransform.offsetMax = new Vector2(-24f, -20f);
+        }
+
+        void FillConflictCards()
+        {
+            var f = GameManager.Instance != null ? GameManager.Instance.Fandom : null;
+            int mental = f != null ? f.conflictSootheMental : 10;
+            int sootheLoy = f != null ? f.conflictSootheLoyalty : 8;
+            int t2 = f != null ? f.conflictStyleT2 : 2;
+            int styleLoy = f != null ? f.conflictStyleLoyalty : 10;
+            int extra = f != null ? f.conflictExtraSurcharge : 2000;
+            var sootheCap = _conflictSoothe != null ? _conflictSoothe.GetComponentInChildren<Text>() : null;
+            if (sootheCap != null)
+                sootheCap.text = $"특별방송으로 달래기\n멘탈 −{mental}\n충성 +{sootheLoy}";
+            var styleCap = _conflictStyle != null ? _conflictStyle.GetComponentInChildren<Text>() : null;
+            if (styleCap != null)
+                styleCap.text = $"내 스타일대로\nT2 −{t2}\n충성 −{styleLoy}\n다음 위협 +{EconomyRules.FormatWon(extra)}";
+            if (_conflictOverlayResult != null)
+                _conflictOverlayResult.text = "";
+            if (_conflictSoothe != null)
+                _conflictSoothe.gameObject.SetActive(true);
+            if (_conflictStyle != null)
+                _conflictStyle.gameObject.SetActive(true);
+        }
+
+        void ShowConflictCard()
+        {
+            FillConflictCards();
+            if (_conflictOverlay != null)
+            {
+                _conflictOverlay.SetActive(true);
+                _conflictOverlay.transform.SetAsLastSibling();
+            }
+            _conflictOpen = true;
+        }
+
+        void CloseConflictCard()
+        {
+            _conflictOpen = false;
+            if (_conflictOverlay != null)
+                _conflictOverlay.SetActive(false);
+        }
+
         void OnSootheConflict()
         {
             var gm = GameManager.Instance;
-            FandomRules.SootheConflict(gm.Run, gm.Fandom);
+            if (gm == null || !FandomRules.SootheConflict(gm.Run, gm.Fandom))
+                return;
+            var f = gm.Fandom;
+            int mental = f != null ? f.conflictSootheMental : 10;
+            int loy = f != null ? f.conflictSootheLoyalty : 8;
+            _result.text = $"달랬다 멘탈 −{mental} · 충성 +{loy}";
+            CloseConflictCard();
+            gm.SaveRun();
             Render();
+            AdvanceBeats();
         }
 
         void OnStyleConflict()
         {
             var gm = GameManager.Instance;
-            FandomRules.StyleConflict(gm.Run, gm.Fandom);
+            if (gm == null || !FandomRules.StyleConflict(gm.Run, gm.Fandom))
+                return;
+            var f = gm.Fandom;
+            int t2 = f != null ? f.conflictStyleT2 : 2;
+            int loy = f != null ? f.conflictStyleLoyalty : 10;
+            int extra = f != null ? f.conflictExtraSurcharge : 2000;
+            _result.text = $"내 스타일대로 T2 −{t2} · 충성 −{loy} · 다음 위협 +{EconomyRules.FormatWon(extra)}";
+            CloseConflictCard();
+            gm.SaveRun();
             Render();
+            AdvanceBeats();
         }
+
+        void ShowAutoCard()
+        {
+            var gm = GameManager.Instance;
+            if (gm == null || gm.Run == null)
+                return;
+            var f = gm.Fandom;
+            int cost = f != null ? f.autoDailyCost : 8000;
+            if (_autoBody != null)
+                _autoBody.text = $"하루 {EconomyRules.FormatWon(cost)}";
+            if (_autoRoot != null)
+            {
+                _autoRoot.SetActive(true);
+                _autoRoot.transform.SetAsLastSibling();
+            }
+            _autoOpen = true;
+        }
+
+        void CloseAutoCard(bool on)
+        {
+            var gm = GameManager.Instance;
+            if (gm == null || gm.Run == null)
+                return;
+            FandomRules.SetAutoReply(gm.Run, on);
+            gm.Run.autoReplyPrompted = true;
+            _autoOpen = false;
+            if (_autoRoot != null)
+                _autoRoot.SetActive(false);
+            gm.SaveRun();
+            Render();
+            AdvanceBeats();
+        }
+
+        void OnAutoOn() => CloseAutoCard(true);
+
+        void OnAutoOff() => CloseAutoCard(false);
 
         void OnRepay()
         {
@@ -912,7 +1067,7 @@ namespace BankruptVtuber
 
         void AdvanceBeats()
         {
-            if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen || _agencyOpen || _agencySplashOpen || _juniorOpen || _concertOpen || _concertResultOpen)
+            if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen || _agencyOpen || _agencySplashOpen || _juniorOpen || _concertOpen || _concertResultOpen || _conflictOpen || _autoOpen)
                 return;
             var gm = GameManager.Instance;
             if (gm == null || gm.Run == null)
@@ -946,7 +1101,10 @@ namespace BankruptVtuber
                 return;
             }
             if (FandomRules.MustResolveConflict(gm.Run))
+            {
+                ShowConflictCard();
                 return;
+            }
             if (gm.Run.agencyJustFounded)
             {
                 ShowAgencySplash();
@@ -960,6 +1118,11 @@ namespace BankruptVtuber
             if (!_juniorDismissed && Week4Rules.CanScoutJunior(gm.Run, gm.Week4))
             {
                 ShowJuniorCard();
+                return;
+            }
+            if (!gm.Run.autoReplyPrompted && FandomRules.CanToggleAuto(gm.Run) && !ShouldShowEnding(gm.Run, gm.Week5))
+            {
+                ShowAutoCard();
                 return;
             }
             if (!_concertDismissed && Week5Rules.CanBookConcert(gm.Run, gm.Week5))

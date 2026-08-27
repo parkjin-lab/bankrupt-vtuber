@@ -132,6 +132,7 @@ namespace BankruptVtuber
         public bool conflictResolved;
         public bool conflictPending;
         public bool autoReplyOn;
+        public bool autoReplyPrompted;
         public bool lastMinjunLeft;
         public bool lastHaeunLeft;
         public bool lastHadSuccessfulSuperchat;
