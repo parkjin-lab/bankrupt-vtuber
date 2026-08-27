@@ -208,6 +208,7 @@ def check_project() -> None:
         "morning_room.png": "아침 방",
         "ending_clear.png": "주차 클리어",
         "ending_bankrupt.png": "파산",
+        "letter_card.png": "팬레터",
         "pad_left.png": "← 키캡",
         "pad_down.png": "↓ 키캡",
         "pad_right.png": "→ 키캡",
@@ -1454,6 +1455,7 @@ def check_project() -> None:
     check_settlement_bgm()
     check_result_stings()
     check_ending_backdrops()
+    check_letter_card()
 
 
 def check_content_types() -> None:
@@ -5966,6 +5968,68 @@ def check_ending_backdrops() -> None:
         fail("ending backdrops moved Unity off 6000.5.9f1")
     else:
         ok("week-clear / bankrupt sit on ending_clear / ending_bankrupt; copy / stings stay")
+
+
+def check_letter_card() -> None:
+    import struct
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    look_cs = (ROOT / "Assets/Scripts/Presentation/FanLetterLook.cs").read_text(encoding="utf-8")
+    fandom_rules = (ROOT / "Assets/Scripts/Economy/FandomRules.cs").read_text(encoding="utf-8")
+    fandom_asset = (ROOT / "Assets/Resources/Balance/FandomBalance.asset").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    letter_build = build.split('LetterRoot"', 1)[-1].split('MemberRoot"', 1)[0]
+    on_letter = settle_cs.split("void OnLetter", 1)[-1].split("void OnLetterLater", 1)[0]
+    png = ROOT / "Assets/Resources/Art/letter_card.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("팬레터 letter_card PNG is missing")
+    elif w < 360 or h < 220 or w <= h:
+        fail("팬레터 letter_card PNG is not a readable landscape paper")
+    elif color != 6:
+        fail("팬레터 letter_card PNG is not RGBA")
+    elif 'LetterCard = "Art/letter_card"' not in art_cs:
+        fail("ArtSprites does not hook Art/letter_card")
+    elif "ArtSprites.LetterCard" not in letter_build or '"LetterCard"' not in letter_build:
+        fail("LetterCard does not hang Art/letter_card")
+    elif "ArtSprites.PanelDark" in letter_build and "ArtSprites.LetterCard" not in letter_build:
+        fail("letter still uses flat PanelDark only")
+    elif "답장하기" not in letter_build or "나중에" not in letter_build or "팬레터" not in letter_build:
+        fail("letter paper covered 답장하기 / 나중에 / 팬레터")
+    elif "SendLetter" not in on_letter:
+        fail("letter paper unhooked SendLetter")
+    elif "FanLetterLook" not in settle_cs or "첫 도네" not in look_cs:
+        fail("letter paper dropped named 민준/하은 copy")
+    elif "letterLoyalty: 4" not in fandom_asset or "letterMental: 8" not in fandom_asset:
+        fail("letter paper retuned loyalty / mental")
+    elif "CanSendLetter" not in fandom_rules or "ShouldOfferLetter" not in fandom_rules:
+        fail("letter paper changed offer / send routing")
+    elif "Audio/bgm_settlement" not in settle_cs or "TickIncomeCount" not in settle_cs:
+        fail("letter paper dropped settlement BGM or income count-up")
+    elif "청구 미달" not in settle_cs or "TickDebtCount" not in settle_cs or "TickMentalCount" not in settle_cs:
+        fail("letter paper dropped settlement counts")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("letter paper retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("letter paper broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising fan letters / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("letter paper dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("letter paper moved Unity off 6000.5.9f1")
+    else:
+        ok("fan letter sits on letter_card paper; reply / ignore / counts stay")
 
 
 def check_save_roundtrip() -> None:

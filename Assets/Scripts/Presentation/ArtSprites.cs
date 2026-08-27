@@ -22,6 +22,7 @@ namespace BankruptVtuber
         public const string MorningRoom = "Art/morning_room";
         public const string EndingClear = "Art/ending_clear";
         public const string EndingBankrupt = "Art/ending_bankrupt";
+        public const string LetterCard = "Art/letter_card";
         public const string PadLeft = "Art/pad_left";
         public const string PadDown = "Art/pad_down";
         public const string PadRight = "Art/pad_right";

@@ -592,7 +592,9 @@ namespace BankruptVtuber
             letterWash.raycastTarget = true;
             var paper = UiKit.Panel(_letterRoot.transform, "LetterCard", Color.white);
             UiKit.Layout(paper, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 440));
-            ArtSprites.ApplySliced(paper.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.92f, 0.94f, 0.98f));
+            var paperImg = paper.GetComponent<Image>();
+            ArtSprites.Apply(paperImg, ArtSprites.LetterCard, new Color(1f, 0.92f, 0.94f, 0.98f), Color.white);
+            paperImg.preserveAspect = false;
             SafeFitCard.Bind(paper, 720f, 440f);
             var letterTitle = UiKit.Label(paper, "LetterTitle", "팬레터", 22, Palette.Pink, TextAnchor.UpperLeft, FontStyle.Bold);
             UiKit.Layout(letterTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(28, -16), new Vector2(-56, 28));
