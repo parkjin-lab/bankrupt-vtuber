@@ -206,6 +206,8 @@ def check_project() -> None:
         "title_studio.png": "타이틀 스튜디오",
         "settlement_desk.png": "정산 책상",
         "morning_room.png": "아침 방",
+        "ending_clear.png": "주차 클리어",
+        "ending_bankrupt.png": "파산",
         "pad_left.png": "← 키캡",
         "pad_down.png": "↓ 키캡",
         "pad_right.png": "→ 키캡",
@@ -1451,6 +1453,7 @@ def check_project() -> None:
     check_morning_bgm()
     check_settlement_bgm()
     check_result_stings()
+    check_ending_backdrops()
 
 
 def check_content_types() -> None:
@@ -5884,6 +5887,85 @@ def check_result_stings() -> None:
         fail("result stings moved Unity off 6000.5.9f1")
     else:
         ok("week-clear / bankrupt splashes play distinct one-shot stings; conditions stay")
+
+
+def check_ending_backdrops() -> None:
+    import struct
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    splash = settle_cs.split("void ApplyResultSplashes", 1)[-1].split("void ApplyHeadline", 1)[0]
+    clear_fn = settle_cs.split("static bool IsWeekClear", 1)[-1].split("static bool ShouldShowEnding", 1)[0]
+    broke_fn = settle_cs.split("static bool IsBankruptResult", 1)[-1].split("static bool IsBurnoutResult", 1)[0]
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    clear_build = build.split('ClearRoot"', 1)[-1].split('StampRoot"', 1)[0]
+    stamp_build = build.split('StampRoot"', 1)[-1].split('LetterRoot"', 1)[0]
+
+    for name, label in (
+        ("ending_clear.png", "주차 클리어"),
+        ("ending_bankrupt.png", "파산"),
+    ):
+        png = ROOT / "Assets/Resources/Art" / name
+        data = png.read_bytes() if png.exists() else b""
+        w = h = color = 0
+        if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+            w, h = struct.unpack(">II", data[16:24])
+            color = data[25]
+        if not png.exists() or png.stat().st_size < 8000:
+            fail(f"{label} ending PNG is missing")
+            return
+        if w < 360 or h < 540 or h <= w:
+            fail(f"{label} ending PNG is not a readable portrait backdrop")
+            return
+        if color != 6:
+            fail(f"{label} ending PNG is not RGBA")
+            return
+
+    if 'EndingClear = "Art/ending_clear"' not in art_cs or 'EndingBankrupt = "Art/ending_bankrupt"' not in art_cs:
+        fail("ArtSprites missing ending_clear / ending_bankrupt hooks")
+    elif "ArtSprites.EndingClear" not in clear_build or '"ClearWash"' not in clear_build:
+        fail("ClearWash does not hang Art/ending_clear")
+    elif "ArtSprites.EndingBankrupt" not in stamp_build or '"StampWash"' not in stamp_build:
+        fail("StampWash does not hang Art/ending_bankrupt")
+    elif "preserveAspect = false" not in clear_build or "preserveAspect = false" not in stamp_build:
+        fail("ending backdrops keep aspect and letterbox the splash")
+    elif "주차 클리어" not in settle_cs or "1주차 생존" not in splash or "다음 주차 시작" not in settle_cs:
+        fail("ending backdrops changed week-clear copy")
+    elif '"파산"' not in settle_cs or "번아웃" not in splash or "처음부터" not in stamp_build:
+        fail("ending backdrops changed bankrupt / burnout copy")
+    elif "_stampWash.color" not in splash:
+        fail("ending backdrops dropped bankrupt / burnout wash tint")
+    elif "WeekOutcome.Win" not in clear_fn or "WeekOutcome.Week4Win" not in clear_fn:
+        fail("ending backdrops changed week-clear conditions")
+    elif "WeekOutcome.Bankrupt" not in broke_fn or "EndingKind.Bankrupt" not in broke_fn:
+        fail("ending backdrops changed bankrupt conditions")
+    elif "PlaySettleSfx(_clearCue" not in splash or "PlaySettleSfx(_bankruptCue" not in splash:
+        fail("ending backdrops dropped clear / bankrupt stings")
+    elif "_resultStingPlayed" not in splash or "QuietSettleBgm" not in splash:
+        fail("ending backdrops broke one-shot sting / bed fade")
+    elif "Audio/sfx_clear" not in settle_cs or "Audio/sfx_bankrupt" not in settle_cs:
+        fail("ending backdrops dropped Audio/sfx_clear|sfx_bankrupt")
+    elif "BankruptDebt" not in eco_cs or "public void NextMorning()" not in gm:
+        fail("ending backdrops changed bankrupt numbers or routing")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("ending backdrops retuned Week 1 economy / bankrupt line")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("ending backdrops broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising endings / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("ending backdrops dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("ending backdrops moved Unity off 6000.5.9f1")
+    else:
+        ok("week-clear / bankrupt sit on ending_clear / ending_bankrupt; copy / stings stay")
 
 
 def check_save_roundtrip() -> None:

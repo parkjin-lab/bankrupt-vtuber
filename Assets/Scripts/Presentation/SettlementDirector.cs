@@ -533,8 +533,11 @@ namespace BankruptVtuber
             _clearRoot = new GameObject("ClearRoot", typeof(RectTransform));
             _clearRoot.transform.SetParent(root, false);
             UiKit.Stretch(_clearRoot.GetComponent<RectTransform>());
-            var clearWash = UiKit.Image(_clearRoot.transform, "ClearWash", new Color(0.08f, 0.16f, 0.12f, 0.96f));
+            var clearWash = UiKit.Image(_clearRoot.transform, "ClearWash", Color.white);
             UiKit.Stretch(clearWash.rectTransform);
+            ArtSprites.Apply(clearWash, ArtSprites.EndingClear, new Color(0.08f, 0.16f, 0.12f, 0.96f), Color.white);
+            clearWash.preserveAspect = false;
+            clearWash.raycastTarget = false;
             var clearGlow = UiKit.Image(_clearRoot.transform, "ClearGlow", new Color(1f, 0.82f, 0.25f, 0.16f));
             UiKit.Layout(clearGlow.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(900, 900));
             var clearTag = UiKit.Label(_clearRoot.transform, "ClearTag", "주차 클리어", 28, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -560,8 +563,11 @@ namespace BankruptVtuber
             _stampRoot = new GameObject("StampRoot", typeof(RectTransform));
             _stampRoot.transform.SetParent(root, false);
             UiKit.Stretch(_stampRoot.GetComponent<RectTransform>());
-            _stampWash = UiKit.Image(_stampRoot.transform, "StampWash", new Color(0.42f, 0.04f, 0.10f, 0.97f));
+            _stampWash = UiKit.Image(_stampRoot.transform, "StampWash", Color.white);
             UiKit.Stretch(_stampWash.rectTransform);
+            ArtSprites.Apply(_stampWash, ArtSprites.EndingBankrupt, new Color(0.42f, 0.04f, 0.10f, 0.97f), Color.white);
+            _stampWash.preserveAspect = false;
+            _stampWash.raycastTarget = false;
             _stampPortrait = new StudioPortrait(_stampRoot.transform, new Vector2(0.18f, 0.50f), new Vector2(320, 400), false);
             _stampMark = UiKit.Label(_stampRoot.transform, "StampMark", "파산", 120, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_stampMark.rectTransform, new Vector2(0.58f, 0.62f), new Vector2(0.58f, 0.62f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 160));
@@ -1994,8 +2000,8 @@ namespace BankruptVtuber
             {
                 bool burn = burnout && !bankrupt;
                 _stampWash.color = burn
-                    ? new Color(0.10f, 0.08f, 0.10f, 0.97f)
-                    : new Color(0.42f, 0.04f, 0.10f, 0.97f);
+                    ? new Color(0.58f, 0.52f, 0.58f, 1f)
+                    : Color.white;
                 _stampMark.text = burn ? "번아웃" : "파산";
                 _stampMark.color = burn ? Palette.PastelDim : Palette.MoneyRed;
                 _stampDebt.text = burn
