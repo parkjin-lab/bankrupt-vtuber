@@ -8,6 +8,7 @@ namespace BankruptVtuber
     {
         StreamSession _session;
         AvatarView _avatar;
+        RivalDuelView _rivalDuel;
         RectTransform _lane;
         RectTransform _hit;
         Text _viewers;
@@ -191,6 +192,8 @@ namespace BankruptVtuber
             if (StreamSession.ShouldOfferFirstStreamCoach(gm.Run))
                 _session.EnableFirstStreamCoach();
             _avatar.SetViewers(_shownViewers);
+            if (_rivalDuel != null)
+                _rivalDuel.Bind(_session);
         }
 
         void Update()
@@ -293,6 +296,11 @@ namespace BankruptVtuber
                 _session.LastResolved = null;
                 ShowJudge(j, note);
                 _avatar.React(j, note.IsSuperchat);
+                if (_session.RivalActive && _rivalDuel != null && (j == Judgement.Perfect || j == Judgement.Miss))
+                {
+                    var w3 = GameManager.Instance.Week3;
+                    _rivalDuel.FlashSteal(j == Judgement.Perfect, w3.rivalPerfectSteal, w3.rivalMissSteal);
+                }
                 if (j == Judgement.Miss)
                 {
                     float dv = _session.Viewers - _lastViewers;
@@ -323,6 +331,8 @@ namespace BankruptVtuber
             _shownIncome = Mathf.MoveTowards(_shownIncome, live, dt * incomeSpeed);
             _avatar.SetViewers(_shownViewers);
             RefreshHud();
+            if (_rivalDuel != null)
+                _rivalDuel.Tick(dt);
             RefreshCoach();
             _lastViewers = _session.Viewers;
             _lastMental = _session.Mental;
@@ -421,6 +431,11 @@ namespace BankruptVtuber
                 _session.Viewers,
                 _session.RivalViewers,
                 _session.RivalActive);
+            if (_session.RivalActive && _rivalDuel != null)
+            {
+                _rivalDuel.ShowResult(gm.Run.lastRivalWon, gm.Week3.rivalWinCash, gm.Week3.rivalLoseMental);
+                yield return new WaitForSeconds(0.85f);
+            }
             _judge.text = _session.ForceEnded ? "멘탈 붕괴 — 강제 종료" : "방송 종료";
             _judge.color = Color.white;
             _judgeFlash = 1f;
@@ -494,6 +509,7 @@ namespace BankruptVtuber
             UiKit.Layout(_showTitle.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -212), new Vector2(420, 44));
 
             _avatar = new AvatarView(root as RectTransform);
+            _rivalDuel = new RivalDuelView(root as RectTransform);
 
             var chatPanel = UiKit.Panel(root, "Chat", new Color(0.07f, 0.05f, 0.1f, 0.88f));
             _chatPanel = chatPanel.GetComponent<Image>();

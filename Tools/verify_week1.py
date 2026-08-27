@@ -1331,6 +1331,7 @@ def check_project() -> None:
     check_fan_letter()
     check_chat_catalog()
     check_week2_beats()
+    check_rival_duel()
 
 
 def check_content_types() -> None:
@@ -1722,6 +1723,88 @@ def check_week2_beats() -> None:
         fail("Week 1 bills were retuned by Week 2 beats")
     else:
         ok("letter → 멤버십 해금 → clip; Week 1 gated; Week2Balance numbers unchanged")
+
+
+def check_rival_duel() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    duel_path = ROOT / "Assets/Scripts/Presentation/RivalDuelView.cs"
+    duel_cs = duel_path.read_text(encoding="utf-8") if duel_path.exists() else ""
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+
+    if not duel_path.exists():
+        fail("RivalDuelView is missing")
+        return
+    if "라이벌" not in duel_cs or "RivalCam" not in duel_cs:
+        fail("rival duel is missing the 라이벌 portrait")
+    elif "YouFill" not in duel_cs or "RivalFill" not in duel_cs:
+        fail("rival duel is missing the two viewer bars")
+    elif "스틸 +" not in duel_cs or "라이벌 스틸" not in duel_cs:
+        fail("Perfect/Miss steal flashes are missing")
+    elif "라이벌 승" not in duel_cs or "라이벌 패" not in duel_cs or "멘탈 −" not in duel_cs:
+        fail("end-of-stream 라이벌 승 / 라이벌 패 slam is missing")
+    elif "RivalDuelView" not in live_cs or "FlashSteal" not in live_cs or "ShowResult" not in live_cs:
+        fail("LiveStream does not bind the rival duel")
+    elif "RivalActive" not in duel_cs or "SetActive(on)" not in duel_cs:
+        fail("duel chrome is not gated on RivalActive")
+    else:
+        ok("rival day shows a 라이벌 cam and two viewer bars")
+
+    end = live_cs.split("EndRoutine", 1)[-1].split("void Build", 1)[0]
+    if "ApplyRivalResult" not in end:
+        fail("EndRoutine no longer applies the existing rival result")
+    elif end.find("ApplyRivalResult") > end.find("ShowResult"):
+        fail("rival slam does not use ApplyRivalResult (display only)")
+    elif "lastRivalWon" not in end or "rivalWinCash" not in end or "rivalLoseMental" not in end:
+        fail("rival slam does not read existing win cash / lose mental")
+    elif "rivalPerfectSteal" not in live_cs or "rivalMissSteal" not in live_cs:
+        fail("steal flash does not read existing Week3 steal amounts")
+    else:
+        ok("rival slam is display-only on existing ApplyRivalResult")
+
+    if "ShouldStartRival" not in live_cs or "EnableRival" not in live_cs:
+        fail("rival still must start from ShouldStartRival / EnableRival")
+    elif "enum StreamEventKind" not in event_cs or "GearLag = 2" not in event_cs.split("enum StreamEventKind", 1)[-1].split("}", 1)[0]:
+        fail("a second QTE / event kind was added")
+    elif "TryEventKey" not in session_cs or "ApplyRivalSteal" not in session_cs:
+        fail("existing QTE or rival steal was removed")
+    else:
+        ok("same one rival stream; no second QTE")
+
+    for token in (
+        "rivalDay: 12",
+        "rivalPeakViewers: 55",
+        "rivalStartViewers: 25",
+        "rivalViewersPerSec: 0.9",
+        "rivalPerfectSteal: 0.6",
+        "rivalMissSteal: 0.8",
+        "rivalWinCash: 20000",
+        "rivalWinViewerBonus: 6",
+        "rivalLoseViewerPenalty: 5",
+        "rivalLoseMental: 12",
+    ):
+        if token not in w3_asset:
+            fail(f"Week3Balance rival number changed ({token})")
+            break
+    else:
+        ok("Week3Balance rival numbers unchanged")
+
+    if "playerViewers > rivalViewers" not in w3r_cs or "rivalWinCash" not in w3r_cs:
+        fail("ApplyRivalResult formula was rewritten")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("rival duel broke pads, 입력됨, or added timeScale")
+    elif "멤버십 해금" not in settle_cs or "오늘 클립 올릴까" not in settle_cs:
+        fail("rival duel dropped membership / clip cards")
+    elif "Week3" in title_cs or "라이벌" in title_cs or "토크" in title_cs:
+        fail("Title started advertising the rival duel")
+    elif "billRent: 8000" not in (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8"):
+        fail("Week 1 bills were retuned by the rival duel")
+    else:
+        ok("non-rival days and Week 1 stay unchanged")
 
 
 def check_save_roundtrip() -> None:
