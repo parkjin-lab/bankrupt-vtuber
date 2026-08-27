@@ -1447,6 +1447,7 @@ def check_project() -> None:
     check_event_sfx()
     check_content_icons()
     check_title_bgm()
+    check_stream_bgm()
 
 
 def check_content_types() -> None:
@@ -5585,6 +5586,77 @@ def check_title_bgm() -> None:
         fail("title BGM moved Unity off 6000.5.9f1")
     else:
         ok("Title loops anxious neon bgm_title; fades 0.2s on leave; other scenes stay mute")
+
+
+def check_stream_bgm() -> None:
+    import wave
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    look_cs = (ROOT / "Assets/Scripts/Presentation/ContentShowLook.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    path = ROOT / "Assets/Resources/Audio/bgm_stream.wav"
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    show = live_cs.split("void ShowEndCut", 1)[-1].split("void Build", 1)[0]
+    fade = live_cs.split("IEnumerator FadeStreamBed", 1)[-1].split("void Build", 1)[0]
+
+    if not path.exists() or path.stat().st_size < 20000:
+        fail("bgm_stream.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("bgm_stream.wav is not a readable PCM loop")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 4.0 or dur > 16.0:
+            fail(f"bgm_stream.wav duration {dur:.3f}s is not a short looping stream bed")
+            return
+
+    if "Audio/bgm_stream" not in apply or "_bed.Play()" not in apply:
+        fail("LiveStream does not loop Audio/bgm_stream on the show bed")
+    elif "loop = true" not in apply or "BedClip" not in apply:
+        fail("stream bed dropped loop or BedClip fallback")
+    elif "look.BedVolume" not in apply:
+        fail("stream bed dropped content BedVolume (must stay quieter than title)")
+    elif "PlaySfx(_onAirCue" not in start or "Audio/sfx_onair" not in live_cs:
+        fail("stream bed is not started with ON AIR")
+    elif "FadeStreamBed" not in show or "const float fade = 0.2f" not in fade or "_bed.Stop()" not in fade:
+        fail("stream bed does not fade ~0.2s on 방송 종료")
+    elif "PlaySfx(_endCutCue" not in show or "Audio/sfx_end_cut" not in live_cs:
+        fail("stream bed dropped the 방송 종료 sting")
+    elif "Audio/bgm_stream" in title_cs or "Audio/bgm_stream" in week_cs or "Audio/bgm_stream" in settle_cs:
+        fail("stream bed leaked onto Title / WeekStart / Settlement")
+    elif "Audio/bgm_title" not in title_cs or "Audio/bgm_title" in live_cs:
+        fail("title BGM is no longer title-only")
+    elif "0.16f" not in look_cs or "0.14f" not in look_cs or "0.15f" not in look_cs or "0.11f" not in look_cs:
+        fail("stream bed retuned content BedVolume")
+    elif "Audio/sfx_perfect" not in live_cs or "Audio/sfx_good" not in live_cs or "Audio/sfx_miss" not in live_cs:
+        fail("stream bed dropped judge SFX")
+    elif "Audio/sfx_superchat" not in live_cs or "Audio/sfx_hype" not in live_cs or "Audio/sfx_anti" not in live_cs:
+        fail("stream bed dropped superchat / hype / anti SFX")
+    elif "Audio/sfx_lag" not in live_cs or "Audio/sfx_clock_tick" not in live_cs:
+        fail("stream bed dropped lag / clock SFX")
+    elif "ShowEndCut" in debug_cs or "PlaySfx(_endCutCue" in debug_cs or "Audio/bgm_stream" in debug_cs:
+        fail("F10 skip is no longer mute-safe / direct to settlement")
+    elif "gm.GoSettlement()" not in debug_cs:
+        fail("F10 skip no longer jumps to settlement")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("stream bed retuned Week 1 economy / hype")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("stream bed broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising stream bed / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("stream bed dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("stream bed moved Unity off 6000.5.9f1")
+    else:
+        ok("LiveStream loops quiet bgm_stream under hits; fades 0.2s on 방송 종료; title stays title-only")
 
 
 def check_save_roundtrip() -> None:

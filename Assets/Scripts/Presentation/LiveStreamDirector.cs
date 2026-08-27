@@ -696,6 +696,7 @@ namespace BankruptVtuber
             _judgeFlash = 1f;
             if (_session.ForceEnded && _forceEndRoot != null)
             {
+                StartCoroutine(FadeStreamBed());
                 _forceEndRoot.gameObject.SetActive(true);
                 _forceEndRoot.SetAsLastSibling();
                 yield return new WaitForSeconds(1.25f);
@@ -713,8 +714,7 @@ namespace BankruptVtuber
         {
             if (_liveDot != null)
                 _liveDot.color = new Color(0.2f, 0.02f, 0.04f, 0.2f);
-            if (_bed != null)
-                _bed.Stop();
+            StartCoroutine(FadeStreamBed());
             PlaySfx(_endCutCue, 0.50f);
             if (_endCutRoot == null)
                 return;
@@ -729,6 +729,24 @@ namespace BankruptVtuber
                 _endCutCopy.text = "방송 종료";
                 _endCutCopy.color = Palette.MoneyRed;
             }
+        }
+
+        System.Collections.IEnumerator FadeStreamBed()
+        {
+            if (_bed == null || !_bed.isPlaying)
+                yield break;
+            float start = _bed.volume;
+            float t = 0f;
+            const float fade = 0.2f;
+            while (t < fade)
+            {
+                t += Time.deltaTime;
+                if (_bed != null)
+                    _bed.volume = Mathf.Lerp(start, 0f, t / fade);
+                yield return null;
+            }
+            if (_bed != null)
+                _bed.Stop();
         }
 
         void Build()
@@ -2445,7 +2463,9 @@ namespace BankruptVtuber
             _avatar?.ApplyShow(look);
             if (_bed != null)
             {
-                _bed.clip = BedClip(look.Type);
+                var clip = Resources.Load<AudioClip>("Audio/bgm_stream");
+                _bed.clip = clip != null ? clip : BedClip(look.Type);
+                _bed.loop = true;
                 _bed.volume = look.BedVolume;
                 _bed.Play();
             }
