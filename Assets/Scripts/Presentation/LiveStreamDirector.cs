@@ -119,6 +119,11 @@ namespace BankruptVtuber
         Image _laneFreeze;
 
         readonly Dictionary<ChatNote, RectTransform> _views = new Dictionary<ChatNote, RectTransform>();
+        readonly HashSet<ChatNote> _heldNotes = new HashSet<ChatNote>();
+        readonly List<WonFly> _wonFlies = new List<WonFly>(8);
+        readonly List<ScCrack> _scCracks = new List<ScCrack>(4);
+        RectTransform _fxRoot;
+        float _incomePunch;
         float _judgeFlash;
         float _judgePop;
         float _judgePopMax;
@@ -335,9 +340,14 @@ namespace BankruptVtuber
                     int dm = _session.Mental - _lastMental;
                     ShowMissSting(dv, dm);
                     PlaySfx(_bad, 0.48f);
+                    if (note.IsSuperchat)
+                        BeginSuperchatCrack(note);
                 }
                 else if (note.IsSuperchat)
+                {
                     PlaySfx(_sc, 0.55f);
+                    BeginSuperchatFly(note);
+                }
                 else if (j == Judgement.Perfect)
                     PlaySfx(_ok, 0.42f);
                 else
@@ -437,6 +447,8 @@ namespace BankruptVtuber
             _stub.color = sc;
 
             _comboStingFlash = Mathf.MoveTowards(_comboStingFlash, 0f, dt * 1.7f);
+            _incomePunch = Mathf.MoveTowards(_incomePunch, 0f, dt * 2.2f);
+            TickSuperchatFx(dt);
             if (_session.Mental < _hudMental)
                 _mentalPunch = 1f;
             _hudMental = _session.Mental;
@@ -532,6 +544,7 @@ namespace BankruptVtuber
 
             var safe = StreamSafeArea.Attach(canvasRoot);
             var root = safe;
+            _fxRoot = root as RectTransform;
 
             _hypeFlash = UiKit.Image(root, "HypeFlash", new Color(1f, 0.82f, 0.25f, 0f));
             UiKit.Stretch(_hypeFlash.rectTransform);
@@ -935,6 +948,10 @@ namespace BankruptVtuber
             _billToday.color = Palette.MoneyRed;
             _incomeNow.text = EconomyRules.FormatWon(ticking);
             _incomeNow.color = Palette.CashGreen;
+            float punch = 1f + 0.28f * _incomePunch;
+            _incomeNow.rectTransform.localScale = Vector3.one * punch;
+            if (_remain != null)
+                _remain.rectTransform.localScale = Vector3.one * punch;
             int remain = _tonightBills - ticking;
             bool covered = remain <= 0;
             _remain.text = covered ? "청구 커버" : EconomyRules.FormatWon(remain);
@@ -997,6 +1014,8 @@ namespace BankruptVtuber
             {
                 if (note.Consumed)
                 {
+                    if (_heldNotes.Contains(note))
+                        continue;
                     if (_views.TryGetValue(note, out var dead))
                     {
                         Destroy(dead.gameObject);
@@ -1261,6 +1280,11 @@ namespace BankruptVtuber
                         : Palette.Gold;
             var nickT = UiKit.Label(card, "Nick", nickLine, named || super ? 15 : 14, nickCol, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(nickT.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(76, -6), new Vector2(-88, 22));
+            if (super && note.SuperchatWon > 0)
+            {
+                var wonT = UiKit.Label(card, "Won", EconomyRules.FormatWon(note.SuperchatWon), 20, Palette.Ink, TextAnchor.MiddleRight, FontStyle.Bold);
+                UiKit.Layout(wonT.rectTransform, new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-14, -6), new Vector2(120, 24));
+            }
             string body = named && super
                 ? $"{kind}  {EconomyRules.FormatWon(note.SuperchatWon)}  {note.Text}"
                 : note.Text;
@@ -1322,6 +1346,175 @@ namespace BankruptVtuber
             _judgePopMax = _judgeBig ? 0.25f : 0.12f;
             _judgePop = _judgePopMax;
             _judge.rectTransform.localScale = Vector3.one * (_judgeBig ? 1.58f : 1.18f);
+        }
+
+        void BeginSuperchatFly(ChatNote note)
+        {
+            if (note == null || _fxRoot == null)
+                return;
+            _views.TryGetValue(note, out var fromRt);
+            bool firstMinjun = false;
+            var gm = GameManager.Instance;
+            if (gm != null && gm.Run != null && !gm.Run.minjunEver)
+                firstMinjun = true;
+            if (fromRt != null)
+            {
+                _heldNotes.Add(note);
+                var won = fromRt.Find("Won");
+                if (won != null)
+                    won.localScale = Vector3.one * 1.45f;
+                if (firstMinjun)
+                    StampMinjunFirst(fromRt);
+            }
+
+            string wonLine = EconomyRules.FormatWon(note.SuperchatWon);
+            var fly = UiKit.Label(_fxRoot, "WonFly", firstMinjun ? wonLine + "\n민준 첫 도네" : wonLine, 34, Palette.CashGreen, TextAnchor.MiddleCenter, FontStyle.Bold);
+            fly.horizontalOverflow = HorizontalWrapMode.Overflow;
+            fly.verticalOverflow = VerticalWrapMode.Overflow;
+            UiKit.Layout(fly.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(280, 64));
+            var start = fromRt != null ? LocalIn(_fxRoot, fromRt) : new Vector2(180f, -40f);
+            var dest = _incomeNow != null ? LocalIn(_fxRoot, _incomeNow.rectTransform) : new Vector2(-80f, 280f);
+            fly.rectTransform.anchoredPosition = start;
+            fly.rectTransform.localScale = Vector3.one * 1.35f;
+            _wonFlies.Add(new WonFly { Rt = fly.rectTransform, From = start, To = dest, T = 0f });
+        }
+
+        void BeginSuperchatCrack(ChatNote note)
+        {
+            if (note == null || !_views.TryGetValue(note, out var rt) || rt == null)
+                return;
+            _heldNotes.Add(note);
+            _scCracks.Add(new ScCrack { Note = note, Rt = rt, T = 0f, Start = rt.anchoredPosition });
+        }
+
+        static void StampMinjunFirst(RectTransform banner)
+        {
+            if (banner == null)
+                return;
+            var nick = banner.Find("Nick");
+            if (nick != null)
+            {
+                var t = nick.GetComponent<Text>();
+                if (t != null)
+                    t.text = "민준 첫 도네";
+            }
+        }
+
+        void TickSuperchatFx(float dt)
+        {
+            for (int i = _wonFlies.Count - 1; i >= 0; i--)
+            {
+                var fly = _wonFlies[i];
+                fly.T += dt / 0.48f;
+                float u = Mathf.Clamp01(fly.T);
+                float ease = 1f - (1f - u) * (1f - u);
+                if (fly.Rt != null)
+                {
+                    var p = Vector2.Lerp(fly.From, fly.To, ease);
+                    p.y += Mathf.Sin(u * Mathf.PI) * 36f;
+                    fly.Rt.anchoredPosition = p;
+                    fly.Rt.localScale = Vector3.one * Mathf.Lerp(1.35f, 0.72f, ease);
+                    var text = fly.Rt.GetComponent<Text>();
+                    if (text != null)
+                    {
+                        var c = text.color;
+                        c.a = u < 0.82f ? 1f : 1f - (u - 0.82f) / 0.18f;
+                        text.color = c;
+                    }
+                }
+                if (u >= 1f)
+                {
+                    _incomePunch = 1f;
+                    if (fly.Rt != null)
+                        Destroy(fly.Rt.gameObject);
+                    _wonFlies.RemoveAt(i);
+                }
+                else
+                    _wonFlies[i] = fly;
+            }
+
+            for (int i = _scCracks.Count - 1; i >= 0; i--)
+            {
+                var crack = _scCracks[i];
+                crack.T += dt / 0.42f;
+                float u = Mathf.Clamp01(crack.T);
+                if (crack.Rt != null)
+                {
+                    crack.Rt.anchoredPosition = crack.Start + new Vector2(u * 28f, -u * u * 160f);
+                    crack.Rt.localEulerAngles = new Vector3(0f, 0f, -18f * u);
+                    crack.Rt.localScale = Vector3.one * (1f - 0.18f * u);
+                    var img = crack.Rt.GetComponent<Image>();
+                    if (img != null)
+                    {
+                        var c = img.color;
+                        c.a = 1f - u;
+                        img.color = c;
+                    }
+                }
+                if (u >= 1f)
+                {
+                    if (crack.Note != null)
+                    {
+                        _heldNotes.Remove(crack.Note);
+                        _views.Remove(crack.Note);
+                    }
+                    if (crack.Rt != null)
+                        Destroy(crack.Rt.gameObject);
+                    _scCracks.RemoveAt(i);
+                }
+                else
+                    _scCracks[i] = crack;
+            }
+
+            if (_wonFlies.Count == 0)
+            {
+                var done = new List<ChatNote>();
+                foreach (var n in _heldNotes)
+                {
+                    bool cracking = false;
+                    for (int c = 0; c < _scCracks.Count; c++)
+                    {
+                        if (_scCracks[c].Note == n)
+                            cracking = true;
+                    }
+                    if (!cracking)
+                        done.Add(n);
+                }
+                for (int i = 0; i < done.Count; i++)
+                {
+                    var n = done[i];
+                    _heldNotes.Remove(n);
+                    if (_views.TryGetValue(n, out var rt) && rt != null && n.Consumed)
+                    {
+                        Destroy(rt.gameObject);
+                        _views.Remove(n);
+                    }
+                }
+            }
+        }
+
+        static Vector2 LocalIn(RectTransform host, RectTransform src)
+        {
+            if (host == null || src == null)
+                return Vector2.zero;
+            var world = src.TransformPoint(src.rect.center);
+            return (Vector2)host.InverseTransformPoint(world);
+        }
+
+        struct WonFly
+        {
+            public RectTransform Rt;
+            public Vector2 From;
+            public Vector2 To;
+            public float T;
+        }
+
+        struct ScCrack
+        {
+            public ChatNote Note;
+            public RectTransform Rt;
+            public float T;
+            public Vector2 Start;
         }
 
         void ShowMissSting(float viewerDelta, int mentalDelta)

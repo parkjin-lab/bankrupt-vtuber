@@ -1341,6 +1341,7 @@ def check_project() -> None:
     check_chat_nicks()
     check_hype_wash()
     check_mental_fatigue()
+    check_superchat_fly()
 
 
 def check_content_types() -> None:
@@ -2338,6 +2339,53 @@ def check_mental_fatigue() -> None:
         fail("mental wash retuned Week 1 bills or hype")
     else:
         ok("low mental looks exhausted; force-end / miss math unchanged")
+
+
+def check_superchat_fly() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    bind_cs = (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+
+    if "BeginSuperchatFly" not in live_cs or "WonFly" not in live_cs:
+        fail("successful superchat has no ₩ fly to the money HUD")
+    elif "_incomeNow" not in live_cs or '"지금 수입"' not in live_cs:
+        fail("₩ fly has no 지금 수입 target")
+    elif "BeginSuperchatCrack" not in live_cs or "_scCracks" not in live_cs:
+        fail("missed superchat banner does not crack / fall")
+    elif "민준 첫 도네" not in live_cs or "minjunEver" not in live_cs:
+        fail("민준 first-superchat banner stamp is missing")
+    elif "MaybeSpawnMinjun" in live_cs:
+        fail("superchat fly added a new 민준 unlock rule")
+    elif "ShowMissSting" not in live_cs:
+        fail("superchat miss dropped the existing miss sting")
+    elif "SuperchatIncome += note.SuperchatWon" not in session_cs:
+        fail("superchat fly retuned session won income")
+    elif "StreamRules.SuperchatAmount(HypeActive, Rng, Balance)" not in session_cs:
+        fail("superchat spawn amount path was changed")
+    elif "superchatMinWon" not in rules_cs or "hypeSuperchatMultiplier" not in rules_cs:
+        fail("StreamRules superchat amount math was retuned")
+    elif "GetKeyUp(KeyCode.Space)" not in bind_cs or "GetKeyUp(KeyCode.Return)" not in bind_cs:
+        fail("Space/Enter superchat release-once was broken")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("superchat fly broke pads, 입력됨, or added timeScale")
+    elif "RefreshHypeShow" not in live_cs or "RefreshMentalShow" not in live_cs or '"Nick"' not in live_cs:
+        fail("superchat fly dropped hype, mental wash, or nicks")
+    elif "StreamSafeArea" not in live_cs or "오늘 헤드라인" not in settle_cs:
+        fail("superchat fly dropped StreamSafeArea or headline")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising superchat / later weeks")
+    elif "superchatMinWon: 1000" not in balance or "superchatMaxWon: 6000" not in balance:
+        fail("superchat amount ranges were retuned")
+    elif "superchatMinCount: 8" not in balance or "superchatMaxCount: 10" not in balance:
+        fail("superchat count was retuned")
+    elif "billRent: 8000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("superchat fly retuned Week 1 bills or hype")
+    else:
+        ok("Perfect superchat flies ₩ to 지금 수입; miss cracks; 민준 첫 도네 is stamp-only")
 
 
 def check_save_roundtrip() -> None:
