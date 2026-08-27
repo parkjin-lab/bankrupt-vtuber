@@ -196,6 +196,7 @@ def check_project() -> None:
 
     art = {
         "pasan_nyang.png": "avatar",
+        "rival_nyang.png": "라이벌",
         "bill_rent.png": "월세",
         "bill_electric.png": "전기",
         "bill_license.png": "라이선스",
@@ -1463,6 +1464,7 @@ def check_project() -> None:
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
+    check_rival_portrait()
 
 
 def check_content_types() -> None:
@@ -6379,6 +6381,67 @@ def check_coach_pad_icons() -> None:
         fail("coach pad icons moved Unity off 6000.5.9f1")
     else:
         ok("Day-1 coach shows pad_* keycaps next to ←↓→↑ Space; teach stays")
+
+
+def check_rival_portrait() -> None:
+    import struct
+
+    duel_cs = (ROOT / "Assets/Scripts/Presentation/RivalDuelView.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    avatar_cs = (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/rival_nyang.png"
+    player_png = ROOT / "Assets/Resources/Art/pasan_nyang.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    bust = duel_cs.split('"RivalBust"', 1)[-1].split("var tag", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("rival_nyang.png is missing")
+    elif w < 128 or h < 128 or abs(w - h) > 16:
+        fail("rival_nyang.png is not a readable square webcam face")
+    elif color != 6:
+        fail("rival_nyang.png is not RGBA")
+    elif 'RivalAvatar = "Art/rival_nyang"' not in art_cs:
+        fail("ArtSprites does not hook Art/rival_nyang")
+    elif "ArtSprites.RivalAvatar" not in bust or "RivalBust" not in duel_cs:
+        fail("RivalCam bust does not hang Art/rival_nyang")
+    elif "ArtSprites.Avatar" in bust:
+        fail("rival cam still uses the player pasan_nyang face")
+    elif 'Avatar = "Art/pasan_nyang"' not in art_cs or "ArtSprites.Avatar" not in avatar_cs:
+        fail("player webcam no longer uses Art/pasan_nyang")
+    elif not player_png.exists() or player_png.stat().st_size < 8000:
+        fail("pasan_nyang.png was dropped")
+    elif "RivalCamCount" not in duel_cs or "RefreshBars" not in duel_cs:
+        fail("rival portrait dropped the rival viewer tick")
+    elif "스틸 +" not in duel_cs or "라이벌 승" not in duel_cs or "라이벌 패" not in duel_cs:
+        fail("rival portrait dropped steal / win-lose feedback")
+    elif "rivalPerfectSteal: 0.6" not in w3_asset or "rivalWinCash: 20000" not in w3_asset or "rivalLoseMental: 12" not in w3_asset:
+        fail("rival portrait retuned Week3 rival numbers")
+    elif "playerViewers > rivalViewers" not in w3r_cs or "ApplyRivalResult" not in w3r_cs:
+        fail("rival portrait changed win/lose routing")
+    elif "RivalDuelView" not in live_cs or "FlashSteal" not in live_cs or "ShowResult" not in live_cs:
+        fail("rival portrait unhooked LiveStream duel bind")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("rival portrait retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("rival portrait broke pads, 입력됨, or added timeScale")
+    elif "Week3" in title_cs or "라이벌" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising rival portrait / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("rival portrait dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("rival portrait moved Unity off 6000.5.9f1")
+    else:
+        ok("rival duel shows rival_nyang face; pasan_nyang / ticks / win-lose stay")
 
 
 def check_save_roundtrip() -> None:

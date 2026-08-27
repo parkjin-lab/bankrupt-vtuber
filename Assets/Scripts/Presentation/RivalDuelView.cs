@@ -45,7 +45,8 @@ namespace BankruptVtuber
 
             var bust = UiKit.Image(cam, "RivalBust", Color.white);
             UiKit.Stretch(bust.rectTransform, 28, 28, 56, 26);
-            ArtSprites.Apply(bust, ArtSprites.Avatar, new Color(0.72f, 0.42f, 0.5f, 1f), new Color(0.55f, 0.28f, 0.36f, 1f));
+            ArtSprites.Apply(bust, ArtSprites.RivalAvatar, new Color(0.72f, 0.42f, 0.5f, 1f), Color.white);
+            bust.preserveAspect = true;
 
             var tag = UiKit.Panel(cam, "RivalTag", new Color(0.86f, 0.12f, 0.22f, 0.96f));
             UiKit.Layout(tag, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -8), new Vector2(108, 30));

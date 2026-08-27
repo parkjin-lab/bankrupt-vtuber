@@ -10,6 +10,7 @@ namespace BankruptVtuber
     public static class ArtSprites
     {
         public const string Avatar = "Art/pasan_nyang";
+        public const string RivalAvatar = "Art/rival_nyang";
         public const string BillRent = "Art/bill_rent";
         public const string BillElectric = "Art/bill_electric";
         public const string BillLicense = "Art/bill_license";
