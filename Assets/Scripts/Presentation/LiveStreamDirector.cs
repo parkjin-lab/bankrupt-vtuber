@@ -223,7 +223,9 @@ namespace BankruptVtuber
                 _comboBreakSfx = _miss;
             _ok = _perfect;
             _bad = _miss;
-            _sc = ToneClip("sfx_super", new[] { 523f, 659f, 784f, 1046f }, 0.06f, 0.20f);
+            _sc = Resources.Load<AudioClip>("Audio/sfx_superchat");
+            if (_sc == null)
+                _sc = ToneClip("sfx_super", new[] { 523f, 659f, 784f, 1046f }, 0.06f, 0.20f);
             _comboCue = ToneClip("sfx_combo", new[] { 698f, 880f, 1174f }, 0.07f, 0.24f);
             _clockTick = Resources.Load<AudioClip>("Audio/sfx_clock_tick");
             if (_clockTick == null)

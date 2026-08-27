@@ -285,7 +285,7 @@ def check_project() -> None:
         ok("LiveStream overlay has LIVE, ticking viewers, cash/debt")
     if "Audio/sfx_perfect" not in live_cs or "Audio/sfx_good" not in live_cs or "Audio/sfx_miss" not in live_cs:
         fail("distinct Perfect/Good/Miss Resource SFX clips missing")
-    elif "sfx_super" not in live_cs or "sfx_combo" not in live_cs or "Audio/sfx_onair" not in live_cs:
+    elif "Audio/sfx_superchat" not in live_cs or "sfx_combo" not in live_cs or "Audio/sfx_onair" not in live_cs:
         fail("superchat / combo / on-air SFX missing")
     elif "Combo >= 5" not in live_cs or "PlayOneShot" not in live_cs:
         fail("combo-5 cue or AudioSource PlayOneShot missing")
@@ -1437,6 +1437,7 @@ def check_project() -> None:
     check_judge_sfx()
     check_stream_stings()
     check_clock_tick_sfx()
+    check_superchat_sfx()
 
 
 def check_content_types() -> None:
@@ -5198,6 +5199,61 @@ def check_clock_tick_sfx() -> None:
         fail("clock tick moved Unity off 6000.5.9f1")
     else:
         ok("last 10s plays sfx_clock_tick each second; 0 keeps 방송 종료 sting only")
+
+
+def check_superchat_sfx() -> None:
+    import wave
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    judge = live_cs.split("if (_session.LastJudgement.HasValue", 1)[-1].split("SyncNotes();", 1)[0]
+    miss = judge.split("if (j == Judgement.Miss)", 1)[-1].split("else if (note.IsSuperchat)", 1)[0]
+    success = judge.split("else if (note.IsSuperchat)", 1)[-1].split("else if (j == Judgement.Perfect)", 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_superchat.wav"
+
+    if not path.exists() or path.stat().st_size < 2000:
+        fail("sfx_superchat.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.15 or dur > 0.50:
+            fail(f"superchat chime duration {dur:.3f}s is not a short gold coin clip")
+            return
+
+    if "Audio/sfx_superchat" not in live_cs or "PlaySfx(_sc" not in success:
+        fail("superchat success does not play Audio/sfx_superchat")
+    elif "BeginSuperchatFly" not in success:
+        fail("superchat success dropped the ₩ fly")
+    elif "BeginSuperchatCrack" not in miss:
+        fail("superchat miss dropped the visual crack")
+    elif "PlaySfx(_sc" in miss:
+        fail("superchat miss plays the gold coin chime")
+    elif "PlaySfx(_miss" not in miss and "PlaySfx(_comboBreakSfx" not in miss:
+        fail("superchat miss dropped miss/combo thud")
+    elif "PlaySfx(_perfect" not in judge or "PlaySfx(_good" not in judge:
+        fail("superchat chime overwrote Perfect/Good SFX")
+    elif "eta <= 0.4f" not in live_cs or "BuildSuperchatPip" not in live_cs:
+        fail("superchat chime dropped the telegraph pip")
+    elif "superchatMinWon: 1000" not in balance or "superchatMaxWon: 6000" not in balance:
+        fail("superchat chime retuned amounts")
+    elif "superchatMinInterval: 9" not in balance or "superchatMinCount: 8" not in balance:
+        fail("superchat chime retuned spawn")
+    elif "Audio/sfx_clock_tick" not in live_cs or "Audio/sfx_onair" not in live_cs:
+        fail("superchat chime dropped clock tick or ON AIR sting")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("superchat chime retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("superchat chime broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising superchat chime / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("superchat chime dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("superchat chime moved Unity off 6000.5.9f1")
+    else:
+        ok("superchat success plays gold-coin chime; miss still cracks; amounts stay")
 
 
 def check_save_roundtrip() -> None:
