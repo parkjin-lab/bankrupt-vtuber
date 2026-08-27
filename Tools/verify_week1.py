@@ -1395,6 +1395,7 @@ def check_project() -> None:
     check_next_pulse()
     check_event_warn()
     check_day_slam()
+    check_bill_chip()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -3646,6 +3647,52 @@ def check_day_slam() -> None:
         fail("n일차 slam moved Unity off 6000.5.9f1")
     else:
         ok("WeekStart slams n일차 0.25s; last-day / 어제 / 청구 / cards stay")
+
+
+def check_bill_chip() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    hud = live_cs.split("void RefreshHud", 1)[-1].split("void TickEventWarn", 1)[0]
+
+    if "BillChip" not in live_cs or '"청구 "' not in live_cs:
+        fail("LiveStream has no persistent 청구 ₩N chip")
+    elif "FormatWon(_tonightBills)" not in hud or '"청구 "' not in hud:
+        fail("청구 chip does not show tonight's real bill")
+    elif "Palette.Gold" not in hud or "_billsCovered" not in hud:
+        fail("청구 chip does not flip gold when income covers")
+    elif hud.count("SlamBillCover(") > 0 and hud.split("if (_billChip")[-1].count("SlamBillCover(") > 0:
+        fail("청구 chip added a second cover slam")
+    elif "SlamBillCover()" not in live_cs or "CoverSlam" not in live_cs:
+        fail("청구 chip dropped the existing once cover slam")
+    elif "SlamBillCover" in settle_cs or "CoverSlam" in settle_cs:
+        fail("청구 chip grew a fake settlement slam")
+    elif "lastBills =" in hud or "billRent =" in hud or "TonightBills =" in hud:
+        fail("청구 chip writes bill amounts")
+    elif "TonightBills(gm.Run)" not in live_cs:
+        fail("청구 chip is not keyed off EconomyRules.TonightBills")
+    elif "TonightBills" not in eco_cs:
+        fail("청구 chip dropped EconomyRules.TonightBills")
+    elif "_dayHead" not in week_cs or "TryPeekEventWarn" not in (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8"):
+        fail("청구 chip dropped n일차 slam or event telegraph")
+    elif "TickNextPulse" not in settle_cs or "TickStrike" not in live_cs:
+        fail("청구 chip dropped 다음날 pulse or strike marker")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("청구 chip broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising 청구 chip / later weeks")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("청구 chip retuned Week 1 cash or bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("청구 chip dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("청구 chip moved Unity off 6000.5.9f1")
+    else:
+        ok("HUD keeps 청구 ₩N all stream; gold on cover; slam stays once")
 
 
 def check_mental_fatigue() -> None:

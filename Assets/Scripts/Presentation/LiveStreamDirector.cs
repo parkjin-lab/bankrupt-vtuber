@@ -23,6 +23,8 @@ namespace BankruptVtuber
         Image _timerChipImg;
         int _lastClockSec = -1;
         Text _billToday;
+        Text _billChip;
+        Image _billChipImg;
         Text _incomeNow;
         Text _remain;
         Text _hypeMul;
@@ -762,6 +764,13 @@ namespace BankruptVtuber
 
             _showTitle = UiKit.Label(root, "ShowTitle", "", 34, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(_showTitle.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -212), new Vector2(420, 44));
+            var billChip = UiKit.Panel(root, "BillChip", new Color(0.55f, 0.08f, 0.16f, 0.94f));
+            UiKit.Layout(billChip, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(460, -214), new Vector2(240, 40));
+            _billChipImg = billChip.GetComponent<Image>();
+            if (_billChipImg != null)
+                _billChipImg.raycastTarget = false;
+            _billChip = UiKit.Label(billChip, "T", "청구 ₩0", 22, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Stretch(_billChip.rectTransform);
 
             _avatar = new AvatarView(root as RectTransform);
             _rivalDuel = new RivalDuelView(root as RectTransform);
@@ -1290,6 +1299,15 @@ namespace BankruptVtuber
             }
             _remain.text = covered ? "청구 커버" : EconomyRules.FormatWon(remain);
             _remain.color = covered ? Palette.CashGreen : Palette.MoneyRed;
+            if (_billChip != null)
+            {
+                _billChip.text = "청구 " + EconomyRules.FormatWon(_tonightBills);
+                _billChip.color = covered || _billsCovered ? Palette.Ink : Color.white;
+            }
+            if (_billChipImg != null)
+                _billChipImg.color = covered || _billsCovered
+                    ? Palette.Gold
+                    : new Color(0.55f, 0.08f, 0.16f, 0.94f);
             if (_session.HypeActive)
                 _hypeMul.text = $"하이프 {_session.Balance.hypeIncomeMultiplier:0.#}x";
             else if (_session.PerfectCombo >= _session.Balance.comboIncomeThreshold)
