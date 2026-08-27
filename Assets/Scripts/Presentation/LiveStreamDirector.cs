@@ -1717,10 +1717,21 @@ namespace BankruptVtuber
         {
             if (rt == null || note.FanWounded)
                 return;
+            var pad = NotePadColor(note);
+            var edge = rt.Find("KindEdge");
+            if (edge != null)
+            {
+                var e = edge.GetComponent<Image>();
+                if (e != null)
+                {
+                    pad.a = e.color.a > 0.01f ? e.color.a : 1f;
+                    e.color = pad;
+                }
+                return;
+            }
             var body = rt.GetComponent<Image>();
             if (body == null)
                 return;
-            var pad = NotePadColor(note);
             pad.a = body.color.a;
             body.color = pad;
         }
@@ -1740,10 +1751,9 @@ namespace BankruptVtuber
             UiKit.Layout(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(w, h));
             var img = card.GetComponent<Image>();
             float a = _look.DimWash ? 0.80f : 0.94f;
+            bool chatBubble = !super && !troll;
             if (named && super)
                 ArtSprites.ApplySliced(img, ArtSprites.SuperchatBanner, note.FanWounded ? new Color(0.72f, 0.62f, 0.28f, 0.72f) : new Color(1f, 0.86f, 0.28f, 1f), new Vector4(36f, 28f, 36f, 28f));
-            else if (named)
-                ArtSprites.ApplySliced(img, ArtSprites.BubblePill, note.FanWounded ? new Color(color.r * 0.72f, color.g * 0.72f, color.b * 0.72f, 0.55f) : color);
             else if (super)
                 ArtSprites.ApplySliced(img, ArtSprites.SuperchatBanner, new Color(1f, 0.86f, 0.28f, 1f), new Vector4(36f, 28f, 36f, 28f));
             else if (troll)
@@ -1752,7 +1762,17 @@ namespace BankruptVtuber
                 img.preserveAspect = false;
             }
             else
-                ArtSprites.ApplySliced(img, ArtSprites.BubblePill, new Color(color.r, color.g, color.b, a));
+                ArtSprites.ApplySliced(img, ArtSprites.ChatBubble, Color.white, new Vector4(48f, 36f, 48f, 36f));
+            if (chatBubble)
+            {
+                var edge = UiKit.Image(card, "KindEdge", color);
+                UiKit.Layout(edge.rectTransform, new Vector2(0f, 0.18f), new Vector2(0f, 0.82f), new Vector2(0f, 0.5f), new Vector2(14f, 0f), new Vector2(12f, 0f));
+                edge.raycastTarget = false;
+                edge.transform.SetAsFirstSibling();
+                if (named && note.FanWounded)
+                    edge.color = new Color(color.r * 0.72f, color.g * 0.72f, color.b * 0.72f, 0.55f);
+                img.color = new Color(1f, 1f, 1f, named && note.FanWounded ? 0.72f : a);
+            }
 
             string key = super ? "SPACE" : note.Kind switch
             {

@@ -211,6 +211,7 @@ def check_project() -> None:
         "pad_right.png": "→ 키캡",
         "pad_up.png": "↑ 키캡",
         "pad_superchat.png": "슈퍼챗 키캡",
+        "chat_bubble.png": "채팅 버블",
         "badge_superchat.png": "superchat",
         "badge_troll.png": "troll",
     }
@@ -1426,6 +1427,7 @@ def check_project() -> None:
     check_settlement_desk()
     check_morning_room()
     check_pad_keycaps()
+    check_chat_bubble()
 
 
 def check_content_types() -> None:
@@ -4801,6 +4803,68 @@ def check_pad_keycaps() -> None:
         fail("pad keycaps moved Unity off 6000.5.9f1")
     else:
         ok("live pads are stream-deck keycaps; flash / pip / bindings stay")
+
+
+def check_chat_bubble() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    catalog = (ROOT / "Assets/Resources/Balance/ChatCatalog.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/chat_bubble.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    make = live_cs.split("RectTransform MakeBubble", 1)[-1].split("static void DimNamedBubble", 1)[0]
+    tint = live_cs.split("static void TintTravelNote", 1)[-1].split("RectTransform MakeBubble", 1)[0]
+    sync = live_cs.split("void SyncNotes", 1)[-1].split("void RefreshPromoOverlay", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 4000:
+        fail("채팅 bubble PNG is missing")
+    elif w < 240 or h < 96 or w <= h:
+        fail("채팅 bubble PNG is not a readable horizontal pill")
+    elif color != 6:
+        fail("채팅 bubble PNG is not RGBA")
+    elif 'ChatBubble = "Art/chat_bubble"' not in art_cs:
+        fail("ArtSprites does not hook Art/chat_bubble")
+    elif "ArtSprites.ChatBubble" not in make or "KindEdge" not in make:
+        fail("regular chat notes are not drawn on the chat bubble")
+    elif "ArtSprites.SuperchatBanner" not in make or "ArtSprites.TrollBubble" not in make:
+        fail("chat bubble dropped gold superchat or troll treatment")
+    elif "KindEdge" not in tint or "NotePadColor" not in tint:
+        fail("kind edge no longer follows pad colors")
+    elif "TintTravelNote" not in sync or "Palette.ForKind(note.Kind)" not in live_cs:
+        fail("chat bubble dropped traveling kind tint")
+    elif '"Nick"' not in make or "note.User" not in make or "note.Text" not in make:
+        fail("chat bubble dropped nicks or ChatCatalog lines")
+    elif "interval *= 0.5f" not in session_cs or "HypeActive" not in session_cs:
+        fail("chat bubble dropped hype 2x spawn")
+    elif "chatSpawnStart: 1.55" not in balance or "chatSpawnEnd: 1.05" not in balance:
+        fail("chat bubble retuned chat spawn table")
+    elif "positive:" not in catalog or "empathy:" not in catalog or "laugh:" not in catalog or "thanks:" not in catalog:
+        fail("chat bubble dropped ChatCatalog kinds")
+    elif "ChatKind.Positive" not in make or "ChatKind.Empathy" not in make or "ChatKind.Laugh" not in make:
+        fail("chat bubble changed chat kinds")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("chat bubble retuned Week 1 economy / hype")
+    elif "ArtSprites.PadLeft" not in live_cs or "ArtSprites.MorningRoom" not in (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8"):
+        fail("chat bubble dropped pad keycaps or morning room")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("chat bubble broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising chat bubble / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("chat bubble dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("chat bubble moved Unity off 6000.5.9f1")
+    else:
+        ok("regular chat sits on a live-chat bubble; superchat gold / nicks / hype stay")
 
 
 def check_save_roundtrip() -> None:
