@@ -10,6 +10,9 @@ namespace BankruptVtuber
         static int _queuedPromo;
         static bool _padCharging;
 
+        /// <summary>On-screen kind / superchat pad-down. LiveStream plays the keycap click.</summary>
+        public static System.Action OnLanePadPress;
+
         /// <summary>
         /// Arrows are the documented map. A/S/D/F and WASD are aliases.
         /// Space/Enter superchat commits once on release (hold-to-charge).
@@ -64,6 +67,16 @@ namespace BankruptVtuber
             || UnityEngine.Input.GetKey(KeyCode.Space)
             || UnityEngine.Input.GetKey(KeyCode.Return)
             || UnityEngine.Input.GetKey(KeyCode.KeypadEnter);
+
+        /// <summary>Keyboard kind / superchat pad-down (not release / not judge).</summary>
+        public static bool LaneKeyboardPressDown() =>
+            PositiveDown()
+            || EmpathyDown()
+            || LaughDown()
+            || ThanksDown()
+            || UnityEngine.Input.GetKeyDown(KeyCode.Space)
+            || UnityEngine.Input.GetKeyDown(KeyCode.Return)
+            || UnityEngine.Input.GetKeyDown(KeyCode.KeypadEnter);
 
         public static bool EventKeyPressed(out int index)
         {

@@ -83,9 +83,11 @@ namespace BankruptVtuber
             switch (mode)
             {
                 case Mode.Kind:
+                    StreamBindings.OnLanePadPress?.Invoke();
                     StreamBindings.QueueKind(kind);
                     break;
                 case Mode.Superchat:
+                    StreamBindings.OnLanePadPress?.Invoke();
                     StreamBindings.BeginSuperchatCharge();
                     break;
                 case Mode.Event:

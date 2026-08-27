@@ -114,6 +114,7 @@ namespace BankruptVtuber
         AudioClip _onAirCue;
         AudioClip _endCutCue;
         AudioClip _billCoverCue;
+        AudioClip _padClick;
         Image _wash;
         Image _washVeil;
         Image _chatPanel;
@@ -253,10 +254,15 @@ namespace BankruptVtuber
             _billCoverCue = Resources.Load<AudioClip>("Audio/sfx_bill_cover");
             if (_billCoverCue == null)
                 _billCoverCue = ToneClip("sfx_bill_cover", new[] { 880f, 1174f, 1568f }, 0.07f, 0.22f);
+            _padClick = Resources.Load<AudioClip>("Audio/sfx_pad");
+            if (_padClick == null)
+                _padClick = ToneClip("sfx_pad", new[] { 1800f, 900f }, 0.03f, 0.16f);
+            StreamBindings.OnLanePadPress += PlayPadClick;
         }
 
         void OnDestroy()
         {
+            StreamBindings.OnLanePadPress -= PlayPadClick;
             if (_bed != null)
                 _bed.Stop();
             UiKit.UnlockUiInputForStream();
@@ -329,6 +335,13 @@ namespace BankruptVtuber
         {
             if (_session == null || _ending)
                 return;
+
+            if (!_session.EventActive
+                && !_session.PromoActive
+                && !_session.LineActive
+                && !_session.ConcertActive
+                && StreamBindings.LaneKeyboardPressDown())
+                PlayPadClick();
 
             float dt = Time.deltaTime;
             int comboWas = _session.Combo;
@@ -2824,6 +2837,8 @@ namespace BankruptVtuber
                     _eventKeys[i].rectTransform.localScale = Vector3.one;
             }
         }
+
+        void PlayPadClick() => PlaySfx(_padClick, 0.34f);
 
         void PlaySfx(AudioClip clip, float volume)
         {

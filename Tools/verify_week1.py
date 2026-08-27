@@ -1456,6 +1456,7 @@ def check_project() -> None:
     check_result_stings()
     check_ending_backdrops()
     check_letter_card()
+    check_pad_sfx()
 
 
 def check_content_types() -> None:
@@ -6030,6 +6031,74 @@ def check_letter_card() -> None:
         fail("letter paper moved Unity off 6000.5.9f1")
     else:
         ok("fan letter sits on letter_card paper; reply / ignore / counts stay")
+
+
+def check_pad_sfx() -> None:
+    import wave
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    pad_cs = (ROOT / "Assets/Scripts/Input/StreamPadButton.cs").read_text(encoding="utf-8")
+    bind_cs = (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    judge = live_cs.split("if (_session.LastJudgement.HasValue", 1)[-1].split("SyncNotes();", 1)[0]
+    press = pad_cs.split("public void Press()", 1)[-1].split("public void Release()", 1)[0]
+    update = live_cs.split("void Update()", 1)[-1].split("void LateUpdate", 1)[0]
+    if "void LateUpdate" not in live_cs:
+        update = live_cs.split("void Update()", 1)[-1].split("void Echo(", 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_pad.wav"
+    if not path.exists() or path.stat().st_size < 1500:
+        fail("sfx_pad.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("sfx_pad.wav is not a readable PCM click")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.03 or dur > 0.12:
+            fail(f"sfx_pad.wav duration {dur:.3f}s is not a short keycap click")
+            return
+
+    if "Audio/sfx_pad" not in live_cs or "PlayPadClick" not in live_cs:
+        fail("LiveStream does not load / play Audio/sfx_pad")
+    elif "OnLanePadPress" not in bind_cs or "LaneKeyboardPressDown" not in bind_cs:
+        fail("pad click hooks are missing from StreamBindings")
+    elif "OnLanePadPress" not in press or "QueueKind" not in press or "BeginSuperchatCharge" not in press:
+        fail("kind / superchat pad-down does not fire the click")
+    elif "OnLanePadPress" in press.split("case Mode.Event", 1)[-1].split("case Mode.PromoConfirm", 1)[0]:
+        fail("event pads play the lane keycap click")
+    elif "LaneKeyboardPressDown" not in update or "PlayPadClick" not in update:
+        fail("keyboard kind / superchat pad-down does not play the click")
+    elif "PlaySfx(_padClick" in judge or "PlayPadClick" in judge:
+        fail("pad click plays on judge instead of press")
+    elif "PlaySfx(_perfect" not in judge or "PlaySfx(_good" not in judge or "PlaySfx(_miss" not in judge:
+        fail("pad click dropped Perfect / Good / Miss SFX")
+    elif "PlaySfx(_sc" not in judge:
+        fail("pad click moved superchat chime off hit")
+    elif "_flash = 0.08f" not in pad_cs or "pad?.Flash()" not in live_cs:
+        fail("pad click changed the 0.08s flash")
+    elif "TryConsumeKind" not in bind_cs or "GetKeyDown(KeyCode.LeftArrow)" not in bind_cs:
+        fail("pad click retuned keyboard bindings")
+    elif "슈퍼챗" not in live_cs or "SetPulse" not in live_cs:
+        fail("pad click dropped superchat pip / telegraph pulse")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("pad click retuned hit windows")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("pad click retuned Judge windows")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("pad click retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("pad click broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising pad click / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("pad click dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("pad click moved Unity off 6000.5.9f1")
+    else:
+        ok("kind / superchat pads play sfx_pad once on press; judge / chime stay")
 
 
 def check_save_roundtrip() -> None:
