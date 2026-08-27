@@ -26,6 +26,9 @@ namespace BankruptVtuber
         RectTransform _contentRoot;
         Text _contentHud;
         Text _yesterday;
+        RectTransform _lastDayRoot;
+        Text _lastDayWeek;
+        Text _lastDayNeed;
         Button _goLive;
         StudioPortrait _portrait;
         RectTransform _fanMinjun;
@@ -117,6 +120,19 @@ namespace BankruptVtuber
             _cash = MoneyChip(moneyBar, "CashChip", "현금", Palette.CashGreen, 0f, 0.33f);
             _debt = MoneyChip(moneyBar, "DebtChip", "부채", Palette.MoneyRed, 0.33f, 0.66f);
             _mental = MoneyChip(moneyBar, "MentalChip", "멘탈", Palette.Pink, 0.66f, 1f);
+
+            _lastDayRoot = UiKit.Panel(root, "LastDayBanner", new Color(0.55f, 0.08f, 0.16f, 0.96f));
+            UiKit.Layout(_lastDayRoot, new Vector2(0.02f, 1), new Vector2(0.72f, 1), new Vector2(0, 1), new Vector2(0, -316), new Vector2(0, 88));
+            ArtSprites.ApplySliced(_lastDayRoot.GetComponent<Image>(), ArtSprites.ThreatBanner, Palette.MoneyRed, new Vector4(28f, 20f, 28f, 20f));
+            SafeFitCard.Bind(_lastDayRoot, 980f, 88f, 12f);
+            var lastTitle = UiKit.Label(_lastDayRoot, "LastDayTitle", "마지막 날", 36, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(lastTitle.rectTransform, new Vector2(0, 0.48f), new Vector2(0.42f, 1), new Vector2(0, 1), new Vector2(20, -4), new Vector2(-8, 0));
+            _lastDayWeek = UiKit.Label(_lastDayRoot, "LastDayWeek", "1주차 마지막", 22, Color.white, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_lastDayWeek.rectTransform, new Vector2(0.42f, 0.48f), new Vector2(1, 1), new Vector2(0, 1), new Vector2(8, -4), new Vector2(-16, 0));
+            _lastDayNeed = UiKit.Label(_lastDayRoot, "LastDayNeed", "", 16, Palette.Pastel, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_lastDayNeed.rectTransform, new Vector2(0, 0), new Vector2(1, 0.52f), new Vector2(0, 0), new Vector2(20, 6), new Vector2(-24, 0));
+            UiKit.Wrap(_lastDayNeed);
+            _lastDayRoot.gameObject.SetActive(false);
 
             var wavePanel = UiKit.Panel(root, "WavePanel", new Color(1, 1, 1, 0.06f));
             UiKit.Layout(wavePanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -20), new Vector2(1320, 480));
@@ -252,6 +268,7 @@ namespace BankruptVtuber
             _contentHud.text = content;
             _contentHud.gameObject.SetActive(!string.IsNullOrEmpty(content));
             RefreshYesterday(run);
+            RefreshLastDay(run);
         }
 
         void RefreshYesterday(GameRunState run)
@@ -261,6 +278,53 @@ namespace BankruptVtuber
             string line = DayHeadline.YesterdayLine(run);
             _yesterday.text = line;
             _yesterday.gameObject.SetActive(!string.IsNullOrEmpty(line));
+        }
+
+        void RefreshLastDay(GameRunState run)
+        {
+            if (_lastDayRoot == null)
+                return;
+            bool last = run != null && run.day == WeekSchedule.LastDayOfCurrentWeek(run);
+            _lastDayRoot.gameObject.SetActive(last);
+            if (!last)
+                return;
+            int week = WeekSchedule.WeekNumber(run);
+            if (_lastDayWeek != null)
+                _lastDayWeek.text = week + "주차 마지막";
+            if (_lastDayNeed != null)
+                _lastDayNeed.text = LastDayClearReminder(run);
+        }
+
+        static string LastDayClearReminder(GameRunState run)
+        {
+            var gm = GameManager.Instance;
+            string now = "지금 현금 " + EconomyRules.FormatWon(run.cash) +
+                         " · 부채 " + EconomyRules.FormatWon(run.debt);
+            int week = WeekSchedule.WeekNumber(run);
+            if (week == 2 && gm != null && gm.Week2 != null)
+            {
+                return now + "   클리어 부채 ≤ " + EconomyRules.FormatWon(gm.Week2.winDebtMax) +
+                       " 또는 현금 ≥ " + EconomyRules.FormatWon(gm.Week2.winCashMin) + " · 멤버십";
+            }
+            if (week == 3 && gm != null && gm.Week3 != null)
+            {
+                return now + "   클리어 부채 ≤ " + EconomyRules.FormatWon(gm.Week3.winDebtMax) +
+                       " 또는 현금 ≥ " + EconomyRules.FormatWon(gm.Week3.winCashMin) + " · 아크릴";
+            }
+            if (week == 4 && gm != null && gm.Week4 != null)
+            {
+                return now + "   클리어 에이전시, 그리고 부채 ≤ " + EconomyRules.FormatWon(gm.Week4.winDebtMax) +
+                       " 또는 현금 ≥ " + EconomyRules.FormatWon(gm.Week4.winCashMin);
+            }
+            if (week == 5 && gm != null && gm.Week5 != null)
+            {
+                return now + "   오늘 끝나면 엔딩 · 파산 부채 ≥ " + EconomyRules.FormatWon(gm.Week5.bankruptDebt);
+            }
+            var w1 = gm != null ? gm.Balance : null;
+            if (w1 == null)
+                return now;
+            return now + "   클리어 부채 ≤ " + EconomyRules.FormatWon(w1.winDebtMax) +
+                   " 또는 현금 ≥ " + EconomyRules.FormatWon(w1.winCashMin);
         }
 
         static string ContentPickName(StreamContentType type) => type switch
@@ -509,8 +573,11 @@ namespace BankruptVtuber
             }
 
             RefreshYesterday(gm.Run);
+            RefreshLastDay(gm.Run);
             if (_yesterday != null && _yesterday.gameObject.activeSelf)
                 yield return new WaitForSeconds(0.55f);
+            if (_lastDayRoot != null && _lastDayRoot.gameObject.activeSelf)
+                yield return new WaitForSeconds(0.45f);
 
             _log.text = gm.Run.extraRolls.Count == 0
                 ? "오늘은 추가 위협이 없습니다."

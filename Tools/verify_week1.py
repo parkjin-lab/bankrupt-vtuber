@@ -1353,6 +1353,7 @@ def check_project() -> None:
     check_viewer_pop()
     check_bill_cover_slam()
     check_yesterday_headline()
+    check_last_day_banner()
 
 
 def check_content_types() -> None:
@@ -2528,6 +2529,45 @@ def check_yesterday_headline() -> None:
         fail("IsValid rejects old saves that omit lastHeadline")
     else:
         ok("Day 2+ WeekStart shows yesterday's headline; Day 1 and restart stay empty")
+
+
+def check_last_day_banner() -> None:
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    uikit_cs = (ROOT / "Assets/Scripts/Presentation/UiKit.cs").read_text(encoding="utf-8")
+    w1 = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+
+    if "마지막 날" not in week_cs or "주차 마지막" not in week_cs:
+        fail("WeekStart last-day morning has no 마지막 날 banner")
+    elif "LastDayOfCurrentWeek" not in week_cs:
+        fail("last-day banner is not keyed off WeekSchedule last days")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("WeekSchedule last days moved off 5/10/15/20/25")
+    elif "winDebtMax" not in week_cs or "winCashMin" not in week_cs:
+        fail("last-day banner does not show the existing cash/debt clear line")
+    elif "RefreshLastDay" not in week_cs or "LastDayBanner" not in week_cs:
+        fail("last-day banner is not wired on WeekStart")
+    elif "YesterdayLine" not in week_cs or "UnlockUiInputForStream" not in week_cs:
+        fail("last-day banner dropped 어제 headline or input unlock")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("last-day banner broke pads, 입력됨, or added timeScale")
+    elif "StreamSafeArea" not in week_cs or "SafeFitCard" not in week_cs:
+        fail("last-day banner dropped StreamSafeArea")
+    elif "UnlockUiInputForStream" not in title_cs or "UnlockUiInputForStream" not in settle_cs:
+        fail("last-day banner dropped Title/Settlement input unlock")
+    elif "DontDestroyOnLoad" not in uikit_cs:
+        fail("last-day banner dropped EventSystem DDOL")
+    elif "콘텐츠 편중 갈등" not in week_cs or "멤버십 해금" not in settle_cs:
+        fail("last-day banner dropped prior cards")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising last-day / later weeks")
+    elif "winDebtMax: 30000" not in w1 or "winCashMin: 70000" not in w1 or "billRent: 8000" not in w1:
+        fail("last-day banner retuned Week 1 clear or bills")
+    else:
+        ok("day 5/10/15/20/25 WeekStart shows 마지막 날; other mornings stay quiet")
 
 
 def check_save_roundtrip() -> None:
