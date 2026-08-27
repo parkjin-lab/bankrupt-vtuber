@@ -39,6 +39,10 @@ namespace BankruptVtuber
         Text _onAirLive;
         Text _onAirCopy;
         float _onAirLeft;
+        RectTransform _endCutRoot;
+        Image _endCutWash;
+        Image _endCutPip;
+        Text _endCutCopy;
         Text _stub;
         Text _charge;
         RectTransform _eventRoot;
@@ -615,10 +619,36 @@ namespace BankruptVtuber
             {
                 _forceEndRoot.gameObject.SetActive(true);
                 _forceEndRoot.SetAsLastSibling();
+                yield return new WaitForSeconds(1.25f);
             }
-            yield return new WaitForSeconds(_session.ForceEnded ? 1.25f : 1.1f);
+            else
+            {
+                ShowEndCut();
+                yield return new WaitForSeconds(0.5f);
+            }
             Debug.Log("[파산 버튜버] stream payout " + paid);
             gm.GoSettlement();
+        }
+
+        void ShowEndCut()
+        {
+            if (_liveDot != null)
+                _liveDot.color = new Color(0.2f, 0.02f, 0.04f, 0.2f);
+            if (_bed != null)
+                _bed.Stop();
+            if (_endCutRoot == null)
+                return;
+            _endCutRoot.gameObject.SetActive(true);
+            _endCutRoot.SetAsLastSibling();
+            if (_endCutWash != null)
+                _endCutWash.color = new Color(0f, 0f, 0f, 0.96f);
+            if (_endCutPip != null)
+                _endCutPip.color = new Color(0.28f, 0.03f, 0.06f, 1f);
+            if (_endCutCopy != null)
+            {
+                _endCutCopy.text = "방송 종료";
+                _endCutCopy.color = Palette.MoneyRed;
+            }
         }
 
         void Build()
@@ -897,6 +927,20 @@ namespace BankruptVtuber
             UiKit.Layout(_onAirLive.rectTransform, new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.5f), new Vector2(16f, 0f), new Vector2(520f, 88f));
             _onAirCopy = UiKit.Label(_onAirRoot, "Copy", "방송 시작", 36, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_onAirCopy.rectTransform, new Vector2(0.5f, 0.46f), new Vector2(0.5f, 0.46f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420f, 44f));
+
+            _endCutRoot = UiKit.Panel(canvasRoot, "EndCut", new Color(0f, 0f, 0f, 0.96f));
+            UiKit.Stretch(_endCutRoot);
+            _endCutWash = _endCutRoot.GetComponent<Image>();
+            if (_endCutWash != null)
+                _endCutWash.raycastTarget = false;
+            _endCutPip = UiKit.Image(_endCutRoot, "Pip", new Color(0.35f, 0.04f, 0.08f, 1f));
+            UiKit.Layout(_endCutPip.rectTransform, new Vector2(0.5f, 0.58f), new Vector2(0.5f, 0.58f), new Vector2(0.5f, 0.5f), new Vector2(-120f, 8f), new Vector2(22f, 22f));
+            _endCutPip.raycastTarget = false;
+            var endLive = UiKit.Label(_endCutRoot, "Live", "LIVE", 72, new Color(0.45f, 0.12f, 0.16f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(endLive.rectTransform, new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.5f), new Vector2(18f, 0f), new Vector2(420f, 88f));
+            _endCutCopy = UiKit.Label(_endCutRoot, "Copy", "방송 종료", 40, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_endCutCopy.rectTransform, new Vector2(0.5f, 0.46f), new Vector2(0.5f, 0.46f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420f, 48f));
+            _endCutRoot.gameObject.SetActive(false);
 
             _forceEndRoot = UiKit.Panel(canvasRoot, "ForceEnd", new Color(0.10f, 0.02f, 0.05f, 0.88f));
             UiKit.Stretch(_forceEndRoot);

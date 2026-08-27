@@ -1373,6 +1373,7 @@ def check_project() -> None:
     check_on_air()
     check_perfect_good()
     check_income_pop()
+    check_end_cut()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -2535,6 +2536,48 @@ def check_income_pop() -> None:
         fail("+₩ popup moved Unity off 6000.5.9f1")
     else:
         ok("successful notes pop +₩ next to 지금 수입; superchat fly stays; Miss does not")
+
+
+def check_end_cut() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    end = live_cs.split("EndRoutine", 1)[-1].split("void Build", 1)[0]
+
+    if "ShowEndCut" not in live_cs or "방송 종료" not in live_cs:
+        fail("90s end has no 방송 종료 cut")
+    elif "WaitForSeconds(0.5f)" not in end:
+        fail("방송 종료 cut is not 0.5s")
+    elif "EndCut" not in live_cs or "0f, 0f, 0f, 0.96f" not in live_cs:
+        fail("방송 종료 cut has no black flash")
+    elif "ApplyStreamPayout" not in end or "GoSettlement" not in end:
+        fail("end cut dropped payout or settlement")
+    elif "gm.GoSettlement()" not in debug_cs or "ShowEndCut" in debug_cs:
+        fail("F10 no longer jumps straight to settlement")
+    elif "TimeLeft = balance.streamSeconds" not in session_cs or "streamSeconds: 90" not in balance:
+        fail("end cut retuned the 90s stream")
+    elif '"ON AIR"' not in live_cs or "ShowIncomeDelta" not in live_cs or "RefreshClockChip" not in live_cs:
+        fail("end cut dropped ON AIR, +₩ popup, or last-10s clock")
+    elif "강제 종료" not in end or "WaitForSeconds(1.25f)" not in end:
+        fail("end cut replaced the existing force-end sting")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("end cut broke pads, 입력됨, or added timeScale")
+    elif "StreamSafeArea" not in live_cs or "오늘 헤드라인" not in settle_cs:
+        fail("end cut dropped StreamSafeArea or 오늘 헤드라인")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising end cut / later weeks")
+    elif "billRent: 8000" not in balance:
+        fail("end cut retuned Week 1 bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("end cut dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("end cut moved Unity off 6000.5.9f1")
+    else:
+        ok("90s end cuts with 0.5s 방송 종료; F10 still jumps to settlement")
 
 
 def check_mental_fatigue() -> None:
