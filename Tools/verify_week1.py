@@ -1470,6 +1470,7 @@ def check_project() -> None:
     check_nextday_sfx()
     check_title_sfx()
     check_pick_sfx()
+    check_letter_sfx()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -6306,7 +6307,7 @@ def check_nextday_sfx() -> None:
     pulse = settle_cs.split("void TickNextPulse", 1)[-1].split("static bool CanAdvance", 1)[0]
     leave = settle_cs.split("void LeaveSettle", 1)[-1].split("IEnumerator FadeSettleBgmThen", 1)[0]
     fade = settle_cs.split("IEnumerator FadeSettleBgmThen", 1)[-1]
-    play = settle_cs.split("void PlayNextDaySfx", 1)[-1].split("void QuietSettleBgm", 1)[0]
+    play = settle_cs.split("void PlayNextDaySfx", 1)[-1].split("void PlayLetterSfx", 1)[0]
     splash = settle_cs.split("void ApplyResultSplashes", 1)[-1].split("void ApplyHeadline", 1)[0]
     path = ROOT / "Assets/Resources/Audio/sfx_nextday.wav"
 
@@ -6514,6 +6515,79 @@ def check_pick_sfx() -> None:
         fail("content pick SFX moved Unity off 6000.5.9f1")
     else:
         ok("content pick plays sfx_pick once; icons / accents / multipliers stay")
+
+
+def check_letter_sfx() -> None:
+    import wave
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    fandom_rules = (ROOT / "Assets/Scripts/Economy/FandomRules.cs").read_text(encoding="utf-8")
+    fandom_asset = (ROOT / "Assets/Resources/Balance/FandomBalance.asset").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    look_cs = (ROOT / "Assets/Scripts/Presentation/FanLetterLook.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    on_letter = settle_cs.split("void OnLetter", 1)[-1].split("void OnLetterLater", 1)[0]
+    later = settle_cs.split("void OnLetterLater", 1)[-1].split("void MaybeShowLetter", 1)[0]
+    play = settle_cs.split("void PlayLetterSfx", 1)[-1].split("void QuietSettleBgm", 1)[0]
+    letter_build = settle_cs.split('LetterRoot"', 1)[-1].split('MemberRoot"', 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_letter.wav"
+
+    if not path.exists() or path.stat().st_size < 2000:
+        fail("sfx_letter.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("sfx_letter.wav is not a readable PCM stamp")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.12 or dur > 0.40:
+            fail(f"sfx_letter.wav duration {dur:.3f}s is not a short stamp/pen confirm")
+            return
+
+    if "Audio/sfx_letter" not in settle_cs or "PlayLetterSfx" not in settle_cs:
+        fail("Settlement does not load / play Audio/sfx_letter")
+    elif "PlayLetterSfx();" not in on_letter or on_letter.count("PlayLetterSfx();") != 1:
+        fail("답장하기 confirm is not a single shot")
+    elif "SendLetter" not in on_letter:
+        fail("letter SFX unhooked SendLetter")
+    elif play.count("PlayOneShot") != 1:
+        fail("letter confirm can fire more than one shot")
+    elif "PlayLetterSfx" in later:
+        fail("나중에 plays the stamp")
+    elif "_letterHeartFlash = 1.2f" not in on_letter or "충성 +" not in on_letter:
+        fail("letter SFX dropped the existing heart / added a second slam")
+    elif "답장하기" not in letter_build or "나중에" not in letter_build:
+        fail("letter SFX covered 답장하기 / 나중에")
+    elif "ArtSprites.LetterCard" not in letter_build or 'LetterCard = "Art/letter_card"' not in art_cs:
+        fail("letter SFX dropped letter_card paper")
+    elif "FanLetterLook" not in settle_cs or "첫 도네" not in look_cs:
+        fail("letter SFX dropped named copy")
+    elif "letterLoyalty: 4" not in fandom_asset or "letterMental: 8" not in fandom_asset:
+        fail("letter SFX retuned loyalty / mental")
+    elif "CanSendLetter" not in fandom_rules or "ShouldOfferLetter" not in fandom_rules:
+        fail("letter SFX changed offer / send routing")
+    elif "Audio/bgm_settlement" not in settle_cs or "volume = 0.16f" not in settle_cs:
+        fail("letter SFX dropped settlement BGM")
+    elif "Audio/sfx_letter" in title_cs or "Audio/sfx_letter" in week_cs or "Audio/sfx_letter" in live_cs:
+        fail("letter confirm leaked onto Title / WeekStart / LiveStream")
+    elif "Audio/sfx_nextday" not in settle_cs or "PlayNextDaySfx" not in settle_cs:
+        fail("letter SFX dropped 다음날 confirm")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("letter SFX retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("letter SFX broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising letter SFX / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("letter SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("letter SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("답장하기 plays sfx_letter once; 나중에 silent; paper / routing / BGM stay")
 
 
 def check_mental_sfx() -> None:

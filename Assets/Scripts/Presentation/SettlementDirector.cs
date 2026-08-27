@@ -148,6 +148,7 @@ namespace BankruptVtuber
         AudioClip _clearCue;
         AudioClip _bankruptCue;
         AudioClip _nextDayCue;
+        AudioClip _letterCue;
         bool _leavingSettle;
         bool _resultStingPlayed;
 
@@ -1337,6 +1338,7 @@ namespace BankruptVtuber
             var gm = GameManager.Instance;
             if (!FandomRules.SendLetter(gm.Run, gm.Balance, gm.Fandom))
                 return;
+            PlayLetterSfx();
             var f = gm.Fandom;
             int loy = f != null ? f.letterLoyalty : 4;
             int men = f != null ? f.letterMental : 8;
@@ -2195,6 +2197,7 @@ namespace BankruptVtuber
             _clearCue = Resources.Load<AudioClip>("Audio/sfx_clear");
             _bankruptCue = Resources.Load<AudioClip>("Audio/sfx_bankrupt");
             _nextDayCue = Resources.Load<AudioClip>("Audio/sfx_nextday");
+            _letterCue = Resources.Load<AudioClip>("Audio/sfx_letter");
         }
 
         void PlaySettleSfx(AudioClip clip, float volume)
@@ -2207,6 +2210,12 @@ namespace BankruptVtuber
         {
             if (_settleSfx != null && _nextDayCue != null)
                 _settleSfx.PlayOneShot(_nextDayCue, 0.46f);
+        }
+
+        void PlayLetterSfx()
+        {
+            if (_settleSfx != null && _letterCue != null)
+                _settleSfx.PlayOneShot(_letterCue, 0.44f);
         }
 
         void QuietSettleBgm()
