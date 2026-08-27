@@ -12,6 +12,8 @@ namespace BankruptVtuber
         Text _mental;
         Text _log;
         Text _day;
+        Text _dayHead;
+        float _daySlam;
         Text _fandom;
         Text _superfans;
         RectTransform _stack;
@@ -70,6 +72,7 @@ namespace BankruptVtuber
                 return;
             ExtraThreatRules.EnsureRolled(gm.Run, gm.Balance, gm.Week2, gm.Week3, gm.Week4, gm.Week5);
             RefreshHud();
+            _daySlam = 0.25f;
             StartCoroutine(BillWave(gm));
         }
 
@@ -88,6 +91,12 @@ namespace BankruptVtuber
             {
                 float u = _billSlam / 0.25f;
                 _billTile.localScale = Vector3.one * (1f + 0.24f * u);
+            }
+            _daySlam = Mathf.MoveTowards(_daySlam, 0f, Time.deltaTime);
+            if (_dayHead != null)
+            {
+                float u = _daySlam / 0.25f;
+                _dayHead.rectTransform.localScale = Vector3.one * (1f + 0.28f * u);
             }
             TickGoLivePulse();
 
@@ -130,7 +139,9 @@ namespace BankruptVtuber
             _portrait = new StudioPortrait(root, new Vector2(0.90f, 0.82f), new Vector2(220, 280), true);
 
             var title = UiKit.Label(root, "Title", "파산 버튜버", 48, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
-            UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(36, -16), new Vector2(640, 54));
+            UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(36, -16), new Vector2(400, 54));
+            _dayHead = UiKit.Label(root, "DayHead", "", 52, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_dayHead.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(430, -12), new Vector2(420, 58));
             _day = UiKit.Label(root, "DayLabel", "", 24, Palette.Pink, TextAnchor.UpperLeft);
             UiKit.Layout(_day.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -68), new Vector2(720, 32));
             _fandom = UiKit.Label(root, "FandomHud", "", 18, Palette.Pastel, TextAnchor.UpperLeft);
@@ -302,6 +313,8 @@ namespace BankruptVtuber
             string sponsor = run.sponsorActive ? $"   ·   스폰서 {run.sponsorDaysLeft}일" : "";
             string rank = run.finalRank > 0 ? $"   ·   랭킹 {run.finalRank}위" : "";
             string concert = run.concertPending ? "   ·   콘서트 대기" : "";
+            if (_dayHead != null)
+                _dayHead.text = run.day + "일차";
             _day.text = $"{week}주차  ·  {run.day}일차   /   {last}일{members}{goods}{agency}{junior}{sponsor}{rank}{concert}";
             _cash.text = EconomyRules.FormatWon(run.cash);
             _debt.text = EconomyRules.FormatWon(run.debt);

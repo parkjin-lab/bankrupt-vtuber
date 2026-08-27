@@ -1394,6 +1394,7 @@ def check_project() -> None:
     check_strike_marker()
     check_next_pulse()
     check_event_warn()
+    check_day_slam()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -3596,6 +3597,55 @@ def check_event_warn() -> None:
         fail("event warn moved Unity off 6000.5.9f1")
     else:
         ok("events flash 안티 온다 / 렉 온다 0.5s early; sting / keys / scars stay")
+
+
+def check_day_slam() -> None:
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    schedule_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    hud = week_cs.split("void RefreshHud", 1)[-1].split("void RefreshCashShort", 1)[0]
+    slam = week_cs.split("_daySlam = Mathf.MoveTowards", 1)[-1].split("TickGoLivePulse", 1)[0]
+
+    if "_dayHead" not in week_cs or '"일차"' not in week_cs:
+        fail("WeekStart has no n일차 morning header")
+    elif "_daySlam = 0.25f" not in week_cs or "_daySlam / 0.25f" not in slam:
+        fail("n일차 does not slam in 0.25s")
+    elif "run.day +" not in hud and "run.day + \"일차\"" not in hud and 'run.day + "일차"' not in hud:
+        fail("n일차 header does not read run.day")
+    elif "run.day = " in week_cs or "day += " in week_cs or "day -= " in week_cs:
+        fail("n일차 slam writes the day index")
+    elif "LastDayOfCurrentWeek" not in schedule_cs or "WeekNumber" not in schedule_cs:
+        fail("n일차 slam dropped week day math")
+    elif "마지막 날" not in week_cs or "LastDayBanner" not in week_cs or "RefreshLastDay" not in week_cs:
+        fail("n일차 slam dropped the last-day banner")
+    elif "YesterdayLine" not in week_cs or "RefreshYesterday" not in week_cs:
+        fail("n일차 slam dropped 어제 headline")
+    elif '"오늘 청구"' not in week_cs or "_billSlam = 0.25f" not in week_cs:
+        fail("n일차 slam dropped 오늘 청구 slam")
+    elif "편하게 잡담" not in week_cs or "고음 승부" not in week_cs:
+        fail("n일차 slam dropped content cards")
+    elif "TryPeekEventWarn" not in (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8"):
+        fail("n일차 slam dropped event telegraph")
+    elif "TickNextPulse" not in settle_cs or "TickStrike" not in live_cs:
+        fail("n일차 slam dropped 다음날 pulse or strike marker")
+    elif "TickGoLivePulse" not in week_cs or "청구보다 부족" not in week_cs:
+        fail("n일차 slam dropped GO LIVE pulse or 청구보다 부족")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("n일차 slam broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising n일차 slam / later weeks")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("n일차 slam retuned Week 1 cash or bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("n일차 slam dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("n일차 slam moved Unity off 6000.5.9f1")
+    else:
+        ok("WeekStart slams n일차 0.25s; last-day / 어제 / 청구 / cards stay")
 
 
 def check_mental_fatigue() -> None:
