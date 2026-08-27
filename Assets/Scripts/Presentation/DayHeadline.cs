@@ -8,6 +8,24 @@ namespace BankruptVtuber
     /// </summary>
     public static class DayHeadline
     {
+        public static void Remember(GameRunState run)
+        {
+            if (run == null)
+                return;
+            if (!run.streamDoneThisDay && run.lastStreamIncome == 0 && run.lastBills == 0)
+                return;
+            run.lastHeadline = Build(run);
+        }
+
+        public static string YesterdayLine(GameRunState run)
+        {
+            if (run == null || run.day <= 1)
+                return "";
+            if (string.IsNullOrEmpty(run.lastHeadline))
+                return "";
+            return "어제: " + run.lastHeadline;
+        }
+
         public static string Build(GameRunState run)
         {
             if (run == null)

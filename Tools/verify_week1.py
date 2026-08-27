@@ -1344,6 +1344,7 @@ def check_project() -> None:
     check_superchat_fly()
     check_viewer_pop()
     check_bill_cover_slam()
+    check_yesterday_headline()
 
 
 def check_content_types() -> None:
@@ -2468,6 +2469,53 @@ def check_bill_cover_slam() -> None:
         fail("cover slam retuned Week 1 bills or hype")
     else:
         ok("first 청구 커버 slams gold once; sticky green; no fake settle slam")
+
+
+def check_yesterday_headline() -> None:
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    head_cs = (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").read_text(encoding="utf-8")
+    state_cs = (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8")
+    save_cs = (ROOT / "Assets/Scripts/Core/RunSave.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    reset = state_cs.split("void ResetNewRun", 1)[-1].split("void ClearWeek2Progress", 1)[0]
+    nextday = state_cs.split("void BeginNextDay", 1)[-1]
+    morning = gm.split("void NextMorning", 1)[-1].split("public void Load", 1)[0]
+
+    if "YesterdayLine" not in head_cs or '"어제: "' not in head_cs:
+        fail("WeekStart has no 어제 headline line")
+    elif "lastHeadline" not in state_cs or "lastHeadline" not in save_cs:
+        fail("yesterday headline is not persisted on the run save")
+    elif "Remember" not in head_cs or "DayHeadline.Remember" not in settle_cs:
+        fail("settlement does not store today's headline string")
+    elif "DayHeadline.Remember" not in morning and "lastHeadline" not in morning:
+        fail("NextMorning does not keep lastHeadline before the next day wipe")
+    elif "lastHeadline = \"\"" not in reset and "lastHeadline = string.Empty" not in reset:
+        fail("ResetNewRun leaves a leftover headline")
+    elif "lastHeadline =" in nextday.split("FandomRules.ResetDaily", 1)[0] and 'lastHeadline = ""' in nextday:
+        fail("BeginNextDay wipes yesterday's headline before WeekStart")
+    elif "day <= 1" not in head_cs:
+        fail("Day 1 first morning can show a fake yesterday")
+    elif "Yesterday" not in week_cs or "YesterdayLine" not in week_cs:
+        fail("WeekStart does not show 어제 above the bill slam")
+    elif "오늘 헤드라인" not in settle_cs or "청구 커버" not in head_cs:
+        fail("yesterday slice dropped today's settlement headline")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("yesterday slice broke pads, 입력됨, or added timeScale")
+    elif "StreamSafeArea" not in week_cs or "SafeFitCard" not in week_cs:
+        fail("yesterday slice dropped StreamSafeArea")
+    elif "멤버십 해금" not in settle_cs or "콘텐츠 편중 갈등" not in week_cs:
+        fail("yesterday slice dropped prior cards")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising yesterday / later weeks")
+    elif "billRent: 8000" not in (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8"):
+        fail("yesterday headline retuned Week 1 bills")
+    elif "lastHeadline == \"청구 커버 · 시청 32\"" not in save_cs:
+        fail("dummy save/load dropped lastHeadline")
+    else:
+        ok("Day 2+ WeekStart shows yesterday's headline; Day 1 and restart stay empty")
 
 
 def check_save_roundtrip() -> None:

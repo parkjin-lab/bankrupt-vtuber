@@ -1653,6 +1653,7 @@ namespace BankruptVtuber
 
         void ApplyHeadline(GameRunState run)
         {
+            DayHeadline.Remember(run);
             string line = DayHeadline.Build(run);
             if (_headline != null)
                 _headline.text = line;

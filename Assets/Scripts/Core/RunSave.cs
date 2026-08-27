@@ -156,7 +156,8 @@ namespace BankruptVtuber
                 && dst.npcRankingScore != null
                 && dst.npcRankingScore.Length == 3
                 && dst.npcRankingScore[1] == 360
-                && dst.contentPicked == StreamContentType.Game;
+                && dst.contentPicked == StreamContentType.Game
+                && dst.lastHeadline == "청구 커버 · 시청 32";
         }
 
         public static GameRunState MakeDummy()
@@ -199,6 +200,7 @@ namespace BankruptVtuber
             run.lastOutcome = WeekOutcome.Continue;
             run.contentPicked = StreamContentType.Game;
             run.contentMentalAppliedThisDay = false;
+            run.lastHeadline = "청구 커버 · 시청 32";
             run.ApplyExtraRolls(new[]
             {
                 new ExtraThreatRoll("gear_break", "장비 고장", 7000, "Art/bill_gear", new Color(1f, 0.42f, 0.42f))
@@ -348,7 +350,8 @@ namespace BankruptVtuber
                 lastHadSuccessfulSuperchat = run.lastHadSuccessfulSuperchat,
                 lastMissStreak = run.lastMissStreak,
                 contentPicked = (int)run.contentPicked,
-                contentMentalAppliedThisDay = run.contentMentalAppliedThisDay
+                contentMentalAppliedThisDay = run.contentMentalAppliedThisDay,
+                lastHeadline = run.lastHeadline ?? ""
             };
             return data;
         }
@@ -474,6 +477,7 @@ namespace BankruptVtuber
             run.lastMissStreak = data.lastMissStreak;
             run.contentPicked = (StreamContentType)data.contentPicked;
             run.contentMentalAppliedThisDay = data.contentMentalAppliedThisDay;
+            run.lastHeadline = data.lastHeadline ?? "";
             ApplyRolls(data, run);
         }
 
@@ -684,6 +688,7 @@ namespace BankruptVtuber
             public int lastMissStreak;
             public int contentPicked;
             public bool contentMentalAppliedThisDay;
+            public string lastHeadline;
         }
     }
 }

@@ -139,6 +139,7 @@ namespace BankruptVtuber
         public int lastMissStreak;
         public StreamContentType contentPicked;
         public bool contentMentalAppliedThisDay;
+        public string lastHeadline;
 
         public void ResetNewRun(Week1Balance b, int? seed = null)
         {
@@ -163,6 +164,7 @@ namespace BankruptVtuber
             lastBills = 0;
             lastRepaid = 0;
             lastOutcome = WeekOutcome.Continue;
+            lastHeadline = "";
             ClearWeek2Progress();
             ClearWeek3Progress();
             ClearWeek4Progress();
