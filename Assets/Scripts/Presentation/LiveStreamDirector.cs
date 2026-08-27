@@ -33,6 +33,12 @@ namespace BankruptVtuber
         Text _combo;
         Text _judge;
         Image _liveDot;
+        RectTransform _onAirRoot;
+        Image _onAirWash;
+        Image _onAirPip;
+        Text _onAirLive;
+        Text _onAirCopy;
+        float _onAirLeft;
         Text _stub;
         Text _charge;
         RectTransform _eventRoot;
@@ -80,6 +86,7 @@ namespace BankruptVtuber
         AudioClip _sc;
         AudioClip _comboCue;
         AudioClip _clockTick;
+        AudioClip _onAirCue;
         Image _wash;
         Image _washVeil;
         Image _chatPanel;
@@ -172,6 +179,7 @@ namespace BankruptVtuber
             _sc = ToneClip("sfx_super", new[] { 523f, 659f, 784f, 1046f }, 0.06f, 0.20f);
             _comboCue = ToneClip("sfx_combo", new[] { 698f, 880f, 1174f }, 0.07f, 0.24f);
             _clockTick = ToneClip("sfx_clock", new[] { 1320f }, 0.045f, 0.18f);
+            _onAirCue = ToneClip("sfx_onair", new[] { 392f, 523f, 784f }, 0.06f, 0.22f);
         }
 
         void OnDestroy()
@@ -234,6 +242,9 @@ namespace BankruptVtuber
             ApplyThreatShow(gm.Run);
             if (StreamSession.ShouldOfferFirstStreamCoach(gm.Run))
                 _session.EnableFirstStreamCoach();
+            _onAirLeft = 0.6f;
+            TickOnAir();
+            PlaySfx(_onAirCue, 0.46f);
             _avatar.SetViewers(_shownViewers);
             if (_rivalDuel != null)
                 _rivalDuel.Bind(_session);
@@ -441,8 +452,13 @@ namespace BankruptVtuber
             {
                 _judge.rectTransform.localScale = Vector3.one;
             }
+            _onAirLeft = Mathf.MoveTowards(_onAirLeft, 0f, dt);
+            TickOnAir();
             if (_liveDot != null)
-                _liveDot.color = new Color(1f, 1f, 1f, 0.4f + 0.6f * Mathf.Abs(Mathf.Sin(Time.time * 6f)));
+            {
+                var pip = _onAirLeft > 0f ? Palette.MoneyRed : Color.white;
+                _liveDot.color = new Color(pip.r, pip.g, pip.b, 0.4f + 0.6f * Mathf.Abs(Mathf.Sin(Time.time * 6f)));
+            }
             _stingFlash = Mathf.MoveTowards(_stingFlash, 0f, dt * 1.4f);
             _viewerFlash = Mathf.MoveTowards(_viewerFlash, 0f, dt * 1.8f);
             _viewerPopFlash = Mathf.MoveTowards(_viewerPopFlash, 0f, dt * 1.6f);
@@ -848,6 +864,19 @@ namespace BankruptVtuber
             concertSlamC.a = 0f;
             _concertSlam.color = concertSlamC;
 
+            _onAirRoot = UiKit.Panel(canvasRoot, "OnAir", new Color(0.08f, 0.02f, 0.05f, 0.72f));
+            UiKit.Stretch(_onAirRoot);
+            _onAirWash = _onAirRoot.GetComponent<Image>();
+            if (_onAirWash != null)
+                _onAirWash.raycastTarget = false;
+            _onAirPip = UiKit.Image(_onAirRoot, "Pip", Palette.MoneyRed);
+            UiKit.Layout(_onAirPip.rectTransform, new Vector2(0.5f, 0.58f), new Vector2(0.5f, 0.58f), new Vector2(0.5f, 0.5f), new Vector2(-110f, 8f), new Vector2(22f, 22f));
+            _onAirPip.raycastTarget = false;
+            _onAirLive = UiKit.Label(_onAirRoot, "Live", "ON AIR", 72, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_onAirLive.rectTransform, new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.5f), new Vector2(16f, 0f), new Vector2(520f, 88f));
+            _onAirCopy = UiKit.Label(_onAirRoot, "Copy", "방송 시작", 36, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_onAirCopy.rectTransform, new Vector2(0.5f, 0.46f), new Vector2(0.5f, 0.46f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420f, 44f));
+
             _forceEndRoot = UiKit.Panel(canvasRoot, "ForceEnd", new Color(0.10f, 0.02f, 0.05f, 0.88f));
             UiKit.Stretch(_forceEndRoot);
             _forceEndRoot.gameObject.SetActive(false);
@@ -936,9 +965,49 @@ namespace BankruptVtuber
             };
         }
 
+        void TickOnAir()
+        {
+            float u = _onAirLeft / 0.6f;
+            bool show = u > 0.001f;
+            if (_onAirRoot != null)
+            {
+                _onAirRoot.gameObject.SetActive(show);
+                if (show)
+                    _onAirRoot.SetAsLastSibling();
+            }
+            if (!show)
+                return;
+            if (_onAirWash != null)
+            {
+                var w = _onAirWash.color;
+                w.a = 0.72f * u;
+                _onAirWash.color = w;
+            }
+            if (_onAirPip != null)
+            {
+                var p = Palette.MoneyRed;
+                p.a = u;
+                _onAirPip.color = p;
+                _onAirPip.rectTransform.localScale = Vector3.one * (1f + 0.35f * u);
+            }
+            if (_onAirLive != null)
+            {
+                var c = Color.white;
+                c.a = u;
+                _onAirLive.color = c;
+                _onAirLive.rectTransform.localScale = Vector3.one * (1f + 0.18f * u);
+            }
+            if (_onAirCopy != null)
+            {
+                var c = Palette.MoneyRed;
+                c.a = u;
+                _onAirCopy.color = c;
+            }
+        }
+
         void RefreshCoach()
         {
-            bool on = _session != null && _session.CoachActive;
+            bool on = _session != null && _session.CoachActive && _onAirLeft <= 0f;
             if (_coachHint != null)
                 _coachHint.gameObject.SetActive(on);
             var held = on ? _session.CoachHeld : null;

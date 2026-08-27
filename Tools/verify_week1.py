@@ -1370,6 +1370,7 @@ def check_project() -> None:
     check_hype_wash()
     check_combo_break()
     check_clock_urgency()
+    check_on_air()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -1537,6 +1538,8 @@ def check_first_stream_coach() -> None:
         fail("week-clear screen was dropped while adding the coach")
     elif "토크" in title_cs or "Week2" in title_cs or "민준" in title_cs:
         fail("Title started advertising the coach / later weeks")
+    elif "_onAirLeft <= 0f" not in live_cs:
+        fail("Day-1 coach UI no longer waits for the ON AIR sting")
     else:
         ok("spawn tables, pads, week-clear, and Title stay unchanged; Day 2 has no coach")
 
@@ -2407,6 +2410,42 @@ def check_clock_urgency() -> None:
         fail("clock urgency moved Unity off 6000.5.9f1")
     else:
         ok("last 10s clock pulses red and ticks 10…9…; 0 snaps to 종료")
+
+
+def check_on_air() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+
+    if '"ON AIR"' not in live_cs or "방송 시작" not in live_cs or "TickOnAir" not in live_cs:
+        fail("stream start has no ON AIR / 방송 시작 sting")
+    elif "_onAirLeft = 0.6f" not in live_cs:
+        fail("ON AIR sting is not 0.6s")
+    elif "EnableFirstStreamCoach" not in live_cs or "_onAirLeft <= 0f" not in live_cs:
+        fail("Day-1 coach was replaced by ON AIR or no longer runs after it")
+    elif "_nextChatAt = 0.4f" not in session_cs:
+        fail("ON AIR retuned first-note timing")
+    elif "streamSeconds: 90" not in balance or "TimeLeft = balance.streamSeconds" not in session_cs:
+        fail("ON AIR retuned the 90s stream")
+    elif "RefreshClockChip" not in live_cs or "콤보 끊김" not in live_cs:
+        fail("ON AIR dropped last-10s clock or combo-break")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("ON AIR broke pads, 입력됨, or added timeScale")
+    elif "StreamSafeArea" not in live_cs or "오늘 헤드라인" not in settle_cs:
+        fail("ON AIR dropped StreamSafeArea or 오늘 헤드라인")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising ON AIR / later weeks")
+    elif "billRent: 8000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("ON AIR retuned Week 1 bills or hype")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("ON AIR dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("ON AIR moved Unity off 6000.5.9f1")
+    else:
+        ok("stream opens with 0.6s ON AIR / 방송 시작; Day-1 coach still follows")
 
 
 def check_mental_fatigue() -> None:
