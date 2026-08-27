@@ -1336,15 +1336,24 @@ namespace BankruptVtuber
                 }
                 rt.anchoredPosition = new Vector2(x, y);
                 rt.localEulerAngles = new Vector3(0f, 0f, tilt);
+                float abs = Mathf.Abs(_session.Elapsed - note.HitTime);
+                bool hot = abs <= 0.15f;
+                var glow = rt.Find("Hot");
+                if (glow != null)
+                {
+                    var g = glow.GetComponent<Image>();
+                    if (g != null)
+                        g.color = new Color(1f, 1f, 1f, hot ? 0.40f : 0f);
+                }
                 if (note.IsSuperchat)
                 {
                     float slam = Mathf.Clamp01((_session.Elapsed - note.SpawnTime) / 0.18f);
                     float s = Mathf.Lerp(1.38f, 1f, slam * slam);
-                    rt.localScale = Vector3.one * s;
+                    rt.localScale = Vector3.one * (s * (hot ? 1.06f : 1f));
                 }
                 else
                 {
-                    rt.localScale = Vector3.one;
+                    rt.localScale = Vector3.one * (hot ? 1.08f : 1f);
                 }
                 if (note.FanWounded)
                     DimNamedBubble(rt);
@@ -1592,6 +1601,10 @@ namespace BankruptVtuber
             msg.horizontalOverflow = HorizontalWrapMode.Wrap;
             if (super)
                 card.localScale = Vector3.one * 1.38f;
+            var glow = UiKit.Image(card, "Hot", new Color(1f, 1f, 1f, 0f));
+            UiKit.Stretch(glow.rectTransform);
+            glow.raycastTarget = false;
+            glow.transform.SetSiblingIndex(0);
             return card;
         }
 

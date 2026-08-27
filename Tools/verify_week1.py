@@ -1384,6 +1384,7 @@ def check_project() -> None:
     check_pad_flash()
     check_mental_count()
     check_morning_cash_short()
+    check_note_hot()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -3045,6 +3046,55 @@ def check_morning_cash_short() -> None:
         fail("morning cash warn moved Unity off 6000.5.9f1")
     else:
         ok("WeekStart tints 현금 warning-red + 청구보다 부족 when cash < today's bill")
+
+
+def check_note_hot() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    sync = live_cs.split("void SyncNotes", 1)[-1].split("void RefreshPromoOverlay", 1)[0]
+    coach = session_cs.split("void TickCoach", 1)[-1].split("void TryGrabCoachNote", 1)[0]
+
+    if "abs <= 0.15f" not in sync or "HitTime" not in sync:
+        fail("notes do not brighten within ~0.15s of the hit line")
+    elif '"Hot"' not in live_cs or "1f, 1f, 1f" not in sync:
+        fail("near-hit notes have no bright overlay")
+    elif "c.a =" in sync or "img.color = c" in sync:
+        fail("note glow washed bubble alpha into a flat bar")
+    elif "approachSeconds =" in sync or "HitTime =" in sync:
+        fail("note glow writes travel / hit times")
+    elif "perfectWindow =" in live_cs or "goodWindow =" in live_cs:
+        fail("note glow retuned judge windows")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("note glow retuned Judge")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("note glow retuned hit windows")
+    elif "approachSeconds: 1.35" not in balance:
+        fail("note glow retuned travel speed")
+    elif "FreezeNotes(dt)" not in coach or "_coachHeld.HitTime = Elapsed" not in coach:
+        fail("note glow broke the Day-1 coach pause")
+    elif "EnableFirstStreamCoach" not in live_cs or "CoachActive" not in live_cs:
+        fail("note glow dropped the Day-1 coach")
+    elif "청구보다 부족" not in week_cs or "RefreshCashShort" not in week_cs:
+        fail("note glow dropped WeekStart 청구보다 부족")
+    elif "_flash = 0.08f" not in (ROOT / "Assets/Scripts/Input/StreamPadButton.cs").read_text(encoding="utf-8"):
+        fail("note glow dropped pad press flash")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("note glow broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising note glow / later weeks")
+    elif "billRent: 8000" not in balance:
+        fail("note glow retuned Week 1 bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("note glow dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("note glow moved Unity off 6000.5.9f1")
+    else:
+        ok("notes brighten within 0.15s of the hit line; windows / travel / coach stay")
 
 
 def check_mental_fatigue() -> None:
