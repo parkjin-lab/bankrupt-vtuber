@@ -91,6 +91,11 @@ namespace BankruptVtuber
         {
             var canvas = UiKit.CreateCanvas("TitleCanvas", transform);
             StudioChrome.Wash(canvas.transform);
+            var backdrop = UiKit.Image(canvas.transform, "TitleBackdrop", Color.white);
+            UiKit.Stretch(backdrop.rectTransform);
+            ArtSprites.Apply(backdrop, ArtSprites.TitleStudio, Palette.Studio, Color.white);
+            backdrop.preserveAspect = false;
+            backdrop.raycastTarget = false;
             var root = StreamSafeArea.Attach(canvas.transform);
 
             _titleRoot = new GameObject("TitleRoot", typeof(RectTransform));

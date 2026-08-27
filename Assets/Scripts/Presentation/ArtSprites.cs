@@ -17,6 +17,7 @@ namespace BankruptVtuber
         public const string BillGear = "Art/bill_gear";
         public const string BillNotice = "Art/bill_notice";
         public const string StreamOverlay = "Art/stream_overlay";
+        public const string TitleStudio = "Art/title_studio";
         public const string Superchat = "Art/badge_superchat";
         public const string Troll = "Art/badge_troll";
         public const string BubblePill = "Art/bubble_pill";

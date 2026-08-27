@@ -203,6 +203,7 @@ def check_project() -> None:
         "bill_gear.png": "장비",
         "bill_notice.png": "고지서",
         "stream_overlay.png": "라이브 오버레이",
+        "title_studio.png": "타이틀 스튜디오",
         "badge_superchat.png": "superchat",
         "badge_troll.png": "troll",
     }
@@ -1414,6 +1415,7 @@ def check_project() -> None:
     check_vtuber_face()
     check_bill_notice()
     check_stream_overlay()
+    check_title_studio()
 
 
 def check_content_types() -> None:
@@ -4505,6 +4507,67 @@ def check_stream_overlay() -> None:
         fail("stream overlay moved Unity off 6000.5.9f1")
     else:
         ok("라이브 chrome is a 2D overlay frame; chips / pads / hit / FX stay")
+
+
+def check_title_studio() -> None:
+    import struct
+
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/title_studio.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    build = title_cs.split("void Build()", 1)[-1].split("void BuildHowTo", 1)[0]
+    pulse = title_cs.split("void TickStartPulse", 1)[-1].split("void OpenHowTo", 1)[0]
+    wipe = title_cs.split("void BuildWipe", 1)[-1].split("void BuildPrologue", 1)[0]
+    cont = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("타이틀 studio PNG is missing")
+    elif w < 360 or h < 540 or h <= w:
+        fail("타이틀 studio PNG is not a readable portrait backdrop")
+    elif color != 6:
+        fail("타이틀 studio PNG is not RGBA (menu would stay a blank wash)")
+    elif 'TitleStudio = "Art/title_studio"' not in art_cs:
+        fail("ArtSprites does not hook Art/title_studio")
+    elif '"TitleBackdrop"' not in build or "ArtSprites.TitleStudio" not in build:
+        fail("Title does not hang the studio behind the wordmark")
+    elif "「파산 버튜버」" not in build or "방송 시작" not in build or "이어서 하기" not in build:
+        fail("title studio covered the wordmark or menu buttons")
+    elif "1f + 0.04f" not in title_cs or "TickStartPulse" not in title_cs or '"시작"' not in title_cs:
+        fail("title studio dropped wordmark / 새 방송 시작 pulse")
+    elif "1f + 0.03f" not in pulse or "TickContinuePulse" not in title_cs or '"이어"' not in title_cs:
+        fail("title studio dropped start / continue pulse chips")
+    elif "MoneyPlate" not in title_cs or "이어하기 " not in title_cs or '"현금 "' not in cont or '"부채 "' not in cont:
+        fail("title studio dropped the continue row")
+    elif "새 방송 시작" not in title_cs or "진행 중인 " not in wipe or "지울까?" not in wipe or "지우고 시작" not in wipe or "취소" not in wipe:
+        fail("title studio dropped 새 방송 시작 / wipe confirm")
+    elif "OpenWipe" not in title_cs or "ConfirmWipe" not in title_cs or "StartNewRun" not in gm:
+        fail("title studio unhooked wipe / start")
+    elif "ArtSprites.StreamOverlay" not in live_cs or "ArtSprites.BillNotice" not in week_cs:
+        fail("title studio dropped the live overlay or 고지서")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("title studio retuned start numbers")
+    elif "billRent: 8000" not in balance:
+        fail("title studio retuned Week 1 bills")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("title studio broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising studio / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("title studio dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("title studio moved Unity off 6000.5.9f1")
+    else:
+        ok("Title sits on a broke-studio backdrop; pulse / continue / wipe stay")
 
 
 def check_save_roundtrip() -> None:
