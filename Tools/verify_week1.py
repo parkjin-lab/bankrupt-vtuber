@@ -1329,6 +1329,7 @@ def check_project() -> None:
     check_first_stream_coach()
     check_event_accident()
     check_fan_letter()
+    check_chat_catalog()
 
 
 def check_content_types() -> None:
@@ -1603,6 +1604,75 @@ def check_fan_letter() -> None:
         fail("Week 1 bills were retuned by the fan letter")
     else:
         ok("letter uses existing fandom numbers; Day 1 has no fake letter; WeekStart 하은 stays")
+
+
+def _catalog_cs_lines(cs: str, name: str) -> list[str]:
+    block = cs.split(f"{name} = new[]", 1)[-1].split("};", 1)[0]
+    return re.findall(r'"([^"]+)"', block)
+
+
+def _catalog_asset_lines(asset: str, name: str) -> list[str]:
+    rest = asset.split(f"  {name}:", 1)[-1]
+    lines: list[str] = []
+    for raw in rest.splitlines()[1:]:
+        if raw.startswith("  - "):
+            lines.append(raw[4:])
+        elif raw.startswith("  ") and raw.endswith(":") and not raw.startswith("  - "):
+            break
+    return lines
+
+
+def _has_hangul(text: str) -> bool:
+    return any("가" <= ch <= "힣" for ch in text)
+
+
+def check_chat_catalog() -> None:
+    catalog_cs = (ROOT / "Assets/Scripts/Data/ChatCatalog.cs").read_text(encoding="utf-8")
+    asset = (ROOT / "Assets/Resources/Balance/ChatCatalog.asset").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    kinds = ("positive", "empathy", "laugh", "thanks")
+    banned = ("lorem", "ipsum", "hello", "world", "asdf", "test line")
+    blob = catalog_cs + "\n" + asset
+
+    for name in kinds:
+        cs_lines = _catalog_cs_lines(catalog_cs, name)
+        asset_lines = _catalog_asset_lines(asset, name)
+        if len(set(cs_lines)) < 16 or len(set(asset_lines)) < 16:
+            fail(f"ChatCatalog {name} has fewer than 16 distinct lines")
+            continue
+        if set(cs_lines) != set(asset_lines):
+            fail(f"ChatCatalog {name} defaults and asset pools drifted")
+            continue
+        if any(not _has_hangul(line) for line in cs_lines):
+            fail(f"ChatCatalog {name} has a line with no Hangul")
+            continue
+        if any(len(line) > 28 for line in cs_lines):
+            fail(f"ChatCatalog {name} has a line too long for the bubble")
+            continue
+        ok(f"ChatCatalog {name} has {len(set(cs_lines))} short Korean lines")
+
+    if any(token in blob.lower() for token in banned):
+        fail("ChatCatalog picked up English lorem / placeholder copy")
+    elif "월세" not in blob or "슈퍼챗" not in blob or ("빚" not in blob and "부채" not in blob):
+        fail("ChatCatalog lost 월세 / 빚 / 슈퍼챗 jokes")
+    elif "ㅋㅋ" not in blob and "ㄹㅇ" not in blob:
+        fail("ChatCatalog has no light ㅋㅋ / ㄹㅇ")
+    elif "talkPositive" in catalog_cs or "gamePositive" in catalog_cs or "string[] minjun" in catalog_cs:
+        fail("ChatCatalog grew a new data shape")
+    elif "ChatKind.Positive => positive" not in catalog_cs or "Catalog.Pick(kind, Rng)" not in (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8"):
+        fail("stream no longer picks from the shared ChatCatalog pools")
+    elif "chatSpawnStart: 1.55" not in balance or "billRent: 8000" not in balance:
+        fail("chat copy retuned spawn or Week 1 bills")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "답장하기" not in (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8"):
+        fail("catalog rewrite broke pads or the fan letter")
+    elif "색에 맞는 키 또는 아래 버튼을 눌러" not in live_cs or "사고 수습" not in (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8"):
+        fail("catalog rewrite dropped the coach or event accident")
+    elif "토크" in title_cs or "민준" in title_cs:
+        fail("Title started advertising chat copy")
+    else:
+        ok("shared ChatCatalog pools only; spawn / bills / named-fan rules unchanged")
 
 
 def check_save_roundtrip() -> None:
