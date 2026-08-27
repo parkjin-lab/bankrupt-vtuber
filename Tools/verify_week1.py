@@ -1337,6 +1337,7 @@ def check_project() -> None:
     check_week5_finale_beats()
     check_fandom_beats()
     check_portrait_safe_area()
+    check_day_headline()
 
 
 def check_content_types() -> None:
@@ -2150,6 +2151,43 @@ def check_portrait_safe_area() -> None:
         fail("card copy cannot wrap or scroll")
     else:
         ok("pads stay full-width; new cards wrap/stack; confirm stays on-screen")
+
+
+def check_day_headline() -> None:
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    head_cs = (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").read_text(encoding="utf-8") if (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").exists() else ""
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    recap = settle_cs.split("var recap", 1)[0][-400:] if "var recap" in settle_cs else ""
+
+    if "오늘 헤드라인" not in settle_cs or "DayHeadline" not in settle_cs:
+        fail("settlement recap has no 오늘 헤드라인")
+    elif "청구 커버" not in head_cs or "청구 미달" not in head_cs:
+        fail("headline does not say 청구 커버 / 청구 미달 from tonight's bills")
+    elif "TonightBills" not in head_cs or "lastStreamIncome" not in head_cs:
+        fail("headline does not use existing income / tonight bills")
+    elif "라이벌 승" not in head_cs or "민준 답장" not in head_cs or "하이프 실패" not in head_cs:
+        fail("headline is missing rival / letter / hype facts")
+    elif "lastRivalMatch" not in head_cs or "lastFanLetter" not in head_cs or "lastHadHype" not in head_cs:
+        fail("headline is not gated on what actually happened")
+    elif "lastClipSuccess" not in head_cs or "lastStreamPeakViewers" not in head_cs:
+        fail("headline dropped clip / peak")
+    elif "ApplyHeadline" not in settle_cs or "ClearHeadline" not in settle_cs or "StampHeadline" not in settle_cs:
+        fail("week-clear / bankrupt do not reuse the headline")
+    elif '"오늘 수입"' not in settle_cs or '"청구"' not in settle_cs:
+        fail("headline replaced the green 수입 / red 청구 tiles")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("headline slice broke pads, 입력됨, or added timeScale")
+    elif "StreamSafeArea" not in settle_cs:
+        fail("headline slice dropped StreamSafeArea")
+    elif "멤버십 해금" not in settle_cs or "콘텐츠 편중 갈등" not in (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8"):
+        fail("headline slice dropped prior cards")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising fandom / later weeks")
+    elif "billRent: 8000" not in (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8"):
+        fail("Week 1 bills were retuned by the headline")
+    else:
+        ok("settlement recap has a screenshot 오늘 헤드라인 from existing facts")
 
 
 def check_save_roundtrip() -> None:

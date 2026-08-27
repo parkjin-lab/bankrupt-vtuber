@@ -29,6 +29,11 @@ namespace BankruptVtuber
         GameObject _endingRoot;
         Text _endingTitle;
         Text _endingBody;
+        Text _headlineTag;
+        Text _headline;
+        Text _clearHeadline;
+        Text _stampHeadline;
+        Text _endingHeadline;
         Text _tileIncome;
         Text _tileBills;
         Text _tileCash;
@@ -193,9 +198,15 @@ namespace BankruptVtuber
 
             var title = UiKit.Label(root, "Title", "정산", 48, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
             UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(36, -16), new Vector2(400, 56));
+            _headlineTag = UiKit.Label(root, "HeadlineTag", "오늘 헤드라인", 18, Palette.Gold, TextAnchor.UpperLeft, FontStyle.Bold);
+            UiKit.Layout(_headlineTag.rectTransform, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(40, -68), new Vector2(0, 22));
+            _headline = UiKit.Label(root, "Headline", "", 32, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
+            UiKit.Layout(_headline.rectTransform, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(40, -90), new Vector2(0, 56));
+            UiKit.Wrap(_headline);
+            _headline.lineSpacing = 1.1f;
 
             var recap = UiKit.Panel(root, "Recap", new Color(0, 0, 0, 0));
-            UiKit.Layout(recap, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(20, -78), new Vector2(0, 210));
+            UiKit.Layout(recap, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(20, -148), new Vector2(0, 190));
             _tileIncome = StudioChrome.RecapTile(recap, "Income", "오늘 수입", Palette.CashGreen, 0f, 0.25f, 0.48f, 0.52f, true);
             _tileBills = StudioChrome.RecapTile(recap, "Bills", "청구", Palette.MoneyRed, 0.25f, 0.50f, 0.48f, 0.52f, false);
             _tileCash = StudioChrome.RecapTile(recap, "Cash", "현금", Palette.CashGreen, 0.50f, 0.75f, 0.48f, 0.52f, true);
@@ -354,8 +365,11 @@ namespace BankruptVtuber
             _endingPortrait = new StudioPortrait(endingCard, new Vector2(0.18f, 0.52f), new Vector2(320, 400), false);
             _endingTitle = UiKit.Label(endingCard, "ETitle", "", 52, Palette.Gold, TextAnchor.UpperLeft, FontStyle.Bold);
             UiKit.Layout(_endingTitle.rectTransform, new Vector2(0.38f, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(12, -36), new Vector2(-40, 72));
+            _endingHeadline = UiKit.Label(endingCard, "EHeadline", "", 22, Palette.Gold, TextAnchor.UpperLeft, FontStyle.Bold);
+            UiKit.Layout(_endingHeadline.rectTransform, new Vector2(0.38f, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(12, -108), new Vector2(-48, 44));
+            UiKit.Wrap(_endingHeadline);
             _endingBody = UiKit.Label(endingCard, "EBody", "", 24, Palette.Pastel, TextAnchor.UpperLeft);
-            UiKit.Layout(_endingBody.rectTransform, new Vector2(0.38f, 0.28f), new Vector2(1, 0.72f), new Vector2(0, 1), new Vector2(12, 0), new Vector2(-48, 0));
+            UiKit.Layout(_endingBody.rectTransform, new Vector2(0.38f, 0.22f), new Vector2(1, 0.62f), new Vector2(0, 1), new Vector2(12, 0), new Vector2(-48, 0));
             _endingBody.horizontalOverflow = HorizontalWrapMode.Wrap;
             _endingBody.lineSpacing = 1.25f;
             _retire = UiKit.Button(endingCard, "Retire", "후배에게 메인 양도", OnRetire, Palette.Gold, Palette.Ink);
@@ -377,6 +391,9 @@ namespace BankruptVtuber
             _clearTitle = UiKit.Label(_clearRoot.transform, "ClearTitle", "1주차 생존", 72, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_clearTitle.rectTransform, new Vector2(0.04f, 1), new Vector2(0.96f, 1), new Vector2(0.5f, 1), new Vector2(0, -100), new Vector2(0, 90));
             UiKit.Wrap(_clearTitle);
+            _clearHeadline = UiKit.Label(_clearRoot.transform, "ClearHeadline", "", 28, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_clearHeadline.rectTransform, new Vector2(0.06f, 1), new Vector2(0.94f, 1), new Vector2(0.5f, 1), new Vector2(0, -188), new Vector2(0, 48));
+            UiKit.Wrap(_clearHeadline);
             _clearPortrait = new StudioPortrait(_clearRoot.transform, new Vector2(0.5f, 0.46f), new Vector2(340, 420), false);
             var snap = UiKit.Panel(_clearRoot.transform, "ClearSnap", Color.white);
             UiKit.Layout(snap, new Vector2(0.08f, 0), new Vector2(0.92f, 0), new Vector2(0.5f, 0), new Vector2(0, 156), new Vector2(0, 88));
@@ -403,6 +420,9 @@ namespace BankruptVtuber
             _stampEpitaph = UiKit.Label(_stampRoot.transform, "StampEpitaph", "", 22, Palette.Pastel, TextAnchor.MiddleCenter);
             UiKit.Layout(_stampEpitaph.rectTransform, new Vector2(0.58f, 0.28f), new Vector2(0.58f, 0.28f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760, 64));
             _stampEpitaph.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _stampHeadline = UiKit.Label(_stampRoot.transform, "StampHeadline", "", 24, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_stampHeadline.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 132), new Vector2(720, 44));
+            UiKit.Wrap(_stampHeadline);
             var stampRestart = UiKit.Button(_stampRoot.transform, "StampRestart", "처음부터", () => GameManager.Instance.RestartRun(), Palette.Ink, Palette.Pastel);
             UiKit.Layout(stampRestart.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 48), new Vector2(360, 72));
             _stampRoot.SetActive(false);
@@ -745,6 +765,7 @@ namespace BankruptVtuber
                 $"\n\n현금 {EconomyRules.FormatWon(run.cash)}     부채 {EconomyRules.FormatWon(run.debt)}     멘탈 {run.mental}";
 
             run.lastOutcome = EconomyRules.Evaluate(run, b, w2, w3, w4, w5);
+            ApplyHeadline(run);
             bool offerClip = Week2Rules.CanOfferClip(run, w2);
             bool offerFound = Week4Rules.CanFoundAgency(run, w4);
             bool offerScout = Week4Rules.CanScoutJunior(run, w4);
@@ -1587,6 +1608,8 @@ namespace BankruptVtuber
                 };
                 _clearCash.text = "현금  " + EconomyRules.FormatWon(run.cash);
                 _clearDebt.text = "부채  " + EconomyRules.FormatWon(run.debt);
+                if (_clearHeadline != null)
+                    _clearHeadline.text = DayHeadline.Build(run);
                 _clearPortrait?.PoseEnding(EndingKind.SoloLegend);
             }
             if ((bankrupt || burnout) && _stampRoot != null && _stampRoot.activeSelf)
@@ -1604,6 +1627,8 @@ namespace BankruptVtuber
                 _stampEpitaph.text = burn
                     ? Week5Rules.EndingBody(EndingKind.Burnout)
                     : $"부채가 {EconomyRules.FormatWon(cap)}을 넘었습니다. 채널은 여기서 멈춥니다.";
+                if (_stampHeadline != null)
+                    _stampHeadline.text = DayHeadline.Build(run);
                 _stampPortrait?.PoseEnding(burn ? EndingKind.Burnout : EndingKind.Bankrupt);
             }
             if (clear || bankrupt || burnout)
@@ -1626,6 +1651,21 @@ namespace BankruptVtuber
             }
         }
 
+        void ApplyHeadline(GameRunState run)
+        {
+            string line = DayHeadline.Build(run);
+            if (_headline != null)
+                _headline.text = line;
+            if (_headlineTag != null)
+                _headlineTag.gameObject.SetActive(!string.IsNullOrEmpty(line));
+            if (_clearHeadline != null)
+                _clearHeadline.text = line;
+            if (_stampHeadline != null)
+                _stampHeadline.text = line;
+            if (_endingHeadline != null)
+                _endingHeadline.text = line;
+        }
+
         void ApplyEndingOverlay(GameRunState run, Week5Balance w5)
         {
             bool show = ShouldShowEnding(run, w5);
@@ -1641,6 +1681,8 @@ namespace BankruptVtuber
                 : run.lastEnding;
             _endingTitle.text = Week5Rules.EndingTitle(kind);
             _endingBody.text = Week5Rules.EndingBody(kind);
+            if (_endingHeadline != null)
+                _endingHeadline.text = DayHeadline.Build(run);
             _endingPortrait?.PoseEnding(kind);
             bool offerRetire = Week5Rules.CanOfferRetire(run, w5) && !run.retirePicked;
             _retire.gameObject.SetActive(offerRetire);
