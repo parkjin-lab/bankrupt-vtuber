@@ -128,6 +128,8 @@ namespace BankruptVtuber
         int _hudMental = 100;
         bool _mentalWasTired;
         Text _showTitle;
+        Text _showChip;
+        Image _showChipImg;
         ContentShowLook _look = ContentShowLook.For(StreamContentType.None);
         float _bedDuck;
         bool _threatGear;
@@ -771,7 +773,14 @@ namespace BankruptVtuber
             _rival.transform.parent.gameObject.SetActive(false);
 
             _showTitle = UiKit.Label(root, "ShowTitle", "", 34, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UiKit.Layout(_showTitle.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -212), new Vector2(420, 44));
+            UiKit.Layout(_showTitle.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(164, -212), new Vector2(280, 44));
+            var showChip = UiKit.Panel(root, "ShowChip", Palette.Pink);
+            UiKit.Layout(showChip, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -214), new Vector2(128, 36));
+            _showChipImg = showChip.GetComponent<Image>();
+            if (_showChipImg != null)
+                _showChipImg.raycastTarget = false;
+            _showChip = UiKit.Label(showChip, "T", "", 20, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Stretch(_showChip.rectTransform);
             var billChip = UiKit.Panel(root, "BillChip", new Color(0.55f, 0.08f, 0.16f, 0.94f));
             UiKit.Layout(billChip, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(460, -214), new Vector2(240, 40));
             _billChipImg = billChip.GetComponent<Image>();
@@ -2280,6 +2289,7 @@ namespace BankruptVtuber
                     : look.Type == StreamContentType.Reaction ? Palette.PastelDim
                     : look.Card;
             }
+            PaintShowChip(look.Type);
             UiKit.EnsureCamera(look.Wash);
             _avatar?.ApplyShow(look);
             if (look.Type == StreamContentType.Talk)
@@ -2297,6 +2307,35 @@ namespace BankruptVtuber
                 _bed.Play();
             }
         }
+
+        void PaintShowChip(StreamContentType type)
+        {
+            string name = ShowChipName(type);
+            if (_showChip != null)
+                _showChip.text = name;
+            if (_showChipImg != null)
+                _showChipImg.color = ShowChipAccent(type);
+            if (_showChip != null && _showChip.transform.parent != null)
+                _showChip.transform.parent.gameObject.SetActive(name.Length > 0);
+        }
+
+        static string ShowChipName(StreamContentType type) => type switch
+        {
+            StreamContentType.Talk => "토크",
+            StreamContentType.Game => "게임",
+            StreamContentType.Song => "노래",
+            StreamContentType.Reaction => "리액션",
+            _ => ""
+        };
+
+        static Color ShowChipAccent(StreamContentType type) => type switch
+        {
+            StreamContentType.Talk => Palette.Pink,
+            StreamContentType.Game => Palette.Troll,
+            StreamContentType.Song => Palette.Gold,
+            StreamContentType.Reaction => Palette.PastelDim,
+            _ => Palette.Muted
+        };
 
         void ApplyThreatShow(GameRunState run)
         {

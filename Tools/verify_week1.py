@@ -1406,6 +1406,7 @@ def check_project() -> None:
     check_last_day_banner()
     check_title_continue_preview()
     check_start_pulse()
+    check_show_chip()
 
 
 def check_content_types() -> None:
@@ -4163,6 +4164,61 @@ def check_start_pulse() -> None:
         fail("start pulse moved Unity off 6000.5.9f1")
     else:
         ok("Title 새 방송 시작 pulses 1.03 with a 시작 chip; wipe / continue stay")
+
+
+def check_show_chip() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    look_cs = (ROOT / "Assets/Scripts/Presentation/ContentShowLook.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Economy/ContentRules.cs").read_text(encoding="utf-8")
+    content_asset = (ROOT / "Assets/Resources/Balance/ContentBalance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    paint = live_cs.split("void PaintShowChip", 1)[-1].split("void ApplyThreatShow", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    accent = week_cs.split("static Color ContentPickAccent", 1)[-1].split("void AddContentButton", 1)[0]
+
+    if "ShowChip" not in live_cs or "ShowChipName" not in live_cs or "ShowChipAccent" not in live_cs:
+        fail("live stream has no tonight show chip")
+    elif '"토크"' not in paint or '"게임"' not in paint or '"노래"' not in paint or '"리액션"' not in paint:
+        fail("show chip does not name 토크/게임/노래/리액션")
+    elif "Palette.Pink" not in paint or "Palette.Troll" not in paint or "Palette.Gold" not in paint or "Palette.PastelDim" not in paint:
+        fail("show chip is not the content card accent colors")
+    elif "Palette.Pink" not in accent or "Palette.Troll" not in accent or "Palette.Gold" not in accent or "Palette.PastelDim" not in accent:
+        fail("show chip drifted from WeekStart card accents")
+    elif "PaintShowChip(look.Type)" not in apply:
+        fail("show chip is not keyed off tonight's pick")
+    elif "look.OverlayTitle" not in apply or "look.Wash" not in apply or "look.BedVolume" not in apply:
+        fail("show chip changed the existing content skins")
+    elif "_avatar?.ApplyShow(look)" not in apply:
+        fail("show chip dropped the webcam show skin")
+    elif "오늘: 토크" not in look_cs or "오늘: 게임" not in look_cs or "오늘: 노래" not in look_cs or "오늘: 리액션" not in look_cs:
+        fail("show chip dropped 오늘: overlay titles")
+    elif "reactionChatSpawnMul" in look_cs or "talkIncomeMultiplier =" in apply:
+        fail("show chip retuned content modifiers")
+    elif "talkIncomeMultiplier: 1" not in content_asset or "songMentalCost: 8" not in content_asset:
+        fail("show chip retuned ContentBalance")
+    elif "IncomeMul" not in rules_cs or "MentalCost" not in rules_cs:
+        fail("show chip dropped ContentRules tuning")
+    elif "ContentPickAccent" not in week_cs or "편하게 잡담" not in week_cs:
+        fail("show chip dropped WeekStart content cards")
+    elif "TickStartPulse" not in title_cs or "StartChip" not in title_cs:
+        fail("show chip dropped 새 방송 시작 pulse")
+    elif "TickViewerChipPop" not in live_cs or "BillFill" not in live_cs or "const float LaneHit = -210f" not in live_cs:
+        fail("show chip dropped viewer pop, 청구 fill, or the hit bar")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("show chip broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising show chip / later weeks")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("show chip retuned Week 1 cash or bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("show chip dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("show chip moved Unity off 6000.5.9f1")
+    else:
+        ok("live show chip names 토크/게임/노래/리액션 in card accent; skins stay")
 
 
 def check_save_roundtrip() -> None:
