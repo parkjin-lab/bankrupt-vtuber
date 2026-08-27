@@ -1354,6 +1354,7 @@ def check_project() -> None:
     check_bill_cover_slam()
     check_yesterday_headline()
     check_last_day_banner()
+    check_title_continue_preview()
 
 
 def check_content_types() -> None:
@@ -2568,6 +2569,36 @@ def check_last_day_banner() -> None:
         fail("last-day banner retuned Week 1 clear or bills")
     else:
         ok("day 5/10/15/20/25 WeekStart shows 마지막 날; other mornings stay quiet")
+
+
+def check_title_continue_preview() -> None:
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+
+    if "이어하기 " not in title_cs or "일차" not in title_cs:
+        fail("Title continue does not show 이어하기 n일차")
+    elif "현금 " not in title_cs or "부채 " not in title_cs or "FormatWon" not in title_cs:
+        fail("Title continue does not show saved cash/debt")
+    elif "lastHeadline" not in title_cs or '"어제: "' not in title_cs:
+        fail("Title continue dropped lastHeadline when present")
+    elif "TryLoad" not in title_cs or "HasValidSave" not in title_cs:
+        fail("Title continue does not peek the existing save")
+    elif "새 방송 시작" not in title_cs or "StartNewRun" not in title_cs or "RunSave.Delete" not in gm:
+        fail("새 방송 시작 no longer wipes the save")
+    elif "이어서 하기" not in title_cs or "ContinueRun" not in title_cs:
+        fail("Title lost 이어서 하기")
+    elif "UnlockUiInputForStream" not in title_cs or "StreamSafeArea.Attach" not in title_cs:
+        fail("Title continue dropped EventSystem unlock or StreamSafeArea")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("Title continue broke pads, 입력됨, or added timeScale")
+    elif "마지막 날" not in week_cs or "YesterdayLine" not in week_cs:
+        fail("Title continue dropped last-day banner or 어제 headline")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising later weeks / fandom")
+    else:
+        ok("Title with a save shows 이어하기 n일차 + 현금/부채")
 
 
 def check_save_roundtrip() -> None:

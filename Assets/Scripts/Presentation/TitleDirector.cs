@@ -15,6 +15,9 @@ namespace BankruptVtuber
         RectTransform _billStack;
         Button _start;
         Button _continue;
+        Text _continueDay;
+        Text _continueMoney;
+        Text _continueHead;
         Button _how;
         Text _hint;
         StudioPortrait _portrait;
@@ -87,7 +90,19 @@ namespace BankruptVtuber
             _start = UiKit.Button(titleParent, "Start", "방송 시작", OnStartBroadcast, Palette.PinkDeep, Color.white);
             StyleMenuButton(_start, new Vector2(56, -40), new Vector2(420, 78), Palette.PinkDeep);
             _continue = UiKit.Button(titleParent, "Continue", "이어서 하기", OnContinue, Palette.Gold, Palette.Ink);
-            StyleMenuButton(_continue, new Vector2(56, -132), new Vector2(420, 78), Palette.Gold);
+            StyleMenuButton(_continue, new Vector2(56, -154), new Vector2(420, 128), Palette.Gold);
+            _continueDay = _continue.GetComponentInChildren<Text>();
+            if (_continueDay != null)
+            {
+                _continueDay.alignment = TextAnchor.UpperLeft;
+                _continueDay.fontSize = 26;
+                UiKit.Layout(_continueDay.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(18, -10), new Vector2(-28, 34));
+            }
+            _continueMoney = UiKit.Label(_continue.transform, "SaveMoney", "", 18, Palette.Ink, TextAnchor.UpperLeft, FontStyle.Bold);
+            UiKit.Layout(_continueMoney.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(18, -44), new Vector2(-28, 24));
+            _continueHead = UiKit.Label(_continue.transform, "SaveHead", "", 16, Palette.Ink, TextAnchor.UpperLeft, FontStyle.Bold);
+            UiKit.Layout(_continueHead.rectTransform, new Vector2(0, 0), new Vector2(1, 0.42f), new Vector2(0, 0), new Vector2(18, 8), new Vector2(-28, 0));
+            UiKit.Wrap(_continueHead);
             _continue.gameObject.SetActive(false);
             _how = UiKit.Button(titleParent, "HowTo", "조작 설명", OpenHowTo, Palette.StudioHi, Palette.Pastel);
             StyleMenuButton(_how, new Vector2(56, -224), new Vector2(420, 70), Palette.StudioHi);
@@ -174,15 +189,33 @@ namespace BankruptVtuber
 
         void RefreshContinue()
         {
-            _hasSave = RunSave.HasValidSave();
+            var peek = new GameRunState();
+            _hasSave = RunSave.HasValidSave() && RunSave.TryLoad(peek);
             _continue.gameObject.SetActive(_hasSave);
+            if (_hasSave)
+                FillContinue(peek);
             var caption = _start.GetComponentInChildren<Text>();
             if (caption != null)
                 caption.text = _hasSave ? "새 방송 시작" : "방송 시작";
             if (_hint != null)
                 _hint.text = _hasSave ? "Space / Enter  이어서 하기" : "Space / Enter  방송 시작";
             if (_how != null)
-                StyleMenuButton(_how, new Vector2(56, _hasSave ? -224 : -132), new Vector2(420, 70), Palette.StudioHi);
+                StyleMenuButton(_how, new Vector2(56, _hasSave ? -252 : -132), new Vector2(420, 70), Palette.StudioHi);
+        }
+
+        void FillContinue(GameRunState peek)
+        {
+            if (_continueDay != null)
+                _continueDay.text = "이어하기 " + peek.day + "일차";
+            if (_continueMoney != null)
+                _continueMoney.text = "현금 " + EconomyRules.FormatWon(peek.cash) +
+                                      " · 부채 " + EconomyRules.FormatWon(peek.debt);
+            bool hasHead = peek.lastHeadline != null && peek.lastHeadline.Length > 0;
+            if (_continueHead != null)
+            {
+                _continueHead.text = hasHead ? "어제: " + peek.lastHeadline : "";
+                _continueHead.gameObject.SetActive(hasHead);
+            }
         }
 
         void OnContinue()
