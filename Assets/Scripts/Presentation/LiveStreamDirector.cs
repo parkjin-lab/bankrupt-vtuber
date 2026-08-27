@@ -107,6 +107,7 @@ namespace BankruptVtuber
         AudioClip _comboBreakSfx;
         AudioClip _sc;
         AudioClip _comboCue;
+        AudioClip _hypeCue;
         AudioClip _clockTick;
         AudioClip _onAirCue;
         AudioClip _endCutCue;
@@ -228,6 +229,9 @@ namespace BankruptVtuber
             if (_sc == null)
                 _sc = ToneClip("sfx_super", new[] { 523f, 659f, 784f, 1046f }, 0.06f, 0.20f);
             _comboCue = ToneClip("sfx_combo", new[] { 698f, 880f, 1174f }, 0.07f, 0.24f);
+            _hypeCue = Resources.Load<AudioClip>("Audio/sfx_hype");
+            if (_hypeCue == null)
+                _hypeCue = ToneClip("sfx_hype", new[] { 523f, 659f, 784f, 1046f }, 0.07f, 0.24f);
             _clockTick = Resources.Load<AudioClip>("Audio/sfx_clock_tick");
             if (_clockTick == null)
                 _clockTick = ToneClip("sfx_clock", new[] { 1320f }, 0.045f, 0.18f);
@@ -2291,6 +2295,8 @@ namespace BankruptVtuber
         void RefreshHypeShow()
         {
             bool hype = _session != null && _session.HypeActive;
+            if (hype && !_hypeWasOn)
+                PlaySfx(_hypeCue, 0.58f);
             float pulse = Mathf.Abs(Mathf.Sin(Time.time * 8f));
             if (hype)
             {

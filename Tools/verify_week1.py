@@ -1439,6 +1439,7 @@ def check_project() -> None:
     check_clock_tick_sfx()
     check_superchat_sfx()
     check_bill_cover_sfx()
+    check_hype_sfx()
 
 
 def check_content_types() -> None:
@@ -2356,6 +2357,7 @@ def check_hype_wash() -> None:
     balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
     nicks_cs = (ROOT / "Assets/Scripts/Data/ChatNicks.cs").read_text(encoding="utf-8") if (ROOT / "Assets/Scripts/Data/ChatNicks.cs").exists() else ""
 
+    hype = live_cs.split("void RefreshHypeShow", 1)[-1].split("void RefreshMentalShow", 1)[0]
     if "RefreshHypeShow" not in live_cs or "HypeBanner" not in live_cs:
         fail("hype does not eat the screen")
     elif "하이프" not in live_cs or "hypeIncomeMultiplier" not in live_cs:
@@ -2374,8 +2376,12 @@ def check_hype_wash() -> None:
         fail("hype end does not snap back to today's content wash")
     elif "if (hypeActive)" not in rules_cs or "return b.hypeIncomeMultiplier;" not in rules_cs:
         fail("StreamRules.IncomeMultiplier math was retuned")
-    elif "Combo >= 5" not in live_cs or "PlayOneShot" not in live_cs:
+    elif "Combo >= 5" not in live_cs or "PlaySfx(_comboCue" not in live_cs:
         fail("combo-5 SFX was dropped")
+    elif "PlaySfx(_hypeCue" not in hype or "Audio/sfx_hype" not in live_cs:
+        fail("hype start has no cheer sting")
+    elif "hype && !_hypeWasOn" not in hype:
+        fail("hype cheer is not a one-shot on start")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
         fail("hype wash broke pads, 입력됨, or added timeScale")
     elif "StreamSafeArea" not in live_cs or '"Nick"' not in live_cs or "오늘 헤드라인" not in settle_cs:
@@ -5305,6 +5311,55 @@ def check_bill_cover_sfx() -> None:
         fail("bill-cover SFX moved Unity off 6000.5.9f1")
     else:
         ok("청구 커버 one-shot plays cash-register SFX; no second slam; bills stay")
+
+
+def check_hype_sfx() -> None:
+    import wave
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    hype = live_cs.split("void RefreshHypeShow", 1)[-1].split("void RefreshMentalShow", 1)[0]
+    update = live_cs.split("void Update()", 1)[-1].split("if (_session.EventActive)", 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_hype.wav"
+
+    if not path.exists() or path.stat().st_size < 2000:
+        fail("sfx_hype.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.20 or dur > 0.60:
+            fail(f"hype SFX duration {dur:.3f}s is not a short rising cheer")
+            return
+
+    if "Audio/sfx_hype" not in live_cs or "PlaySfx(_hypeCue" not in hype:
+        fail("hype start does not play Audio/sfx_hype")
+    elif "hype && !_hypeWasOn" not in hype:
+        fail("hype cheer is not once when hype starts")
+    elif "PlaySfx(_comboCue" not in update or "Combo >= 5" not in update or "_lastCombo < 5" not in update:
+        fail("combo-5 sting was dropped or retuned")
+    elif "hypePerfectCombo: 9" not in balance or "hypeSeconds: 12" not in balance:
+        fail("hype SFX retuned trigger or duration")
+    elif "hypeIncomeMultiplier: 2.5" not in balance or "return b.hypeIncomeMultiplier;" not in rules_cs:
+        fail("hype SFX retuned 2.5x payout")
+    elif "interval *= 0.5f" not in (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8"):
+        fail("hype SFX dropped chat 2x spawn")
+    elif "Audio/sfx_bill_cover" not in live_cs or "Audio/sfx_superchat" not in live_cs:
+        fail("hype SFX dropped bill-cover or superchat chime")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("hype SFX retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("hype SFX broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising hype SFX / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("hype SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("hype SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("hype start plays rising cheer once; combo-5 sting / 12s / 2.5x stay")
 
 
 def check_save_roundtrip() -> None:
