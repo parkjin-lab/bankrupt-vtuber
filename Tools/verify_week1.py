@@ -1457,6 +1457,7 @@ def check_project() -> None:
     check_ending_backdrops()
     check_letter_card()
     check_pad_sfx()
+    check_golive_sfx()
 
 
 def check_content_types() -> None:
@@ -6099,6 +6100,72 @@ def check_pad_sfx() -> None:
         fail("pad click moved Unity off 6000.5.9f1")
     else:
         ok("kind / superchat pads play sfx_pad once on press; judge / chime stay")
+
+
+def check_golive_sfx() -> None:
+    import wave
+
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    leave = week_cs.split("void LeaveMorning", 1)[-1].split("IEnumerator FadeMorningBgmThen", 1)[0]
+    fade = week_cs.split("IEnumerator FadeMorningBgmThen", 1)[-1]
+    confirm = week_cs.split("void Update()", 1)[-1].split("void TickGoLivePulse", 1)[0]
+    click = week_cs.split("_goLive = UiKit.Button", 1)[-1].split("_conflictRoot", 1)[0]
+    pulse = week_cs.split("void TickGoLivePulse", 1)[-1].split("void Build()", 1)[0]
+    start_live = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_golive.wav"
+    if not path.exists() or path.stat().st_size < 2000:
+        fail("sfx_golive.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("sfx_golive.wav is not a readable PCM confirm")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.12 or dur > 0.45:
+            fail(f"sfx_golive.wav duration {dur:.3f}s is not a short confirm/whoosh")
+            return
+
+    if "Audio/sfx_golive" not in week_cs or "PlayGoLiveSfx();" not in leave:
+        fail("WeekStart does not play Audio/sfx_golive on leave")
+    elif leave.count("PlayGoLiveSfx();") != 1:
+        fail("GO LIVE confirm can fire more than once")
+    elif "LeaveMorning" not in confirm or "GameManager.Instance.GoLive()" not in confirm:
+        fail("Space GO LIVE no longer leaves morning")
+    elif "LeaveMorning" not in click or "() => GameManager.Instance.GoLive()" not in click:
+        fail("방송 켜기 click no longer leaves morning")
+    elif "콘서트 방송" not in week_cs or "ConcertStreamReady" not in week_cs:
+        fail("GO LIVE SFX dropped concert 방송 caption")
+    elif "const float fade = 0.2f" not in fade or "Audio/bgm_morning" not in week_cs:
+        fail("GO LIVE SFX dropped morning BGM fade")
+    elif "TickGoLivePulse" not in week_cs or "LivePip" not in week_cs or "1f + 0.04f" not in pulse:
+        fail("GO LIVE SFX dropped pulse / LIVE pip")
+    elif '"방송 켜기  (Space)"' not in week_cs:
+        fail("GO LIVE caption is no longer 방송 켜기")
+    elif "Audio/sfx_onair" not in live_cs or "PlaySfx(_onAirCue" not in start_live or "0.6f" not in start_live:
+        fail("GO LIVE SFX replaced the live ON AIR sting")
+    elif "Audio/sfx_golive" in live_cs or "Audio/sfx_golive" in title_cs:
+        fail("GO LIVE confirm leaked onto LiveStream / Title")
+    elif "Audio/sfx_pad" not in live_cs or "PlayPadClick" not in live_cs:
+        fail("GO LIVE SFX dropped pad click")
+    elif "public void GoLive()" not in gm:
+        fail("GO LIVE SFX changed GameManager.GoLive")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("GO LIVE SFX retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("GO LIVE SFX broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising GO LIVE SFX / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("GO LIVE SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("GO LIVE SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("방송 켜기 plays sfx_golive once; ON AIR sting still follows on live")
 
 
 def check_save_roundtrip() -> None:

@@ -45,6 +45,8 @@ namespace BankruptVtuber
         Image _cashImg;
         Text _cashShort;
         AudioSource _morningBgm;
+        AudioSource _sfx;
+        AudioClip _goLiveCue;
         bool _leavingMorning;
 
         struct Bill
@@ -65,6 +67,9 @@ namespace BankruptVtuber
             UiKit.EnsureEventSystem();
             UiKit.UnlockUiInputForStream();
             Build();
+            _sfx = gameObject.AddComponent<AudioSource>();
+            _sfx.playOnAwake = false;
+            _goLiveCue = Resources.Load<AudioClip>("Audio/sfx_golive");
             StartMorningBgm();
         }
 
@@ -880,7 +885,14 @@ namespace BankruptVtuber
             if (_leavingMorning)
                 return;
             _leavingMorning = true;
+            PlayGoLiveSfx();
             StartCoroutine(FadeMorningBgmThen(next));
+        }
+
+        void PlayGoLiveSfx()
+        {
+            if (_sfx != null && _goLiveCue != null)
+                _sfx.PlayOneShot(_goLiveCue, 0.48f);
         }
 
         IEnumerator FadeMorningBgmThen(System.Action next)
