@@ -129,8 +129,16 @@ def check_project() -> None:
         fail("stream lock is never unlocked for later Submit screens")
     elif "LockUiInputForStream" not in live_awake or live_awake.find("EnsureEventSystem") > live_awake.find("LockUiInputForStream"):
         fail("LiveStreamDirector.Awake does not lock UI input after EnsureEventSystem")
+    elif "DontDestroyOnLoad" not in uikit_cs.split("EnsureEventSystem", 1)[-1].split("LockUiInputForStream", 1)[0]:
+        fail("EventSystem dies with LiveStream so later screens lose clicks")
     else:
-        ok("LiveStream keeps EventSystem clicks and stops navigation from eating keys")
+        title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+        week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+        settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+        if "UnlockUiInputForStream" not in title_cs or "UnlockUiInputForStream" not in week_cs or "UnlockUiInputForStream" not in settle_cs:
+            fail("Title / WeekStart / Settlement do not unlock stream input so buttons click")
+        else:
+            ok("LiveStream keeps EventSystem clicks and stops navigation from eating keys")
 
     pad_cs = (ROOT / "Assets/Scripts/Input/StreamPadButton.cs").read_text(encoding="utf-8") if (ROOT / "Assets/Scripts/Input/StreamPadButton.cs").exists() else ""
     relay_cs = (ROOT / "Assets/Scripts/Input/StreamPointerRelay.cs").read_text(encoding="utf-8") if (ROOT / "Assets/Scripts/Input/StreamPointerRelay.cs").exists() else ""
@@ -2514,6 +2522,10 @@ def check_yesterday_headline() -> None:
         fail("yesterday headline retuned Week 1 bills")
     elif "lastHeadline == \"청구 커버 · 시청 32\"" not in save_cs:
         fail("dummy save/load dropped lastHeadline")
+    elif "data.lastHeadline ?? \"\"" not in save_cs:
+        fail("old saves without lastHeadline cannot load")
+    elif "lastHeadline" in save_cs.split("static bool IsValid", 1)[-1].split("static RunSaveData Capture", 1)[0]:
+        fail("IsValid rejects old saves that omit lastHeadline")
     else:
         ok("Day 2+ WeekStart shows yesterday's headline; Day 1 and restart stay empty")
 

@@ -219,11 +219,14 @@ namespace BankruptVtuber
 
         public static void EnsureEventSystem()
         {
-            if (UnityEngine.Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() != null)
-                return;
-            var go = new GameObject("EventSystem");
-            go.AddComponent<UnityEngine.EventSystems.EventSystem>();
-            go.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+            var es = UnityEngine.Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>();
+            if (es == null)
+            {
+                var go = new GameObject("EventSystem");
+                es = go.AddComponent<UnityEngine.EventSystems.EventSystem>();
+                go.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+            }
+            UnityEngine.Object.DontDestroyOnLoad(es.gameObject);
         }
 
         static UnityEngine.EventSystems.EventSystem _lockedEs;
@@ -276,15 +279,26 @@ namespace BankruptVtuber
         {
             if (!_streamInputLocked)
                 return;
-            if (_lockedEs != null)
-                _lockedEs.sendNavigationEvents = _lockedNav;
-            if (_lockedModule != null)
+            var es = _lockedEs;
+            if (es == null)
+                es = UnityEngine.EventSystems.EventSystem.current;
+            if (es == null)
+                es = UnityEngine.Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>();
+            var module = _lockedModule;
+            if (module == null && es != null)
+                module = es.GetComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+            if (es != null)
             {
-                _lockedModule.horizontalAxis = _lockedHorizontal;
-                _lockedModule.verticalAxis = _lockedVertical;
-                _lockedModule.submitButton = _lockedSubmit;
-                _lockedModule.cancelButton = _lockedCancel;
-                _lockedModule.enabled = true;
+                es.sendNavigationEvents = _lockedNav;
+                es.SetSelectedGameObject(null);
+            }
+            if (module != null)
+            {
+                module.horizontalAxis = _lockedHorizontal;
+                module.verticalAxis = _lockedVertical;
+                module.submitButton = _lockedSubmit;
+                module.cancelButton = _lockedCancel;
+                module.enabled = true;
             }
             _lockedEs = null;
             _lockedModule = null;

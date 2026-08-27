@@ -49,6 +49,7 @@ namespace BankruptVtuber
         {
             UiKit.EnsureCamera(Palette.Studio);
             UiKit.EnsureEventSystem();
+            UiKit.UnlockUiInputForStream();
             Build();
         }
 
