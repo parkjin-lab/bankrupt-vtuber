@@ -1469,6 +1469,7 @@ def check_project() -> None:
     check_golive_sfx()
     check_nextday_sfx()
     check_title_sfx()
+    check_pick_sfx()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -6442,6 +6443,76 @@ def check_title_sfx() -> None:
         fail("title SFX moved Unity off 6000.5.9f1")
     else:
         ok("title lobby plays sfx_title once on leave; pulse / wipe / fade stay")
+
+
+def check_pick_sfx() -> None:
+    import wave
+
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    content_asset = (ROOT / "Assets/Resources/Balance/ContentBalance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    pick = week_cs.split("void OnPickContent", 1)[-1].split("static void StyleConflictCard", 1)[0]
+    cards = week_cs.split("void AddContentButton", 1)[-1].split("void OnPickContent", 1)[0]
+    leave = week_cs.split("void LeaveMorning", 1)[-1].split("void PlayGoLiveSfx", 1)[0]
+    play = week_cs.split("void PlayPickSfx", 1)[-1].split("IEnumerator FadeMorningBgmThen", 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_pick.wav"
+
+    if not path.exists() or path.stat().st_size < 2000:
+        fail("sfx_pick.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("sfx_pick.wav is not a readable PCM confirm")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.10 or dur > 0.36:
+            fail(f"sfx_pick.wav duration {dur:.3f}s is not a short pick confirm")
+            return
+
+    if "Audio/sfx_pick" not in week_cs or "PlayPickSfx" not in week_cs:
+        fail("WeekStart does not load / play Audio/sfx_pick")
+    elif "PlayPickSfx();" not in pick or pick.count("PlayPickSfx();") != 1:
+        fail("content pick confirm is not a single shot on choose")
+    elif "ContentRules.Pick" not in pick or "gm.SaveRun()" not in pick:
+        fail("content pick SFX changed confirm flow")
+    elif play.count("PlayOneShot") != 1:
+        fail("content pick confirm can fire more than one shot")
+    elif "PlayPickSfx" in leave or "PlayPickSfx" in cards:
+        fail("content pick SFX plays on GO LIVE or card build")
+    elif "ContentPickIcon" not in week_cs or "ArtSprites.ForContent" not in week_cs:
+        fail("content pick SFX dropped show icons")
+    elif "ContentPickAccent" not in week_cs or "Palette.Pink" not in week_cs or "Palette.Gold" not in week_cs:
+        fail("content pick SFX dropped accent colors")
+    elif "편하게 잡담" not in week_cs or "같이 깨자" not in week_cs or "고음 승부" not in week_cs or "같이 보자" not in week_cs:
+        fail("content pick SFX dropped Korean vibe lines")
+    elif "talkIncomeMultiplier: 1" not in content_asset or "gameIncomeMultiplier: 1.15" not in content_asset:
+        fail("content pick SFX retuned income multipliers")
+    elif "songMentalCost: 8" not in content_asset or "talkMentalCost: 6" not in content_asset:
+        fail("content pick SFX retuned mental costs")
+    elif "Audio/sfx_pick" in title_cs or "Audio/sfx_pick" in live_cs or "Audio/sfx_pick" in settle_cs:
+        fail("content pick confirm leaked onto Title / LiveStream / Settlement")
+    elif "Audio/sfx_title" not in title_cs or "PlayTitleSfx" not in title_cs:
+        fail("content pick SFX dropped title leave confirm")
+    elif "Audio/sfx_golive" not in week_cs or "PlayGoLiveSfx" not in week_cs:
+        fail("content pick SFX dropped GO LIVE confirm")
+    elif "Audio/sfx_nextday" not in settle_cs or "PlayNextDaySfx" not in settle_cs:
+        fail("content pick SFX dropped 다음날 confirm")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("content pick SFX retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("content pick SFX broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising content pick SFX / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("content pick SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("content pick SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("content pick plays sfx_pick once; icons / accents / multipliers stay")
 
 
 def check_mental_sfx() -> None:

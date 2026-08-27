@@ -47,6 +47,7 @@ namespace BankruptVtuber
         AudioSource _morningBgm;
         AudioSource _sfx;
         AudioClip _goLiveCue;
+        AudioClip _pickCue;
         bool _leavingMorning;
 
         struct Bill
@@ -70,6 +71,7 @@ namespace BankruptVtuber
             _sfx = gameObject.AddComponent<AudioSource>();
             _sfx.playOnAwake = false;
             _goLiveCue = Resources.Load<AudioClip>("Audio/sfx_golive");
+            _pickCue = Resources.Load<AudioClip>("Audio/sfx_pick");
             StartMorningBgm();
         }
 
@@ -548,6 +550,7 @@ namespace BankruptVtuber
             var gm = GameManager.Instance;
             if (gm == null || !ContentRules.Pick(gm.Run, type))
                 return;
+            PlayPickSfx();
             gm.SaveRun();
             _contentRoot.gameObject.SetActive(false);
             RefreshHud();
@@ -893,6 +896,12 @@ namespace BankruptVtuber
         {
             if (_sfx != null && _goLiveCue != null)
                 _sfx.PlayOneShot(_goLiveCue, 0.48f);
+        }
+
+        void PlayPickSfx()
+        {
+            if (_sfx != null && _pickCue != null)
+                _sfx.PlayOneShot(_pickCue, 0.42f);
         }
 
         IEnumerator FadeMorningBgmThen(System.Action next)
