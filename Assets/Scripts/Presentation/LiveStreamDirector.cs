@@ -115,6 +115,7 @@ namespace BankruptVtuber
         AudioClip _endCutCue;
         AudioClip _billCoverCue;
         AudioClip _padClick;
+        AudioClip _mentalCue;
         Image _wash;
         Image _washVeil;
         Image _chatPanel;
@@ -137,6 +138,7 @@ namespace BankruptVtuber
         float _mentalPunch;
         int _hudMental = 100;
         bool _mentalWasTired;
+        bool _mentalWasDanger;
         Text _showTitle;
         Text _showChip;
         Image _showChipImg;
@@ -257,6 +259,9 @@ namespace BankruptVtuber
             _padClick = Resources.Load<AudioClip>("Audio/sfx_pad");
             if (_padClick == null)
                 _padClick = ToneClip("sfx_pad", new[] { 1800f, 900f }, 0.03f, 0.16f);
+            _mentalCue = Resources.Load<AudioClip>("Audio/sfx_mental");
+            if (_mentalCue == null)
+                _mentalCue = ToneClip("sfx_mental", new[] { 220f, 277f, 165f }, 0.10f, 0.18f);
             StreamBindings.OnLanePadPress += PlayPadClick;
         }
 
@@ -2404,6 +2409,8 @@ namespace BankruptVtuber
             _avatar?.SetTired(tired, danger);
             if (_mentalWarnBox != null)
                 _mentalWarnBox.gameObject.SetActive(danger);
+            if (danger && !_mentalWasDanger)
+                PlaySfx(_mentalCue, 0.50f);
             if (_mentalGrain != null)
             {
                 float a = danger ? 0.28f : tired ? 0.10f : 0f;
@@ -2435,6 +2442,7 @@ namespace BankruptVtuber
                 UiKit.EnsureCamera(_look.Wash);
             }
             _mentalWasTired = tired;
+            _mentalWasDanger = danger;
         }
 
         static Sprite GrainSprite()

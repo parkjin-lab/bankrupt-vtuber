@@ -1458,6 +1458,7 @@ def check_project() -> None:
     check_letter_card()
     check_pad_sfx()
     check_golive_sfx()
+    check_mental_sfx()
 
 
 def check_content_types() -> None:
@@ -6166,6 +6167,74 @@ def check_golive_sfx() -> None:
         fail("GO LIVE SFX moved Unity off 6000.5.9f1")
     else:
         ok("방송 켜기 plays sfx_golive once; ON AIR sting still follows on live")
+
+
+def check_mental_sfx() -> None:
+    import wave
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    mental = live_cs.split("void RefreshMentalShow", 1)[-1].split("static Sprite GrainSprite", 1)[0]
+    judge = live_cs.split("if (_session.LastJudgement.HasValue", 1)[-1].split("SyncNotes();", 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_mental.wav"
+    if not path.exists() or path.stat().st_size < 2000:
+        fail("sfx_mental.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("sfx_mental.wav is not a readable PCM sting")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.15 or dur > 0.50:
+            fail(f"sfx_mental.wav duration {dur:.3f}s is not a short uneasy sting")
+            return
+
+    if "Audio/sfx_mental" not in live_cs or "PlaySfx(_mentalCue" not in mental:
+        fail("LiveStream does not play Audio/sfx_mental on mental danger")
+    elif "_mentalWasDanger" not in mental or "danger && !_mentalWasDanger" not in mental:
+        fail("mental danger sting is not edge-triggered once")
+    elif "멘탈 위험" not in live_cs or "m <= 20" not in mental or "m <= 40" not in mental:
+        fail("mental SFX changed danger / tired thresholds")
+    elif "SetTired(tired, danger)" not in mental or "MentalGrain" not in live_cs:
+        fail("mental SFX dropped tired avatar or grain wash")
+    elif "_mentalWarnBox" not in mental or "SetActive(danger)" not in mental:
+        fail("mental SFX dropped the 멘탈 위험 chip")
+    elif "PlaySfx(_mentalCue" in judge:
+        fail("mental sting plays on every judge hit")
+    elif "PlaySfx(_perfect" not in judge or "PlaySfx(_good" not in judge or "PlaySfx(_miss" not in judge:
+        fail("mental SFX dropped Perfect / Good / Miss")
+    elif "Audio/sfx_pad" not in live_cs or "PlayPadClick" not in live_cs:
+        fail("mental SFX dropped pad click")
+    elif "Audio/sfx_golive" not in week_cs or "PlayGoLiveSfx" not in week_cs:
+        fail("mental SFX dropped GO LIVE confirm")
+    elif "Audio/sfx_onair" not in live_cs or "PlaySfx(_onAirCue" not in live_cs:
+        fail("mental SFX dropped ON AIR sting")
+    elif "missStreakMental: 3" not in balance or "missStreakMentalPenalty: 12" not in balance:
+        fail("mental SFX retuned miss-streak mental numbers")
+    elif "totalMissMentalPenalty: 20" not in balance or "forceEndIncomeNumerator: 1" not in balance:
+        fail("mental SFX retuned total-miss / force-end numbers")
+    elif "missStreakMentalPenalty" not in rules_cs or "Mental <= 0" not in session_cs:
+        fail("mental SFX changed miss / force-end rules")
+    elif "forceEndIncomeNumerator" not in eco_cs:
+        fail("mental SFX retuned force-end income math")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("mental SFX retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("mental SFX broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising mental SFX / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("mental SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("mental SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("멘탈 위험 plays sfx_mental once on chip-on; wash / thresholds stay")
 
 
 def check_save_roundtrip() -> None:
