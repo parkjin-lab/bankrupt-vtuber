@@ -144,6 +144,8 @@ namespace BankruptVtuber
         Image _showChipImg;
         Image _showChipIcon;
         ContentShowLook _look = ContentShowLook.For(StreamContentType.None);
+        bool _concertShow;
+        float _bedVolume;
         float _bedDuck;
         bool _threatGear;
         bool _threatNet;
@@ -306,6 +308,7 @@ namespace BankruptVtuber
             {
                 Week5Rules.MarkConcertStarted(gm.Run);
                 _session.EnableConcert(gm.Week5);
+                _concertShow = true;
             }
             _shownViewers = _session.Viewers;
             _incomeMarked = _session.LiveIncome;
@@ -655,7 +658,7 @@ namespace BankruptVtuber
             RefreshMentalShow();
             _bedDuck = Mathf.MoveTowards(_bedDuck, 0f, dt * 1.8f);
             if (_bed != null)
-                _bed.volume = Mathf.Lerp(_look.BedVolume, _look.BedVolume * 0.28f, _bedDuck);
+                _bed.volume = Mathf.Lerp(_bedVolume, _bedVolume * 0.28f, _bedDuck);
             TickThreatFx();
             TickEventAccident(dt);
 
@@ -2555,10 +2558,11 @@ namespace BankruptVtuber
             _avatar?.ApplyShow(look);
             if (_bed != null)
             {
-                var clip = Resources.Load<AudioClip>("Audio/bgm_stream");
+                var clip = Resources.Load<AudioClip>(_concertShow ? "Audio/bgm_concert" : "Audio/bgm_stream");
                 _bed.clip = clip != null ? clip : BedClip(look.Type);
                 _bed.loop = true;
-                _bed.volume = look.BedVolume;
+                _bedVolume = _concertShow ? 0.24f : look.BedVolume;
+                _bed.volume = _bedVolume;
                 _bed.Play();
             }
         }

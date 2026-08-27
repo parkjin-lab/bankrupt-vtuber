@@ -1459,6 +1459,7 @@ def check_project() -> None:
     check_content_icons()
     check_title_bgm()
     check_stream_bgm()
+    check_concert_bgm()
     check_morning_bgm()
     check_settlement_bgm()
     check_result_stings()
@@ -5682,6 +5683,108 @@ def check_stream_bgm() -> None:
         fail("stream bed moved Unity off 6000.5.9f1")
     else:
         ok("LiveStream loops quiet bgm_stream under hits; fades 0.2s on 방송 종료; title stays title-only")
+
+
+def check_concert_bgm() -> None:
+    import math
+    import struct
+    import wave
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    look_cs = (ROOT / "Assets/Scripts/Presentation/ContentShowLook.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    w5r_cs = (ROOT / "Assets/Scripts/Economy/Week5Rules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    path = ROOT / "Assets/Resources/Audio/bgm_concert.wav"
+    stream_path = ROOT / "Assets/Resources/Audio/bgm_stream.wav"
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    show = live_cs.split("void ShowEndCut", 1)[-1].split("void Build", 1)[0]
+    fade = live_cs.split("IEnumerator FadeStreamBed", 1)[-1].split("void Build", 1)[0]
+    live_concert = live_cs.split('"ConcertCard"', 1)[-1].split('"CoverSlam"', 1)[0]
+
+    if not path.exists() or path.stat().st_size < 20000:
+        fail("bgm_concert.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("bgm_concert.wav is not a readable PCM loop")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 4.0 or dur > 16.0:
+            fail(f"bgm_concert.wav duration {dur:.3f}s is not a short looping concert bed")
+            return
+        concert = struct.unpack("<" + "h" * w.getnframes(), w.readframes(w.getnframes()))
+    with wave.open(str(stream_path), "rb") as w:
+        stream = struct.unpack("<" + "h" * w.getnframes(), w.readframes(w.getnframes()))
+
+    def rms(samples):
+        return math.sqrt(sum(s * s for s in samples) / len(samples))
+
+    def brightness(samples):
+        return math.sqrt(sum((samples[i] - samples[i - 1]) ** 2 for i in range(1, len(samples))) / (len(samples) - 1))
+
+    if rms(concert) <= rms(stream) * 1.08:
+        fail("concert bed is not louder than bgm_stream")
+        return
+    if brightness(concert) <= brightness(stream) * 2.0:
+        fail("concert bed is not brighter than bgm_stream")
+        return
+
+    if "ConcertStreamReady" not in start or "EnableConcert" not in start or "_concertShow = true" not in start:
+        fail("concert bed is not armed for the Week 5 concert live")
+    elif "Audio/bgm_concert" not in apply or "Audio/bgm_stream" not in apply or "_bed.Play()" not in apply:
+        fail("LiveStream does not pick bgm_concert vs bgm_stream on the show bed")
+    elif "_concertShow ? \"Audio/bgm_concert\" : \"Audio/bgm_stream\"" not in apply:
+        fail("concert bed is not limited to the concert live")
+    elif "ConcertActive" in apply:
+        fail("concert bed is gated on the performance QTE, not the whole show")
+    elif "0.24f" not in apply or "look.BedVolume" not in apply:
+        fail("concert bed is not louder than regular stream BedVolume")
+    elif "0.16f" not in look_cs or "0.14f" not in look_cs or "0.15f" not in look_cs or "0.11f" not in look_cs:
+        fail("concert bed retuned regular content BedVolume")
+    elif "_bedVolume * 0.28f" not in live_cs:
+        fail("concert bed dropped SFX ducking")
+    elif "FadeStreamBed" not in show or "const float fade = 0.2f" not in fade or "_bed.Stop()" not in fade:
+        fail("concert bed does not fade ~0.2s on 방송 종료")
+    elif "Audio/bgm_concert" in title_cs or "Audio/bgm_concert" in week_cs or "Audio/bgm_concert" in settle_cs:
+        fail("concert bed leaked onto Title / WeekStart / Settlement")
+    elif "Audio/bgm_title" not in title_cs or "Audio/bgm_title" in live_cs:
+        fail("title BGM is no longer title-only")
+    elif "Audio/bgm_morning" not in week_cs or "Audio/bgm_morning" in live_cs:
+        fail("morning BGM is no longer WeekStart-only")
+    elif "Audio/bgm_settlement" not in settle_cs or "Audio/bgm_settlement" in live_cs:
+        fail("settlement BGM is no longer Settlement-only")
+    elif "ArtSprites.ConcertStage" not in live_concert or 'ConcertStage = "Art/concert_stage"' not in art_cs:
+        fail("concert bed dropped concert stage art")
+    elif "Audio/sfx_perfect" not in live_cs or "Audio/sfx_good" not in live_cs or "Audio/sfx_miss" not in live_cs:
+        fail("concert bed dropped judge SFX")
+    elif "Audio/sfx_superchat" not in live_cs or "Audio/sfx_hype" not in live_cs:
+        fail("concert bed dropped superchat / hype SFX")
+    elif "ShowEndCut" in debug_cs or "Audio/bgm_concert" in debug_cs:
+        fail("F10 skip is no longer mute-safe / direct to settlement")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset or "concertSuccessMultiplier: 1.3" not in w5_asset:
+        fail("concert bed retuned concert cost / payout / 1.3x")
+    elif "concertUnlockCash: 150000" not in w5_asset or "CanBookConcert" not in w5r_cs:
+        fail("concert bed changed concert unlock routing")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("concert bed retuned Week 1 economy / hype")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("concert bed broke pads, 입력됨, or added timeScale")
+    elif "Week5" in title_cs or "콘서트" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising concert bed / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("concert bed dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("concert bed moved Unity off 6000.5.9f1")
+    else:
+        ok("concert live loops brighter bgm_concert; regular live keeps bgm_stream; fades 0.2s on 방송 종료")
 
 
 def check_morning_bgm() -> None:
