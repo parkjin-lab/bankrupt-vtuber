@@ -1408,6 +1408,7 @@ def check_project() -> None:
     check_start_pulse()
     check_continue_pulse()
     check_show_chip()
+    check_settle_show_line()
 
 
 def check_content_types() -> None:
@@ -4277,6 +4278,62 @@ def check_show_chip() -> None:
         fail("show chip moved Unity off 6000.5.9f1")
     else:
         ok("live show chip names 토크/게임/노래/리액션 in card accent; skins stay")
+
+
+def check_settle_show_line() -> None:
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    head_cs = (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    content_asset = (ROOT / "Assets/Resources/Balance/ContentBalance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    paint = settle_cs.split("void PaintShowLine", 1)[-1].split("void ApplyEndingOverlay", 1)[0]
+    head = settle_cs.split("void ApplyHeadline", 1)[-1].split("void PaintShowLine", 1)[0]
+    accent = week_cs.split("static Color ContentPickAccent", 1)[-1].split("void AddContentButton", 1)[0]
+
+    if "ShowLine" not in settle_cs or "PaintShowLine" not in settle_cs:
+        fail("settlement has no tonight content line")
+    elif '"오늘 토크"' not in paint or '"오늘 게임"' not in paint or '"오늘 노래"' not in paint or '"오늘 리액션"' not in paint:
+        fail("settlement line does not name 오늘 토크/게임/노래/리액션")
+    elif "Palette.Pink" not in paint or "Palette.Troll" not in paint or "Palette.Gold" not in paint or "Palette.PastelDim" not in paint:
+        fail("settlement line is not the content card accent colors")
+    elif "Palette.Pink" not in accent or "Palette.Troll" not in accent:
+        fail("settlement line drifted from WeekStart card accents")
+    elif "contentPicked" not in paint or "HasPick" not in paint:
+        fail("settlement line is not keyed off tonight's pick")
+    elif "DayHeadline.Remember" not in head or "DayHeadline.Build" not in head:
+        fail("settlement line changed headline logic")
+    elif "오늘 토크" in head or "ShowLine" in head:
+        fail("settlement line wrote into ApplyHeadline")
+    elif "청구 커버" not in head_cs or "TonightBills" not in head_cs or "lastStreamIncome" not in head_cs:
+        fail("settlement line retuned DayHeadline facts")
+    elif "PayoutIncome" in paint or "lastStreamIncome =" in paint or "cash =" in paint:
+        fail("settlement line writes payout")
+    elif '"오늘 수입"' not in settle_cs or "TickLeftCash" not in settle_cs:
+        fail("settlement line dropped income tiles / leftover cash")
+    elif "팬레터 답장" not in settle_cs or "OnLetter" not in settle_cs or "클립 업로드" not in settle_cs:
+        fail("settlement line dropped letter / clip cards")
+    elif "TickNextPulse" not in settle_cs or "TickContinuePulse" not in title_cs or "ShowChip" not in live_cs:
+        fail("settlement line dropped 다음날 / continue pulse / live show chip")
+    elif "public static int Payout" in eco_cs and "lastStreamIncome =" in paint:
+        fail("settlement line wrote payout")
+    elif "talkIncomeMultiplier: 1" not in content_asset or "songMentalCost: 8" not in content_asset:
+        fail("settlement line retuned ContentBalance")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("settlement line broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising settlement show line / later weeks")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("settlement line retuned Week 1 cash or bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("settlement line dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("settlement line moved Unity off 6000.5.9f1")
+    else:
+        ok("settlement names 오늘 토크/게임/노래/리액션 in accent; headline / payout stay")
 
 
 def check_save_roundtrip() -> None:

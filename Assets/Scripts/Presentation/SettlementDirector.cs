@@ -33,6 +33,7 @@ namespace BankruptVtuber
         Text _endingBody;
         Text _headlineTag;
         Text _headline;
+        Text _showLine;
         Text _clearHeadline;
         Text _stampHeadline;
         Text _endingHeadline;
@@ -297,6 +298,8 @@ namespace BankruptVtuber
             UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(36, -16), new Vector2(400, 56));
             _headlineTag = UiKit.Label(root, "HeadlineTag", "오늘 헤드라인", 18, Palette.Gold, TextAnchor.UpperLeft, FontStyle.Bold);
             UiKit.Layout(_headlineTag.rectTransform, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(40, -68), new Vector2(0, 22));
+            _showLine = UiKit.Label(root, "ShowLine", "", 18, Palette.Pink, TextAnchor.MiddleRight, FontStyle.Bold);
+            UiKit.Layout(_showLine.rectTransform, new Vector2(0.40f, 1), new Vector2(0.78f, 1), new Vector2(1, 1), new Vector2(-8, -68), new Vector2(0, 22));
             _headline = UiKit.Label(root, "Headline", "", 32, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
             UiKit.Layout(_headline.rectTransform, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(40, -90), new Vector2(0, 56));
             UiKit.Wrap(_headline);
@@ -1115,6 +1118,7 @@ namespace BankruptVtuber
 
             run.lastOutcome = EconomyRules.Evaluate(run, b, w2, w3, w4, w5);
             ApplyHeadline(run);
+            PaintShowLine(run);
             bool offerClip = Week2Rules.CanOfferClip(run, w2);
             bool offerFound = Week4Rules.CanFoundAgency(run, w4);
             bool offerScout = Week4Rules.CanScoutJunior(run, w4);
@@ -2015,6 +2019,36 @@ namespace BankruptVtuber
             if (_endingHeadline != null)
                 _endingHeadline.text = line;
         }
+
+        void PaintShowLine(GameRunState run)
+        {
+            if (_showLine == null)
+                return;
+            bool has = ContentRules.HasPick(run);
+            _showLine.gameObject.SetActive(has);
+            if (!has)
+                return;
+            _showLine.text = ShowLineName(run.contentPicked);
+            _showLine.color = ShowLineAccent(run.contentPicked);
+        }
+
+        static string ShowLineName(StreamContentType type) => type switch
+        {
+            StreamContentType.Talk => "오늘 토크",
+            StreamContentType.Game => "오늘 게임",
+            StreamContentType.Song => "오늘 노래",
+            StreamContentType.Reaction => "오늘 리액션",
+            _ => ""
+        };
+
+        static Color ShowLineAccent(StreamContentType type) => type switch
+        {
+            StreamContentType.Talk => Palette.Pink,
+            StreamContentType.Game => Palette.Troll,
+            StreamContentType.Song => Palette.Gold,
+            StreamContentType.Reaction => Palette.PastelDim,
+            _ => Palette.Muted
+        };
 
         void ApplyEndingOverlay(GameRunState run, Week5Balance w5)
         {
