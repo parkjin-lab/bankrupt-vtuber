@@ -1450,6 +1450,7 @@ def check_project() -> None:
     check_stream_bgm()
     check_morning_bgm()
     check_settlement_bgm()
+    check_result_stings()
 
 
 def check_content_types() -> None:
@@ -5808,6 +5809,81 @@ def check_settlement_bgm() -> None:
         fail("settlement BGM moved Unity off 6000.5.9f1")
     else:
         ok("Settlement loops tired bgm_settlement; fades 0.2s on leave; other beds stay isolated")
+
+
+def check_result_stings() -> None:
+    import wave
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    splash = settle_cs.split("void ApplyResultSplashes", 1)[-1].split("void ApplyHeadline", 1)[0]
+    clear_fn = settle_cs.split("static bool IsWeekClear", 1)[-1].split("static bool ShouldShowEnding", 1)[0]
+    broke_fn = settle_cs.split("static bool IsBankruptResult", 1)[-1].split("static bool IsBurnoutResult", 1)[0]
+    clips = {
+        "sfx_clear.wav": (0.28, 0.80),
+        "sfx_bankrupt.wav": (0.22, 0.70),
+    }
+    durations = {}
+    for name, (lo, hi) in clips.items():
+        path = ROOT / "Assets/Resources/Audio" / name
+        if not path.exists() or path.stat().st_size < 2000:
+            fail(f"result sting {name} is missing")
+            return
+        with wave.open(str(path), "rb") as w:
+            if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+                fail(f"result sting {name} is not a readable PCM clip")
+                return
+            dur = w.getnframes() / float(w.getframerate())
+            durations[name] = dur
+            if dur < lo or dur > hi:
+                fail(f"result sting {name} duration {dur:.3f}s is not a short distinct sting")
+                return
+
+    if "Audio/sfx_clear" not in settle_cs or "Audio/sfx_bankrupt" not in settle_cs:
+        fail("Settlement does not load Audio/sfx_clear|sfx_bankrupt")
+    elif "PlaySettleSfx(_clearCue" not in splash or "PlaySettleSfx(_bankruptCue" not in splash:
+        fail("clear / bankrupt splash do not play distinct stings")
+    elif "_resultStingPlayed" not in splash:
+        fail("result stings can replay on every Render")
+    elif "QuietSettleBgm" not in splash or "FadeSettleBgmThen" not in settle_cs:
+        fail("result stings do not fade the settlement bed")
+    elif "주차 클리어" not in settle_cs or "1주차 생존" not in splash or "다음 주차 시작" not in settle_cs:
+        fail("result stings changed week-clear copy")
+    elif '"파산"' not in settle_cs or "번아웃" not in splash:
+        fail("result stings changed bankrupt / burnout copy")
+    elif "WeekOutcome.Win" not in clear_fn or "WeekOutcome.Week4Win" not in clear_fn:
+        fail("result stings changed week-clear conditions")
+    elif "WeekOutcome.Bankrupt" not in broke_fn or "EndingKind.Bankrupt" not in broke_fn:
+        fail("result stings changed bankrupt conditions")
+    elif "BankruptDebt" not in eco_cs or "public void NextMorning()" not in gm:
+        fail("result stings changed bankrupt numbers or routing")
+    elif "Audio/bgm_settlement" not in settle_cs or "volume = 0.16f" not in settle_cs:
+        fail("result stings dropped settlement BGM")
+    elif "Audio/sfx_clear" in title_cs or "Audio/sfx_bankrupt" in week_cs or "Audio/sfx_clear" in live_cs:
+        fail("result stings leaked onto Title / WeekStart / LiveStream")
+    elif "Audio/bgm_title" not in title_cs or "Audio/bgm_morning" not in week_cs or "Audio/bgm_stream" not in live_cs:
+        fail("result stings dropped title / morning / stream beds")
+    elif "ShowEndCut" in debug_cs or "PlaySfx(_endCutCue" in debug_cs:
+        fail("F10 skip is no longer mute-safe / direct to settlement")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("result stings retuned Week 1 economy / bankrupt line")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("result stings broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising result stings / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("result stings dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("result stings moved Unity off 6000.5.9f1")
+    else:
+        ok("week-clear / bankrupt splashes play distinct one-shot stings; conditions stay")
 
 
 def check_save_roundtrip() -> None:

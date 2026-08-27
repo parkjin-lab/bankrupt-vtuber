@@ -144,7 +144,11 @@ namespace BankruptVtuber
         RectTransform _week5Row;
         RectTransform _actionRow;
         AudioSource _settleBgm;
+        AudioSource _settleSfx;
+        AudioClip _clearCue;
+        AudioClip _bankruptCue;
         bool _leavingSettle;
+        bool _resultStingPlayed;
 
         void Awake()
         {
@@ -2005,6 +2009,21 @@ namespace BankruptVtuber
                     _stampHeadline.text = DayHeadline.Build(run);
                 _stampPortrait?.PoseEnding(burn ? EndingKind.Burnout : EndingKind.Bankrupt);
             }
+            if (!_resultStingPlayed)
+            {
+                if (clear && !bankrupt && !burnout)
+                {
+                    PlaySettleSfx(_clearCue, 0.56f);
+                    QuietSettleBgm();
+                    _resultStingPlayed = true;
+                }
+                else if (bankrupt)
+                {
+                    PlaySettleSfx(_bankruptCue, 0.62f);
+                    QuietSettleBgm();
+                    _resultStingPlayed = true;
+                }
+            }
             if (clear || bankrupt || burnout)
             {
                 _next.gameObject.SetActive(clear);
@@ -2132,6 +2151,23 @@ namespace BankruptVtuber
             _settleBgm.playOnAwake = false;
             _settleBgm.volume = 0.16f;
             _settleBgm.Play();
+            _settleSfx = gameObject.AddComponent<AudioSource>();
+            _settleSfx.playOnAwake = false;
+            _clearCue = Resources.Load<AudioClip>("Audio/sfx_clear");
+            _bankruptCue = Resources.Load<AudioClip>("Audio/sfx_bankrupt");
+        }
+
+        void PlaySettleSfx(AudioClip clip, float volume)
+        {
+            if (_settleSfx != null && clip != null)
+                _settleSfx.PlayOneShot(clip, volume);
+        }
+
+        void QuietSettleBgm()
+        {
+            if (_settleBgm == null || !_settleBgm.isPlaying)
+                return;
+            StartCoroutine(FadeSettleBgmThen(null));
         }
 
         void LeaveSettle(System.Action next)
