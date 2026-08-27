@@ -198,6 +198,8 @@ def check_project() -> None:
         "pasan_nyang.png": "avatar",
         "rival_nyang.png": "라이벌",
         "goods_stand.png": "아크릴",
+        "agency_card.png": "에이전시",
+        "sponsor_card.png": "스폰서",
         "bill_rent.png": "월세",
         "bill_electric.png": "전기",
         "bill_license.png": "라이선스",
@@ -1467,6 +1469,7 @@ def check_project() -> None:
     check_coach_pad_icons()
     check_rival_portrait()
     check_goods_stand()
+    check_week4_card_art()
 
 
 def check_content_types() -> None:
@@ -6509,6 +6512,88 @@ def check_goods_stand() -> None:
         fail("goods stand moved Unity off 6000.5.9f1")
     else:
         ok("acrylic unlock / promo show goods_stand product; rules / rival stay")
+
+
+def check_week4_card_art() -> None:
+    import struct
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    w4_asset = (ROOT / "Assets/Resources/Balance/Week4Balance.asset").read_text(encoding="utf-8")
+    w4r_cs = (ROOT / "Assets/Scripts/Economy/Week4Rules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    agency_build = build.split('AgencyRoot"', 1)[-1].split('AgencySplashRoot"', 1)[0]
+    open_build = build.split('AgencySplashRoot"', 1)[-1].split('JuniorRoot"', 1)[0]
+    junior_build = build.split('JuniorRoot"', 1)[-1].split('ConcertBookRoot"', 1)[0]
+    line_build = live_cs.split('"LineCard"', 1)[-1].split('"ConcertCard"', 1)[0]
+    goods_build = build.split('GoodsRoot"', 1)[-1].split('AgencyRoot"', 1)[0]
+
+    for name, label, min_h in (
+        ("agency_card.png", "에이전시", 220),
+        ("sponsor_card.png", "스폰서", 200),
+    ):
+        png = ROOT / "Assets/Resources/Art" / name
+        data = png.read_bytes() if png.exists() else b""
+        w = h = color = 0
+        if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+            w, h = struct.unpack(">II", data[16:24])
+            color = data[25]
+        if not png.exists() or png.stat().st_size < 8000:
+            fail(f"{label} card PNG is missing")
+            return
+        if w < 360 or h < min_h or w <= h:
+            fail(f"{label} card PNG is not a readable landscape desk paper")
+            return
+        if color != 6:
+            fail(f"{label} card PNG is not RGBA")
+            return
+
+    if 'AgencyCard = "Art/agency_card"' not in art_cs or 'SponsorCard = "Art/sponsor_card"' not in art_cs:
+        fail("ArtSprites missing agency_card / sponsor_card hooks")
+    elif "ArtSprites.AgencyCard" not in agency_build or '"AgencyCard"' not in agency_build:
+        fail("AgencyCard does not hang Art/agency_card")
+    elif "ArtSprites.AgencyCard" not in open_build or '"AgencyOpenCard"' not in open_build:
+        fail("AgencyOpenCard does not hang Art/agency_card")
+    elif "ArtSprites.AgencyCard" not in junior_build or '"JuniorCard"' not in junior_build:
+        fail("JuniorCard does not reuse Art/agency_card")
+    elif "ArtSprites.SponsorCard" not in line_build or '"LineCard"' not in live_cs:
+        fail("sponsor line LineCard does not hang Art/sponsor_card")
+    elif "에이전시 설립" not in agency_build or "설립" not in agency_build or "나중에" not in agency_build:
+        fail("agency art covered founding copy")
+    elif "에이전시 오픈" not in open_build or "정산으로" not in open_build:
+        fail("agency art covered open splash copy")
+    elif "후배 스카우트" not in junior_build or "스카우트" not in junior_build:
+        fail("junior art covered scout copy")
+    elif "스폰서 멘트 타이밍" not in line_build or "계약 유지" not in live_cs or "계약 파기" not in live_cs:
+        fail("sponsor art covered line copy")
+    elif "FoundAgency" not in settle_cs or "ScoutJunior" not in settle_cs:
+        fail("week4 card art unhooked FoundAgency / ScoutJunior")
+    elif "ArtSprites.GoodsStand" not in goods_build:
+        fail("week4 card art dropped goods_stand")
+    elif "agencyFoundCost: 40000" not in w4_asset or "agencyDailyCost: 15000" not in w4_asset:
+        fail("week4 card art retuned agency costs")
+    elif "juniorScoutCost: 25000" not in w4_asset or "sponsorLineBonus: 3000" not in w4_asset:
+        fail("week4 card art retuned junior / sponsor line numbers")
+    elif "sponsorDaily: 10000" not in w4_asset or "agencyUnlockCash: 100000" not in w4_asset:
+        fail("week4 card art retuned sponsor / unlock gates")
+    elif "CanFoundAgency" not in w4r_cs or "CanScoutJunior" not in w4r_cs:
+        fail("week4 card art changed unlock routing")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("week4 card art retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("week4 card art broke pads, 입력됨, or added timeScale")
+    elif "Week4" in title_cs or "에이전시" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising week4 card art / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("week4 card art dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("week4 card art moved Unity off 6000.5.9f1")
+    else:
+        ok("agency / junior / sponsor sit on desk papers; unlock / numbers stay")
 
 
 def check_save_roundtrip() -> None:

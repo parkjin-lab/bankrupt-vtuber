@@ -701,7 +701,9 @@ namespace BankruptVtuber
             agencyWash.raycastTarget = true;
             var agencyCard = UiKit.Panel(_agencyRoot.transform, "AgencyCard", Color.white);
             UiKit.Layout(agencyCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 400));
-            ArtSprites.ApplySliced(agencyCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.92f, 0.55f, 0.98f));
+            var agencyImg = agencyCard.GetComponent<Image>();
+            ArtSprites.Apply(agencyImg, ArtSprites.AgencyCard, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            agencyImg.preserveAspect = false;
             SafeFitCard.Bind(agencyCard, 720f, 400f);
             var agencyTitle = UiKit.Label(agencyCard, "AgencyTitle", "에이전시 설립", 46, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(agencyTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
@@ -724,7 +726,9 @@ namespace BankruptVtuber
             agencyOpenWash.raycastTarget = true;
             var agencyOpenCard = UiKit.Panel(_agencySplashRoot.transform, "AgencyOpenCard", Color.white);
             UiKit.Layout(agencyOpenCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
-            ArtSprites.ApplySliced(agencyOpenCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.9f, 0.5f, 0.98f));
+            var agencyOpenImg = agencyOpenCard.GetComponent<Image>();
+            ArtSprites.Apply(agencyOpenImg, ArtSprites.AgencyCard, new Color(1f, 0.9f, 0.5f, 0.98f), Color.white);
+            agencyOpenImg.preserveAspect = false;
             SafeFitCard.Bind(agencyOpenCard, 720f, 380f);
             var agencyOpenTitle = UiKit.Label(agencyOpenCard, "AgencyOpenTitle", "에이전시 오픈", 52, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(agencyOpenTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
@@ -744,7 +748,9 @@ namespace BankruptVtuber
             juniorWash.raycastTarget = true;
             var juniorCard = UiKit.Panel(_juniorRoot.transform, "JuniorCard", Color.white);
             UiKit.Layout(juniorCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 360));
-            ArtSprites.ApplySliced(juniorCard.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.86f, 0.94f, 0.98f));
+            var juniorImg = juniorCard.GetComponent<Image>();
+            ArtSprites.Apply(juniorImg, ArtSprites.AgencyCard, new Color(1f, 0.86f, 0.94f, 0.98f), Color.white);
+            juniorImg.preserveAspect = false;
             SafeFitCard.Bind(juniorCard, 720f, 360f);
             var juniorTitle = UiKit.Label(juniorCard, "JuniorTitle", "후배 스카우트", 46, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(juniorTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));

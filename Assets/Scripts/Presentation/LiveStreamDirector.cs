@@ -1054,8 +1054,11 @@ namespace BankruptVtuber
             promoSlamC.a = 0f;
             _promoSlam.color = promoSlamC;
 
-            _lineRoot = UiKit.Panel(root, "LineCard", new Color(0.18f, 0.08f, 0.16f, 0.97f));
+            _lineRoot = UiKit.Panel(root, "LineCard", Color.white);
             UiKit.Layout(_lineRoot, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
+            var lineImg = _lineRoot.GetComponent<Image>();
+            ArtSprites.Apply(lineImg, ArtSprites.SponsorCard, new Color(0.18f, 0.08f, 0.16f, 0.97f), Color.white);
+            lineImg.preserveAspect = false;
             SafeFitCard.Bind(_lineRoot, 720f, 380f);
             _lineTitle = UiKit.Label(_lineRoot, "LTitle", "스폰서 멘트 타이밍", 40, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
             UiKit.Layout(_lineTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -18), new Vector2(-24, 52));

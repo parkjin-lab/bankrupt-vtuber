@@ -12,6 +12,8 @@ namespace BankruptVtuber
         public const string Avatar = "Art/pasan_nyang";
         public const string RivalAvatar = "Art/rival_nyang";
         public const string GoodsStand = "Art/goods_stand";
+        public const string AgencyCard = "Art/agency_card";
+        public const string SponsorCard = "Art/sponsor_card";
         public const string BillRent = "Art/bill_rent";
         public const string BillElectric = "Art/bill_electric";
         public const string BillLicense = "Art/bill_license";
