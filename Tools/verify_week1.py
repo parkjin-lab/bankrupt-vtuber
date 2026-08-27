@@ -1381,6 +1381,7 @@ def check_project() -> None:
     check_hype_chat()
     check_cam_punch()
     check_combo_pop()
+    check_pad_flash()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -2894,6 +2895,48 @@ def check_combo_pop() -> None:
         fail("combo pop moved Unity off 6000.5.9f1")
     else:
         ok("combo chip pops 1.15 on the way up, 1.22 at 5+; stings stay")
+
+
+def check_pad_flash() -> None:
+    pad_cs = (ROOT / "Assets/Scripts/Input/StreamPadButton.cs").read_text(encoding="utf-8")
+    bind_cs = (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    uikit_cs = (ROOT / "Assets/Scripts/Presentation/UiKit.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+
+    if "_flash = 0.08f" not in pad_cs or "Color.white" not in pad_cs:
+        fail("pads do not flash brighter for 0.08s")
+    elif "pad?.Flash()" not in live_cs or "KindPressPad" not in live_cs:
+        fail("keyboard aliases do not flash the matching pad")
+    elif "Echo(\"입력됨 홍보\", _promoYes)" not in live_cs or "EventPad(idx)" not in live_cs:
+        fail("promo / event pads do not use the press flash")
+    elif "QueueKind" not in pad_cs or "BeginSuperchatCharge" not in pad_cs:
+        fail("pad flash changed input bindings")
+    elif "TryConsumeKind" not in bind_cs or "GetKeyDown(KeyCode.LeftArrow)" not in bind_cs:
+        fail("pad flash retuned keyboard aliases")
+    elif "UnlockUiInputForStream" not in live_cs or "DontDestroyOnLoad" not in uikit_cs:
+        fail("pad flash dropped EventSystem unlock / DDOL")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("pad flash retuned hit windows")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("pad flash retuned Judge windows")
+    elif "_comboPop = 0.1f" not in live_cs or "입력됨" not in live_cs:
+        fail("pad flash dropped combo pop or 입력됨")
+    elif "AddColumnPad" not in live_cs or "timeScale" in live_cs:
+        fail("pad flash broke pads or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising pad flash / later weeks")
+    elif "billRent: 8000" not in balance:
+        fail("pad flash retuned Week 1 bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("pad flash dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("pad flash moved Unity off 6000.5.9f1")
+    else:
+        ok("pads flash brighter 0.08s on press; keyboard aliases match; bindings stay")
 
 
 def check_mental_fatigue() -> None:

@@ -79,6 +79,12 @@ namespace BankruptVtuber
         readonly Text[] _eventKeyLabels = new Text[4];
         readonly StreamPadButton[] _lanePads = new StreamPadButton[5];
         readonly StreamPadButton[] _eventPads = new StreamPadButton[4];
+        StreamPadButton _promoYes;
+        StreamPadButton _promoNo;
+        StreamPadButton _lineYes;
+        StreamPadButton _lineNo;
+        StreamPadButton _concertYes;
+        StreamPadButton _concertNo;
         Text _echo;
         float _echoFlash;
         Image _tensionFill;
@@ -298,12 +304,12 @@ namespace BankruptVtuber
             {
                 if (StreamBindings.PromoConfirmDown())
                 {
-                    Echo("입력됨 홍보");
+                    Echo("입력됨 홍보", _promoYes);
                     _session.TryPromo(true);
                 }
                 else if (StreamBindings.PromoSkipDown())
                 {
-                    Echo("입력됨 넘김");
+                    Echo("입력됨 넘김", _promoNo);
                     _session.TryPromo(false);
                 }
                 StreamBindings.DiscardLaneQueue();
@@ -312,12 +318,12 @@ namespace BankruptVtuber
             {
                 if (StreamBindings.PromoConfirmDown())
                 {
-                    Echo("입력됨 멘트");
+                    Echo("입력됨 멘트", _lineYes);
                     _session.TryLine(true);
                 }
                 else if (StreamBindings.PromoSkipDown())
                 {
-                    Echo("입력됨 넘김");
+                    Echo("입력됨 넘김", _lineNo);
                     _session.TryLine(false);
                 }
                 StreamBindings.DiscardLaneQueue();
@@ -326,19 +332,19 @@ namespace BankruptVtuber
             {
                 if (StreamBindings.PromoConfirmDown())
                 {
-                    Echo("입력됨 퍼포먼스");
+                    Echo("입력됨 퍼포먼스", _concertYes);
                     _session.TryConcert(true);
                 }
                 else if (StreamBindings.PromoSkipDown())
                 {
-                    Echo("입력됨 넘김");
+                    Echo("입력됨 넘김", _concertNo);
                     _session.TryConcert(false);
                 }
                 StreamBindings.DiscardLaneQueue();
             }
             else if (StreamBindings.TryConsumeKind(out var kind, out var hold))
             {
-                Echo($"입력됨 {Palette.LabelFor(kind)}", LanePad(kind));
+                Echo($"입력됨 {Palette.LabelFor(kind)}", KindPressPad(kind));
                 _session.TryHit(kind, _session.Elapsed, hold);
             }
 
@@ -876,7 +882,7 @@ namespace BankruptVtuber
             UiKit.Layout(_promoBody.rectTransform, new Vector2(0, 0.30f), new Vector2(1, 0.78f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-36, 0));
             _promoTimer = UiKit.Label(_promoRoot, "PTimer", "", 20, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_promoTimer.rectTransform, new Vector2(0, 0.22f), new Vector2(1, 0.30f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-            AddOverlayChoice(_promoRoot, "홍보하기", "넘어가기");
+            AddOverlayChoice(_promoRoot, "홍보하기", "넘어가기", out _promoYes, out _promoNo);
             _promoRoot.gameObject.SetActive(false);
             _promoSlam = UiKit.Label(root, "PromoSlam", "홍보 성공 1.5x", 56, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_promoSlam.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(720, 80));
@@ -893,7 +899,7 @@ namespace BankruptVtuber
             UiKit.Layout(_lineBody.rectTransform, new Vector2(0, 0.30f), new Vector2(1, 0.78f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-36, 0));
             _lineTimer = UiKit.Label(_lineRoot, "LTimer", "", 20, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_lineTimer.rectTransform, new Vector2(0, 0.22f), new Vector2(1, 0.30f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-            AddOverlayChoice(_lineRoot, "멘트 넣기", "놓치기");
+            AddOverlayChoice(_lineRoot, "멘트 넣기", "놓치기", out _lineYes, out _lineNo);
             _lineRoot.gameObject.SetActive(false);
             _lineSlam = UiKit.Label(root, "LineSlam", "계약 유지 +₩3,000", 48, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_lineSlam.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(820, 80));
@@ -910,7 +916,7 @@ namespace BankruptVtuber
             UiKit.Layout(_concertBody.rectTransform, new Vector2(0, 0.30f), new Vector2(1, 0.78f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-36, 0));
             _concertTimer = UiKit.Label(_concertRoot, "CTimer", "", 20, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_concertTimer.rectTransform, new Vector2(0, 0.22f), new Vector2(1, 0.30f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-            AddOverlayChoice(_concertRoot, "성공", "넘기기");
+            AddOverlayChoice(_concertRoot, "성공", "넘기기", out _concertYes, out _concertNo);
             _concertRoot.gameObject.SetActive(false);
             _coverSlam = UiKit.Label(root, "CoverSlam", "청구 커버", 72, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_coverSlam.rectTransform, new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(720, 90));
@@ -982,15 +988,15 @@ namespace BankruptVtuber
             return StreamPadButton.Attach(img.gameObject, mode, kind, eventIndex);
         }
 
-        void AddOverlayChoice(Transform parent, string confirm, string skip)
+        void AddOverlayChoice(Transform parent, string confirm, string skip, out StreamPadButton yes, out StreamPadButton no)
         {
             var row = UiKit.Panel(parent, "ChoiceRow", new Color(0, 0, 0, 0));
             UiKit.Layout(row, new Vector2(0, 0), new Vector2(1, 0.24f), new Vector2(0.5f, 0), Vector2.zero, Vector2.zero);
             var rowImg = row.GetComponent<Image>();
             if (rowImg != null)
                 rowImg.raycastTarget = false;
-            AddColumnPad(row, 0, 2, confirm, Palette.PinkDeep, StreamPadButton.Mode.PromoConfirm);
-            AddColumnPad(row, 1, 2, skip, Palette.Troll, StreamPadButton.Mode.PromoSkip);
+            yes = AddColumnPad(row, 0, 2, confirm, Palette.PinkDeep, StreamPadButton.Mode.PromoConfirm);
+            no = AddColumnPad(row, 1, 2, skip, Palette.Troll, StreamPadButton.Mode.PromoSkip);
         }
 
         void Echo(string text, StreamPadButton pad = null)
@@ -1012,6 +1018,15 @@ namespace BankruptVtuber
             if (i >= 0 && i < 4)
                 return _lanePads[i];
             return _lanePads[4];
+        }
+
+        StreamPadButton KindPressPad(ChatKind kind)
+        {
+            if (UnityEngine.Input.GetKeyUp(KeyCode.Space)
+                || UnityEngine.Input.GetKeyUp(KeyCode.Return)
+                || UnityEngine.Input.GetKeyUp(KeyCode.KeypadEnter))
+                return _lanePads[4];
+            return LanePad(kind);
         }
 
         StreamPadButton CoachPad(ChatNote note)
@@ -1470,9 +1485,13 @@ namespace BankruptVtuber
             {
                 bool hot = i + 1 == target;
                 float pulse = 0.88f + 0.12f * Mathf.Abs(Mathf.Sin(Time.time * 12f));
-                _eventKeys[i].color = hot
+                var idle = hot
                     ? new Color(1f, 0.94f, 0.28f, pulse)
                     : new Color(0.28f, 0.24f, 0.3f, 0.2f);
+                if (_eventPads[i] != null)
+                    _eventPads[i].SetIdleColor(idle);
+                else
+                    _eventKeys[i].color = idle;
                 _eventKeyLabels[i].color = hot ? Palette.Ink : Palette.Muted;
                 _eventKeys[i].rectTransform.localScale = hot
                     ? Vector3.one * (1.18f + 0.1f * Mathf.Abs(Mathf.Sin(Time.time * 10f)))
