@@ -1718,6 +1718,16 @@ namespace BankruptVtuber
             if (rt == null || note.FanWounded)
                 return;
             var pad = NotePadColor(note);
+            var chip = rt.Find("NoteChip");
+            if (chip != null)
+            {
+                var c = chip.GetComponent<Image>();
+                if (c != null)
+                {
+                    pad.a = c.color.a > 0.01f ? c.color.a : 1f;
+                    c.color = pad;
+                }
+            }
             var edge = rt.Find("KindEdge");
             if (edge != null)
             {
@@ -1729,11 +1739,24 @@ namespace BankruptVtuber
                 }
                 return;
             }
+            if (chip != null)
+                return;
             var body = rt.GetComponent<Image>();
             if (body == null)
                 return;
             pad.a = body.color.a;
             body.color = pad;
+        }
+
+        static float NoteChipAngle(ChatKind kind)
+        {
+            return kind switch
+            {
+                ChatKind.Empathy => 90f,
+                ChatKind.Laugh => 180f,
+                ChatKind.Thanks => 270f,
+                _ => 0f
+            };
         }
 
         RectTransform MakeBubble(ChatNote note)
@@ -1773,6 +1796,19 @@ namespace BankruptVtuber
                     edge.color = new Color(color.r * 0.72f, color.g * 0.72f, color.b * 0.72f, 0.55f);
                 img.color = new Color(1f, 1f, 1f, named && note.FanWounded ? 0.72f : a);
             }
+            if (!super)
+            {
+                var chipCol = named && note.FanWounded
+                    ? new Color(color.r * 0.72f, color.g * 0.72f, color.b * 0.72f, 0.72f)
+                    : new Color(color.r, color.g, color.b, a);
+                var chip = UiKit.Image(card, "NoteChip", chipCol);
+                float chipSize = (troll ? 78f : 72f) * scale;
+                UiKit.Layout(chip.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(42f, 0f), new Vector2(chipSize, chipSize));
+                ArtSprites.Apply(chip, ArtSprites.NoteChip, chipCol, chipCol);
+                chip.preserveAspect = true;
+                chip.raycastTarget = false;
+                chip.rectTransform.localEulerAngles = new Vector3(0f, 0f, NoteChipAngle(note.Kind));
+            }
 
             string key = super ? "SPACE" : note.Kind switch
             {
@@ -1794,9 +1830,11 @@ namespace BankruptVtuber
                 else
                     fanTag = "슈퍼팬";
             }
-            var keyCol = super || troll || named ? Palette.Ink : Color.white;
-            var keyT = UiKit.Label(card, "Key", key, super ? 16 : 18, keyCol, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(keyT.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(18, 0), new Vector2(56, 0));
+            if (super)
+            {
+                var keyT = UiKit.Label(card, "Key", key, 16, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+                UiKit.Layout(keyT.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(18, 0), new Vector2(56, 0));
+            }
             string nickLine = note.User ?? "";
             if (!named && super && note.SuperchatWon > 0)
                 nickLine = $"{note.User}  ·  {EconomyRules.FormatWon(note.SuperchatWon)}";

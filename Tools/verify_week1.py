@@ -212,6 +212,7 @@ def check_project() -> None:
         "pad_up.png": "↑ 키캡",
         "pad_superchat.png": "슈퍼챗 키캡",
         "chat_bubble.png": "채팅 버블",
+        "note_chip.png": "노트 칩",
         "badge_superchat.png": "superchat",
         "badge_troll.png": "troll",
     }
@@ -1428,6 +1429,7 @@ def check_project() -> None:
     check_morning_room()
     check_pad_keycaps()
     check_chat_bubble()
+    check_note_chip()
 
 
 def check_content_types() -> None:
@@ -4865,6 +4867,74 @@ def check_chat_bubble() -> None:
         fail("chat bubble moved Unity off 6000.5.9f1")
     else:
         ok("regular chat sits on a live-chat bubble; superchat gold / nicks / hype stay")
+
+
+def check_note_chip() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/note_chip.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    make = live_cs.split("RectTransform MakeBubble", 1)[-1].split("static void DimNamedBubble", 1)[0]
+    tint = live_cs.split("static void TintTravelNote", 1)[-1].split("RectTransform MakeBubble", 1)[0]
+    sync = live_cs.split("void SyncNotes", 1)[-1].split("void RefreshPromoOverlay", 1)[0]
+    strike = live_cs.split("void TickStrike", 1)[-1].split("void SyncNotes", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 4000:
+        fail("노트 chip PNG is missing")
+    elif w < 128 or h < 128 or abs(w - h) > 8:
+        fail("노트 chip PNG is not a readable square gem")
+    elif color != 6:
+        fail("노트 chip PNG is not RGBA")
+    elif 'NoteChip = "Art/note_chip"' not in art_cs:
+        fail("ArtSprites does not hook Art/note_chip")
+    elif "ArtSprites.NoteChip" not in make or '"NoteChip"' not in make:
+        fail("traveling notes are not drawn on the note chip")
+    elif "NoteChipAngle" not in make and "NoteChipAngle" not in live_cs:
+        fail("note chip does not rotate to kind arrows")
+    elif "NoteChip" not in tint or "NotePadColor" not in tint:
+        fail("note chip is not tinted to kind pad colors")
+    elif "ArtSprites.SuperchatBanner" not in make or "Palette.Gold" not in live_cs.split("static Color NotePadColor", 1)[-1].split("static void TintTravelNote", 1)[0]:
+        fail("note chip dropped gold superchat treatment")
+    elif "ArtSprites.ChatBubble" not in make or "KindEdge" not in make:
+        fail("note chip dropped the live-chat bubble")
+    elif "abs <= 0.15f" not in sync or '"Hot"' not in live_cs or "1f, 1f, 1f" not in sync:
+        fail("note chip dropped the 0.15s hittable glow")
+    elif "TickStrike" not in live_cs or "Judgement.Perfect" not in strike:
+        fail("note chip dropped the strike line pulse")
+    elif "approachSeconds =" in sync or "HitTime =" in sync or "SpawnNote" in tint:
+        fail("note chip writes travel / hit times")
+    elif "perfectWindow =" in live_cs or "goodWindow =" in live_cs:
+        fail("note chip retuned judge windows")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("note chip retuned hit windows")
+    elif "approachSeconds: 1.35" not in balance:
+        fail("note chip retuned travel speed")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("note chip retuned Judge scoring")
+    elif "ArtSprites.PadLeft" not in live_cs or 'ChatBubble = "Art/chat_bubble"' not in art_cs:
+        fail("note chip dropped pad keycaps or chat bubble art")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("note chip broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising note chip / later weeks")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("note chip retuned Week 1 economy / hype")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("note chip dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("note chip moved Unity off 6000.5.9f1")
+    else:
+        ok("traveling notes sit on a rhythm chip; pad tint / glow / strike / scoring stay")
 
 
 def check_save_roundtrip() -> None:
