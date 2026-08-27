@@ -1406,6 +1406,7 @@ def check_project() -> None:
     check_last_day_banner()
     check_title_continue_preview()
     check_start_pulse()
+    check_continue_pulse()
     check_show_chip()
 
 
@@ -4164,6 +4165,63 @@ def check_start_pulse() -> None:
         fail("start pulse moved Unity off 6000.5.9f1")
     else:
         ok("Title 새 방송 시작 pulses 1.03 with a 시작 chip; wipe / continue stay")
+
+
+def check_continue_pulse() -> None:
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    pulse = title_cs.split("void TickContinuePulse", 1)[-1].split("void OpenHowTo", 1)[0]
+    click = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    cont = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    load = title_cs.split("void OnContinue", 1)[-1].split("void OnStartBroadcast", 1)[0]
+    wipe = title_cs.split("void BuildWipe", 1)[-1].split("void BuildPrologue", 1)[0]
+
+    if "TickContinuePulse" not in title_cs or "ContinueChip" not in title_cs or '"이어"' not in title_cs:
+        fail("이어서 하기 has no pulse / 이어 chip")
+    elif "1f + 0.03f" not in pulse or "Sin(Time.time" not in pulse:
+        fail("이어서 하기 does not soft-pulse at 1.03")
+    elif "OnContinue" not in click or "ContinueChip" not in click:
+        fail("이어 chip is not on the continue button")
+    elif "activeInHierarchy" not in pulse or "_hasSave" not in hide or "SetActive(_hasSave)" not in hide:
+        fail("continue pulse is not hidden when there is no save")
+    elif "ContinueRun()" not in load:
+        fail("continue pulse changed continue load")
+    elif "진행 중인 " not in wipe or "지울까?" not in wipe or "지우고 시작" not in wipe or "취소" not in wipe:
+        fail("continue pulse changed the save-wipe confirm")
+    elif "ConfirmWipe" not in title_cs or "OpenWipe" not in title_cs:
+        fail("continue pulse unhooked wipe confirm")
+    elif "MoneyPlate" not in title_cs or "이어하기 " not in title_cs or '"현금 "' not in cont or '"부채 "' not in cont:
+        fail("continue pulse dropped day + cash/debt")
+    elif "peek.cash <" not in cont or "Palette.MoneyRed" not in cont or "Palette.Gold" not in cont:
+        fail("continue cash/debt panic colors changed")
+    elif '"어제: "' not in title_cs or "lastHeadline" not in title_cs:
+        fail("continue pulse dropped yesterday headline")
+    elif "TickStartPulse" not in title_cs or "StartChip" not in title_cs or '"시작"' not in title_cs:
+        fail("continue pulse dropped 새 방송 시작 pulse")
+    elif "ShowChip" not in live_cs or "TickGoLivePulse" not in week_cs or "TickNextPulse" not in settle_cs:
+        fail("continue pulse dropped show chip or GO LIVE / 다음날")
+    elif "public bool ContinueRun()" not in gm:
+        fail("continue pulse changed GameManager.ContinueRun")
+    elif "UnlockUiInputForStream" not in title_cs or "StreamSafeArea.Attach" not in title_cs:
+        fail("continue pulse dropped EventSystem unlock or StreamSafeArea")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("continue pulse broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising continue pulse / later weeks")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("continue pulse retuned Week 1 cash or bills")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("continue pulse dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("continue pulse moved Unity off 6000.5.9f1")
+    else:
+        ok("Title 이어서 하기 pulses 1.03 with a 이어 chip; hidden without save")
 
 
 def check_show_chip() -> None:

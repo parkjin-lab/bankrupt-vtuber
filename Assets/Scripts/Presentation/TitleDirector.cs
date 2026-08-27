@@ -18,6 +18,8 @@ namespace BankruptVtuber
         RectTransform _startRt;
         RectTransform _startChip;
         Button _continue;
+        RectTransform _continueRt;
+        RectTransform _continueChip;
         Text _continueDay;
         Text _continueMoney;
         Text _continueDebt;
@@ -51,6 +53,7 @@ namespace BankruptVtuber
                 _wordmark.rectTransform.localScale = Vector3.one * (1f + 0.04f * u);
             }
             TickStartPulse();
+            TickContinuePulse();
             if (_busy && !_prologuePlaying)
                 return;
 
@@ -121,13 +124,23 @@ namespace BankruptVtuber
                 startCap.offsetMin = new Vector2(56f, 0f);
             _continue = UiKit.Button(titleParent, "Continue", "이어서 하기", OnContinue, Palette.Gold, Palette.Ink);
             StyleMenuButton(_continue, new Vector2(56, -154), new Vector2(420, 128), Palette.Gold);
-            _continueDay = _continue.GetComponentInChildren<Text>();
+            _continueRt = _continue.GetComponent<RectTransform>();
+            _continueDay = _continue.transform.Find("Caption") != null
+                ? _continue.transform.Find("Caption").GetComponent<Text>()
+                : null;
             if (_continueDay != null)
             {
                 _continueDay.alignment = TextAnchor.UpperLeft;
                 _continueDay.fontSize = 26;
-                UiKit.Layout(_continueDay.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(18, -10), new Vector2(-28, 34));
+                UiKit.Layout(_continueDay.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(72, -10), new Vector2(-28, 34));
             }
+            _continueChip = UiKit.Panel(_continue.transform, "ContinueChip", Palette.PinkDeep);
+            UiKit.Layout(_continueChip, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(36f, -22f), new Vector2(52f, 26f));
+            var contChipImg = _continueChip.GetComponent<Image>();
+            if (contChipImg != null)
+                contChipImg.raycastTarget = false;
+            var contChipT = UiKit.Label(_continueChip, "T", "이어", 14, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Stretch(contChipT.rectTransform);
             var moneyPlate = UiKit.Panel(_continue.transform, "MoneyPlate", new Color(0.12f, 0.05f, 0.08f, 0.88f));
             UiKit.Layout(moneyPlate, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -42f), new Vector2(-16f, 28f));
             _continueMoney = UiKit.Label(moneyPlate, "SaveMoney", "", 18, Palette.MoneyRed, TextAnchor.MiddleLeft, FontStyle.Bold);
@@ -246,6 +259,21 @@ namespace BankruptVtuber
             _startRt.localScale = Vector3.one * (1f + 0.03f * u);
             if (_startChip != null)
                 _startChip.localScale = Vector3.one * (1f + 0.08f * u);
+        }
+
+        void TickContinuePulse()
+        {
+            if (_continueRt == null)
+                return;
+            if (_continue == null || !_continue.gameObject.activeInHierarchy || _wipeOpen || _howToOpen || _prologuePlaying)
+            {
+                _continueRt.localScale = Vector3.one;
+                return;
+            }
+            float u = 0.5f + 0.5f * Mathf.Sin(Time.time * 2.2f);
+            _continueRt.localScale = Vector3.one * (1f + 0.03f * u);
+            if (_continueChip != null)
+                _continueChip.localScale = Vector3.one * (1f + 0.08f * u);
         }
 
         void OpenHowTo()
