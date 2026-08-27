@@ -1467,6 +1467,7 @@ def check_project() -> None:
     check_letter_card()
     check_pad_sfx()
     check_golive_sfx()
+    check_nextday_sfx()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -6284,6 +6285,82 @@ def check_golive_sfx() -> None:
         fail("GO LIVE SFX moved Unity off 6000.5.9f1")
     else:
         ok("방송 켜기 plays sfx_golive once; ON AIR sting still follows on live")
+
+
+def check_nextday_sfx() -> None:
+    import wave
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    confirm = settle_cs.split("void Update()", 1)[-1].split("void TickNextPulse", 1)[0]
+    click = settle_cs.split("_next = UiKit.Button", 1)[-1].split("_restart = UiKit.Button", 1)[0]
+    pulse = settle_cs.split("void TickNextPulse", 1)[-1].split("static bool CanAdvance", 1)[0]
+    leave = settle_cs.split("void LeaveSettle", 1)[-1].split("IEnumerator FadeSettleBgmThen", 1)[0]
+    fade = settle_cs.split("IEnumerator FadeSettleBgmThen", 1)[-1]
+    play = settle_cs.split("void PlayNextDaySfx", 1)[-1].split("void QuietSettleBgm", 1)[0]
+    splash = settle_cs.split("void ApplyResultSplashes", 1)[-1].split("void ApplyHeadline", 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_nextday.wav"
+
+    if not path.exists() or path.stat().st_size < 2000:
+        fail("sfx_nextday.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("sfx_nextday.wav is not a readable PCM page-turn")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.12 or dur > 0.40:
+            fail(f"sfx_nextday.wav duration {dur:.3f}s is not a short page-turn/confirm")
+            return
+
+    if "Audio/sfx_nextday" not in settle_cs or "PlayNextDaySfx" not in settle_cs:
+        fail("Settlement does not load / play Audio/sfx_nextday")
+    elif "PlayNextDaySfx();" not in confirm or "LeaveSettle(() => gm.NextMorning())" not in confirm:
+        fail("Space 다음날 does not play sfx_nextday then NextMorning")
+    elif "PlayNextDaySfx();" not in click or "() => GameManager.Instance.NextMorning()" not in click:
+        fail("다음날 click does not play sfx_nextday then NextMorning")
+    elif play.count("PlayOneShot") != 1:
+        fail("다음날 confirm can fire more than one shot")
+    elif "PlayNextDaySfx" in leave or "PlayNextDaySfx" in pulse:
+        fail("다음날 SFX plays on every leave or on the pulse tick")
+    elif "TickNextPulse" not in settle_cs or '"다음"' not in settle_cs or "1f + 0.03f" not in pulse:
+        fail("다음날 SFX changed the 1.03 pulse / 다음 chip")
+    elif "_letterOpen" not in confirm or "_conflictOpen" not in confirm or "OnLetter" not in settle_cs:
+        fail("다음날 SFX dropped fan-letter / overlay gates")
+    elif "PlaySettleSfx(_clearCue" not in splash or "PlaySettleSfx(_bankruptCue" not in splash:
+        fail("다음날 SFX dropped clear / bankrupt stings")
+    elif "const float fade = 0.2f" not in fade or "Audio/bgm_settlement" not in settle_cs:
+        fail("다음날 SFX dropped settlement BGM fade")
+    elif "LeaveSettle(() => GameManager.Instance.RestartRun())" not in settle_cs:
+        fail("다음날 SFX changed 처음부터 routing")
+    elif "Audio/sfx_nextday" in title_cs or "Audio/sfx_nextday" in week_cs or "Audio/sfx_nextday" in live_cs:
+        fail("다음날 confirm leaked onto Title / WeekStart / LiveStream")
+    elif "Audio/bgm_title" not in title_cs or "Audio/bgm_morning" not in week_cs:
+        fail("다음날 SFX dropped title / morning BGM")
+    elif "Audio/bgm_stream" not in live_cs or "Audio/bgm_concert" not in live_cs:
+        fail("다음날 SFX dropped stream / concert BGM")
+    elif "Audio/sfx_golive" not in week_cs or "PlayGoLiveSfx" not in week_cs:
+        fail("다음날 SFX dropped GO LIVE confirm")
+    elif "public void NextMorning()" not in gm or "ShowEndCut" in debug_cs:
+        fail("다음날 SFX changed NextMorning or F10 skip")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("다음날 SFX retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("다음날 SFX broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising 다음날 SFX / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("다음날 SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("다음날 SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("다음날 plays sfx_nextday once; pulse / fade / result stings stay")
 
 
 def check_mental_sfx() -> None:

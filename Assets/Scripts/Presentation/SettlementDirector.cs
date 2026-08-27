@@ -147,6 +147,7 @@ namespace BankruptVtuber
         AudioSource _settleSfx;
         AudioClip _clearCue;
         AudioClip _bankruptCue;
+        AudioClip _nextDayCue;
         bool _leavingSettle;
         bool _resultStingPlayed;
 
@@ -276,7 +277,10 @@ namespace BankruptVtuber
             if (_letterOpen || _memberOpen || _clipOpen || _goodsOpen || _agencyOpen || _agencySplashOpen || _juniorOpen || _concertOpen || _concertResultOpen || _conflictOpen || _autoOpen)
                 return;
             if (!_leavingSettle && CanAdvance(gm.Run) && StreamBindings.Confirm)
+            {
+                PlayNextDaySfx();
                 LeaveSettle(() => gm.NextMorning());
+            }
         }
 
         void TickNextPulse()
@@ -489,7 +493,7 @@ namespace BankruptVtuber
             _repay = UiKit.Button(_actionRow, "Repay", "남은 현금으로 빚 갚기", OnRepay, Palette.Gold, Palette.Ink);
             UiKit.Layout(_repay.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-210, 0), new Vector2(360, 60));
 
-            _next = UiKit.Button(_actionRow, "Next", "다음날  (Space)", () => LeaveSettle(() => GameManager.Instance.NextMorning()), Palette.PinkDeep, Color.white);
+            _next = UiKit.Button(_actionRow, "Next", "다음날  (Space)", () => { PlayNextDaySfx(); LeaveSettle(() => GameManager.Instance.NextMorning()); }, Palette.PinkDeep, Color.white);
             _nextRt = _next.GetComponent<RectTransform>();
             UiKit.Layout(_nextRt, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(210, 0), new Vector2(360, 60));
             _nextChip = UiKit.Panel(_next.transform, "NextChip", Palette.Gold);
@@ -2190,12 +2194,19 @@ namespace BankruptVtuber
             _settleSfx.playOnAwake = false;
             _clearCue = Resources.Load<AudioClip>("Audio/sfx_clear");
             _bankruptCue = Resources.Load<AudioClip>("Audio/sfx_bankrupt");
+            _nextDayCue = Resources.Load<AudioClip>("Audio/sfx_nextday");
         }
 
         void PlaySettleSfx(AudioClip clip, float volume)
         {
             if (_settleSfx != null && clip != null)
                 _settleSfx.PlayOneShot(clip, volume);
+        }
+
+        void PlayNextDaySfx()
+        {
+            if (_settleSfx != null && _nextDayCue != null)
+                _settleSfx.PlayOneShot(_nextDayCue, 0.46f);
         }
 
         void QuietSettleBgm()
