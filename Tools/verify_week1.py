@@ -1436,6 +1436,7 @@ def check_project() -> None:
     check_hit_rail()
     check_judge_sfx()
     check_stream_stings()
+    check_clock_tick_sfx()
 
 
 def check_content_types() -> None:
@@ -2440,18 +2441,23 @@ def check_clock_urgency() -> None:
     balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
     player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
 
+    clock = live_cs.split("void RefreshClockChip", 1)[-1].split("void RefreshHud", 1)[0]
     if "RefreshClockChip" not in live_cs or "TimeLeft <= 10f" not in live_cs:
         fail("last 10s clock does not go urgent")
     elif '"종료"' not in live_cs or "TimeLeft <= 0f" not in live_cs:
         fail("clock 0 does not snap to 종료")
-    elif "sfx_clock" not in live_cs or "PlaySfx(_clockTick" not in live_cs:
-        fail("last 10s has no per-second tick")
-    elif "shown != _lastClockSec" not in live_cs:
-        fail("clock tick is not once per second")
+    elif "Audio/sfx_clock_tick" not in live_cs or "PlaySfx(_clockTick" not in clock:
+        fail("last 10s has no per-second Resource tick")
+    elif "shown != _lastClockSec" not in clock or "shown >= 1" not in clock:
+        fail("clock tick is not once per second on 10…1")
+    elif "PlaySfx(_clockTick" in clock.split("TimeLeft <= 0f", 1)[0]:
+        fail("clock plays an extra tick at 0")
     elif "streamSeconds = 90f" not in session_cs.split("TimeLeft = balance.streamSeconds", 1)[0] and "TimeLeft = balance.streamSeconds" not in session_cs:
         fail("clock urgency retuned stream length wiring")
     elif "streamSeconds: 90" not in balance:
         fail("clock urgency retuned the 90s stream")
+    elif "1f + 0.10f * pulse" not in clock or "Sin(Time.time * 9f)" not in clock:
+        fail("clock urgency changed the visual pulse")
     elif "콤보 끊김" not in live_cs or "ShowMissSting" not in live_cs:
         fail("clock urgency dropped combo-break or miss sting")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
@@ -5141,6 +5147,57 @@ def check_stream_stings() -> None:
         fail("stream stings moved Unity off 6000.5.9f1")
     else:
         ok("ON AIR start sting + 방송 종료 cut sting; timings / F10 / judge SFX stay")
+
+
+def check_clock_tick_sfx() -> None:
+    import wave
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    clock = live_cs.split("void RefreshClockChip", 1)[-1].split("void RefreshHud", 1)[0]
+    end_show = live_cs.split("void ShowEndCut", 1)[-1].split("void Build", 1)[0]
+    judge = live_cs.split("if (_session.LastJudgement.HasValue", 1)[-1].split("SyncNotes();", 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_clock_tick.wav"
+
+    if not path.exists() or path.stat().st_size < 1200:
+        fail("sfx_clock_tick.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.03 or dur > 0.12:
+            fail(f"clock tick duration {dur:.3f}s is not a short tick")
+            return
+
+    if "Audio/sfx_clock_tick" not in live_cs or "PlaySfx(_clockTick" not in clock:
+        fail("last 10s does not play Audio/sfx_clock_tick")
+    elif "shown != _lastClockSec && shown >= 1" not in clock:
+        fail("clock tick is not once per second on 10…1")
+    elif "PlaySfx(_clockTick" in clock.split("if (_session.TimeLeft <= 0f)", 1)[0]:
+        fail("clock plays a tick at 0 before 종료")
+    elif "PlaySfx(_endCutCue" not in end_show:
+        fail("clock tick dropped the 방송 종료 sting")
+    elif "PlaySfx(_perfect" not in judge or "PlaySfx(_good" not in judge or "PlaySfx(_miss" not in judge:
+        fail("clock tick overwrote distinct judge SFX")
+    elif "Audio/sfx_onair" not in live_cs or "Audio/sfx_end_cut" not in live_cs:
+        fail("clock tick dropped ON AIR / end-cut stings")
+    elif "1f + 0.10f * pulse" not in clock or "Sin(Time.time * 9f)" not in clock:
+        fail("clock tick changed the visual pulse")
+    elif "streamSeconds: 90" not in balance or "_onAirLeft = 0.6f" not in live_cs:
+        fail("clock tick retuned 90s length or ON AIR timing")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("clock tick retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("clock tick broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising clock tick / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("clock tick dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("clock tick moved Unity off 6000.5.9f1")
+    else:
+        ok("last 10s plays sfx_clock_tick each second; 0 keeps 방송 종료 sting only")
 
 
 def check_save_roundtrip() -> None:
