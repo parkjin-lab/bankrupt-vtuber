@@ -223,6 +223,12 @@ namespace BankruptVtuber
             _shownViewers = viewers;
         }
 
+        public void HappyPop()
+        {
+            _pop = 1f;
+            _happy = 1f;
+        }
+
         public void SetHype(bool on)
         {
             _hypeOn = on;

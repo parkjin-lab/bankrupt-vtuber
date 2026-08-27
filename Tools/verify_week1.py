@@ -1343,6 +1343,7 @@ def check_project() -> None:
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
+    check_bill_cover_slam()
 
 
 def check_content_types() -> None:
@@ -2427,6 +2428,46 @@ def check_viewer_pop() -> None:
         fail("viewer popup retuned hype viewers or Week 1 bills")
     else:
         ok("시청 +/− pops next to the chip; miss reuses one popup; deltas unchanged")
+
+
+def check_bill_cover_slam() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    avatar_cs = (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+
+    if "SlamBillCover" not in live_cs or "CoverSlam" not in live_cs:
+        fail("mid-stream 청구 커버 has no gold slam")
+    elif "청구 커버" not in live_cs or "TonightBills" not in live_cs:
+        fail("cover slam is not keyed off tonight bills vs live income")
+    elif "_billsCovered" not in live_cs or "SlamBillCover()" not in live_cs:
+        fail("cover slam is not once-per-stream / sticky")
+    elif "dt * 2.5f" not in live_cs:
+        fail("cover slam is not a short 0.4s hit")
+    elif "HappyPop" not in avatar_cs or "HappyPop()" not in live_cs:
+        fail("cover slam has no avatar happy pop")
+    elif "SlamBillCover" in settle_cs or "CoverSlam" in settle_cs:
+        fail("settlement grew a fake 청구 커버 slam")
+    elif "청구 미달" not in (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").read_text(encoding="utf-8"):
+        fail("settlement headline lost 청구 미달")
+    elif "TonightBills" not in eco_cs:
+        fail("cover slam is not using existing TonightBills")
+    elif "ShowViewerDelta" not in live_cs or "BeginSuperchatFly" not in live_cs:
+        fail("cover slam dropped viewer popups or superchat fly")
+    elif "RefreshHypeShow" not in live_cs or "RefreshMentalShow" not in live_cs:
+        fail("cover slam dropped hype / mental wash")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("cover slam broke pads, 입력됨, or added timeScale")
+    elif "StreamSafeArea" not in live_cs or '"Nick"' not in live_cs:
+        fail("cover slam dropped StreamSafeArea or nicks")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising cover / later weeks")
+    elif "billRent: 8000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("cover slam retuned Week 1 bills or hype")
+    else:
+        ok("first 청구 커버 slams gold once; sticky green; no fake settle slam")
 
 
 def check_save_roundtrip() -> None:

@@ -59,6 +59,9 @@ namespace BankruptVtuber
         Text _concertSlam;
         float _concertSlamFlash;
         bool _concertWasActive;
+        Text _coverSlam;
+        float _coverSlamFlash;
+        bool _billsCovered;
         readonly Image[] _eventKeys = new Image[4];
         readonly Text[] _eventKeyLabels = new Text[4];
         readonly StreamPadButton[] _lanePads = new StreamPadButton[5];
@@ -479,6 +482,14 @@ namespace BankruptVtuber
                 _concertSlam.color = cc;
                 _concertSlam.rectTransform.localScale = Vector3.one * (1f + 0.32f * _concertSlamFlash);
             }
+            _coverSlamFlash = Mathf.MoveTowards(_coverSlamFlash, 0f, dt * 2.5f);
+            if (_coverSlam != null)
+            {
+                var kc = _coverSlam.color;
+                kc.a = _coverSlamFlash;
+                _coverSlam.color = kc;
+                _coverSlam.rectTransform.localScale = Vector3.one * (1f + 0.42f * _coverSlamFlash);
+            }
             var sc = _stub.color;
             sc.a = Mathf.MoveTowards(sc.a, 0f, dt * 0.7f);
             _stub.color = sc;
@@ -810,6 +821,11 @@ namespace BankruptVtuber
             UiKit.Layout(_concertTimer.rectTransform, new Vector2(0, 0.22f), new Vector2(1, 0.30f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             AddOverlayChoice(_concertRoot, "성공", "넘기기");
             _concertRoot.gameObject.SetActive(false);
+            _coverSlam = UiKit.Label(root, "CoverSlam", "청구 커버", 72, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_coverSlam.rectTransform, new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(720, 90));
+            var coverC = _coverSlam.color;
+            coverC.a = 0f;
+            _coverSlam.color = coverC;
             _concertSlam = UiKit.Label(root, "ConcertSlam", "정산 ×1.3", 56, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_concertSlam.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(720, 80));
             var concertSlamC = _concertSlam.color;
@@ -992,7 +1008,13 @@ namespace BankruptVtuber
             if (_remain != null)
                 _remain.rectTransform.localScale = Vector3.one * punch;
             int remain = _tonightBills - ticking;
-            bool covered = remain <= 0;
+            bool covered = remain <= 0 || _billsCovered;
+            if (!_billsCovered && shown >= _tonightBills && _tonightBills > 0)
+            {
+                _billsCovered = true;
+                covered = true;
+                SlamBillCover();
+            }
             _remain.text = covered ? "청구 커버" : EconomyRules.FormatWon(remain);
             _remain.color = covered ? Palette.CashGreen : Palette.MoneyRed;
             if (_session.HypeActive)
@@ -1016,7 +1038,7 @@ namespace BankruptVtuber
             {
                 float u = _tonightBills <= 0 ? 1f : Mathf.Clamp01(ticking / (float)_tonightBills);
                 _raceFill.rectTransform.anchorMax = new Vector2(u, 1f);
-                _raceFill.color = covered ? Palette.CashGreen : Palette.MoneyRed;
+                _raceFill.color = covered || _billsCovered ? Palette.CashGreen : Palette.MoneyRed;
             }
             if (_bankruptFill != null)
             {
@@ -1554,6 +1576,19 @@ namespace BankruptVtuber
             public RectTransform Rt;
             public float T;
             public Vector2 Start;
+        }
+
+        void SlamBillCover()
+        {
+            _coverSlamFlash = 1f;
+            if (_coverSlam != null)
+            {
+                _coverSlam.text = "청구 커버";
+                var c = Palette.Gold;
+                c.a = 1f;
+                _coverSlam.color = c;
+            }
+            _avatar?.HappyPop();
         }
 
         void ShowViewerDelta(float viewerDelta)
