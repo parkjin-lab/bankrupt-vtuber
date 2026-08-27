@@ -1133,6 +1133,14 @@ def check_project() -> None:
         fail("Title started advertising the playtest skip")
     else:
         ok("Title still starts a Week 1 run without debug keys")
+    if "DayHeadline.Remember(gm.Run)" not in debug_cs:
+        fail("F10 skip does not write lastHeadline for the next 어제 line")
+    elif "DayHeadline.Remember(gm.Run, false)" not in debug_cs:
+        fail("F9 skip does not keep lastHeadline before the week jump wipe")
+    elif 'lastHeadline = ""' in debug_cs or "lastHeadline = string.Empty" in debug_cs:
+        fail("F9/F10 skip blanks lastHeadline")
+    else:
+        ok("F9/F10 skip writes lastHeadline so the next morning can show 어제")
 
     fandom_asset_path = ROOT / "Assets/Resources/Balance/FandomBalance.asset"
     fandom_cs = (ROOT / "Assets/Scripts/Data/FandomBalance.cs").read_text(encoding="utf-8")
@@ -2528,6 +2536,8 @@ def check_yesterday_headline() -> None:
         fail("old saves without lastHeadline cannot load")
     elif "lastHeadline" in save_cs.split("static bool IsValid", 1)[-1].split("static RunSaveData Capture", 1)[0]:
         fail("IsValid rejects old saves that omit lastHeadline")
+    elif "DayHeadline.Remember" not in (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8"):
+        fail("F9/F10 skip leaves lastHeadline empty")
     else:
         ok("Day 2+ WeekStart shows yesterday's headline; Day 1 and restart stay empty")
 

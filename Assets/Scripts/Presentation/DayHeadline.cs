@@ -10,7 +10,14 @@ namespace BankruptVtuber
     {
         public static void Remember(GameRunState run)
         {
+            Remember(run, true);
+        }
+
+        public static void Remember(GameRunState run, bool overwrite)
+        {
             if (run == null)
+                return;
+            if (!overwrite && !string.IsNullOrEmpty(run.lastHeadline))
                 return;
             if (!run.streamDoneThisDay && run.lastStreamIncome == 0 && run.lastBills == 0)
                 return;

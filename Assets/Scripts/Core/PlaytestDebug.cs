@@ -95,6 +95,7 @@ namespace BankruptVtuber
 
             if (!gm.Run.streamDoneThisDay)
                 ApplyAverageStream(gm);
+            DayHeadline.Remember(gm.Run);
             gm.MarkPrologueSeen();
             gm.GoSettlement();
             Debug.Log("[파산 버튜버] DEBUG F10 average stream ₩" + AverageStreamTake + " → settlement");
@@ -121,6 +122,7 @@ namespace BankruptVtuber
             int cashKeep = gm.Run.cash;
             int debtKeep = gm.Run.debt;
 
+            DayHeadline.Remember(gm.Run, false);
             GrantClearedUnlocks(gm, next);
             PrepareJumpedMorning(gm, targetDay);
 
