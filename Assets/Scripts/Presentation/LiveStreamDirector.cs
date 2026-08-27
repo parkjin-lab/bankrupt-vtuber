@@ -11,6 +11,7 @@ namespace BankruptVtuber
         RivalDuelView _rivalDuel;
         RectTransform _lane;
         RectTransform _hit;
+        Image _strike;
         Text _viewers;
         Text _rival;
         Text _cash;
@@ -420,6 +421,7 @@ namespace BankruptVtuber
             }
 
             SyncNotes();
+            TickStrike();
             TickSuperchatPip();
             RefreshEventOverlay();
             if (_promoWasActive && !_session.PromoActive && _session.Promo.Resolved && _session.Promo.Success)
@@ -776,6 +778,9 @@ namespace BankruptVtuber
 
             _hit = UiKit.Panel(_lane, "Hit", new Color(1f, 1f, 1f, 0.22f));
             UiKit.Layout(_hit, new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, LaneHit), new Vector2(0, 10));
+            _strike = UiKit.Image(_lane, "Strike", new Color(1f, 0.95f, 0.72f, 0.96f));
+            UiKit.Layout(_strike.rectTransform, new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, LaneHit), new Vector2(0, 4));
+            _strike.raycastTarget = false;
 
             var hitLabel = UiKit.Label(_lane, "HitL", "타이밍", 16, Palette.Pastel, TextAnchor.MiddleRight);
             UiKit.Layout(hitLabel.rectTransform, new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-4, LaneHit + 18), new Vector2(80, 20));
@@ -1348,6 +1353,40 @@ namespace BankruptVtuber
             }
             float tension = Mathf.Clamp01(_session.MissStreak / (float)_session.Balance.missStreakMental);
             _tensionFill.rectTransform.anchorMax = new Vector2(tension, 1f);
+        }
+
+        void TickStrike()
+        {
+            if (_strike == null)
+                return;
+            bool perfect = false;
+            if (_session != null)
+            {
+                var notes = _session.Notes;
+                for (int i = 0; i < notes.Count; i++)
+                {
+                    var n = notes[i];
+                    if (n.Consumed)
+                        continue;
+                    float abs = Mathf.Abs(_session.Elapsed - n.HitTime);
+                    if (StreamRules.Judge(abs, _session.Balance, _session.Tuning.PerfectWindowMul) == Judgement.Perfect)
+                    {
+                        perfect = true;
+                        break;
+                    }
+                }
+            }
+            if (perfect)
+            {
+                float u = 0.5f + 0.5f * Mathf.Abs(Mathf.Sin(Time.time * 12f));
+                _strike.color = Color.Lerp(Color.white, Palette.Gold, 0.35f + 0.55f * u);
+                _strike.rectTransform.localScale = new Vector3(1f, 1f + 0.28f * u, 1f);
+            }
+            else
+            {
+                _strike.color = new Color(1f, 0.95f, 0.72f, 0.96f);
+                _strike.rectTransform.localScale = Vector3.one;
+            }
         }
 
         void SyncNotes()

@@ -1391,6 +1391,7 @@ def check_project() -> None:
     check_left_cash()
     check_go_live_pulse()
     check_note_pad_color()
+    check_strike_marker()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -3420,6 +3421,65 @@ def check_note_pad_color() -> None:
         fail("note pad tint retuned Judge")
     else:
         ok("traveling notes match kind pad colors; superchat stays gold; 0.15s glow stays")
+
+
+def check_strike_marker() -> None:
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    bind_cs = (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    tick = live_cs.split("void TickStrike", 1)[-1].split("void SyncNotes", 1)[0]
+    build = live_cs.split("_hit = UiKit.Panel", 1)[-1].split("var hitLabel", 1)[0]
+    hit = live_cs.split("_hit = UiKit.Panel", 1)[-1].split("_strike", 1)[0]
+
+    if "TickStrike" not in live_cs or '"Strike"' not in live_cs:
+        fail("hit line has no white/gold strike marker")
+    elif "new Vector2(0, LaneHit)" not in build or "new Vector2(0, 4)" not in build:
+        fail("strike marker is not a thin bar at the hit position")
+    elif "new Vector2(0, LaneHit)" not in hit or "new Vector2(0, 10)" not in hit:
+        fail("existing hit line moved or resized")
+    elif "const float LaneHit = -210f" not in live_cs:
+        fail("hit line Y was moved")
+    elif "StreamRules.Judge" not in tick or "Judgement.Perfect" not in tick:
+        fail("strike does not pulse on the existing Perfect window")
+    elif "Palette.Gold" not in tick or "Color.white" not in tick:
+        fail("strike pulse is not white/gold")
+    elif "LaneHit =" in tick or "HitTime =" in tick:
+        fail("strike marker writes hit position / times")
+    elif "perfectWindow =" in live_cs or "goodWindow =" in live_cs:
+        fail("strike marker retuned judge windows")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("strike marker retuned hit windows")
+    elif "approachSeconds: 1.35" not in balance:
+        fail("strike marker retuned travel speed")
+    elif "NotePadColor" not in live_cs or "TintTravelNote" not in live_cs:
+        fail("strike marker dropped note pad colors")
+    elif "abs <= 0.15f" not in live_cs or '"Hot"' not in live_cs:
+        fail("strike marker dropped the 0.15s hittable glow")
+    elif "TickGoLivePulse" not in week_cs or "LivePip" not in week_cs:
+        fail("strike marker dropped GO LIVE pulse")
+    elif "GetKeyUp(KeyCode.Space)" not in bind_cs or "TryConsumeKind" not in bind_cs:
+        fail("strike marker broke stream bindings")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("strike marker broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs:
+        fail("Title started advertising strike marker / later weeks")
+    elif "billRent: 8000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("strike marker retuned Week 1 bills or hype")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("strike marker dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("strike marker moved Unity off 6000.5.9f1")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("strike marker retuned Judge")
+    elif "FreezeNotes(dt)" not in session_cs.split("void TickCoach", 1)[-1]:
+        fail("strike marker broke the Day-1 coach pause")
+    else:
+        ok("hit line has a thin white/gold strike; pulses in the Perfect window")
 
 
 def check_mental_fatigue() -> None:
