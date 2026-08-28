@@ -24,6 +24,7 @@ namespace BankruptVtuber
         Text _continueDay;
         Image _continueLastDay;
         Text _continueLastWeek;
+        Image _continueMemberPin;
         Text _continueMoney;
         Text _continueDebt;
         Text _continueHead;
@@ -218,6 +219,12 @@ namespace BankruptVtuber
                 contChipImg.raycastTarget = false;
             var contChipT = UiKit.Label(_continueChip, "T", "이어", 14, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Stretch(contChipT.rectTransform);
+            _continueMemberPin = UiKit.Image(_continue.transform, "ContinueMemberPin", Color.white);
+            UiKit.Layout(_continueMemberPin.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-8f, 10f), new Vector2(72f, 48f));
+            ArtSprites.Apply(_continueMemberPin, ArtSprites.MembershipCard, Color.white, Color.white);
+            _continueMemberPin.preserveAspect = true;
+            _continueMemberPin.raycastTarget = false;
+            _continueMemberPin.gameObject.SetActive(false);
             var moneyPlate = UiKit.Panel(_continue.transform, "MoneyPlate", new Color(0, 0, 0, 0));
             UiKit.Layout(moneyPlate, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -42f), new Vector2(-16f, 32f));
             _continueCashSlip = UiKit.Image(moneyPlate, "ContinueCashSlip", Color.white);
@@ -437,6 +444,8 @@ namespace BankruptVtuber
                 _continueDayTab.gameObject.SetActive(_hasSave);
             if (_continueLastDay != null && !_hasSave)
                 _continueLastDay.gameObject.SetActive(false);
+            if (_continueMemberPin != null && !_hasSave)
+                _continueMemberPin.gameObject.SetActive(false);
             if (_continueClip != null)
                 _continueClip.gameObject.SetActive(hasHead);
             if (!_hasSave && _continueWarn != null)
@@ -461,6 +470,8 @@ namespace BankruptVtuber
                 _continueLastDay.gameObject.SetActive(last);
             if (last && _continueLastWeek != null)
                 _continueLastWeek.text = WeekSchedule.WeekNumber(peek) + "주차 마지막";
+            if (_continueMemberPin != null)
+                _continueMemberPin.gameObject.SetActive(peek.membershipUnlocked);
             int bills = EconomyRules.TonightBills(peek);
             bool shortfall = bills > 0 && peek.cash < bills;
             if (_continueMoney != null)

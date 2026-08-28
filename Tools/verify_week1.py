@@ -1552,6 +1552,7 @@ def check_project() -> None:
     check_goods_card_plate()
     check_concert_result_plate()
     check_membership_live_badge()
+    check_title_membership_pin()
     check_agency_live_badge()
     check_goods_live_badge()
     check_ranking_live_badge()
@@ -10060,6 +10061,108 @@ def check_membership_live_badge() -> None:
         fail("membership badge moved Unity off 6000.5.9f1")
     else:
         ok("post-unlock live hangs a tiny membership_card badge; Week 1 / pre-unlock hides it")
+
+
+def check_title_membership_pin() -> None:
+    """Title continue hangs a tiny membership_card pin after unlock; new-game / pre-unlock hides it."""
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    w2_asset = (ROOT / "Assets/Resources/Balance/Week2Balance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    last_tab = build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in build else ""
+    pin = build.split("_continueMemberPin = UiKit.Image", 1)[-1].split('"MoneyPlate"', 1)[0] if "_continueMemberPin = UiKit.Image" in build else ""
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    hud = live_build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in live_build else ""
+    badge = live_build.split('"MemberBadgeHud"', 1)[-1]
+    if '"AgencyBadgeHud"' in badge:
+        badge = badge.split('"AgencyBadgeHud"', 1)[0]
+    else:
+        badge = badge.split("var chatPanel", 1)[0] if '"MemberBadgeHud"' in live_build else ""
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    member_build = settle_build.split('MemberRoot"', 1)[-1].split('ClipRoot"', 1)[0]
+    member_plate = member_build.split('"MemberCardHud"', 1)[-1].split('"MemberTitle"', 1)[0] if '"MemberCardHud"' in member_build else ""
+    member_show = settle_cs.split("void ShowMemberSplash", 1)[-1].split("void OnMemberAck", 1)[0]
+
+    if 'MembershipCard = "Art/membership_card"' not in art_cs:
+        fail("ArtSprites does not hook Art/membership_card")
+    elif '"ContinueMemberPin"' not in build or "ArtSprites.MembershipCard" not in pin:
+        fail("Title continue does not hang membership_card as a tiny pin")
+    elif "_continue.transform" not in pin:
+        fail("Title membership pin is not on the continue HUD")
+    elif "72f, 48f" not in pin or "preserveAspect = true" not in pin:
+        fail("Title membership pin is not a tiny preserveAspect card")
+    elif "SetActive(false)" not in pin:
+        fail("Title membership pin is not hidden on a new-game / pre-unlock title")
+    elif "SetActive(peek.membershipUnlocked)" not in fill:
+        fail("Title membership pin is not gated on the same unlock flag as the live badge")
+    elif "_continueMemberPin" not in hide or "SetActive(false)" not in hide:
+        fail("Title membership pin is not hidden without a save")
+    elif "membershipUnlocked =" in title_cs or "membershipCount" in title_cs:
+        fail("Title membership pin writes membership state")
+    elif '"MemberBadgeHud"' in title_cs or '"MemberCardHud"' in title_cs:
+        fail("Title membership pin copied the live badge or settlement plate name")
+    elif "_avatar.Root" in pin or "MemberBadgeHud" in pin:
+        fail("Title membership pin is a live webcam cluster copy")
+    elif "UiKit.Stretch" in pin or "680f, 340f" in pin or "PanelDark" in pin:
+        fail("Title membership pin reused the settlement unlock plate")
+    elif "168f, 168f" in pin or "220f, 128f" in pin:
+        fail("Title membership pin stole a live plate slot")
+    elif "166f, -6f" in pin or "-10f, -6f" in pin:
+        fail("Title membership pin covers the last-day / n일차 day_tab")
+    elif "ArtSprites.MembershipCard" in last_tab or '"ContinueMemberPin"' in last_tab:
+        fail("Title membership pin sat between last-day tab and ContinueChip")
+    elif '"ContinueLastDayTab"' not in build or "ArtSprites.DayTab" not in last_tab:
+        fail("Title membership pin dropped the last-day day_tab")
+    elif "LastDayOfCurrentWeek" not in fill or "SetActive(last)" not in fill:
+        fail("Title membership pin dropped last-day gating")
+    elif "Audio/sfx_membership" in title_cs or "PlayMemberSfx" in title_cs:
+        fail("Title membership pin stole sfx_membership off the settlement plate")
+    elif '"MemberBadgeHud"' not in hud or "ArtSprites.MembershipCard" not in badge:
+        fail("Title membership pin dropped the live webcam badge")
+    elif "72f, 48f" not in badge or "preserveAspect = true" not in badge:
+        fail("Title membership pin restyled the live webcam badge")
+    elif "-10f, -10f" not in badge:
+        fail("Title membership pin moved the live webcam badge")
+    elif "SetActive(_memberShow)" not in apply or "membershipUnlocked" not in start:
+        fail("Title membership pin unhooked live badge unlock gating")
+    elif '"MemberCardHud"' not in member_build or "ArtSprites.MembershipCard" not in member_plate:
+        fail("Title membership pin dropped the settlement unlock plate")
+    elif "PlayMemberSfx();" not in member_show or "멤버십 해금" not in member_build:
+        fail("Title membership pin restyled the settlement unlock plate")
+    elif "startingMembers: 8" not in w2_asset or "membershipPassivePerMember: 150" not in w2_asset:
+        fail("Title membership pin retuned membership numbers")
+    elif "unlockPeakViewers: 40" not in w2_asset or "unlockSuccessfulStreams: 4" not in w2_asset:
+        fail("Title membership pin retuned unlock gates")
+    elif "peakViewersEver >= w2.unlockPeakViewers" not in sched_cs:
+        fail("Title membership pin changed unlock routing")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("Title membership pin retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("Title membership pin retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("Title membership pin retuned week-clear gates")
+    elif "perfectWindow: 0.07" not in balance or "perfectWindow * " not in rules_cs:
+        fail("Title membership pin retuned hit windows")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("Title membership pin broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "멤버십" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising membership pin / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("Title membership pin dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("Title membership pin moved Unity off 6000.5.9f1")
+    else:
+        ok("title continue hangs a tiny membership_card pin after unlock; new-game / pre-unlock hides it")
 
 
 def check_agency_live_badge() -> None:
