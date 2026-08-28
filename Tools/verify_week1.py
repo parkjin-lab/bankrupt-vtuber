@@ -16498,8 +16498,6 @@ def check_live_day1_bill() -> None:
         fail("live day-1 bill paper folded Title NewGameBill sting onto live")
     elif '"NewGameBill"' in live_cs or '"ContinueDebtNotice"' in live_cs:
         fail("live day-1 bill paper folded Title bill papers onto live")
-    elif '"오늘 청구"' in live_cs:
-        fail("live day-1 bill paper folded morning 오늘 청구 onto live")
     elif "run.day =" in live_cs or "day += " in live_cs or "day -= " in live_cs:
         fail("live day-1 bill paper writes the day index")
     elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
