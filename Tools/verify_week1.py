@@ -222,6 +222,8 @@ def check_project() -> None:
         "viewer_badge.png": "시청 배지",
         "clock_plate.png": "시계 배지",
         "onair_led.png": "ON AIR LED",
+        "judge_perfect.png": "PERFECT 스탬프",
+        "judge_good.png": "GOOD 스탬프",
         "membership_card.png": "멤버십",
         "clip_card.png": "클립",
         "pad_left.png": "← 키캡",
@@ -1492,6 +1494,7 @@ def check_project() -> None:
     check_viewer_badge()
     check_clock_plate()
     check_onair_led()
+    check_judge_stamps()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -2603,6 +2606,8 @@ def check_perfect_good() -> None:
 
     if "PERFECT" not in judge or "GOOD" not in judge:
         fail("judge pop lost PERFECT / GOOD labels")
+    elif "ArtSprites.JudgePerfect" not in judge or "ArtSprites.JudgeGood" not in judge:
+        fail("Perfect/Good are not on judge stamps")
     elif "Palette.Gold" not in judge or "_judgePopMax = 0.2f" not in judge:
         fail("Perfect is not a gold 0.2s pop")
     elif "Color.white" not in judge or "1.08f" not in judge:
@@ -7864,6 +7869,77 @@ def check_onair_led() -> None:
         ok("ON AIR sits on onair_led LED badge; 0.6s sting / SFX / pip-off stay")
 
 
+def check_judge_stamps() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    avatar_cs = (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    judge = live_cs.split("void ShowJudge", 1)[-1].split("void BeginSuperchatFly", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+
+    for name, label, min_w, min_h in (
+        ("judge_perfect.png", "PERFECT", 360, 160),
+        ("judge_good.png", "GOOD", 360, 160),
+    ):
+        png = ROOT / "Assets/Resources/Art" / name
+        data = png.read_bytes() if png.exists() else b""
+        w = h = color = 0
+        if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+            w, h = struct.unpack(">II", data[16:24])
+            color = data[25]
+        if not png.exists() or png.stat().st_size < 8000:
+            fail(f"{label} stamp PNG is missing")
+            return
+        if w < min_w or h < min_h or w <= h:
+            fail(f"{label} stamp PNG is not a readable landscape stamp")
+            return
+        if color != 6:
+            fail(f"{label} stamp PNG is not RGBA")
+            return
+
+    if 'JudgePerfect = "Art/judge_perfect"' not in art_cs or 'JudgeGood = "Art/judge_good"' not in art_cs:
+        fail("ArtSprites does not hook judge_perfect / judge_good")
+    elif "ArtSprites.JudgePerfect" not in judge or "ArtSprites.JudgeGood" not in judge:
+        fail("ShowJudge does not hang Perfect/Good on stamps")
+    elif "PERFECT" not in judge or "GOOD" not in judge:
+        fail("judge stamps dropped PERFECT / GOOD labels")
+    elif "Palette.Gold" not in judge or "Color.white" not in judge:
+        fail("judge stamps dropped gold vs white")
+    elif "_judgePopMax = 0.2f" not in judge or "1.72f" not in judge:
+        fail("Perfect stamp dropped 0.2s big pop")
+    elif "_judgePopMax = 0.12f" not in judge or "1.08f" not in judge:
+        fail("Good stamp dropped smaller pop")
+    elif "Palette.MoneyRed" not in judge or "_judgePopMax = 0.25f" not in judge:
+        fail("judge stamps dropped Miss red pop")
+    elif "Audio/sfx_perfect" not in live_cs or "Audio/sfx_good" not in live_cs:
+        fail("judge stamps dropped Perfect/Good SFX")
+    elif "_punch = 0.12f" not in avatar_cs:
+        fail("judge stamps dropped Perfect webcam punch")
+    elif "perfectWindow: 0.07" not in balance or "greatWindow: 0.13" not in balance or "goodWindow: 0.22" not in balance:
+        fail("judge stamps retuned hit windows")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("judge stamps retuned hit window wiring")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("judge stamps retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("judge stamps broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising judge stamps / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("judge stamps dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("judge stamps moved Unity off 6000.5.9f1")
+    elif "Art/judge_perfect" not in readme or "Art/judge_good" not in readme:
+        fail("README should mention judge_perfect / judge_good")
+    else:
+        ok("PERFECT / GOOD sit on judge stamps; gold/white / size / SFX / punch stay")
+
+
 def check_mental_sfx() -> None:
     import wave
 
@@ -8425,6 +8501,8 @@ def check_readme_playable() -> None:
         fail("README dropped clock_plate live broadcast clock")
     elif "onair_led" not in readme or "ON AIR" not in readme or "sfx_onair" not in readme:
         fail("README dropped onair_led broadcast LED")
+    elif "judge_perfect" not in readme or "judge_good" not in readme or "PERFECT" not in readme or "GOOD" not in readme:
+        fail("README dropped Perfect/Good judge stamps")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:

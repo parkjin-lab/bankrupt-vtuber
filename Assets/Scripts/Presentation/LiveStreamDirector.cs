@@ -41,6 +41,7 @@ namespace BankruptVtuber
         Text _combo;
         Image _comboPlate;
         Text _judge;
+        Image _judgeStamp;
         Image _liveDot;
         RectTransform _onAirRoot;
         Image _onAirWash;
@@ -457,6 +458,8 @@ namespace BankruptVtuber
                     ? StreamEventState.RecoverCopy(_session.Event.Kind)
                     : StreamEventState.FailCopy(_session.Event.Kind);
                 _judge.color = okHit ? Palette.CashGreen : Palette.MoneyRed;
+                if (_judgeStamp != null)
+                    _judgeStamp.gameObject.SetActive(false);
                 _judgeFlash = 1f;
                 _judgeBig = true;
                 _judgePopMax = 0.28f;
@@ -577,16 +580,29 @@ namespace BankruptVtuber
             var jc = _judge.color;
             jc.a = _judgeFlash;
             _judge.color = jc;
+            if (_judgeStamp != null && _judgeStamp.gameObject.activeSelf)
+            {
+                var sc = _judgeStamp.color;
+                sc.a = _judgeFlash;
+                _judgeStamp.color = sc;
+            }
             if (_judgePop > 0f)
             {
                 _judgePop = Mathf.MoveTowards(_judgePop, 0f, dt);
                 float u = _judgePopMax <= 0.001f ? 0f : Mathf.Clamp01(_judgePop / _judgePopMax);
                 float s = _judgeBig ? 1f + 0.58f * u : 1f + 0.18f * u;
-                _judge.rectTransform.localScale = Vector3.one * s;
+                var scale = Vector3.one * s;
+                if (_judge != null)
+                    _judge.rectTransform.localScale = scale;
+                if (_judgeStamp != null && _judgeStamp.gameObject.activeSelf)
+                    _judgeStamp.rectTransform.localScale = scale;
             }
             else
             {
-                _judge.rectTransform.localScale = Vector3.one;
+                if (_judge != null)
+                    _judge.rectTransform.localScale = Vector3.one;
+                if (_judgeStamp != null)
+                    _judgeStamp.rectTransform.localScale = Vector3.one;
             }
             _onAirLeft = Mathf.MoveTowards(_onAirLeft, 0f, dt);
             TickOnAir();
@@ -739,6 +755,8 @@ namespace BankruptVtuber
             }
             _judge.text = _session.ForceEnded ? "멘탈 붕괴 — 강제 종료" : "방송 종료";
             _judge.color = Color.white;
+            if (_judgeStamp != null)
+                _judgeStamp.gameObject.SetActive(false);
             _judgeFlash = 1f;
             if (_session.ForceEnded && _forceEndRoot != null)
             {
@@ -1065,6 +1083,11 @@ namespace BankruptVtuber
             UiKit.Layout(_coachPrompt.rectTransform, new Vector2(0.5f, 0.40f), new Vector2(0.5f, 0.40f), new Vector2(0.5f, 0.5f), new Vector2(-20, 0), new Vector2(560, 72));
             _coachPrompt.gameObject.SetActive(false);
 
+            _judgeStamp = UiKit.Image(root, "JudgeStamp", Color.white);
+            UiKit.Layout(_judgeStamp.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(520, 96));
+            _judgeStamp.preserveAspect = false;
+            _judgeStamp.raycastTarget = false;
+            _judgeStamp.gameObject.SetActive(false);
             _judge = UiKit.Label(root, "Judge", "", 64, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_judge.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(520, 80));
 
@@ -2184,12 +2207,36 @@ namespace BankruptVtuber
                 Judgement.Good => 34,
                 _ => 64
             };
+            if (_judgeStamp != null)
+            {
+                if (j == Judgement.Perfect)
+                {
+                    ArtSprites.Apply(_judgeStamp, ArtSprites.JudgePerfect, Palette.Gold, Color.white);
+                    _judgeStamp.preserveAspect = false;
+                    _judgeStamp.gameObject.SetActive(true);
+                    UiKit.Layout(_judgeStamp.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(560, 110));
+                }
+                else if (j == Judgement.Good)
+                {
+                    ArtSprites.Apply(_judgeStamp, ArtSprites.JudgeGood, Color.white, Color.white);
+                    _judgeStamp.preserveAspect = false;
+                    _judgeStamp.gameObject.SetActive(true);
+                    UiKit.Layout(_judgeStamp.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(360, 72));
+                }
+                else
+                {
+                    _judgeStamp.gameObject.SetActive(false);
+                }
+            }
             _judgeFlash = 1f;
             _judgeBig = j == Judgement.Perfect || j == Judgement.Miss;
             if (j == Judgement.Perfect)
             {
                 _judgePopMax = 0.2f;
-                _judge.rectTransform.localScale = Vector3.one * 1.72f;
+                var s = Vector3.one * 1.72f;
+                _judge.rectTransform.localScale = s;
+                if (_judgeStamp != null)
+                    _judgeStamp.rectTransform.localScale = s;
             }
             else if (j == Judgement.Miss)
             {
@@ -2199,7 +2246,10 @@ namespace BankruptVtuber
             else if (j == Judgement.Good)
             {
                 _judgePopMax = 0.12f;
-                _judge.rectTransform.localScale = Vector3.one * 1.08f;
+                var s = Vector3.one * 1.08f;
+                _judge.rectTransform.localScale = s;
+                if (_judgeStamp != null)
+                    _judgeStamp.rectTransform.localScale = s;
             }
             else
             {
