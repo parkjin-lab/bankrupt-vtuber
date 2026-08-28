@@ -4586,7 +4586,7 @@ def check_title_day_tab() -> None:
         fail("title day_tab does not read peek.day into n일차")
     elif "peek.day =" in title_cs or "day += " in title_cs or "day -= " in title_cs:
         fail("title day_tab writes the day index")
-    elif "ContinueDayTab" not in hide or "SetActive(_hasSave)" not in hide:
+    elif "_continueDayTab" not in hide or "SetActive(_hasSave)" not in hide:
         fail("title day_tab is not hidden without a save")
     elif "_daySlam = 0.25f" not in week_cs or "_dayTab" not in slam:
         fail("title day_tab retuned the morning 0.25s slam")
