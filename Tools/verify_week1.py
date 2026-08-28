@@ -1595,6 +1595,7 @@ def check_project() -> None:
     check_week2_card_art()
     check_coach_pad_icons()
     check_coach_card()
+    check_coach_pad_dock()
     check_rival_portrait()
     check_goods_stand()
     check_week4_card_art()
@@ -12518,6 +12519,75 @@ def check_coach_card() -> None:
         fail("README should mention coach_card")
     else:
         ok("Day-1 coach sits on coach_card sticky; pad art / bindings / Day-1 rule stay")
+
+
+def check_coach_pad_dock() -> None:
+    """Day-1 coach pad row sits on the same pad_dock tray as the live stream-deck."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    offer = session_cs.split("ShouldOfferFirstStreamCoach", 1)[-1].split("public void EnableFirstStreamCoach", 1)[0]
+    refresh = live_cs.split("void RefreshCoach", 1)[-1].split("StreamPadButton EventPad", 1)[0]
+    legend = live_cs.split("RectTransform BuildCoachLegend", 1)[-1].split("void BuildSuperchatPip", 1)[0]
+    if "void BuildSuperchatPip" not in live_cs.split("RectTransform BuildCoachLegend", 1)[-1]:
+        legend = live_cs.split("RectTransform BuildCoachLegend", 1)[-1].split("static string CoachPrompt", 1)[0]
+    row = live_cs.split('UiKit.Panel(bottom, "PadRow"', 1)[-1].split("BuildSuperchatPip", 1)[0]
+    coach_loop = next((ln for ln in readme.splitlines() if "1일차 코치" in ln or "coach_card" in ln), "")
+    coach_inv = next((ln for ln in readme.splitlines() if "Art/coach_card" in ln and "스티키" in ln), "")
+
+    if 'PadDock = "Art/pad_dock"' not in art_cs:
+        fail("ArtSprites does not hook Art/pad_dock")
+    elif "ArtSprites.PadDock" not in legend or '"PadDock"' not in legend:
+        fail("coach pad row does not hang pad_dock behind the keycaps")
+    elif "SetAsFirstSibling" not in legend or "ApplySliced" not in legend:
+        fail("coach pad_dock is not drawn under the coach pad row")
+    elif "ArtSprites.PadDock" not in row or '"PadDock"' not in row:
+        fail("coach pad_dock dropped the live stream-deck tray")
+    elif "ArtSprites.PadLeft" not in legend or "ArtSprites.PadDown" not in legend:
+        fail("coach pad_dock dropped ← / ↓ keycaps")
+    elif "ArtSprites.PadRight" not in legend or "ArtSprites.PadUp" not in legend or "ArtSprites.PadSuperchat" not in legend:
+        fail("coach pad_dock dropped → / ↑ / Space keycaps")
+    elif '"←"' not in legend or '"↓"' not in legend or '"→"' not in legend or '"↑"' not in legend or '"Space"' not in legend:
+        fail("coach pad_dock dropped arrow / Space bindings")
+    elif "ArtSprites.CoachCard" not in live_cs or '"CoachCard"' not in live_cs:
+        fail("coach pad_dock dropped coach_card")
+    elif "색에 맞는 키 또는 아래 버튼을 눌러" not in live_cs:
+        fail("coach pad_dock dropped the Korean hint")
+    elif "← 긍정" not in live_cs or "↓ 공감" not in live_cs or "→ 웃음" not in live_cs or "↑ 감사" not in live_cs:
+        fail("coach pad_dock changed kind prompts")
+    elif "슈퍼챗 Space" not in live_cs or "눌러서 차지 후 떼기" not in live_cs:
+        fail("coach pad_dock changed superchat teach copy")
+    elif "CoachSuccessTarget = 3" not in session_cs or "CoachSeconds = 8f" not in session_cs:
+        fail("coach pad_dock changed dismiss (3 / 8s)")
+    elif "day != 1" not in offer and "day == 1" not in offer:
+        fail("coach pad_dock is not Day-1 only")
+    elif "EnableFirstStreamCoach" not in live_cs or "_onAirLeft <= 0f" not in refresh:
+        fail("coach pad_dock broke Day-1 arm / ON AIR wait")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("coach pad_dock retuned hit windows")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("coach pad_dock retuned Judge windows")
+    elif "chatSpawnStart: 1.55" not in balance or "billRent: 8000" not in balance:
+        fail("coach pad_dock retuned spawn / economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("coach pad_dock broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising coach pad_dock / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("coach pad_dock dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("coach pad_dock moved Unity off 6000.5.9f1")
+    elif "pad_dock" not in coach_loop or "pad_*" not in coach_loop:
+        fail("README coach loop does not name pad_dock under the coach pads")
+    elif "pad_dock" not in coach_inv or "트레이" not in coach_inv:
+        fail("README coach inventory dropped pad_dock under the coach pad row")
+    else:
+        ok("Day-1 coach pad row sits on pad_dock tray; keycaps / bindings / Day-1 rule stay")
 
 
 def check_rival_portrait() -> None:

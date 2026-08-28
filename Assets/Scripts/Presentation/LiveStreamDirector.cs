@@ -1469,6 +1469,12 @@ namespace BankruptVtuber
             var rowImg = row.GetComponent<Image>();
             if (rowImg != null)
                 rowImg.raycastTarget = false;
+            var padDock = UiKit.Image(row, "PadDock", Color.white);
+            UiKit.Stretch(padDock.rectTransform);
+            ArtSprites.ApplySliced(padDock, ArtSprites.PadDock, Color.white, new Vector4(48f, 40f, 48f, 40f));
+            padDock.preserveAspect = false;
+            padDock.raycastTarget = false;
+            padDock.transform.SetAsFirstSibling();
             var tips = new (string art, string bind)[]
             {
                 (ArtSprites.PadLeft, "←"),
