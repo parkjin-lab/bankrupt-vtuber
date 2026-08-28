@@ -209,6 +209,7 @@ def check_project() -> None:
         "bill_food.png": "식비",
         "bill_gear.png": "장비",
         "bill_notice.png": "고지서",
+        "bill_bar.png": "청구 영수증 바",
         "stream_overlay.png": "라이브 오버레이",
         "title_studio.png": "타이틀 스튜디오",
         "settlement_desk.png": "정산 책상",
@@ -1466,6 +1467,7 @@ def check_project() -> None:
     check_day_tab()
     check_bill_chip()
     check_bill_fill()
+    check_bill_bar()
     check_mental_fatigue()
     check_superchat_fly()
     check_viewer_pop()
@@ -4017,8 +4019,10 @@ def check_bill_fill() -> None:
         fail("fill bar is not red while short / gold when full")
     elif "SlamBillCover" in fill:
         fail("fill bar added a second cover slam")
-    elif "new Vector2(180, 10)" not in live_cs:
+    elif "new Vector2(180, 18)" not in live_cs and "new Vector2(180, 10)" not in live_cs:
         fail("fill bar is not a thin bar next to the chip")
+    elif "ArtSprites.BillBar" not in live_cs:
+        fail("fill bar track is not on bill_bar receipt strip")
     elif "const float LaneHit = -210f" not in live_cs or "TickStrike" not in live_cs:
         fail("fill bar moved or stole the hit bar")
     elif "SlamBillCover()" not in live_cs or "CoverSlam" not in live_cs:
@@ -4047,6 +4051,66 @@ def check_bill_fill() -> None:
         fail("fill bar moved Unity off 6000.5.9f1")
     else:
         ok("thin 청구 fill bar tracks live income; red short / gold full; slam stays once")
+
+
+def check_bill_bar() -> None:
+    """청구 fill track sits on a torn receipt strip (bill_bar.png)."""
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    hud = live_cs.split("void RefreshHud", 1)[-1].split("void TickEventWarn", 1)[0]
+    fill = hud.split("if (_billFill != null)", 1)[-1].split("if (_session.HypeActive)", 1)[0]
+    png = ROOT / "Assets/Resources/Art/bill_bar.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 4000:
+        fail("bill_bar.png is missing")
+    elif w < 240 or h < 36 or w <= h:
+        fail("bill_bar.png is not a readable landscape receipt strip")
+    elif color != 6:
+        fail("bill_bar.png is not RGBA")
+    elif 'BillBar = "Art/bill_bar"' not in art_cs:
+        fail("ArtSprites does not hook Art/bill_bar")
+    elif "ArtSprites.BillBar" not in live_cs or "BillFillTrack" not in live_cs:
+        fail("청구 fill track does not hang Art/bill_bar")
+    elif "ApplySliced(billTrack, ArtSprites.BillBar" not in live_cs and "ApplySliced(billTrack,ArtSprites.BillBar" not in live_cs.replace(" ", ""):
+        fail("bill_bar is not applied sliced on BillFillTrack")
+    elif "BillChip" not in live_cs or "ArtSprites.BillNotice" not in live_cs or '"청구 "' not in live_cs:
+        fail("bill_bar dropped 청구 ₩N chip / bill_notice")
+    elif "Palette.MoneyRed" not in fill or "Palette.Gold" not in fill:
+        fail("bill_bar dropped red short / gold full fill colors")
+    elif "ticking / (float)_tonightBills" not in fill:
+        fail("bill_bar dropped live income / tonight bill fill math")
+    elif "SlamBillCover()" not in live_cs or "ArtSprites.BillCover" not in live_cs:
+        fail("bill_bar dropped PAID bill_cover stamp")
+    elif "Audio/sfx_bill_cover" not in live_cs:
+        fail("bill_bar dropped sfx_bill_cover")
+    elif "SlamBillCover" in settle_cs or "CoverSlam" in settle_cs:
+        fail("bill_bar grew a fake settlement slam")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("bill_bar retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("bill_bar broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising bill_bar / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("bill_bar dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("bill_bar moved Unity off 6000.5.9f1")
+    elif "Art/bill_bar" not in readme or "영수증" not in readme:
+        fail("README should mention bill_bar receipt strip")
+    else:
+        ok("청구 fill sits on bill_bar receipt strip; chip / colors / PAID / sfx stay")
 
 
 def check_mental_fatigue() -> None:
@@ -4229,7 +4293,7 @@ def check_viewer_chip_pop() -> None:
         fail("content / rival viewer modifiers were dropped")
     elif "Viewers =" in show or "Viewers =" in paint:
         fail("viewer chip pop writes viewer math")
-    elif "BillFill" not in live_cs or "new Vector2(180, 10)" not in live_cs:
+    elif "BillFill" not in live_cs or ("new Vector2(180, 18)" not in live_cs and "new Vector2(180, 10)" not in live_cs):
         fail("viewer chip pop dropped the 청구 fill bar")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
         fail("viewer chip pop broke pads, 입력됨, or added timeScale")
@@ -4879,7 +4943,7 @@ def check_bill_notice() -> None:
         fail("debt notice dropped cash slips")
     elif "_billSlam = 0.25f" not in week_cs or "청구보다 부족" not in week_cs:
         fail("bill notice dropped slam or 청구보다 부족")
-    elif "new Vector2(180, 10)" not in live_cs or "ticking / (float)_tonightBills" not in hud:
+    elif ("new Vector2(180, 18)" not in live_cs and "new Vector2(180, 10)" not in live_cs) or "ticking / (float)_tonightBills" not in hud:
         fail("bill notice dropped the 청구 fill bar")
     elif "SlamBillCover()" not in live_cs or "CoverSlam" not in live_cs:
         fail("bill notice dropped the once cover slam")
@@ -10373,12 +10437,13 @@ def check_readme_playable() -> None:
         or "won_pop" not in readme
         or "viewer_pop" not in readme
         or "bill_short" not in readme
+        or "bill_bar" not in readme
         or "청구 커버" not in readme
         or "+₩" not in readme
         or "청구 미달" not in readme
         or "청구보다 부족" not in readme
     ):
-        fail("README money-stamp inventory dropped bill_cover / won_pop / viewer_pop / bill_short")
+        fail("README money-stamp inventory dropped bill_cover / bill_bar / won_pop / viewer_pop / bill_short")
     elif "headline_clip" not in readme or "오늘 헤드라인" not in readme or "어제:" not in readme or "이어서 하기" not in readme:
         fail("README dropped headline scrap on settlement / morning / title continue")
     elif "cash_slip" not in readme or "남은 현금" not in readme or "이어서 하기" not in readme or "지금 수입" not in readme or "오늘 수입" not in readme:

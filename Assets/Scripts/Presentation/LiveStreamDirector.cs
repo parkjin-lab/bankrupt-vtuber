@@ -1071,11 +1071,12 @@ namespace BankruptVtuber
             }
             _billChip = UiKit.Label(billChip, "T", "청구 ₩0", 22, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Stretch(_billChip.rectTransform);
-            var billTrack = UiKit.Image(root, "BillFillTrack", new Color(1f, 1f, 1f, 0.14f));
-            UiKit.Layout(billTrack.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(710, -224), new Vector2(180, 10));
+            var billTrack = UiKit.Image(root, "BillFillTrack", Color.white);
+            UiKit.Layout(billTrack.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(710, -228), new Vector2(180, 18));
+            ArtSprites.ApplySliced(billTrack, ArtSprites.BillBar, Color.white, new Vector4(24f, 16f, 24f, 16f));
             billTrack.raycastTarget = false;
             _billFill = UiKit.Image(billTrack.rectTransform, "BillFill", Palette.MoneyRed);
-            UiKit.Stretch(_billFill.rectTransform);
+            UiKit.Stretch(_billFill.rectTransform, 8, 8, 6, 6);
             _billFill.rectTransform.anchorMax = new Vector2(0f, 1f);
             _billFill.raycastTarget = false;
 

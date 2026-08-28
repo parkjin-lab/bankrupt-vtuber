@@ -23,6 +23,7 @@ namespace BankruptVtuber
         public const string BillFood = "Art/bill_food";
         public const string BillGear = "Art/bill_gear";
         public const string BillNotice = "Art/bill_notice";
+        public const string BillBar = "Art/bill_bar";
         public const string StreamOverlay = "Art/stream_overlay";
         public const string TitleStudio = "Art/title_studio";
         public const string SettlementDesk = "Art/settlement_desk";
