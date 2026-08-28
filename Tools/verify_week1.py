@@ -1561,6 +1561,7 @@ def check_project() -> None:
     check_readme_coach_pad_dock()
     check_readme_threat_slam_sfx()
     check_readme_both_threat_sfx()
+    check_readme_title_threat_sfx()
     check_letter_card()
     check_letter_keycaps()
     check_pad_sfx()
@@ -9990,6 +9991,77 @@ def check_readme_both_threat_sfx() -> None:
         fail("README both-threat moved Unity off 6000.5.9f1")
     else:
         ok("README names both sfx_threat uses (morning slam + settlement plate); silent if none")
+
+
+def check_readme_title_threat_sfx() -> None:
+    """README names all three sfx_threat uses: morning, settlement, title continue."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    extra_cs = (ROOT / "Assets/Scripts/Data/ExtraThreat.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    title_loop = readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]
+    live_loop = readme.split("위협 오버레이", 1)[-1].split("정산:", 1)[0]
+    hud = next((ln for ln in readme.splitlines() if "피크 / 사고" in ln and "event_warn" in ln), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    leave = title_cs.split("void LeaveTitle", 1)[-1].split("IEnumerator FadeTitleBgmThen", 1)[0]
+    spawn = week_cs.split("void SpawnIncoming", 1)[-1].split("IEnumerator Slam", 1)[0]
+    bind = settle_cs.split("void BindExtraWarn", 1)[-1].split("void ApplyHeadline", 1)[0]
+
+    missing = next(
+        (
+            f"{label} {token}"
+            for label, block in (
+                ("title loop", title_loop),
+                ("live overlay", live_loop),
+                ("HUD peak", hud),
+                ("SFX inventory", sfx_inv),
+            )
+            for token in ("sfx_threat", "이어서 하기", "한 번")
+            if token not in block
+        ),
+        "",
+    )
+
+    if missing:
+        fail(f"README {missing} must name title-continue sfx_threat once")
+    elif sfx_inv.count("sfx_threat") < 3:
+        fail("README SFX inventory must name all three sfx_threat uses")
+    elif "오늘의 위협" not in sfx_inv or "정산 추가 위협" not in sfx_inv or "이어서 하기" not in sfx_inv:
+        fail("README SFX inventory must name morning / settlement / title continue sfx_threat")
+    elif "스팅 없음" not in title_loop or "sfx_title" not in title_loop:
+        fail("README title loop must stay silent if no extra and leave on sfx_title")
+    elif "PlayThreatSfx();" not in fill or fill.count("PlayThreatSfx();") != 1:
+        fail("README title-continue sfx_threat lost the extra-threat shot")
+    elif "if (extraOn)" not in fill or "PlayThreatSfx" in hide:
+        fail("README title-continue sfx_threat plays without an extra-threat plate")
+    elif "PlayTitleSfx();" not in leave or "PlayThreatSfx" in leave:
+        fail("README title-continue sfx_threat changed leave confirm")
+    elif "PlayThreatSfx();" not in spawn or "PlayThreatSfx();" not in bind:
+        fail("README title-continue sfx_threat dropped morning / settlement shots")
+    elif "장비 고장" not in extra_cs or "라이벌 견제" not in extra_cs:
+        fail("README title-continue sfx_threat retuned extra threat names")
+    elif "Audio/sfx_threat" in live_cs:
+        fail("sfx_threat leaked onto LiveStream")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("README title-continue sfx_threat retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README title-continue sfx_threat broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising title-continue sfx_threat / later weeks")
+    elif "Week3" in title_cs or "라이벌" in title_cs:
+        fail("Title started advertising Week3 / 라이벌")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README title-continue sfx_threat dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README title-continue sfx_threat moved Unity off 6000.5.9f1")
+    else:
+        ok("README names all three sfx_threat uses (morning / settlement / title continue)")
 
 
 def check_letter_card() -> None:
