@@ -3021,6 +3021,13 @@ namespace BankruptVtuber
             {
                 _eventSting.gameObject.SetActive(true);
                 _eventSting.transform.SetAsLastSibling();
+                bool anti = kind == StreamEventKind.AntiWave;
+                ArtSprites.Apply(
+                    _eventSting,
+                    anti ? ArtSprites.AntiSting : ArtSprites.LagSting,
+                    anti ? new Color(0.92f, 0.05f, 0.16f, 0.92f) : new Color(0.22f, 0.28f, 0.34f, 0.92f),
+                    Color.white);
+                _eventSting.preserveAspect = false;
                 if (_eventStingLabel != null)
                     _eventStingLabel.text = StreamEventState.DisplayName(kind);
             }
@@ -3043,9 +3050,18 @@ namespace BankruptVtuber
                 _eventSting.gameObject.SetActive(stingOn || _eventSting.color.a > 0.02f);
                 float a = stingOn ? 0.92f : Mathf.MoveTowards(_eventSting.color.a, 0f, dt * 6f);
                 bool anti = _eventStingKind == StreamEventKind.AntiWave;
-                _eventSting.color = anti
-                    ? new Color(0.92f, 0.05f, 0.16f, a)
-                    : new Color(0.22f, 0.28f, 0.34f, a);
+                if (stingOn)
+                {
+                    ArtSprites.Apply(
+                        _eventSting,
+                        anti ? ArtSprites.AntiSting : ArtSprites.LagSting,
+                        anti ? new Color(0.92f, 0.05f, 0.16f, a) : new Color(0.22f, 0.28f, 0.34f, a),
+                        Color.white);
+                    _eventSting.preserveAspect = false;
+                }
+                var sc = _eventSting.color;
+                sc.a = a;
+                _eventSting.color = sc;
                 if (_eventStingLabel != null)
                 {
                     var lc = _eventStingLabel.color;

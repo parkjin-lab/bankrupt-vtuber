@@ -222,6 +222,8 @@ def check_project() -> None:
         "combo_break.png": "콤보 끊김 스탬프",
         "hype_frame.png": "하이프 프레임",
         "event_warn.png": "이벤트 경고",
+        "anti_sting.png": "안티 스팅",
+        "lag_sting.png": "렉 스팅",
         "viewer_badge.png": "시청 배지",
         "clock_plate.png": "시계 배지",
         "onair_led.png": "ON AIR LED",
@@ -1506,6 +1508,7 @@ def check_project() -> None:
     check_combo_break_stamp()
     check_hype_frame()
     check_event_warn_plate()
+    check_event_sting_overlays()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -5550,6 +5553,8 @@ def check_event_sfx() -> None:
         fail("anti-wave fire does not play sfx_anti")
     elif "PlaySfx(_lagCue" not in begin or "StreamEventKind.GearLag" not in begin:
         fail("gear-lag fire does not play sfx_lag")
+    elif "ArtSprites.AntiSting" not in begin or "ArtSprites.LagSting" not in begin:
+        fail("event fire does not hang anti_sting / lag_sting overlays")
     elif "PlaySfx" in warn:
         fail("event telegraph plays SFX before fire")
     elif "_eventStingLeft = 0.2f" not in begin or "Panic" not in begin:
@@ -8293,6 +8298,75 @@ def check_event_warn_plate() -> None:
         ok("안티 온다 / 렉 온다 sit on event_warn plate; 0.5s / SFX / stings / rules stay")
 
 
+def check_event_sting_overlays() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    begin = live_cs.split("void BeginEventAccident", 1)[-1].split("void TickEventAccident", 1)[0]
+    tick = live_cs.split("void TickEventAccident", 1)[-1].split("void ApplyEventScar", 1)[0]
+    warn = live_cs.split("void TickEventWarn", 1)[-1].split("void TickStrike", 1)[0]
+
+    for name, label, min_w, min_h in (
+        ("anti_sting.png", "anti", 480, 720),
+        ("lag_sting.png", "lag", 480, 720),
+    ):
+        png = ROOT / "Assets/Resources/Art" / name
+        data = png.read_bytes() if png.exists() else b""
+        w = h = color = 0
+        if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+            w, h = struct.unpack(">II", data[16:24])
+            color = data[25]
+        if not png.exists() or png.stat().st_size < 8000:
+            fail(f"{label} sting PNG is missing")
+            return
+        if w < min_w or h < min_h or h <= w:
+            fail(f"{label} sting PNG is not a readable portrait overlay")
+            return
+        if color != 6:
+            fail(f"{label} sting PNG is not RGBA")
+            return
+
+    if 'AntiSting = "Art/anti_sting"' not in art_cs or 'LagSting = "Art/lag_sting"' not in art_cs:
+        fail("ArtSprites does not hook anti_sting / lag_sting")
+    elif "ArtSprites.AntiSting" not in begin or "ArtSprites.LagSting" not in begin:
+        fail("BeginEventAccident does not hang anti/lag overlays")
+    elif "ArtSprites.AntiSting" not in tick or "ArtSprites.LagSting" not in tick:
+        fail("TickEventAccident does not keep anti/lag overlays")
+    elif "PlaySfx(_antiCue" not in begin or "PlaySfx(_lagCue" not in begin:
+        fail("event sting overlays dropped anti/lag SFX")
+    elif "ArtSprites.EventWarn" not in live_cs or "안티 온다" not in event_cs or "렉 온다" not in event_cs:
+        fail("event sting overlays dropped the telegraph plate / copy")
+    elif "eta > 0.5f" not in session_cs or "PlaySfx" in warn:
+        fail("event sting overlays retuned telegraph timing or SFX")
+    elif "_eventStingLeft = 0.2f" not in begin or "Panic" not in begin:
+        fail("event sting overlays dropped 0.2s sting / panic")
+    elif "eventEarliestSeconds: 35" not in balance or "eventWindowSeconds: 1.15" not in balance:
+        fail("event sting overlays retuned event timing")
+    elif "eventAntiFailMental: 8" not in balance or "eventLagFailFreezeSeconds: 3" not in balance:
+        fail("event sting overlays retuned fail penalties")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("event sting overlays retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("event sting overlays broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising event sting overlays / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("event sting overlays dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("event sting overlays moved Unity off 6000.5.9f1")
+    elif "Art/anti_sting" not in readme or "Art/lag_sting" not in readme:
+        fail("README should mention anti_sting / lag_sting")
+    else:
+        ok("anti/lag fire sit on sting overlays; SFX / telegraph / rules stay")
+
+
 def check_mental_sfx() -> None:
     import wave
 
@@ -8854,6 +8928,8 @@ def check_readme_playable() -> None:
         fail("README dropped hype_frame gold overlay")
     elif "event_warn" not in readme or "안티 온다" not in readme or "렉 온다" not in readme or "sfx_anti" not in readme:
         fail("README dropped event_warn warning plate")
+    elif "anti_sting" not in readme or "lag_sting" not in readme or "sfx_lag" not in readme:
+        fail("README dropped anti_sting / lag_sting overlays")
     elif "viewer_badge" not in readme or "시청자" not in readme or ("시청 +" not in readme and "시청 ±" not in readme):
         fail("README dropped viewer_badge live follower badge")
     elif "clock_plate" not in readme or "남은 시간" not in readme or "sfx_clock_tick" not in readme:
