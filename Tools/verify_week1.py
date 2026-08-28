@@ -1595,6 +1595,7 @@ def check_project() -> None:
     check_live_last_day_cash()
     check_live_week_start_cash()
     check_live_day1_mental()
+    check_live_last_day_mental()
     check_title_day1_tab()
     check_concert_live_badge()
     check_sponsor_live_badge()
@@ -17908,6 +17909,268 @@ def check_live_day1_mental() -> None:
         fail("live day-1 mental paper moved Unity off 6000.5.9f1")
     else:
         ok("day-1 live hangs mental_note as HUD 멘탈; other lives hide it; LiveDay1Bill / LiveDay1Cash / NewGameMental / morning / ending mental stay")
+
+
+def check_live_last_day_mental() -> None:
+    """Last-of-week lives hang mental_note as a tiny HUD 멘탈 paper; other lives hide it; LiveDay1Mental / LiveLastBill / LiveLastCash / NewGameMental / morning / ending mental stay."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
+    build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    paper = build.split('"LiveLastMental"', 1)[-1].split('"LiveLastBill"', 1)[0] if '"LiveLastMental"' in build else ""
+    day1_mental = build.split('"LiveDay1Mental"', 1)[-1].split('"LiveWeekCash"', 1)[0] if '"LiveDay1Mental"' in build else ""
+    last_cash = build.split('"LiveLastCash"', 1)[-1].split('"LiveLastMental"', 1)[0] if '"LiveLastMental"' in build else ""
+    last_bill = build.split('"LiveLastBill"', 1)[-1].split('"LiveWeekBill"', 1)[0] if '"LiveWeekBill"' in build else ""
+    last_tab = build.split('"LiveLastDay"', 1)[-1].split("var chatPanel", 1)[0] if '"LiveLastDay"' in build else ""
+    last_head = build.split('"LiveLastHeadline"', 1)[-1].split("if (_avatar != null && _avatar.Root != null)", 1)[0] if '"LiveLastHeadline"' in build else ""
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    mental_apply = apply.split("if (_lastMental", 1)[-1].split("UiKit.EnsureCamera", 1)[0] if "if (_lastMental" in apply else ""
+    day1_mental_apply = apply.split("if (_day1Mental", 1)[-1].split("if (_weekHeadline", 1)[0] if "if (_day1Mental" in apply else ""
+    last_cash_apply = apply.split("if (_lastCash", 1)[-1].split("if (_lastMental", 1)[0] if "if (_lastMental" in apply else ""
+    last_bill_apply = apply.split("if (_lastBill", 1)[-1].split("if (_lastCash", 1)[0] if "if (_lastCash" in apply else ""
+    last_live_gate = live_cs.split("static bool LiveLastDay", 1)[-1].split("void ApplyThreatShow", 1)[0] if "static bool LiveLastDay" in live_cs else ""
+    show = build.split('"ShowChip"', 1)[-1].split('"BillChip"', 1)[0] if '"ShowChip"' in build else ""
+    bill = build.split('"BillChip"', 1)[-1].split('"LiveDay1Headline"', 1)[0] if '"LiveDay1Headline"' in build else ""
+    hud = build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in build else ""
+    chat = build.split('"ChatDock"', 1)[-1].split('"Lane"', 1)[0] if '"ChatDock"' in build else ""
+    pads = build.split('"PadRow"', 1)[-1].split('"MissSting"', 1)[0] if '"PadRow"' in build else ""
+    coach = build.split('"CoachCard"', 1)[-1].split('"CoachStamp"', 1)[0] if '"CoachCard"' in build else ""
+    timer = build.split('"Timer"', 1)[-1].split('"Cash"', 1)[0] if '"Timer"' in build else ""
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_mental = start_hang.split("_startMental = UiKit.Image", 1)[-1] if "_startMental = UiKit.Image" in start_hang else ""
+    if "_startDay = UiKit.Image" in title_mental:
+        title_mental = title_mental.split("_startDay = UiKit.Image", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    clear_build = settle_build.split('ClearRoot"', 1)[-1].split('StampRoot"', 1)[0]
+    stamp_build = settle_build.split('StampRoot"', 1)[-1].split('LetterRoot"', 1)[0]
+    warn = live_cs.split('var warn = UiKit.Panel', 1)[-1].split("_eventWarnBox", 1)[0]
+
+    if 'MentalNote = "Art/mental_note"' not in art_cs:
+        fail("ArtSprites does not hook Art/mental_note")
+    elif '"LiveLastMental"' not in build or "ArtSprites.MentalNote" not in paper:
+        fail("last-day live does not hang Art/mental_note as a HUD 멘탈 paper")
+    elif "preserveAspect = true" not in paper:
+        fail("live last-day mental paper is not preserveAspect")
+    elif "ApplySliced" in paper:
+        fail("live last-day mental paper reused a sliced desk paper")
+    elif "72f, 48f" in paper:
+        fail("live last-day mental paper was hung as a 72×48 pin")
+    elif "104f, 48f" not in paper or "574f, -268f" not in paper:
+        fail("live last-day mental paper is not a tiny HUD scrap beside LiveLastCash")
+    elif "338f, -268f" in paper or "116f, 56f" in paper:
+        fail("live last-day mental paper covers LiveLastBill")
+    elif "456f, -268f" in paper or "110f, 48f" in paper:
+        fail("live last-day mental paper covers LiveLastCash")
+    elif "204f, -86f" in paper or "160f, 110f" in paper:
+        fail("live last-day mental paper sat on Title NewGameMental")
+    elif "204f, -10f" in paper or "200f, 68f" in paper:
+        fail("live last-day mental paper sat on Title NewGameCash")
+    elif "176f, 170f" in paper or "16f, -10f" in paper:
+        fail("live last-day mental paper sat on Title NewGameBill")
+    elif "8f, -220f" in paper or "8f, -148f" in paper or "0.74f, 1f" in paper or "0.80f, 1f" in paper:
+        fail("live last-day mental paper sat on a morning / settlement desk paper")
+    elif '"멘탈"' not in paper:
+        fail("live last-day mental paper is not Korean 멘탈 copy")
+    elif "청구서" in paper or "BillNotice" in paper or "CashSlip" in paper:
+        fail("live last-day mental paper reused a bill or cash hang")
+    elif "헤드라인" in paper or "HeadlineClip" in paper or "DayTab" in paper:
+        fail("live last-day mental paper reused a headline or calendar hang")
+    elif "1일차" in paper or "마지막 날" in paper or "2주차" in paper or "주차 마지막" in paper:
+        fail("live last-day mental paper reused calendar-tab copy")
+    elif "168f, 68f" in paper or "24f, -272f" in paper:
+        fail("live last-day mental paper covers LiveLastHeadline")
+    elif "132f, 40f" in paper or "200f, -276f" in paper:
+        fail("live last-day mental paper covers LiveLastDay")
+    elif "24, -214" in paper or "168, 44" in paper or '"ShowChip"' in paper:
+        fail("live last-day mental paper covers the show chip")
+    elif "460, -210" in paper or "248, 52" in paper or '"BillChip"' in paper:
+        fail("live last-day mental paper covers the live bill chip")
+    elif "710, -228" in paper or "180, 18" in paper:
+        fail("live last-day mental paper covers the bill fill")
+    elif "ClockPlate" in paper or '"Timer"' in paper or "0.64f, 1f" in paper:
+        fail("live last-day mental paper covers the timer")
+    elif "ChatDock" in paper or "420, -220" in paper or "실시간 채팅" in paper:
+        fail("live last-day mental paper covers chat")
+    elif "PadRow" in paper or "AddColumnPad" in paper or "1–4" in paper:
+        fail("live last-day mental paper covers QTE / pads")
+    elif "CoachCard" in paper or "720, 220" in paper or "-80, 0" in paper:
+        fail("live last-day mental paper covers the day-1 coach")
+    elif "MemberBadgeHud" in paper or "AgencyBadgeHud" in paper or "GoodsBadgeHud" in paper:
+        fail("live last-day mental paper sat on an unlock pin")
+    elif "RankingBadgeHud" in paper or "ClipBadgeHud" in paper or "ConcertBadgeHud" in paper or "SponsorBadgeHud" in paper:
+        fail("live last-day mental paper sat on an unlock pin")
+    elif "-10f, -10f" in paper or "-10f, -322f" in paper:
+        fail("live last-day mental paper covers a webcam unlock pin")
+    elif "360, 70" in paper or '"GoLive"' in paper:
+        fail("live last-day mental paper sat on morning GO LIVE")
+    elif "NewGameMental" in paper or "ContinueMentalNote" in paper or "ClearMentalNote" in paper or "StampMentalNote" in paper:
+        fail("live last-day mental paper sat on Title / ending mental papers")
+    elif "NewGameCash" in paper or "ContinueCashSlip" in paper or "NewGameBill" in paper:
+        fail("live last-day mental paper sat on Title cash / bill papers")
+    elif "오늘 청구" in paper or "_billSlam" in paper:
+        fail("live last-day mental paper sat on the morning bill tile")
+    elif "LiveDay1Headline" in paper or "LiveLastHeadline" in paper or "LiveWeekHeadline" in paper:
+        fail("live last-day mental paper folded a live headline into the same hang")
+    elif '"LiveDay1"' in paper or '"LiveWeekStart"' in paper or '"LiveLastDay"' in paper:
+        fail("live last-day mental paper folded a live calendar into the same hang")
+    elif '"LiveDay1Bill"' in paper or '"LiveLastBill"' in paper or '"LiveWeekBill"' in paper:
+        fail("live last-day mental paper folded a live bill paper into the same hang")
+    elif '"LiveDay1Cash"' in paper or '"LiveLastCash"' in paper or '"LiveWeekCash"' in paper:
+        fail("live last-day mental paper folded a live cash paper into the same hang")
+    elif '"LiveDay1Mental"' in paper:
+        fail("live last-day mental paper folded LiveDay1Mental into the same hang")
+    elif "멘탈 위험" in paper or "MentalWarnBox" in paper:
+        fail("live last-day mental paper reused the live 멘탈 위험 chip")
+    elif "UiKit.Stretch" in paper:
+        fail("live last-day mental paper was stretched over the HUD")
+    elif "SetActive(false)" not in paper:
+        fail("live last-day mental paper is not hidden until ApplyContentShow")
+    elif "Audio/sfx_threat" in paper or "PlayThreatSfx" in paper or "PlayNewGameBillThreat" in paper:
+        fail("live last-day mental paper added a new sting")
+    elif "sfx_mental" in paper or "PlaySfx(_mentalCue" in paper:
+        fail("live last-day mental paper added a new mental sting")
+    elif "_lastMental" not in apply or "LiveLastDay" not in mental_apply:
+        fail("live last-day mental paper is not shown on last-day lives")
+    elif "SetActive(LiveLastDay(GameManager.Instance.Run.day))" not in mental_apply:
+        fail("live last-day mental paper is not hidden on other lives")
+    elif "1 == GameManager.Instance.Run.day" in mental_apply:
+        fail("live last-day mental paper reused the day-1 live gate")
+    elif "LastDayOfCurrentWeek" in mental_apply or "LiveWeekStartDay" in mental_apply:
+        fail("live last-day mental paper reused last-day or week-start gate")
+    elif "LastDayOfCurrentWeek" in apply or "6 == " in apply or "run.day == 6" in apply:
+        fail("live last-day mental paper reused last-day or week-start gate in ApplyContentShow")
+    elif "day == 5" not in last_live_gate or "day == 10" not in last_live_gate or "day == 15" not in last_live_gate:
+        fail("live last-day mental paper is not shown on days 5 / 10 / 15")
+    elif "day == 20" not in last_live_gate or "day == 25" not in last_live_gate:
+        fail("live last-day mental paper is not shown on days 20 / 25")
+    elif re.search(r"day == 1\b", last_live_gate) or re.search(r"day == 6\b", last_live_gate) or re.search(r"day == 2\b", last_live_gate) or re.search(r"day == 7\b", last_live_gate) or re.search(r"day == 11\b", last_live_gate):
+        fail("live last-day mental paper also shows on a non-last-day live")
+    elif "_day1Mental" not in apply or "SetActive(1 == GameManager.Instance.Run.day)" not in day1_mental_apply:
+        fail("live last-day mental paper dropped LiveDay1Mental day-1 hide")
+    elif "LiveLastDay" in day1_mental_apply or "LiveWeekStartDay" in day1_mental_apply:
+        fail("LiveDay1Mental reused last-day or week-start gate")
+    elif '"LiveDay1Mental"' not in build or "ArtSprites.MentalNote" not in day1_mental or '"멘탈"' not in day1_mental:
+        fail("live last-day mental paper restyled LiveDay1Mental")
+    elif "104f, 48f" not in day1_mental or "574f, -268f" not in day1_mental or "preserveAspect = true" not in day1_mental:
+        fail("live last-day mental paper moved LiveDay1Mental")
+    elif "LiveLastMental" in day1_mental or "마지막 날" in day1_mental:
+        fail("LiveDay1Mental hang folded in the last-day live mental paper")
+    elif "_lastCash" not in apply or "SetActive(LiveLastDay(GameManager.Instance.Run.day))" not in last_cash_apply:
+        fail("live last-day mental paper dropped LiveLastCash last-day hide")
+    elif "1 == GameManager.Instance.Run.day" in last_cash_apply:
+        fail("LiveLastCash reused the day-1 live gate")
+    elif "LiveWeekStartDay" in last_cash_apply:
+        fail("LiveLastCash reused the week-start live gate")
+    elif '"LiveLastCash"' not in build or "ArtSprites.CashSlip" not in last_cash or '"현금"' not in last_cash:
+        fail("live last-day mental paper restyled LiveLastCash")
+    elif "110f, 48f" not in last_cash or "456f, -268f" not in last_cash or "preserveAspect = true" not in last_cash:
+        fail("live last-day mental paper moved LiveLastCash")
+    elif "MentalNote" in last_cash or "멘탈" in last_cash or "LiveLastMental" in last_cash:
+        fail("LiveLastCash hang folded in the last-day live mental paper")
+    elif "_lastBill" not in apply or "SetActive(LiveLastDay(GameManager.Instance.Run.day))" not in last_bill_apply:
+        fail("live last-day mental paper dropped LiveLastBill last-day hide")
+    elif "1 == GameManager.Instance.Run.day" in last_bill_apply:
+        fail("LiveLastBill reused the day-1 live gate")
+    elif '"LiveLastBill"' not in build or "ArtSprites.BillNotice" not in last_bill or '"청구서"' not in last_bill:
+        fail("live last-day mental paper restyled LiveLastBill")
+    elif "116f, 56f" not in last_bill or "338f, -268f" not in last_bill or "preserveAspect = true" not in last_bill:
+        fail("live last-day mental paper moved LiveLastBill")
+    elif "MentalNote" in last_bill or "멘탈" in last_bill or "LiveLastMental" in last_bill:
+        fail("LiveLastBill hang folded in the last-day live mental paper")
+    elif '"LiveLastDay"' not in build or "ArtSprites.DayTab" not in last_tab or '"마지막 날"' not in last_tab:
+        fail("live last-day mental paper restyled LiveLastDay")
+    elif "132f, 40f" not in last_tab or "200f, -276f" not in last_tab:
+        fail("live last-day mental paper moved LiveLastDay")
+    elif "멘탈" in last_tab or "MentalNote" in last_tab or "LiveLastMental" in last_tab:
+        fail("LiveLastDay hang folded in the last-day live mental paper")
+    elif '"LiveLastHeadline"' not in build or "ArtSprites.HeadlineClip" not in last_head or '"헤드라인"' not in last_head:
+        fail("live last-day mental paper restyled LiveLastHeadline")
+    elif "168f, 68f" not in last_head or "24f, -272f" not in last_head:
+        fail("live last-day mental paper moved LiveLastHeadline")
+    elif "멘탈" in last_head or "MentalNote" in last_head or "LiveLastMental" in last_head:
+        fail("LiveLastHeadline hang folded in the last-day live mental paper")
+    elif '"NewGameMental"' not in start_hang or "ArtSprites.MentalNote" not in title_mental:
+        fail("live last-day mental paper restyled NewGameMental")
+    elif "204f, -86f" not in title_mental or "160f, 110f" not in title_mental or '"멘탈"' not in title_mental:
+        fail("live last-day mental paper restyled the NewGameMental desk paper")
+    elif "preserveAspect = true" not in title_mental:
+        fail("live last-day mental paper restyled NewGameMental preserveAspect")
+    elif "SetActive(!_hasSave)" not in hide:
+        fail("live last-day mental paper changed Title NewGameMental hide")
+    elif '"ContinueMentalNote"' not in title_cs or "ArtSprites.MentalNote" not in title_cs:
+        fail("live last-day mental paper dropped Title continue mental")
+    elif "ArtSprites.MentalNote" not in money or '"MentalChip"' not in week_cs or '"멘탈"' not in week_cs:
+        fail("live last-day mental paper dropped morning 멘탈")
+    elif "ArtSprites.MentalNote" not in clear_build or '"ClearMentalNote"' not in clear_build:
+        fail("live last-day mental paper dropped the week-clear mental sticky")
+    elif "ArtSprites.MentalNote" not in stamp_build or '"StampMentalNote"' not in stamp_build:
+        fail("live last-day mental paper dropped the bankrupt mental sticky")
+    elif "ArtSprites.MentalNote" not in warn or "MentalWarnBox" not in warn or "멘탈 위험" not in warn:
+        fail("live last-day mental paper dropped live 멘탈 위험")
+    elif '"TonightIncome"' not in live_cs or '"지금 수입"' not in live_cs:
+        fail("live last-day mental paper dropped live 지금 수입")
+    elif "24, -214" not in show or "168, 44" not in show:
+        fail("live last-day mental paper restyled the show chip")
+    elif "460, -210" not in bill or "248, 52" not in bill or "ArtSprites.BillNotice" not in bill:
+        fail("live last-day mental paper restyled the live bill chip")
+    elif "ArtSprites.ClockPlate" not in timer:
+        fail("live last-day mental paper dropped the timer plate")
+    elif "ArtSprites.ChatDock" not in chat:
+        fail("live last-day mental paper dropped chat dock")
+    elif "AddColumnPad" not in pads or "슈퍼챗" not in pads:
+        fail("live last-day mental paper dropped live pads")
+    elif "ArtSprites.CoachCard" not in coach or "720, 220" not in coach:
+        fail("live last-day mental paper dropped the day-1 coach")
+    elif '"MemberBadgeHud"' not in hud or "72f, 48f" not in hud or "-10f, -10f" not in hud:
+        fail("live last-day mental paper restyled the membership pin")
+    elif '"SponsorBadgeHud"' not in hud or "-10f, -322f" not in hud:
+        fail("live last-day mental paper restyled the sponsor pin")
+    elif "SetActive(_memberShow)" not in apply or "SetActive(_sponsorPinShow)" not in apply:
+        fail("live last-day mental paper changed unlock pin hide")
+    elif "Audio/sfx_threat" not in live_cs or "PlayThreatSfx" not in live_cs:
+        fail("live last-day mental paper dropped live GO LIVE / extra-threat sfx_threat")
+    elif "PlayNewGameBillThreat" in live_cs:
+        fail("live last-day mental paper folded Title NewGameBill sting onto live")
+    elif '"NewGameMental"' in live_cs or '"ContinueMentalNote"' in live_cs or '"ClearMentalNote"' in live_cs:
+        fail("live last-day mental paper folded Title / ending mental papers onto live")
+    elif "run.day =" in live_cs or "day += " in live_cs or "day -= " in live_cs:
+        fail("live last-day mental paper writes the day index")
+    elif "startingMental =" in live_cs or "mental +=" in live_cs or "mental -=" in live_cs:
+        fail("live last-day mental paper writes mental")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("live last-day mental paper moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("live last-day mental paper retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("live last-day mental paper retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("live last-day mental paper retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("live last-day mental paper broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising live last-day mental paper / later weeks")
+    elif "def check_live_day1_mental()" not in verify_src or "def check_live_last_day_bill()" not in verify_src:
+        fail("live last-day mental paper dropped LiveDay1Mental / LiveLastBill hang locks")
+    elif "def check_live_last_day_cash()" not in verify_src:
+        fail("live last-day mental paper dropped LiveLastCash hang lock")
+    elif "def check_title_newgame_mental()" not in verify_src or "def check_ending_mental_note()" not in verify_src:
+        fail("live last-day mental paper dropped NewGameMental / ending mental locks")
+    elif "def check_mental_note()" not in verify_src:
+        fail("live last-day mental paper dropped the shared mental_note lock")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("live last-day mental paper dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("live last-day mental paper moved Unity off 6000.5.9f1")
+    else:
+        ok("last-day live hangs mental_note as HUD 멘탈; other lives hide it; LiveDay1Mental / LiveLastBill / LiveLastCash / NewGameMental / morning / ending mental stay")
 
 
 def check_title_day1_tab() -> None:
