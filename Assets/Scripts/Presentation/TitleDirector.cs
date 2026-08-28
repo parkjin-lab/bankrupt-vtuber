@@ -274,7 +274,9 @@ namespace BankruptVtuber
             _wipeRoot = wash.gameObject;
             var card = UiKit.Panel(wash.transform, "WipeCard", Color.white);
             UiKit.Layout(card, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 360));
-            ArtSprites.ApplySliced(card.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 0.90f, 0.92f, 0.98f));
+            var wipeImg = card.GetComponent<Image>();
+            ArtSprites.Apply(wipeImg, ArtSprites.NewGameCard, new Color(1f, 0.90f, 0.92f, 0.98f), Color.white);
+            wipeImg.preserveAspect = false;
             SafeFitCard.Bind(card, 720f, 360f);
             var title = UiKit.Label(card, "WipeTitle", "새 방송 시작", 36, Palette.MoneyRed, TextAnchor.UpperCenter, FontStyle.Bold);
             UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -20), new Vector2(-24, 48));

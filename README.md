@@ -45,7 +45,7 @@
 
 ## 한 판 루프
 
-**Title**은 `Art/title_studio` 파산 스튜디오 바탕 위에 워드마크·버튼이 그대로 올라간다. `Audio/bgm_title` 불안한 네온 루프(로비만. 떠나면 0.2초 페이드). **새 방송 시작**은 `Art/title_start` 스트림덱 키캡 + 작은 **시작** 칩과 함께 1.03으로 숨쉰다. 세이브가 있으면 **이어서 하기**도 `Art/title_continue` 키캡 + 작은 **이어** 칩과 함께 1.03으로 숨쉬고(세이브 없으면 키캡 숨김), **이어하기 n일차** + 현금(`Art/cash_slip` 영수증. 청구를 알면 부족은 빨강 + 아침·정산과 같은 `Art/bill_short` 스탬프 **청구보다 부족**. 세이브 없거나 충분하면 스탬프 숨김)/부채(`Art/bill_notice` 고지서. 골드)/멘탈(`Art/mental_note` 스티키. `멘탈 N`. ≤20이면 빨강. 세이브 없으면 영수증·고지서·메모 숨김). 어제 헤드라인이 있으면 그 줄이 `Art/headline_clip` 신문 스크랩으로 이어하기 옆에 붙는다(세이브·헤드라인 없으면 숨김). **새 방송 시작**은 **진행 중인 n일차를 지울까?** 확인 후 지운다. 로비를 떠나면(`방송 시작` / `이어서 하기` / `지우고 시작`) `Audio/sfx_title` 확인이 한 번 난다.
+**Title**은 `Art/title_studio` 파산 스튜디오 바탕 위에 워드마크·버튼이 그대로 올라간다. `Audio/bgm_title` 불안한 네온 루프(로비만. 떠나면 0.2초 페이드). **새 방송 시작**은 `Art/title_start` 스트림덱 키캡 + 작은 **시작** 칩과 함께 1.03으로 숨쉰다. 세이브가 있으면 **이어서 하기**도 `Art/title_continue` 키캡 + 작은 **이어** 칩과 함께 1.03으로 숨쉬고(세이브 없으면 키캡 숨김), **이어하기 n일차** + 현금(`Art/cash_slip` 영수증. 청구를 알면 부족은 빨강 + 아침·정산과 같은 `Art/bill_short` 스탬프 **청구보다 부족**. 세이브 없거나 충분하면 스탬프 숨김)/부채(`Art/bill_notice` 고지서. 골드)/멘탈(`Art/mental_note` 스티키. `멘탈 N`. ≤20이면 빨강. 세이브 없으면 영수증·고지서·메모 숨김). 어제 헤드라인이 있으면 그 줄이 `Art/headline_clip` 신문 스크랩으로 이어하기 옆에 붙는다(세이브·헤드라인 없으면 숨김). **새 방송 시작**은 `Art/newgame_card` 지우기 고지 카드에 **진행 중인 n일차를 지울까?** 확인(**지우고 시작** / **취소**) 후 지운다. 로비를 떠나면(`방송 시작` / `이어서 하기` / `지우고 시작`) `Audio/sfx_title` 확인이 한 번 난다.
 
 **Title** → **WeekStart**는 `Art/morning_room` 청구 아침 방 위에 `Audio/bgm_morning` 불안한 청구 루프(타이틀보다 작고 날카로움. **방송 켜기**/콘서트 시작으로 떠나면 0.2초 페이드)와 **n일차**가 크게 0.25초 팝 → **오늘 청구**가 `Art/bill_notice` 고지서 칸에서 0.25초 슬램(**현금**은 정산·타이틀과 같은 `Art/cash_slip` 영수증. 청구보다 적으면 경고 빨강 + 정산과 같은 `Art/bill_short` 스탬프 **청구보다 부족**. 막히면 그대로. **멘탈**은 정산·라이브·타이틀과 같은 `Art/mental_note` 스티키 메모에 `N/100`) → 청구 카드 → 콘텐츠 픽(토크/게임/노래/리액션, 네 장 모두 `Art/content_plate` 스트림 카드 플레이트 + `Art/content_*` 아이콘 + 액센트 + 편하게 잡담 / 같이 깨자 / 고음 승부 / 같이 보자. 고르면 `Audio/sfx_pick` 확인이 한 번) → **방송 켜기**(콘서트면 **콘서트 방송**)가 `Art/golive_key` 스트림덱 키캡 + 빨간 LIVE 핍과 함께 1.04로 숨쉬고, 누르면 `Audio/sfx_golive` 확인 후쉬가 한 번 난 뒤 아침 베드가 0.2초 페이드 → 라이브 화면의 0.6초 **ON AIR**(`Audio/sfx_onair`)는 그대로 → **90초 라이브** → **Settlement**.
 
@@ -66,7 +66,7 @@
 
 방·책상 종이·라이브 HUD 스택·돈 스탬프·팝 슬립·스트림덱 키캡·스테이지 아트, 패드, 채팅 버블, 노트, 화면별 BGM(일반 라이브 `bgm_stream` / 콘서트 라이브 `bgm_concert`), 판정·이벤트·엔딩·중반 SFX, 콘텐츠 아이콘, 라이벌 얼굴, 굿즈/에이전시/랭킹/콘서트 아트가 이미 붙어 있다. 아래는 저장소에 있는 아트만 적는다(새로 만들지 않음).
 
-- **방** — `Art/title_studio` · `Art/morning_room` · `Art/settlement_desk` · `Art/stream_overlay` · `Art/ending_clear` / `Art/ending_bankrupt`
+- **방** — `Art/title_studio` · `Art/morning_room` · `Art/settlement_desk` · `Art/stream_overlay` · `Art/ending_clear` / `Art/ending_bankrupt` · `Art/newgame_card`(타이틀 새 방송 지우기 고지)
 - **스트림덱 키캡** — 메뉴·아침·정산 확인 버튼이 같은 키캡 패밀리로 읽힌다(펄스·칩·SFX·라우팅은 그대로).
   - `Art/title_start` — 타이틀 **새 방송 시작** (`sfx_title`, **시작** 칩)
   - `Art/title_continue` — 타이틀 **이어서 하기** (`sfx_title`, **이어** 칩. 세이브 없으면 숨김)

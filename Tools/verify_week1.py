@@ -217,6 +217,7 @@ def check_project() -> None:
         "letter_card.png": "팬레터",
         "letter_reply.png": "답장하기 키캡",
         "letter_ignore.png": "나중에 키캡",
+        "newgame_card.png": "새 방송 지우기 고지",
         "headline_clip.png": "어제 헤드라인",
         "cash_slip.png": "남은 현금",
         "won_pop.png": "+₩ 슬립",
@@ -1493,6 +1494,7 @@ def check_project() -> None:
     check_hype_chip()
     check_golive_keycap()
     check_title_keycaps()
+    check_newgame_card()
     check_nextday_keycap()
     check_hype_sfx()
     check_event_sfx()
@@ -4368,6 +4370,8 @@ def check_start_pulse() -> None:
         fail("새 방송 시작 click no longer wipes or starts")
     elif "진행 중인 " not in wipe or "지울까?" not in wipe or "지우고 시작" not in wipe or "취소" not in wipe:
         fail("save-wipe confirm is not exactly as-is")
+    elif "ArtSprites.NewGameCard" not in wipe or 'NewGameCard = "Art/newgame_card"' not in (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8"):
+        fail("save-wipe confirm is not on newgame_card")
     elif "ConfirmWipe" not in title_cs or "CloseWipe" not in title_cs:
         fail("wipe confirm wiring changed")
     elif "MoneyPlate" not in title_cs or "이어하기 " not in title_cs or '"현금 "' not in cont or '"부채 "' not in cont:
@@ -6050,6 +6054,8 @@ def check_title_keycaps() -> None:
         fail("title keycaps changed new-game confirm / start")
     elif "진행 중인 " not in wipe or "지울까?" not in wipe or "지우고 시작" not in wipe or "취소" not in wipe:
         fail("title keycaps changed wipe confirm copy")
+    elif "ArtSprites.NewGameCard" not in wipe or 'NewGameCard = "Art/newgame_card"' not in art_cs:
+        fail("title keycaps dropped newgame_card wipe notice")
     elif "Audio/sfx_title" not in title_cs and "PlayTitleSfx" not in title_cs and "sfx_title" not in title_cs:
         fail("title keycaps dropped sfx_title")
     elif "ArtSprites.GoLiveKey" not in week_cs:
@@ -6070,6 +6076,71 @@ def check_title_keycaps() -> None:
         fail("README should mention title_start / title_continue")
     else:
         ok("Title start/continue sit on keycaps; pulse / chips / confirm / sfx / hide-no-save stay")
+
+
+def check_newgame_card() -> None:
+    import struct
+
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    wipe = title_cs.split("void BuildWipe", 1)[-1].split("void BuildPrologue", 1)[0]
+    start_fn = title_cs.split("void OnStartBroadcast", 1)[-1].split("void BeginNewRun", 1)[0]
+    confirm = title_cs.split("void ConfirmWipe", 1)[-1].split("void OnContinue", 1)[0]
+    png = ROOT / "Assets/Resources/Art/newgame_card.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("newgame_card.png is missing")
+    elif w < 480 or h < 240 or w <= h:
+        fail("newgame_card.png is not a readable landscape wipe-notice card")
+    elif color != 6:
+        fail("newgame_card.png is not RGBA")
+    elif 'NewGameCard = "Art/newgame_card"' not in art_cs:
+        fail("ArtSprites does not hook Art/newgame_card")
+    elif "ArtSprites.NewGameCard" not in wipe or '"WipeCard"' not in wipe:
+        fail("wipe confirm does not hang Art/newgame_card")
+    elif "진행 중인 " not in wipe or "지울까?" not in wipe or "지우고 시작" not in wipe or "취소" not in wipe:
+        fail("newgame_card dropped Korean confirm / cancel copy")
+    elif '"새 방송 시작"' not in wipe:
+        fail("newgame_card dropped 새 방송 시작 title")
+    elif "ConfirmWipe" not in title_cs or "CloseWipe" not in title_cs:
+        fail("newgame_card unhooked wipe confirm / cancel")
+    elif "OpenWipe" not in start_fn or "BeginNewRun" not in start_fn:
+        fail("newgame_card changed new-game confirm flow")
+    elif "LeaveTitle(BeginNewRun)" not in confirm or "CloseWipe" not in confirm:
+        fail("newgame_card changed wipe confirm leave")
+    elif "ArtSprites.TitleStart" not in title_cs or "ArtSprites.TitleContinue" not in title_cs:
+        fail("newgame_card dropped title keycaps")
+    elif "Audio/sfx_title" not in title_cs or "PlayTitleSfx" not in title_cs:
+        fail("newgame_card dropped sfx_title")
+    elif "RunSave.Delete" not in gm or "public void StartNewRun()" not in gm:
+        fail("newgame_card changed save wipe / StartNewRun")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("newgame_card retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("newgame_card broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising newgame_card / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("newgame_card dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("newgame_card moved Unity off 6000.5.9f1")
+    elif "Art/newgame_card" not in readme or "지울까?" not in readme:
+        fail("README should mention newgame_card wipe notice")
+    elif "ArtSprites.GoLiveKey" not in week_cs:
+        fail("newgame_card dropped morning golive_key match")
+    else:
+        ok("new-game confirm sits on newgame_card; copy / cancel / keycaps / sfx stay")
 
 
 def check_nextday_keycap() -> None:
@@ -7332,6 +7403,8 @@ def check_title_sfx() -> None:
         fail("title SFX changed continue load")
     elif "LeaveTitle(BeginNewRun)" not in wipe or "CloseWipe" not in wipe:
         fail("title SFX dropped the new-game confirm wipe")
+    elif "ArtSprites.NewGameCard" not in title_cs or 'NewGameCard = "Art/newgame_card"' not in (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8"):
+        fail("title SFX dropped newgame_card wipe notice")
     elif "TickStartPulse" not in title_cs or '"시작"' not in title_cs or "1f + 0.03f" not in start_pulse:
         fail("title SFX changed the 1.03 start pulse / 시작 chip")
     elif "TickContinuePulse" not in title_cs or '"이어"' not in title_cs or "1f + 0.03f" not in cont_pulse:
@@ -9788,6 +9861,8 @@ def check_readme_playable() -> None:
         fail("README does not inventory stream-deck keycaps")
     elif "letter_reply" not in readme or "letter_ignore" not in readme or "답장하기" not in readme or "나중에" not in readme:
         fail("README dropped letter_reply / letter_ignore fan-letter keycaps")
+    elif "newgame_card" not in readme or "지울까?" not in readme or "지우고 시작" not in readme:
+        fail("README dropped newgame_card wipe notice")
     elif "chat_bubble" not in readme or "note_chip" not in readme or "superchat_chip" not in readme or "content_*" not in readme:
         fail("README dropped chat / note / superchat envelope / content icons")
     elif "content_plate" not in readme or "콘텐츠" not in readme:
