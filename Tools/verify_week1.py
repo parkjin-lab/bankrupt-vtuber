@@ -2631,6 +2631,8 @@ def check_income_pop() -> None:
 
     if "ShowIncomeDelta" not in live_cs or "IncomePop" not in live_cs:
         fail("successful notes have no +₩ popup on 지금 수입")
+    elif "ArtSprites.CashSlip" not in live_cs or '"TonightIncome"' not in live_cs:
+        fail("+₩ popup chip is not on Art/cash_slip")
     elif '"+" + EconomyRules.FormatWon' not in live_cs and 'text = "+" + EconomyRules.FormatWon' not in live_cs:
         fail("+₩ popup does not use FormatWon")
     elif "ShowIncomeDelta(_session.LiveIncome - _incomeMarked)" not in live_cs:
@@ -7422,6 +7424,12 @@ def check_cash_slip() -> None:
         fail("Title cash slip dropped debt display")
     elif "TickContinuePulse" not in title_cs or "ContinueRun()" not in title_cs:
         fail("Title cash slip dropped continue pulse / load")
+    elif '"TonightIncome"' not in live_cs or "ArtSprites.CashSlip" not in live_cs or '"지금 수입"' not in live_cs:
+        fail("live 지금 수입 is not on the same Art/cash_slip")
+    elif "IncomePop" not in live_cs or "ShowIncomeDelta" not in live_cs:
+        fail("live income slip dropped +₩ popups")
+    elif "BillChip" not in live_cs or "BillFill" not in live_cs or "ArtSprites.BillNotice" not in live_cs:
+        fail("live income slip dropped bill chip / fill / 고지서")
     elif "Palette.MoneyRed" not in left or "PeekTomorrowTypical" not in settle_cs:
         fail("cash slip dropped short-red tint / tomorrow bill peek")
     elif "gm.Run.cash" not in left and "run.cash" not in left:
@@ -7451,7 +7459,7 @@ def check_cash_slip() -> None:
     elif "Art/cash_slip" not in (ROOT / "README.md").read_text(encoding="utf-8"):
         fail("README should mention Art/cash_slip")
     else:
-        ok("title / morning / settlement cash share cash_slip; panic / 고지서 / counts stay")
+        ok("title / morning / live / settlement cash share cash_slip; +₩ / 고지서 stay")
 
 
 def check_mental_sfx() -> None:
@@ -7997,8 +8005,8 @@ def check_readme_playable() -> None:
         fail("README dropped ranking / concert art")
     elif "headline_clip" not in readme or "오늘 헤드라인" not in readme or "어제:" not in readme or "이어서 하기" not in readme:
         fail("README dropped headline scrap on settlement / morning / title continue")
-    elif "cash_slip" not in readme or "남은 현금" not in readme or "이어서 하기" not in readme:
-        fail("README dropped cash_slip on title / morning / settlement")
+    elif "cash_slip" not in readme or "남은 현금" not in readme or "이어서 하기" not in readme or "지금 수입" not in readme:
+        fail("README dropped cash_slip on title / morning / live / settlement")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:

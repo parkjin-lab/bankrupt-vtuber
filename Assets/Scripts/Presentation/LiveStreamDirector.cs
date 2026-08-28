@@ -870,6 +870,24 @@ namespace BankruptVtuber
             _mental = Chip(top, "Mental", "멘탈", 0.75f, 1f, -64f);
             _billToday = Chip(top, "TonightBills", "오늘 청구", 0f, 0.25f, -124f);
             _incomeNow = Chip(top, "TonightIncome", "지금 수입", 0.25f, 0.50f, -124f);
+            var incomeTile = _incomeNow.transform.parent as RectTransform;
+            if (incomeTile != null)
+            {
+                var incomeImg = incomeTile.GetComponent<Image>();
+                if (incomeImg != null)
+                {
+                    ArtSprites.Apply(incomeImg, ArtSprites.CashSlip, new Color(0.98f, 0.94f, 0.86f, 0.98f), Color.white);
+                    incomeImg.preserveAspect = false;
+                    incomeImg.raycastTarget = false;
+                }
+                var incomeCap = incomeTile.Find("L") as RectTransform;
+                if (incomeCap != null)
+                {
+                    var incomeCapT = incomeCap.GetComponent<Text>();
+                    if (incomeCapT != null)
+                        incomeCapT.color = Palette.Ink;
+                }
+            }
             _incomePop = UiKit.Label(_incomeNow.transform.parent, "IncomePop", "", 20, Palette.CashGreen, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(_incomePop.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(8f, 6f), new Vector2(160f, 28f));
             _remain = Chip(top, "Remain", "남은 금액", 0.50f, 0.78f, -124f);
