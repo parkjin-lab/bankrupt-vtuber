@@ -177,6 +177,8 @@ namespace BankruptVtuber
         Image _rankBadge;
         bool _clipPinShow;
         Image _clipBadge;
+        bool _concertPinShow;
+        Image _concertBadge;
         float _bedVolume;
         float _bedDuck;
         bool _threatGear;
@@ -375,6 +377,7 @@ namespace BankruptVtuber
             _goodsPinShow = gm.Run.goodsUnlocked;
             _rankPinShow = Week5Rules.RankingUnlocked(gm.Run, gm.Week5);
             _clipPinShow = gm.Run.clipUploaded;
+            _concertPinShow = gm.Run.concertBooked;
             _shownViewers = _session.Viewers;
             _incomeMarked = _session.LiveIncome;
             _incomeMarkedAt = _session.Elapsed;
@@ -1189,6 +1192,12 @@ namespace BankruptVtuber
                 _clipBadge.preserveAspect = true;
                 _clipBadge.raycastTarget = false;
                 _clipBadge.gameObject.SetActive(false);
+                _concertBadge = UiKit.Image(_avatar.Root, "ConcertBadgeHud", Color.white);
+                UiKit.Layout(_concertBadge.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-10f, -270f), new Vector2(72f, 48f));
+                ArtSprites.Apply(_concertBadge, ArtSprites.ConcertStage, Color.white, Color.white);
+                _concertBadge.preserveAspect = true;
+                _concertBadge.raycastTarget = false;
+                _concertBadge.gameObject.SetActive(false);
             }
 
             var chatPanel = UiKit.Panel(root, "Chat", new Color(0.07f, 0.05f, 0.1f, 0.0f));
@@ -3182,6 +3191,8 @@ namespace BankruptVtuber
                 _rankBadge.gameObject.SetActive(_rankPinShow);
             if (_clipBadge != null)
                 _clipBadge.gameObject.SetActive(_clipPinShow);
+            if (_concertBadge != null)
+                _concertBadge.gameObject.SetActive(_concertPinShow);
             UiKit.EnsureCamera(look.Wash);
             _avatar?.ApplyShow(look);
             if (_bed != null)
