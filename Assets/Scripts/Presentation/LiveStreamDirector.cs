@@ -44,6 +44,7 @@ namespace BankruptVtuber
         Image _liveDot;
         RectTransform _onAirRoot;
         Image _onAirWash;
+        Image _onAirLed;
         Image _onAirPip;
         Text _onAirLive;
         Text _onAirCopy;
@@ -1191,11 +1192,16 @@ namespace BankruptVtuber
             _onAirWash = _onAirRoot.GetComponent<Image>();
             if (_onAirWash != null)
                 _onAirWash.raycastTarget = false;
-            _onAirPip = UiKit.Image(_onAirRoot, "Pip", Palette.MoneyRed);
-            UiKit.Layout(_onAirPip.rectTransform, new Vector2(0.5f, 0.58f), new Vector2(0.5f, 0.58f), new Vector2(0.5f, 0.5f), new Vector2(-110f, 8f), new Vector2(22f, 22f));
+            _onAirLed = UiKit.Image(_onAirRoot, "OnAirLed", Color.white);
+            UiKit.Layout(_onAirLed.rectTransform, new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(560f, 120f));
+            ArtSprites.Apply(_onAirLed, ArtSprites.OnAirLed, new Color(0.35f, 0.04f, 0.08f, 0.98f), Color.white);
+            _onAirLed.preserveAspect = false;
+            _onAirLed.raycastTarget = false;
+            _onAirPip = UiKit.Image(_onAirLed.transform, "Pip", Palette.MoneyRed);
+            UiKit.Layout(_onAirPip.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(36f, 0f), new Vector2(22f, 22f));
             _onAirPip.raycastTarget = false;
-            _onAirLive = UiKit.Label(_onAirRoot, "Live", "ON AIR", 72, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_onAirLive.rectTransform, new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.5f), new Vector2(16f, 0f), new Vector2(520f, 88f));
+            _onAirLive = UiKit.Label(_onAirLed.transform, "Live", "ON AIR", 64, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Stretch(_onAirLive.rectTransform, 56f, 28f, 18f, 18f);
             _onAirCopy = UiKit.Label(_onAirRoot, "Copy", "방송 시작", 36, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_onAirCopy.rectTransform, new Vector2(0.5f, 0.46f), new Vector2(0.5f, 0.46f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420f, 44f));
 
@@ -1437,6 +1443,13 @@ namespace BankruptVtuber
                 w.a = 0.72f * u;
                 _onAirWash.color = w;
             }
+            if (_onAirLed != null)
+            {
+                var led = Color.white;
+                led.a = u;
+                _onAirLed.color = led;
+                _onAirLed.rectTransform.localScale = Vector3.one * (1f + 0.18f * u);
+            }
             if (_onAirPip != null)
             {
                 var p = Palette.MoneyRed;
@@ -1449,7 +1462,6 @@ namespace BankruptVtuber
                 var c = Color.white;
                 c.a = u;
                 _onAirLive.color = c;
-                _onAirLive.rectTransform.localScale = Vector3.one * (1f + 0.18f * u);
             }
             if (_onAirCopy != null)
             {

@@ -35,6 +35,7 @@ namespace BankruptVtuber
         public const string ComboPlate = "Art/combo_plate";
         public const string ViewerBadge = "Art/viewer_badge";
         public const string ClockPlate = "Art/clock_plate";
+        public const string OnAirLed = "Art/onair_led";
         public const string MembershipCard = "Art/membership_card";
         public const string ClipCard = "Art/clip_card";
         public const string PadLeft = "Art/pad_left";

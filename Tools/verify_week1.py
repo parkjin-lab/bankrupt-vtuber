@@ -221,6 +221,7 @@ def check_project() -> None:
         "combo_plate.png": "콤보 배지",
         "viewer_badge.png": "시청 배지",
         "clock_plate.png": "시계 배지",
+        "onair_led.png": "ON AIR LED",
         "membership_card.png": "멤버십",
         "clip_card.png": "클립",
         "pad_left.png": "← 키캡",
@@ -1490,6 +1491,7 @@ def check_project() -> None:
     check_combo_plate()
     check_viewer_badge()
     check_clock_plate()
+    check_onair_led()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -2562,6 +2564,8 @@ def check_on_air() -> None:
         fail("stream start has no ON AIR / 방송 시작 sting")
     elif "_onAirLeft = 0.6f" not in live_cs:
         fail("ON AIR sting is not 0.6s")
+    elif "ArtSprites.OnAirLed" not in live_cs or '"OnAirLed"' not in live_cs:
+        fail("ON AIR is not on Art/onair_led")
     elif "PlaySfx(_onAirCue" not in live_cs or "Audio/sfx_onair" not in live_cs:
         fail("ON AIR has no start sting clip")
     elif "EnableFirstStreamCoach" not in live_cs or "_onAirLeft <= 0f" not in live_cs:
@@ -7800,6 +7804,66 @@ def check_clock_plate() -> None:
         ok("live 남은 시간 sits on clock_plate; last-10 pulse / tick / ON AIR stay")
 
 
+def check_onair_led() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    tick = live_cs.split("void TickOnAir", 1)[-1].split("void RefreshCoach", 1)[0]
+    end = live_cs.split("void ShowEndCut", 1)[-1].split("void ", 1)[0] if "void ShowEndCut" in live_cs else live_cs
+    png = ROOT / "Assets/Resources/Art/onair_led.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("onair_led.png is missing")
+    elif w < 360 or h < 160 or w <= h:
+        fail("onair_led.png is not a readable landscape LED badge")
+    elif color != 6:
+        fail("onair_led.png is not RGBA")
+    elif 'OnAirLed = "Art/onair_led"' not in art_cs:
+        fail("ArtSprites does not hook Art/onair_led")
+    elif "ArtSprites.OnAirLed" not in live_cs or '"OnAirLed"' not in live_cs or '"ON AIR"' not in live_cs:
+        fail("LiveStream does not hang Art/onair_led under ON AIR")
+    elif "_onAirLeft = 0.6f" not in live_cs or "_onAirLeft / 0.6f" not in tick:
+        fail("onair LED dropped 0.6s sting")
+    elif "PlaySfx(_onAirCue" not in live_cs or "Audio/sfx_onair" not in live_cs:
+        fail("onair LED dropped sfx_onair")
+    elif "방송 시작" not in live_cs or "_onAirPip" not in tick:
+        fail("onair LED dropped 방송 시작 / pip")
+    elif "_onAirLed" not in tick or "1f + 0.18f * u" not in tick:
+        fail("onair LED does not pulse with the sting")
+    elif "방송 종료" not in live_cs or "Audio/sfx_end_cut" not in live_cs:
+        fail("onair LED dropped end-cut")
+    elif "_liveDot" not in live_cs or "0.2f, 0.02f, 0.04f, 0.2f" not in live_cs:
+        fail("onair LED dropped end-cut LIVE pip-off")
+    elif "streamSeconds: 90" not in balance or "TimeLeft = balance.streamSeconds" not in session_cs:
+        fail("onair LED retuned stream length")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("onair LED retuned Week 1 economy")
+    elif "EnableFirstStreamCoach" not in live_cs or "_onAirLeft <= 0f" not in live_cs:
+        fail("onair LED broke Day-1 coach wait")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("onair LED broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising onair LED / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("onair LED dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("onair LED moved Unity off 6000.5.9f1")
+    elif "Art/onair_led" not in (ROOT / "README.md").read_text(encoding="utf-8"):
+        fail("README should mention Art/onair_led")
+    else:
+        ok("ON AIR sits on onair_led LED badge; 0.6s sting / SFX / pip-off stay")
+
+
 def check_mental_sfx() -> None:
     import wave
 
@@ -8359,6 +8423,8 @@ def check_readme_playable() -> None:
         fail("README dropped viewer_badge live follower badge")
     elif "clock_plate" not in readme or "남은 시간" not in readme or "sfx_clock_tick" not in readme:
         fail("README dropped clock_plate live broadcast clock")
+    elif "onair_led" not in readme or "ON AIR" not in readme or "sfx_onair" not in readme:
+        fail("README dropped onair_led broadcast LED")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:
