@@ -2240,8 +2240,20 @@ namespace BankruptVtuber
                     : troll
                         ? new Color(1f, 0.92f, 0.94f, 0.95f)
                         : Palette.Gold;
+            if (chatBubble)
+            {
+                var nickPlate = UiKit.Image(card, "NickPlate", Color.white);
+                UiKit.Layout(nickPlate.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(74f, -4f), new Vector2(172f, 26f));
+                ArtSprites.ApplySliced(nickPlate, ArtSprites.ChatNick, Color.white, new Vector4(18f, 12f, 18f, 12f));
+                nickPlate.raycastTarget = false;
+                if (named && note.FanWounded)
+                    nickPlate.color = new Color(1f, 1f, 1f, 0.72f);
+            }
             var nickT = UiKit.Label(card, "Nick", nickLine, named || super ? 15 : 14, nickCol, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UiKit.Layout(nickT.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(76, -6), new Vector2(-88, 22));
+            if (chatBubble)
+                UiKit.Layout(nickT.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(86f, -6f), new Vector2(154f, 22f));
+            else
+                UiKit.Layout(nickT.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(76, -6), new Vector2(-88, 22));
             if (super && note.SuperchatWon > 0)
             {
                 var wonT = UiKit.Label(card, "Won", EconomyRules.FormatWon(note.SuperchatWon), 20, Palette.Ink, TextAnchor.MiddleRight, FontStyle.Bold);
