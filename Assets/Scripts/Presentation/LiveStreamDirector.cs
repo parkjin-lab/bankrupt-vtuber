@@ -162,6 +162,7 @@ namespace BankruptVtuber
         Image _showChipIcon;
         ContentShowLook _look = ContentShowLook.For(StreamContentType.None);
         bool _concertShow;
+        Image _concertStage;
         float _bedVolume;
         float _bedDuck;
         bool _threatGear;
@@ -888,6 +889,12 @@ namespace BankruptVtuber
 
             _wash = UiKit.Image(canvasRoot, "Wash", Palette.Studio);
             UiKit.Stretch(_wash.rectTransform);
+            _concertStage = UiKit.Image(canvasRoot, "ConcertStage", Color.white);
+            UiKit.Stretch(_concertStage.rectTransform);
+            ArtSprites.Apply(_concertStage, ArtSprites.ConcertStage, Palette.Studio, Color.white);
+            _concertStage.preserveAspect = false;
+            _concertStage.raycastTarget = false;
+            _concertStage.gameObject.SetActive(false);
             var overlay = UiKit.Image(canvasRoot, "StreamOverlay", Color.white);
             UiKit.Stretch(overlay.rectTransform);
             ArtSprites.Apply(overlay, ArtSprites.StreamOverlay, Palette.Studio, Color.white);
@@ -3090,6 +3097,8 @@ namespace BankruptVtuber
                     : look.Card;
             }
             PaintShowChip(look.Type);
+            if (_concertStage != null)
+                _concertStage.gameObject.SetActive(_concertShow);
             UiKit.EnsureCamera(look.Wash);
             _avatar?.ApplyShow(look);
             if (_bed != null)

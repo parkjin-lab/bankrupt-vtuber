@@ -1538,6 +1538,7 @@ def check_project() -> None:
     check_title_bgm()
     check_stream_bgm()
     check_concert_bgm()
+    check_concert_live_stage()
     check_morning_bgm()
     check_settlement_bgm()
     check_result_stings()
@@ -8320,6 +8321,80 @@ def check_concert_bgm() -> None:
         fail("concert bed moved Unity off 6000.5.9f1")
     else:
         ok("concert live loops brighter bgm_concert; regular live keeps bgm_stream; fades 0.2s on 방송 종료")
+
+
+def check_concert_live_stage() -> None:
+    """Week 5 concert live hangs concert_stage under the HUD; a normal live does not."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    w5r_cs = (ROOT / "Assets/Scripts/Economy/Week5Rules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    under = build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
+    overlay = build.split('"StreamOverlay"', 1)[-1].split("_washVeil", 1)[0]
+    live_concert = live_cs.split('"ConcertCard"', 1)[-1].split('"CoverSlam"', 1)[0]
+    book_build = settle_cs.split('ConcertBookRoot"', 1)[-1].split('ConcertResultRoot"', 1)[0]
+    slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
+
+    if 'ConcertStage = "Art/concert_stage"' not in art_cs:
+        fail("ArtSprites does not hook Art/concert_stage")
+    elif '"ConcertStage"' not in build or "ArtSprites.ConcertStage" not in build:
+        fail("LiveStream does not hang concert_stage as a live backdrop")
+    elif "ArtSprites.ConcertStage" not in under or "SetActive(false)" not in under:
+        fail("concert_stage is not under stream_overlay / starts hidden")
+    elif "ArtSprites.StreamOverlay" not in overlay or "ArtSprites.ConcertStage" in overlay:
+        fail("stream_overlay is no longer the live chrome, or concert_stage stole it")
+    elif "ArtSprites.StreamOverlay" not in build or '"StreamOverlay"' not in build:
+        fail("concert stage dropped the regular stream_overlay")
+    elif "SetActive(_concertShow)" not in apply:
+        fail("concert_stage is not gated on the Week 5 concert live")
+    elif "ConcertActive" in apply:
+        fail("concert stage is gated on the performance QTE, not the whole show")
+    elif "_concertShow ? \"Audio/bgm_concert\" : \"Audio/bgm_stream\"" not in apply:
+        fail("concert stage retuned bgm_concert routing")
+    elif "ConcertStreamReady" not in start or "EnableConcert" not in start or "_concertShow = true" not in start:
+        fail("concert stage is not armed for the Week 5 concert live")
+    elif "ArtSprites.ConcertStage" not in live_concert:
+        fail("concert stage dropped the live ConcertCard art")
+    elif "ArtSprites.ConcertStage" not in book_build or '"ConcertBookCard"' not in book_build:
+        fail("concert stage dropped booking-card art")
+    elif "Audio/sfx_concert_book" not in settle_cs:
+        fail("concert stage dropped sfx_concert_book")
+    elif "ArtSprites.JudgePerfect" not in slam or "PlaySfx(_perfect" not in slam:
+        fail("concert stage dropped Day-1 coach Perfect stamp")
+    elif "Audio/sfx_threat" not in live_cs or "PlayThreatSfx" not in live_cs:
+        fail("concert stage dropped live sfx_threat")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("concert stage retuned hit windows")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("concert stage retuned Judge windows")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("concert stage retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("concert stage retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("concert stage retuned week-clear gates")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset or "concertSuccessMultiplier: 1.3" not in w5_asset:
+        fail("concert stage retuned concert cost / payout / 1.3x")
+    elif "concertUnlockCash: 150000" not in w5_asset or "CanBookConcert" not in w5r_cs:
+        fail("concert stage changed concert unlock routing")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("concert stage broke pads, 입력됨, or added timeScale")
+    elif "Week5" in title_cs or "콘서트" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising concert stage / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("concert stage dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("concert stage moved Unity off 6000.5.9f1")
+    else:
+        ok("concert live hangs concert_stage under the HUD; a normal live does not")
 
 
 def check_morning_bgm() -> None:
