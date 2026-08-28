@@ -171,6 +171,8 @@ namespace BankruptVtuber
         Image _memberBadge;
         bool _agencyShow;
         Image _agencyBadge;
+        bool _goodsPinShow;
+        Image _goodsBadge;
         float _bedVolume;
         float _bedDuck;
         bool _threatGear;
@@ -366,6 +368,7 @@ namespace BankruptVtuber
             }
             _memberShow = gm.Run.membershipUnlocked;
             _agencyShow = gm.Run.agencyFounded;
+            _goodsPinShow = gm.Run.goodsUnlocked;
             _shownViewers = _session.Viewers;
             _incomeMarked = _session.LiveIncome;
             _incomeMarkedAt = _session.Elapsed;
@@ -1162,6 +1165,12 @@ namespace BankruptVtuber
                 _agencyBadge.preserveAspect = true;
                 _agencyBadge.raycastTarget = false;
                 _agencyBadge.gameObject.SetActive(false);
+                _goodsBadge = UiKit.Image(_avatar.Root, "GoodsBadgeHud", Color.white);
+                UiKit.Layout(_goodsBadge.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-10f, -114f), new Vector2(72f, 48f));
+                ArtSprites.Apply(_goodsBadge, ArtSprites.GoodsStand, Color.white, Color.white);
+                _goodsBadge.preserveAspect = true;
+                _goodsBadge.raycastTarget = false;
+                _goodsBadge.gameObject.SetActive(false);
             }
 
             var chatPanel = UiKit.Panel(root, "Chat", new Color(0.07f, 0.05f, 0.1f, 0.0f));
@@ -3149,6 +3158,8 @@ namespace BankruptVtuber
                 _memberBadge.gameObject.SetActive(_memberShow);
             if (_agencyBadge != null)
                 _agencyBadge.gameObject.SetActive(_agencyShow);
+            if (_goodsBadge != null)
+                _goodsBadge.gameObject.SetActive(_goodsPinShow);
             UiKit.EnsureCamera(look.Wash);
             _avatar?.ApplyShow(look);
             if (_bed != null)

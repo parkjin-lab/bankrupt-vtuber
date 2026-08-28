@@ -1553,6 +1553,7 @@ def check_project() -> None:
     check_concert_result_plate()
     check_membership_live_badge()
     check_agency_live_badge()
+    check_goods_live_badge()
     check_morning_bgm()
     check_settlement_bgm()
     check_result_stings()
@@ -8801,6 +8802,8 @@ def check_goods_promo_live_stand() -> None:
         fail("goods stand dropped the post-unlock membership live badge")
     elif "SetActive(_agencyShow)" not in apply or '"AgencyBadgeHud"' not in live_cs:
         fail("goods stand dropped the post-found agency live pin")
+    elif "SetActive(_goodsPinShow)" not in apply or '"GoodsBadgeHud"' not in live_cs:
+        fail("goods stand dropped the post-unlock goods live pin")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
         fail("goods stand broke pads, 입력됨, or added timeScale")
     elif "Week3" in title_cs or "아크릴" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
@@ -8914,6 +8917,8 @@ def check_sponsor_mention_live_card() -> None:
         fail("sponsor card dropped the post-unlock membership live badge")
     elif "SetActive(_agencyShow)" not in apply or '"AgencyBadgeHud"' not in live_cs:
         fail("sponsor card dropped the post-found agency live pin")
+    elif "SetActive(_goodsPinShow)" not in apply or '"GoodsBadgeHud"' not in live_cs:
+        fail("sponsor card dropped the post-unlock goods live pin")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
         fail("sponsor card broke pads, 입력됨, or added timeScale")
     elif "Week4" in title_cs or "스폰서" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
@@ -9827,6 +9832,8 @@ def check_concert_result_plate() -> None:
         fail("concert result plate dropped the post-unlock membership live badge")
     elif "SetActive(_agencyShow)" not in apply or '"AgencyBadgeHud"' not in live_cs:
         fail("concert result plate dropped the post-found agency live pin")
+    elif "SetActive(_goodsPinShow)" not in apply or '"GoodsBadgeHud"' not in live_cs:
+        fail("concert result plate dropped the post-unlock goods live pin")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
         fail("concert result plate broke pads, 입력됨, or added timeScale")
     elif "Week5" in title_cs or "콘서트" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
@@ -9932,6 +9939,8 @@ def check_membership_live_badge() -> None:
         fail("membership badge dropped concert live concert_stage")
     elif "SetActive(_agencyShow)" not in apply or '"AgencyBadgeHud"' not in live_cs:
         fail("membership badge dropped the post-found agency live pin")
+    elif "SetActive(_goodsPinShow)" not in apply or '"GoodsBadgeHud"' not in live_cs:
+        fail("membership badge dropped the post-unlock goods live pin")
     elif "-10f, -10f" not in badge or "72f, 48f" not in badge:
         fail("membership badge moved off the webcam corner")
     elif "ArtSprites.StreamOverlay" not in overlay or "ArtSprites.ConcertStage" in overlay:
@@ -10025,7 +10034,11 @@ def check_agency_live_badge() -> None:
     sponsor = build.split('"SponsorCardHud"', 1)[-1].split('"GoodsStandHud"', 1)[0] if '"SponsorCardHud"' in build else ""
     hud = build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in build else ""
     member = build.split('"MemberBadgeHud"', 1)[-1].split('"AgencyBadgeHud"', 1)[0] if '"AgencyBadgeHud"' in build else ""
-    pin = build.split('"AgencyBadgeHud"', 1)[-1].split("var chatPanel", 1)[0] if '"AgencyBadgeHud"' in build else ""
+    pin = build.split('"AgencyBadgeHud"', 1)[-1]
+    if '"GoodsBadgeHud"' in pin:
+        pin = pin.split('"GoodsBadgeHud"', 1)[0]
+    else:
+        pin = pin.split("var chatPanel", 1)[0] if '"AgencyBadgeHud"' in build else ""
     settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
     agency_build = settle_build.split('AgencyRoot"', 1)[-1].split('AgencySplashRoot"', 1)[0]
     junior_build = settle_build.split('JuniorRoot"', 1)[-1].split('ConcertBookRoot"', 1)[0]
@@ -10093,6 +10106,8 @@ def check_agency_live_badge() -> None:
         fail("agency pin restyled the settlement scout plate")
     elif "SetActive(_memberShow)" not in apply or '"MemberBadgeHud"' not in live_cs:
         fail("agency pin dropped the post-unlock membership live badge")
+    elif "SetActive(_goodsPinShow)" not in apply or '"GoodsBadgeHud"' not in live_cs:
+        fail("agency pin dropped the post-unlock goods live pin")
     elif "SetActive(_goodsShow)" not in apply or "ArtSprites.GoodsStand" not in shelf:
         fail("agency pin dropped goods-promo live goods_stand")
     elif "UiKit.Stretch" in shelf:
@@ -10163,6 +10178,188 @@ def check_agency_live_badge() -> None:
         fail("agency pin moved Unity off 6000.5.9f1")
     else:
         ok("post-found live hangs a tiny agency_card pin; Weeks 1–3 / pre-found hide it")
+
+
+def check_goods_live_badge() -> None:
+    """Post-unlock live hangs a tiny goods_stand HUD pin; Weeks 1–2 / pre-unlock hide it."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    w4_asset = (ROOT / "Assets/Resources/Balance/Week4Balance.asset").read_text(encoding="utf-8")
+    w2_asset = (ROOT / "Assets/Resources/Balance/Week2Balance.asset").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    under = build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
+    overlay = build.split('"StreamOverlay"', 1)[-1].split("_washVeil", 1)[0]
+    shelf = build.split('"GoodsStandHud"', 1)[-1].split('"HypeFlash"', 1)[0] if '"GoodsStandHud"' in build else ""
+    sponsor = build.split('"SponsorCardHud"', 1)[-1].split('"GoodsStandHud"', 1)[0] if '"SponsorCardHud"' in build else ""
+    hud = build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in build else ""
+    member = build.split('"MemberBadgeHud"', 1)[-1].split('"AgencyBadgeHud"', 1)[0] if '"AgencyBadgeHud"' in build else ""
+    agency = build.split('"AgencyBadgeHud"', 1)[-1].split('"GoodsBadgeHud"', 1)[0] if '"GoodsBadgeHud"' in build else ""
+    pin = build.split('"GoodsBadgeHud"', 1)[-1].split("var chatPanel", 1)[0] if '"GoodsBadgeHud"' in build else ""
+    pin_arm = start.split("_goodsPinShow", 1)[-1][:80] if "_goodsPinShow" in start else ""
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    goods_build = settle_build.split('GoodsRoot"', 1)[-1].split('AgencyRoot"', 1)[0]
+    goods_plate = goods_build.split('"GoodsCardHud"', 1)[-1].split('"GoodsTitle"', 1)[0] if '"GoodsCardHud"' in goods_build else ""
+    goods_show = settle_cs.split("void ShowGoodsSplash", 1)[-1].split("void OnGoodsAck", 1)[0]
+    member_build = settle_build.split('MemberRoot"', 1)[-1].split('ClipRoot"', 1)[0]
+    clip_build = settle_build.split('ClipRoot"', 1)[-1].split('GoodsRoot"', 1)[0]
+    agency_build = settle_build.split('AgencyRoot"', 1)[-1].split('AgencySplashRoot"', 1)[0]
+    junior_build = settle_build.split('JuniorRoot"', 1)[-1].split('ConcertBookRoot"', 1)[0]
+    rank_plate = settle_build.split('"RankingBoardHud"', 1)[-1].split('"RankBody"', 1)[0] if '"RankingBoardHud"' in settle_build else ""
+    book_build = settle_build.split('ConcertBookRoot"', 1)[-1].split('ConcertResultRoot"', 1)[0]
+    result_build = settle_build.split('ConcertResultRoot"', 1)[-1]
+    promo_build = live_cs.split('"PromoCard"', 1)[-1].split('"LineCard"', 1)[0]
+    slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
+
+    if 'GoodsStand = "Art/goods_stand"' not in art_cs:
+        fail("ArtSprites does not hook Art/goods_stand")
+    elif '"GoodsBadgeHud"' not in hud or "ArtSprites.GoodsStand" not in pin:
+        fail("LiveStream does not hang goods_stand as a small HUD pin")
+    elif "_avatar.Root" not in hud:
+        fail("goods pin is not on the webcam HUD")
+    elif "UiKit.Stretch" in pin:
+        fail("goods pin is a full-screen plate; that is the settlement unlock job")
+    elif "680f, 340f" in pin or "720, 380" in pin or "PanelDark" in pin:
+        fail("goods live pin reused the settlement unlock plate")
+    elif "168f, 168f" in pin or "16f, 208f" in pin:
+        fail("goods pin stole the promo-day goods_stand shelf slot")
+    elif "220f, 128f" in pin:
+        fail("goods pin stole the sponsor-mention live plate slot")
+    elif "72f, 48f" not in pin or "preserveAspect = true" not in pin:
+        fail("goods pin is not a tiny preserveAspect HUD pin")
+    elif "-10f, -114f" not in pin:
+        fail("goods pin is not stacked under the agency webcam pin")
+    elif "-10f, -10f" not in member or "72f, 48f" not in member:
+        fail("goods pin covered the membership webcam badge")
+    elif "-10f, -62f" not in agency or "72f, 48f" not in agency:
+        fail("goods pin covered the agency webcam pin")
+    elif "ArtSprites.GoodsStand" in under or "GoodsBadgeHud" in under:
+        fail("goods pin stole the concert_stage backdrop slot")
+    elif "ArtSprites.OnAirLed" not in hud or '"ON AIR"' not in hud:
+        fail("goods pin dropped the webcam onair_led")
+    elif '"MemberBadgeHud"' not in hud or "ArtSprites.MembershipCard" not in member:
+        fail("goods pin dropped the membership webcam badge")
+    elif '"AgencyBadgeHud"' not in hud or "ArtSprites.AgencyCard" not in agency:
+        fail("goods pin dropped the agency webcam pin")
+    elif "SetActive(false)" not in pin:
+        fail("goods pin is not hidden on a Week 1–2 / pre-unlock live")
+    elif "SetActive(_goodsPinShow)" not in apply:
+        fail("goods pin is not gated on goodsUnlocked")
+    elif "_goodsBadge.gameObject.SetActive(_goodsShow)" in apply:
+        fail("goods pin is gated on the promo shelf flag")
+    elif "goodsUnlocked" not in start or "_goodsPinShow" not in start:
+        fail("goods pin is not armed from the existing unlock flag")
+    elif "InWeek3" in pin_arm or "EnablePromo" in pin_arm or "_goodsShow" in pin_arm:
+        fail("goods pin is gated on the promo live, not the unlock flag")
+    elif "PromoActive" in apply or "LineActive" in apply or "ConcertActive" in apply:
+        fail("goods pin is gated on a live QTE, not the unlock flag")
+    elif '"GoodsCardHud"' in live_cs or '"GoodsCardHud"' in title_cs:
+        fail("settlement goods plate leaked onto LiveStream / Title")
+    elif '"GoodsBadgeHud"' in settle_cs or '"GoodsBadgeHud"' in title_cs:
+        fail("live goods pin leaked onto Settlement / Title")
+    elif "PlayGoodsSfx" in live_cs:
+        fail("goods pin stole PlayGoodsSfx off the settlement plate")
+    elif '"GoodsCardHud"' not in goods_build or "ArtSprites.GoodsStand" not in goods_plate:
+        fail("goods pin dropped the settlement unlock desk plate")
+    elif "UiKit.Stretch" in goods_plate:
+        fail("goods pin stretched the settlement unlock plate")
+    elif "PlayGoodsSfx();" not in goods_show or "아크릴 스탠드 해금" not in goods_build:
+        fail("goods pin restyled the settlement unlock plate")
+    elif "SetActive(_goodsShow)" not in apply or "ArtSprites.GoodsStand" not in shelf:
+        fail("goods pin dropped goods-promo live goods_stand")
+    elif "UiKit.Stretch" in shelf:
+        fail("goods pin restyled the goods_stand HUD shelf")
+    elif "168f, 168f" not in shelf or "16f, 208f" not in shelf:
+        fail("goods pin restyled the goods_stand HUD shelf size")
+    elif "SetActive(_memberShow)" not in apply or '"MemberBadgeHud"' not in live_cs:
+        fail("goods pin dropped the post-unlock membership live badge")
+    elif "SetActive(_agencyShow)" not in apply or '"AgencyBadgeHud"' not in live_cs:
+        fail("goods pin dropped the post-found agency live pin")
+    elif "SetActive(_sponsorShow)" not in apply or "ArtSprites.SponsorCard" not in sponsor:
+        fail("goods pin dropped sponsor-mention live plate")
+    elif "220f, 128f" not in sponsor or "preserveAspect = true" not in sponsor:
+        fail("goods pin restyled the sponsor-mention live plate")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in under:
+        fail("goods pin dropped concert live concert_stage")
+    elif "ArtSprites.StreamOverlay" not in overlay or "ArtSprites.ConcertStage" in overlay:
+        fail("goods pin stole stream_overlay / concert_stage chrome")
+    elif "ArtSprites.ViewerBadge" not in live_cs or '"시청자"' not in live_cs:
+        fail("goods pin dropped viewer_badge")
+    elif "ArtSprites.GoodsStand" not in promo_build or '"PromoStand"' not in promo_build:
+        fail("goods pin dropped the promo-card art")
+    elif "굿즈 홍보 타이밍" not in promo_build or "홍보하기" not in promo_build or "넘어가기" not in promo_build:
+        fail("goods pin covered promo copy / confirm")
+    elif "PlaySfx(_goodsCue" not in live_cs or "Audio/sfx_goods" not in live_cs:
+        fail("goods pin dropped promo-card sfx_goods")
+    elif '"ClipCardHud"' not in clip_build or "ArtSprites.ClipCard" not in clip_build:
+        fail("goods pin dropped clip upload desk plate")
+    elif '"MemberCardHud"' not in member_build or "ArtSprites.MembershipCard" not in member_build:
+        fail("goods pin dropped membership unlock desk plate")
+    elif '"AgencyCardHud"' not in agency_build or "ArtSprites.AgencyCard" not in agency_build:
+        fail("goods pin dropped agency found desk plate")
+    elif '"JuniorCardHud"' not in junior_build or "ArtSprites.AgencyCard" not in junior_build:
+        fail("goods pin dropped agency scout desk plate")
+    elif '"RankingBoardHud"' not in settle_build or "ArtSprites.RankingBoard" not in rank_plate:
+        fail("goods pin dropped ranking settlement plate")
+    elif '"ConcertBookHud"' not in book_build or "ArtSprites.ConcertStage" not in book_build:
+        fail("goods pin dropped concert booking desk plate")
+    elif '"ConcertResultHud"' not in result_build or "ArtSprites.ConcertStage" not in result_build:
+        fail("goods pin dropped concert result desk plate")
+    elif "goodsUnlockCash: 60000" not in w3_asset or "goodsProduceCost: 2500" not in w3_asset or "goodsPrice: 7000" not in w3_asset:
+        fail("goods pin retuned unlock / produce / price")
+    elif "goodsPromoMultiplier: 1.5" not in w3_asset or "promoWindowSeconds: 1.2" not in w3_asset:
+        fail("goods pin retuned promo numbers")
+    elif "goodsUnlockStock: 20" not in w3_asset:
+        fail("goods pin retuned unlock stock")
+    elif "TryUnlockGoods" not in w3r_cs or "ProduceGoods" not in w3r_cs:
+        fail("goods pin changed unlock / produce routing")
+    elif "startingMembers: 8" not in w2_asset or "membershipPassivePerMember: 150" not in w2_asset:
+        fail("goods pin retuned membership numbers")
+    elif "sponsorLineBonus: 3000" not in w4_asset:
+        fail("goods pin retuned sponsor numbers")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset:
+        fail("goods pin retuned concert cost / payout")
+    elif "EnableSponsorLine" not in start or "EnablePromo" not in start:
+        fail("goods pin unhooked sponsor / goods live arming")
+    elif "EnableSponsorLine" not in session_cs or "EnablePromo" not in session_cs:
+        fail("goods pin unhooked EnableSponsorLine / EnablePromo")
+    elif "ArtSprites.JudgePerfect" not in slam or "PlaySfx(_perfect" not in slam:
+        fail("goods pin dropped Day-1 coach Perfect stamp")
+    elif live_cs.count("Audio/sfx_threat") < 1 or "PlayThreatSfx" not in live_cs:
+        fail("goods pin dropped live sfx_threat")
+    elif "LastDayBanner" not in week_cs:
+        fail("goods pin dropped morning last-day tab")
+    elif '"ContinueLastDayTab"' not in title_cs or '"SettleLastDayTab"' not in settle_cs:
+        fail("goods pin dropped title / settlement last-day tabs")
+    elif "perfectWindow: 0.07" not in balance or "perfectWindow * " not in rules_cs:
+        fail("goods pin retuned hit windows")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("goods pin retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("goods pin retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("goods pin retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("goods pin broke pads, 입력됨, or added timeScale")
+    elif "Week3" in title_cs or "아크릴" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising goods pin / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("goods pin dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("goods pin moved Unity off 6000.5.9f1")
+    else:
+        ok("post-unlock live hangs a tiny goods_stand pin; Weeks 1–2 / pre-unlock hide it")
 
 
 def check_morning_bgm() -> None:
