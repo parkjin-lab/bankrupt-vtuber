@@ -1584,6 +1584,7 @@ def check_project() -> None:
     check_readme_agency_card_plate()
     check_readme_membership_card_plate()
     check_readme_membership_live_badge()
+    check_readme_agency_live_badge()
     check_readme_clip_card_plate()
     check_readme_concert_book_plate()
     check_readme_goods_card_plate()
@@ -12463,8 +12464,12 @@ def check_readme_agency_card_plate() -> None:
         fail("README week-card inventory dropped goods_stand live shelf")
     elif "concert_stage" not in week_cards or "스튜디오 워시" not in week_cards:
         fail("README week-card inventory dropped concert_stage studio wash")
-    elif "agency_card" in live_loop:
-        fail("README must not hang agency_card as a live HUD")
+    elif "에이전시 핀" not in live_loop or "agency_card" not in live_loop:
+        fail("README live loop dropped the post-found agency webcam pin")
+    elif "에이전시 플레이트" in live_loop:
+        fail("README hung the settlement agency plate on the live loop")
+    elif "에이전시 핀" not in agency_inv:
+        fail("README agency plate must stay distinct from the live pin")
     elif "concert_stage" not in live_loop or "콘서트 바탕" not in live_loop:
         fail("README must keep concert_stage as the live backdrop, not agency_card")
     elif "goods_stand" not in live_loop or "선반" not in live_loop:
@@ -12822,6 +12827,8 @@ def check_readme_membership_live_badge() -> None:
         fail("README must keep goods_stand as the live shelf, not the membership badge")
     elif "sponsor_card" not in live_loop or "스폰서 멘트" not in live_loop:
         fail("README must keep sponsor_card as the live plate, not the membership badge")
+    elif "에이전시 핀" not in live_loop or "에이전시 핀" not in week_cards:
+        fail("README membership badge dropped the agency live webcam pin")
     elif "콘서트 바탕" not in stage_inv or "스테이지 숨김" not in stage_inv:
         fail("README membership badge dropped concert backdrop")
     elif "선반" not in shelf_inv or "goods_stand" not in shelf_inv:
@@ -12886,6 +12893,176 @@ def check_readme_membership_live_badge() -> None:
         fail("README membership badge moved Unity off 6000.5.9f1")
     else:
         ok("README names the post-unlock webcam membership pin vs hidden before unlock")
+
+
+def check_readme_agency_live_badge() -> None:
+    """README names the post-found webcam agency_card pin vs hidden before found."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    w4_asset = (ROOT / "Assets/Resources/Balance/Week4Balance.asset").read_text(encoding="utf-8")
+    w4r_cs = (ROOT / "Assets/Scripts/Economy/Week4Rules.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w2_asset = (ROOT / "Assets/Resources/Balance/Week2Balance.asset").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    live_loop = readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]
+    hud_stack = readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]
+    week_cards = next((ln for ln in readme.splitlines() if "주차 카드" in ln and "concert_stage" in ln), "")
+    pin_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **에이전시 핀**")), "")
+    agency_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **에이전시 플레이트**")), "")
+    badge_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **멤버십 배지**")), "")
+    result_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **콘서트 결과 플레이트**")), "")
+    plate_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **스폰서 플레이트**")), "")
+    shelf_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **굿즈 선반**")), "")
+    week2 = readme.split("**2주차**", 1)[-1].split("**3주차**", 1)[0]
+    week4 = readme.split("**4주차**", 1)[-1].split("**5주차**", 1)[0]
+    week5 = readme.split("**5주차**", 1)[-1].split("이름 팬", 1)[0]
+    stage_inv = next((ln for ln in readme.splitlines() if "콘서트 바탕" in ln and "sfx_concert_book" in ln and "스테이지 숨김" in ln), "")
+    coach_stamp = next((ln for ln in readme.splitlines() if "코치 스탬프" in ln and "judge_perfect" in ln), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    agency_build = settle_build.split('AgencyRoot"', 1)[-1].split('AgencySplashRoot"', 1)[0]
+    junior_build = settle_build.split('JuniorRoot"', 1)[-1].split('ConcertBookRoot"', 1)[0]
+    found_plate = agency_build.split('"AgencyCardHud"', 1)[-1].split('"AgencyTitle"', 1)[0] if '"AgencyCardHud"' in agency_build else ""
+    scout_plate = junior_build.split('"JuniorCardHud"', 1)[-1].split('"JuniorTitle"', 1)[0] if '"JuniorCardHud"' in junior_build else ""
+    hud = live_build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in live_build else ""
+    member = live_build.split('"MemberBadgeHud"', 1)[-1].split('"AgencyBadgeHud"', 1)[0] if '"AgencyBadgeHud"' in live_build else ""
+    pin = live_build.split('"AgencyBadgeHud"', 1)[-1].split("var chatPanel", 1)[0] if '"AgencyBadgeHud"' in live_build else ""
+    under = live_build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
+    shelf = live_build.split('"GoodsStandHud"', 1)[-1].split('"HypeFlash"', 1)[0] if '"GoodsStandHud"' in live_build else ""
+    sponsor = live_build.split('"SponsorCardHud"', 1)[-1].split('"GoodsStandHud"', 1)[0] if '"SponsorCardHud"' in live_build else ""
+
+    missing = next(
+        (
+            f"{label} {token}"
+            for label, block in (
+                ("live loop", live_loop),
+                ("week-card inventory", week_cards),
+                ("agency-pin inventory", pin_inv),
+                ("Week 4", week4),
+            )
+            for token in ("agency_card", "에이전시 핀")
+            if token not in block
+        ),
+        "",
+    )
+
+    if missing:
+        fail(f"README {missing} must name the post-found agency_card webcam pin")
+    elif "웹캠" not in live_loop or "숨김" not in live_loop or "멤버십 배지" not in live_loop:
+        fail("README live loop must name the webcam agency pin under the membership badge")
+    elif "에이전시 플레이트" in live_loop:
+        fail("README hung the settlement agency plate on the live loop")
+    elif "웹캠" not in pin_inv or "숨김" not in pin_inv or "멤버십 배지" not in pin_inv:
+        fail("README agency-pin inventory must name the webcam pin vs hidden")
+    elif "에이전시 플레이트" not in pin_inv:
+        fail("README agency-pin inventory must stay distinct from the settlement plate")
+    elif "에이전시 핀" not in agency_inv or "라이브 HUD" not in agency_inv:
+        fail("README agency plate must stay distinct from the live pin")
+    elif "에이전시 핀" not in hud_stack or "agency_card" not in hud_stack:
+        fail("README live HUD stack dropped the agency webcam pin")
+    elif "멤버십 배지" not in hud_stack or "membership_card" not in hud_stack:
+        fail("README agency pin dropped the membership webcam badge")
+    elif "웹캠" not in badge_inv or "숨김" not in badge_inv:
+        fail("README agency pin dropped membership-badge inventory")
+    elif "에이전시 핀" not in week4 or "숨김" not in week4 or "sfx_agency" not in week4:
+        fail("README Week 4 must name the live webcam pin vs hidden before found")
+    elif "에이전시 플레이트" not in week_cards or "설립" not in week4 or "스카우트" not in week4 or "종이" not in week4:
+        fail("README week-card / Week 4 dropped the settlement agency plate")
+    elif "멤버십 배지" not in week_cards or "멤버십 배지" not in week2 or "멤버십 배지" not in live_loop:
+        fail("README agency pin dropped the membership live webcam badge")
+    elif "콘서트 결과 플레이트" not in week_cards or "콘서트 결과 플레이트" not in week5:
+        fail("README agency pin dropped concert-result desk plate")
+    elif "콘서트 결과 플레이트" not in result_inv or "sfx_concert_book" not in result_inv:
+        fail("README agency pin dropped concert-result inventory")
+    elif "concert_stage" not in live_loop or "콘서트 바탕" not in live_loop:
+        fail("README must keep concert_stage as the live backdrop, not the agency pin")
+    elif "goods_stand" not in live_loop or "선반" not in live_loop:
+        fail("README must keep goods_stand as the live shelf, not the agency pin")
+    elif "sponsor_card" not in live_loop or "스폰서 멘트" not in live_loop:
+        fail("README must keep sponsor_card as the live plate, not the agency pin")
+    elif "콘서트 바탕" not in stage_inv or "스테이지 숨김" not in stage_inv:
+        fail("README agency pin dropped concert backdrop")
+    elif "선반" not in shelf_inv or "goods_stand" not in shelf_inv:
+        fail("README agency pin dropped goods-stand inventory")
+    elif "플레이트" not in plate_inv or "sfx_sponsor" not in plate_inv:
+        fail("README agency pin dropped sponsor-plate inventory")
+    elif "코치 스탬프" not in coach_stamp or "judge_miss" not in coach_stamp:
+        fail("README agency pin dropped Day-1 coach stamps")
+    elif sfx_inv.count("sfx_threat") < 4:
+        fail("README SFX inventory dropped the four sfx_threat uses")
+    elif '"AgencyBadgeHud"' not in hud or "ArtSprites.AgencyCard" not in pin:
+        fail("README agency pin lost the live HUD hang")
+    elif "UiKit.Stretch" in pin or "72f, 48f" not in pin or "-10f, -62f" not in pin:
+        fail("README agency pin restyled the tiny webcam pin")
+    elif "-10f, -10f" not in member or "72f, 48f" not in member:
+        fail("README agency pin covered the membership webcam badge")
+    elif "SetActive(_agencyShow)" not in apply or "agencyFounded" not in start:
+        fail("README agency pin lost agencyFounded gating")
+    elif '"AgencyCardHud"' not in agency_build or "ArtSprites.AgencyCard" not in found_plate:
+        fail("README agency pin dropped the settlement found desk plate")
+    elif '"JuniorCardHud"' not in junior_build or "ArtSprites.AgencyCard" not in scout_plate:
+        fail("README agency pin dropped the settlement scout desk plate")
+    elif "Audio/sfx_agency" in live_cs:
+        fail("README agency pin stole sfx_agency off the settlement plate")
+    elif "SetActive(_memberShow)" not in apply or '"MemberBadgeHud"' not in live_cs:
+        fail("README agency pin dropped the membership live badge")
+    elif "SetActive(_goodsShow)" not in apply or "ArtSprites.GoodsStand" not in shelf:
+        fail("README agency pin dropped goods-promo live goods_stand")
+    elif "SetActive(_sponsorShow)" not in apply or "ArtSprites.SponsorCard" not in sponsor:
+        fail("README agency pin dropped sponsor-mention live plate")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in under:
+        fail("README agency pin dropped concert live concert_stage")
+    elif 'AgencyCard = "Art/agency_card"' not in art_cs:
+        fail("ArtSprites does not hook Art/agency_card")
+    elif "EnableSponsorLine" not in session_cs or "EnablePromo" not in session_cs:
+        fail("README agency pin unhooked EnableSponsorLine / EnablePromo")
+    elif "agencyFoundCost: 40000" not in w4_asset or "agencyDailyCost: 15000" not in w4_asset:
+        fail("README agency pin retuned found / daily cost")
+    elif "agencyUnlockCash: 100000" not in w4_asset or "agencyUnlockDebtMax: 40000" not in w4_asset:
+        fail("README agency pin retuned unlock gates")
+    elif "juniorScoutCost: 25000" not in w4_asset or "juniorDailySuccess: 4000" not in w4_asset:
+        fail("README agency pin retuned junior numbers")
+    elif "CanFoundAgency" not in w4r_cs or "CanScoutJunior" not in w4r_cs:
+        fail("README agency pin changed found / scout routing")
+    elif "sponsorLineBonus: 3000" not in w4_asset or "goodsUnlockCash: 60000" not in w3_asset:
+        fail("README agency pin retuned sponsor / goods numbers")
+    elif "startingMembers: 8" not in w2_asset or "membershipPassivePerMember: 150" not in w2_asset:
+        fail("README agency pin retuned membership numbers")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset:
+        fail("README agency pin retuned concert cost / payout")
+    elif "LastDayBanner" not in week_cs:
+        fail("README agency pin dropped morning last-day tab")
+    elif '"ContinueLastDayTab"' not in title_cs or '"SettleLastDayTab"' not in settle_cs:
+        fail("README agency pin dropped title / settlement last-day tabs")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README agency pin retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README agency pin retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README agency pin retuned week-clear gates")
+    elif "perfectWindow * " not in rules_cs:
+        fail("README agency pin retuned Judge windows")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README agency pin broke pads, 입력됨, or added timeScale")
+    elif "Week4" in title_cs or "에이전시" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising agency pin / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README agency pin dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README agency pin moved Unity off 6000.5.9f1")
+    else:
+        ok("README names the post-found webcam agency pin vs hidden before found")
 
 
 def check_readme_clip_card_plate() -> None:
@@ -13615,6 +13792,8 @@ def check_readme_concert_result_plate() -> None:
         fail("README week-card / Week 2 dropped membership_card desk plate")
     elif "멤버십 배지" not in week_cards or "멤버십 배지" not in week2 or "멤버십 배지" not in live_loop:
         fail("README concert result plate dropped the membership live webcam badge")
+    elif "에이전시 핀" not in week_cards or "에이전시 핀" not in week4 or "에이전시 핀" not in live_loop:
+        fail("README concert result plate dropped the agency live webcam pin")
     elif "agency_card" not in week_cards or "에이전시 플레이트" not in week_cards:
         fail("README week-card inventory dropped agency_card desk plate")
     elif "ranking_board" not in week_cards or "챌린지 랭킹" not in week_cards:
@@ -18270,6 +18449,10 @@ def check_readme_playable() -> None:
         fail("README does not inventory agency/scout settlement agency_card plate")
     elif "숨김" not in readme.split("**4주차**", 1)[-1].split("**5주차**", 1)[0]:
         fail("README Week 4 dropped agency_card hidden-otherwise")
+    elif "에이전시 핀" not in readme or "agency_card" not in readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]:
+        fail("README does not inventory the post-found agency live webcam pin")
+    elif "에이전시 핀" not in readme.split("**4주차**", 1)[-1].split("**5주차**", 1)[0]:
+        fail("README Week 4 dropped the live agency webcam pin")
     elif "멤버십 플레이트" not in readme or "종이" not in readme.split("**2주차**", 1)[-1].split("**3주차**", 1)[0]:
         fail("README does not inventory membership unlock settlement membership_card plate")
     elif "숨김" not in readme.split("**2주차**", 1)[-1].split("**3주차**", 1)[0]:
@@ -18455,7 +18638,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + 코치 스탬프 + 콘서트 바탕 + 콘서트 개최 플레이트 + 콘서트 결과 플레이트 + 굿즈 선반 + 굿즈 해금 플레이트 + 스폰서 플레이트 + 랭킹 플레이트 + 에이전시 플레이트 + 멤버십 배지 + 멤버십 플레이트 + 클립 플레이트 + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + 코치 스탬프 + 콘서트 바탕 + 콘서트 개최 플레이트 + 콘서트 결과 플레이트 + 굿즈 선반 + 굿즈 해금 플레이트 + 스폰서 플레이트 + 랭킹 플레이트 + 에이전시 핀 + 에이전시 플레이트 + 멤버십 배지 + 멤버십 플레이트 + 클립 플레이트 + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
