@@ -182,6 +182,7 @@ namespace BankruptVtuber
         bool _sponsorPinShow;
         Image _sponsorBadge;
         Image _day1Headline;
+        Image _liveDay1;
         Image _weekHeadline;
         Image _lastHeadline;
         float _bedVolume;
@@ -1168,6 +1169,14 @@ namespace BankruptVtuber
             _day1Headline.gameObject.SetActive(false);
 
             _avatar = new AvatarView(root as RectTransform);
+            _liveDay1 = UiKit.Image(root, "LiveDay1", Color.white);
+            UiKit.Layout(_liveDay1.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(200f, -276f), new Vector2(132f, 40f));
+            ArtSprites.Apply(_liveDay1, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _liveDay1.preserveAspect = true;
+            _liveDay1.raycastTarget = false;
+            var liveDay1T = UiKit.Label(_liveDay1.transform, "T", "1일차", 16, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(liveDay1T.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _liveDay1.gameObject.SetActive(false);
             _weekHeadline = UiKit.Image(root, "LiveWeekHeadline", Color.white);
             UiKit.Layout(_weekHeadline.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -272f), new Vector2(168f, 68f));
             ArtSprites.Apply(_weekHeadline, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
@@ -3235,6 +3244,8 @@ namespace BankruptVtuber
                 _sponsorBadge.gameObject.SetActive(_sponsorPinShow);
             if (_day1Headline != null)
                 _day1Headline.gameObject.SetActive(1 == GameManager.Instance.Run.day);
+            if (_liveDay1 != null)
+                _liveDay1.gameObject.SetActive(1 == GameManager.Instance.Run.day);
             if (_weekHeadline != null)
                 _weekHeadline.gameObject.SetActive(LiveWeekStartDay(GameManager.Instance.Run.day));
             if (_lastHeadline != null)
