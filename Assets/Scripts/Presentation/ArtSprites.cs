@@ -41,6 +41,7 @@ namespace BankruptVtuber
         public const string AntiSting = "Art/anti_sting";
         public const string LagSting = "Art/lag_sting";
         public const string ViewerBadge = "Art/viewer_badge";
+        public const string ViewerPop = "Art/viewer_pop";
         public const string ClockPlate = "Art/clock_plate";
         public const string OnAirLed = "Art/onair_led";
         public const string EndCut = "Art/end_cut";

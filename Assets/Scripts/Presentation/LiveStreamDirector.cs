@@ -203,6 +203,7 @@ namespace BankruptVtuber
         float _stingFlash;
         float _viewerFlash;
         Text _viewerPop;
+        Image _viewerPopChip;
         float _viewerPopFlash;
         Text _incomePop;
         Image _incomePopSlip;
@@ -621,13 +622,24 @@ namespace BankruptVtuber
             TickViewerChipPop();
             _viewerPopFlash = Mathf.MoveTowards(_viewerPopFlash, 0f, dt * 1.6f);
             _incomePopFlash = Mathf.MoveTowards(_incomePopFlash, 0f, dt * 1.6f);
+            if (_viewerPopChip != null)
+            {
+                bool show = _viewerPopFlash > 0.02f;
+                _viewerPopChip.gameObject.SetActive(show);
+                if (show)
+                {
+                    var sc = _viewerPopChip.color;
+                    sc.a = _viewerPopFlash;
+                    _viewerPopChip.color = sc;
+                    _viewerPopChip.rectTransform.anchoredPosition = new Vector2(8f, 6f + 22f * (1f - _viewerPopFlash));
+                    _viewerPopChip.rectTransform.localScale = Vector3.one * (1f + 0.16f * _viewerPopFlash);
+                }
+            }
             if (_viewerPop != null)
             {
                 var pc = _viewerPop.color;
                 pc.a = _viewerPopFlash;
                 _viewerPop.color = pc;
-                _viewerPop.rectTransform.anchoredPosition = new Vector2(8f, 6f + 22f * (1f - _viewerPopFlash));
-                _viewerPop.rectTransform.localScale = Vector3.one * (1f + 0.16f * _viewerPopFlash);
             }
             if (_incomePopSlip != null)
             {
@@ -955,8 +967,14 @@ namespace BankruptVtuber
                         viewerCapT.color = Palette.PastelDim;
                 }
             }
-            _viewerPop = UiKit.Label(_viewers.transform.parent, "ViewerPop", "", 20, Palette.CashGreen, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UiKit.Layout(_viewerPop.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(8f, 6f), new Vector2(150f, 28f));
+            _viewerPopChip = UiKit.Image(_viewers.transform.parent, "ViewerPopChip", Color.white);
+            UiKit.Layout(_viewerPopChip.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(8f, 6f), new Vector2(158f, 36f));
+            ArtSprites.Apply(_viewerPopChip, ArtSprites.ViewerPop, new Color(0.16f, 0.22f, 0.38f, 0.96f), Color.white);
+            _viewerPopChip.preserveAspect = false;
+            _viewerPopChip.raycastTarget = false;
+            _viewerPopChip.gameObject.SetActive(false);
+            _viewerPop = UiKit.Label(_viewerPopChip.transform, "ViewerPop", "", 20, Palette.CashGreen, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_viewerPop.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(8f, -1f), new Vector2(-16f, -6f));
             _rival = Chip(top, "Rival", "라이벌", 0.40f, 0.64f, -6f);
             _timer = Chip(top, "Timer", "남은 시간", 0.64f, 1f, -6f);
             _timerChip = _timer.transform.parent as RectTransform;
@@ -2583,6 +2601,17 @@ namespace BankruptVtuber
             if (_viewerPop == null || Mathf.Abs(viewerDelta) < 0.049f)
                 return;
             bool up = viewerDelta > 0f;
+            if (_viewerPopChip != null)
+            {
+                ArtSprites.Apply(_viewerPopChip, ArtSprites.ViewerPop, new Color(0.16f, 0.22f, 0.38f, 0.96f), Color.white);
+                _viewerPopChip.preserveAspect = false;
+                _viewerPopChip.gameObject.SetActive(true);
+                var sc = _viewerPopChip.color;
+                sc.a = 1f;
+                _viewerPopChip.color = sc;
+                _viewerPopChip.rectTransform.anchoredPosition = new Vector2(8f, 6f);
+                _viewerPopChip.rectTransform.localScale = Vector3.one * 1.16f;
+            }
             _viewerPop.text = up
                 ? $"시청 +{viewerDelta:0.0}"
                 : $"시청 −{Mathf.Abs(viewerDelta):0.0}";

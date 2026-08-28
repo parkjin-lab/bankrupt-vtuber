@@ -227,6 +227,7 @@ def check_project() -> None:
         "anti_sting.png": "안티 스팅",
         "lag_sting.png": "렉 스팅",
         "viewer_badge.png": "시청 배지",
+        "viewer_pop.png": "시청 ± 칩",
         "clock_plate.png": "시계 배지",
         "onair_led.png": "ON AIR LED",
         "end_cut.png": "방송 종료 컷",
@@ -1476,6 +1477,7 @@ def check_project() -> None:
     check_bill_cover_sfx()
     check_bill_cover_stamp()
     check_won_pop_slip()
+    check_viewer_pop_chip()
     check_hype_sfx()
     check_event_sfx()
     check_content_icons()
@@ -4038,6 +4040,8 @@ def check_viewer_pop() -> None:
         fail("viewer chip has no +/− popup")
     elif "ViewerPop" not in live_cs or "_viewers" not in live_cs:
         fail("viewer popup is not next to the viewer chip")
+    elif "ArtSprites.ViewerPop" not in live_cs or '"ViewerPopChip"' not in live_cs:
+        fail("viewer +/- popup is not on viewer_pop chip")
     elif "ShowMissSting" not in live_cs or "ShowViewerDelta(viewerDelta)" not in live_cs:
         fail("miss does not reuse the one viewer popup")
     elif live_cs.count("ShowViewerDelta") < 3:
@@ -5608,6 +5612,75 @@ def check_won_pop_slip() -> None:
         fail("README dropped cash_slip 지금 수입 next to won_pop")
     else:
         ok("+₩ sits on won_pop cash slip; fly / cash_slip chip / values / economy stay")
+
+
+def check_viewer_pop_chip() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/viewer_pop.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    show = live_cs.split("void ShowViewerDelta", 1)[-1].split("void TickViewerChipPop", 1)[0]
+    paint = live_cs.split("void PaintViewerChip", 1)[-1].split("void ShowMissSting", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("viewer_pop.png is missing")
+    elif w < 300 or h < 100 or w <= h:
+        fail("viewer_pop.png is not a readable landscape chip")
+    elif color != 6:
+        fail("viewer_pop.png is not RGBA")
+    elif 'ViewerPop = "Art/viewer_pop"' not in art_cs:
+        fail("ArtSprites does not hook Art/viewer_pop")
+    elif "ArtSprites.ViewerPop" not in show or '"ViewerPopChip"' not in live_cs:
+        fail("ShowViewerDelta does not hang Art/viewer_pop under 시청 ±")
+    elif "시청 +" not in show or "시청 −" not in show or "ViewerPop" not in live_cs:
+        fail("viewer_pop chip dropped Korean +/- copy")
+    elif show.count("시청 +") != 1:
+        fail("viewer_pop chip duplicated 시청 + copy")
+    elif "_viewerChipPop = 0.1f" not in show or "1f + 0.12f" not in paint:
+        fail("viewer_pop chip dropped 1.12 badge pop")
+    elif "Palette.CashGreen" not in show or "Palette.MoneyRed" not in show:
+        fail("viewer_pop chip dropped green/red tint")
+    elif "ArtSprites.ViewerBadge" not in live_cs or '"Viewers"' not in live_cs:
+        fail("viewer_pop chip dropped viewer_badge")
+    elif "ShowViewerDelta(viewerDelta)" not in live_cs or live_cs.count("ShowViewerDelta") < 3:
+        fail("viewer_pop chip is not reused for hit / miss / leftover ticks")
+    elif "ClampViewers" not in rules_cs or "ViewerDeltaFor" not in rules_cs:
+        fail("viewer_pop chip retuned ClampViewers / deltas")
+    elif "perfectViewerDelta: 0.5" not in balance or "missViewerDelta: -1.2" not in balance:
+        fail("viewer_pop chip retuned Perfect / Miss viewer deltas")
+    elif "hypeViewersPerSec: 1" not in balance or "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("viewer_pop chip retuned viewer / Week 1 economy")
+    elif "Viewers =" in show or "Viewers =" in paint:
+        fail("viewer_pop chip writes viewer math")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("viewer_pop chip broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising viewer_pop / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("viewer_pop chip dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("viewer_pop chip moved Unity off 6000.5.9f1")
+    elif "Art/viewer_pop" not in readme or "시청" not in readme:
+        fail("README should mention viewer_pop / 시청 ±")
+    elif "Art/viewer_badge" not in readme or "시청자" not in readme:
+        fail("README dropped viewer_badge next to viewer_pop")
+    elif "오늘 헤드라인" not in settle_cs:
+        fail("viewer_pop chip dropped settlement headline")
+    else:
+        ok("시청 ± sits on viewer_pop chip; 1.12 badge / tint / values / math stay")
 
 
 def check_hype_sfx() -> None:
@@ -9133,6 +9206,8 @@ def check_readme_playable() -> None:
         fail("README dropped anti_sting / lag_sting overlays")
     elif "viewer_badge" not in readme or "시청자" not in readme or ("시청 +" not in readme and "시청 ±" not in readme):
         fail("README dropped viewer_badge live follower badge")
+    elif "viewer_pop" not in readme or ("시청 +" not in readme and "시청 ±" not in readme):
+        fail("README dropped viewer_pop +/- chip")
     elif "clock_plate" not in readme or "남은 시간" not in readme or "sfx_clock_tick" not in readme:
         fail("README dropped clock_plate live broadcast clock")
     elif "onair_led" not in readme or "ON AIR" not in readme or "sfx_onair" not in readme:
