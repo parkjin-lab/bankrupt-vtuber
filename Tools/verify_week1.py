@@ -217,6 +217,7 @@ def check_project() -> None:
         "letter_card.png": "팬레터",
         "headline_clip.png": "어제 헤드라인",
         "cash_slip.png": "남은 현금",
+        "bill_cover.png": "청구 커버",
         "mental_note.png": "멘탈 메모",
         "combo_plate.png": "콤보 배지",
         "combo_break.png": "콤보 끊김 스탬프",
@@ -1472,6 +1473,7 @@ def check_project() -> None:
     check_clock_tick_sfx()
     check_superchat_sfx()
     check_bill_cover_sfx()
+    check_bill_cover_stamp()
     check_hype_sfx()
     check_event_sfx()
     check_content_icons()
@@ -4130,6 +4132,8 @@ def check_bill_cover_slam() -> None:
     slam = live_cs.split("void SlamBillCover", 1)[-1].split("void ShowIncomeDelta", 1)[0]
     if "SlamBillCover" not in live_cs or "CoverSlam" not in live_cs:
         fail("mid-stream 청구 커버 has no gold slam")
+    elif "ArtSprites.BillCover" not in slam or '"CoverSlamStamp"' not in live_cs:
+        fail("청구 커버 slam is not on bill_cover stamp")
     elif "청구 커버" not in live_cs or "TonightBills" not in live_cs:
         fail("cover slam is not keyed off tonight bills vs live income")
     elif "_billsCovered" not in live_cs or "SlamBillCover()" not in live_cs:
@@ -4161,7 +4165,7 @@ def check_bill_cover_slam() -> None:
     elif "billRent: 8000" not in balance or "hypeSeconds: 12" not in balance:
         fail("cover slam retuned Week 1 bills or hype")
     else:
-        ok("first 청구 커버 slams gold once; sticky green; no fake settle slam")
+        ok("first 청구 커버 slams gold PAID stamp once; sticky green; no fake settle slam")
 
 
 def check_yesterday_headline() -> None:
@@ -5474,6 +5478,67 @@ def check_bill_cover_sfx() -> None:
         fail("bill-cover SFX moved Unity off 6000.5.9f1")
     else:
         ok("청구 커버 one-shot plays cash-register SFX; no second slam; bills stay")
+
+
+def check_bill_cover_stamp() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    avatar_cs = (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/bill_cover.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    slam = live_cs.split("void SlamBillCover", 1)[-1].split("void ShowIncomeDelta", 1)[0]
+    trigger = live_cs.split("if (!_billsCovered && shown >= _tonightBills", 1)[-1].split("_remain.text", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("bill_cover.png is missing")
+    elif w < 360 or h < 160 or w <= h:
+        fail("bill_cover.png is not a readable landscape PAID stamp")
+    elif color != 6:
+        fail("bill_cover.png is not RGBA")
+    elif 'BillCover = "Art/bill_cover"' not in art_cs:
+        fail("ArtSprites does not hook Art/bill_cover")
+    elif "ArtSprites.BillCover" not in slam or '"CoverSlamStamp"' not in live_cs:
+        fail("SlamBillCover does not hang Art/bill_cover under 청구 커버")
+    elif "청구 커버" not in slam or "PlaySfx(_billCoverCue" not in slam:
+        fail("bill cover stamp dropped Korean copy or cash-register SFX")
+    elif slam.count("PlaySfx(_billCoverCue") != 1:
+        fail("bill cover stamp plays SFX more than once")
+    elif "_billsCovered = true" not in trigger or "SlamBillCover()" not in trigger:
+        fail("bill cover stamp is not on the one-shot cover trigger")
+    elif "HappyPop()" not in slam or "HappyPop" not in avatar_cs:
+        fail("bill cover stamp dropped avatar HappyPop")
+    elif "dt * 2.5f" not in live_cs or "_coverSlamFlash = 1f" not in slam:
+        fail("bill cover stamp dropped the short slam flash")
+    elif "SlamBillCover" in settle_cs or "CoverSlam" in settle_cs or "bill_cover" in settle_cs:
+        fail("settlement grew a second bill_cover slam")
+    elif "TonightBills" not in eco_cs or "billRent: 8000" not in balance:
+        fail("bill cover stamp retuned bills / TonightBills")
+    elif "startingCash: 45000" not in balance or "billElectricNet: 4000" not in balance:
+        fail("bill cover stamp retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("bill cover stamp broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising bill cover stamp / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("bill cover stamp dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("bill cover stamp moved Unity off 6000.5.9f1")
+    elif "Art/bill_cover" not in readme or "청구 커버" not in readme:
+        fail("README should mention bill_cover / 청구 커버")
+    else:
+        ok("청구 커버 sits on bill_cover PAID stamp; one-shot / SFX / sticky / no settle slam stay")
 
 
 def check_hype_sfx() -> None:
@@ -9018,6 +9083,8 @@ def check_readme_playable() -> None:
         fail("README dropped superchat_chip gold envelope")
     elif "superchat_pip" not in readme or "0.4" not in readme:
         fail("README dropped superchat_pip gold telegraph")
+    elif "bill_cover" not in readme or "청구 커버" not in readme or "sfx_bill_cover" not in readme:
+        fail("README dropped bill_cover PAID stamp")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:

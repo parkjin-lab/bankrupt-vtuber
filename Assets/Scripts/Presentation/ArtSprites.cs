@@ -31,6 +31,7 @@ namespace BankruptVtuber
         public const string LetterCard = "Art/letter_card";
         public const string HeadlineClip = "Art/headline_clip";
         public const string CashSlip = "Art/cash_slip";
+        public const string BillCover = "Art/bill_cover";
         public const string MentalNote = "Art/mental_note";
         public const string ComboPlate = "Art/combo_plate";
         public const string ComboBreak = "Art/combo_break";
