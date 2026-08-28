@@ -10285,6 +10285,8 @@ def check_readme_live_threat_sfx() -> None:
         or "방송 켜기" not in sfx_inv
     ):
         fail("README SFX inventory must name morning / settlement / title continue / live GO LIVE sfx_threat")
+    elif "추가 위협 칩" not in morning or "추가 위협 칩" not in live_loop:
+        fail("README morning/overlay must name the live extra-threat chip")
     elif "스팅 없음" not in morning or "sfx_anti" not in morning or "sfx_lag" not in morning:
         fail("README morning must stay silent if no extra and keep anti/lag SFX")
     elif "스팅 없음" not in live_loop or "sfx_anti" not in live_loop or "sfx_lag" not in live_loop:
