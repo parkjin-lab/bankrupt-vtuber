@@ -1475,6 +1475,7 @@ def check_project() -> None:
     check_membership_sfx()
     check_clip_sfx()
     check_goods_sfx()
+    check_agency_sfx()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -6954,6 +6955,108 @@ def check_goods_sfx() -> None:
         fail("goods SFX moved Unity off 6000.5.9f1")
     else:
         ok("아크릴 해금 / 굿즈 홍보 play sfx_goods once each; confirm / numbers stay")
+
+
+def check_agency_sfx() -> None:
+    import wave
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    w4_asset = (ROOT / "Assets/Resources/Balance/Week4Balance.asset").read_text(encoding="utf-8")
+    w4r_cs = (ROOT / "Assets/Scripts/Economy/Week4Rules.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    found_show = settle_cs.split("void ShowAgencyCard", 1)[-1].split("void CloseAgencyCard", 1)[0]
+    junior_show = settle_cs.split("void ShowJuniorCard", 1)[-1].split("void CloseJuniorCard", 1)[0]
+    splash = settle_cs.split("void ShowAgencySplash", 1)[-1].split("void OnAgencySplashAck", 1)[0]
+    yes = settle_cs.split("void OnAgencyYes", 1)[-1].split("void OnAgencyLater", 1)[0]
+    later = settle_cs.split("void OnAgencyLater", 1)[-1].split("void ShowAgencySplash", 1)[0]
+    found = settle_cs.split("void OnFoundAgency", 1)[-1].split("void OnScout", 1)[0]
+    scout = settle_cs.split("void OnScout", 1)[-1].split("void OnSignSponsor", 1)[0]
+    junior_yes = settle_cs.split("void OnJuniorYes", 1)[-1].split("void OnJuniorLater", 1)[0]
+    junior_later = settle_cs.split("void OnJuniorLater", 1)[-1].split("void HideWeek4QuietButtons", 1)[0]
+    ack = settle_cs.split("void OnAgencySplashAck", 1)[-1].split("void ShowJuniorCard", 1)[0]
+    play = settle_cs.split("void PlayAgencySfx", 1)[-1].split("void PlayGoodsSfx", 1)[0]
+    member = settle_cs.split("void ShowMemberSplash", 1)[-1].split("void OnMemberAck", 1)[0]
+    clip = settle_cs.split("void ShowClipCard", 1)[-1].split("void CloseClipCard", 1)[0]
+    goods = settle_cs.split("void ShowGoodsSplash", 1)[-1].split("void OnGoodsAck", 1)[0]
+    line = live_cs.split("else if (_session.LineActive)", 1)[-1].split("else if (_session.ConcertActive)", 1)[0]
+    line_overlay = live_cs.split("void RefreshLineOverlay", 1)[-1].split("void FlashLineResult", 1)[0]
+    line_flash = live_cs.split("void FlashLineResult", 1)[-1].split("void RefreshConcertOverlay", 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_agency.wav"
+
+    if not path.exists() or path.stat().st_size < 2000:
+        fail("sfx_agency.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("sfx_agency.wav is not a readable PCM stamp/office sting")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.16 or dur > 0.42:
+            fail(f"sfx_agency.wav duration {dur:.3f}s is not a short office stamp")
+            return
+
+    if "Audio/sfx_agency" not in settle_cs or "PlayAgencySfx" not in settle_cs:
+        fail("Settlement does not load / play Audio/sfx_agency")
+    elif "PlayAgencySfx();" not in found_show or found_show.count("PlayAgencySfx();") != 1:
+        fail("agency-found card does not play a single office stamp")
+    elif "PlayAgencySfx();" not in junior_show or junior_show.count("PlayAgencySfx();") != 1:
+        fail("junior scout card does not reuse the office stamp")
+    elif play.count("PlayOneShot") != 1:
+        fail("agency chime can fire more than one shot")
+    elif any("PlayAgencySfx" in block for block in (yes, later, found, scout, junior_yes, junior_later, ack, splash)):
+        fail("agency chime plays on 설립 / 스카우트 / 나중에 / splash dismiss")
+    elif "Audio/sfx_agency" in live_cs or "sfx_agency" in line or "sfx_agency" in line_overlay or "sfx_agency" in line_flash:
+        fail("agency SFX leaked onto the mid-stream sponsor line")
+    elif "PlaySfx" in line or "PlaySfx" in line_overlay or "PlaySfx" in line_flash:
+        fail("sponsor line gained SFX this slice")
+    elif "FoundAgency" not in found or "CanFoundAgency" not in w4r_cs:
+        fail("agency SFX unhooked FoundAgency")
+    elif "ScoutJunior" not in scout or "CanScoutJunior" not in w4r_cs:
+        fail("agency SFX unhooked ScoutJunior")
+    elif 'AgencyCard = "Art/agency_card"' not in art_cs or "ArtSprites.AgencyCard" not in settle_cs:
+        fail("agency SFX dropped letterhead art")
+    elif "에이전시 설립" not in settle_cs or "후배 스카우트" not in settle_cs:
+        fail("agency SFX covered founding / scout copy")
+    elif "설립" not in settle_cs or "스카우트" not in settle_cs or "나중에" not in settle_cs:
+        fail("agency SFX dropped 설립 / 스카우트 / 나중에")
+    elif "agencyFoundCost: 40000" not in w4_asset or "agencyDailyCost: 15000" not in w4_asset:
+        fail("agency SFX retuned found / daily cost")
+    elif "agencyUnlockCash: 100000" not in w4_asset or "agencyUnlockDebtMax: 40000" not in w4_asset:
+        fail("agency SFX retuned unlock gates")
+    elif "juniorScoutCost: 25000" not in w4_asset or "juniorDailySuccess: 4000" not in w4_asset:
+        fail("agency SFX retuned junior numbers")
+    elif "sponsorLineBonus: 3000" not in w4_asset or "sponsorFailCash: 15000" not in w4_asset:
+        fail("agency SFX retuned sponsor line numbers")
+    elif "EnableSponsorLine" not in live_cs or "스폰서 멘트" not in live_cs:
+        fail("agency SFX dropped the sponsor line beat")
+    elif "Audio/sfx_goods" not in settle_cs or "PlayGoodsSfx();" not in goods:
+        fail("agency SFX dropped goods stand chime")
+    elif "Audio/sfx_membership" not in settle_cs or "PlayMemberSfx();" not in member:
+        fail("agency SFX dropped membership badge chime")
+    elif "Audio/sfx_clip" not in settle_cs or "PlayClipSfx();" not in clip:
+        fail("agency SFX dropped clip shutter chime")
+    elif "Audio/sfx_agency" in title_cs or "Audio/sfx_agency" in week_cs:
+        fail("agency SFX leaked onto Title / WeekStart")
+    elif "ShowAgencyCard" in debug_cs or "sfx_agency" in debug_cs:
+        fail("F10 skip is no longer mute-safe")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("agency SFX retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("agency SFX broke pads, 입력됨, or added timeScale")
+    elif "Week4" in title_cs or "에이전시" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising agency SFX / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("agency SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("agency SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("에이전시 설립 / 후배 스카우트 play sfx_agency once; sponsor line silent")
 
 
 def check_mental_sfx() -> None:

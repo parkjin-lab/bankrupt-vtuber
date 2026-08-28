@@ -152,6 +152,7 @@ namespace BankruptVtuber
         AudioClip _memberCue;
         AudioClip _clipCue;
         AudioClip _goodsCue;
+        AudioClip _agencyCue;
         bool _leavingSettle;
         bool _resultStingPlayed;
 
@@ -1732,6 +1733,7 @@ namespace BankruptVtuber
             }
             _agencyOpen = true;
             HideWeek4QuietButtons();
+            PlayAgencySfx();
         }
 
         void CloseAgencyCard()
@@ -1795,6 +1797,7 @@ namespace BankruptVtuber
             }
             _juniorOpen = true;
             HideWeek4QuietButtons();
+            PlayAgencySfx();
         }
 
         void CloseJuniorCard()
@@ -2207,6 +2210,7 @@ namespace BankruptVtuber
             _memberCue = Resources.Load<AudioClip>("Audio/sfx_membership");
             _clipCue = Resources.Load<AudioClip>("Audio/sfx_clip");
             _goodsCue = Resources.Load<AudioClip>("Audio/sfx_goods");
+            _agencyCue = Resources.Load<AudioClip>("Audio/sfx_agency");
         }
 
         void PlaySettleSfx(AudioClip clip, float volume)
@@ -2270,6 +2274,12 @@ namespace BankruptVtuber
                 _settleBgm.Stop();
             }
             next?.Invoke();
+        }
+
+        void PlayAgencySfx()
+        {
+            if (_settleSfx != null && _agencyCue != null)
+                _settleSfx.PlayOneShot(_agencyCue, 0.48f);
         }
 
         void PlayGoodsSfx()
