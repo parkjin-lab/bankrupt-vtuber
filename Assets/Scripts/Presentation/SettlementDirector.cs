@@ -34,6 +34,7 @@ namespace BankruptVtuber
         Text _endingBody;
         Text _headlineTag;
         Text _headline;
+        Image _headlineClip;
         Text _showLine;
         Image _showLineIcon;
         Text _clearHeadline;
@@ -328,8 +329,13 @@ namespace BankruptVtuber
 
             var title = UiKit.Label(root, "Title", "정산", 48, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
             UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(36, -16), new Vector2(400, 56));
-            _headlineTag = UiKit.Label(root, "HeadlineTag", "오늘 헤드라인", 18, Palette.Gold, TextAnchor.UpperLeft, FontStyle.Bold);
-            UiKit.Layout(_headlineTag.rectTransform, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(40, -68), new Vector2(0, 22));
+            _headlineClip = UiKit.Image(root, "HeadlineClip", Color.white);
+            UiKit.Layout(_headlineClip.rectTransform, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(36, -66), new Vector2(0, 80));
+            ArtSprites.Apply(_headlineClip, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
+            _headlineClip.preserveAspect = false;
+            _headlineClip.raycastTarget = false;
+            _headlineTag = UiKit.Label(_headlineClip.transform, "HeadlineTag", "오늘 헤드라인", 16, Palette.Ink, TextAnchor.UpperLeft, FontStyle.Bold);
+            UiKit.Layout(_headlineTag.rectTransform, new Vector2(0.07f, 0.62f), new Vector2(0.93f, 0.96f), new Vector2(0, 1), Vector2.zero, Vector2.zero);
             var showLineRow = UiKit.Panel(root, "ShowLineRow", new Color(0, 0, 0, 0));
             UiKit.Layout(showLineRow, new Vector2(0.78f, 1), new Vector2(0.78f, 1), new Vector2(1, 1), new Vector2(-8, -68), new Vector2(168, 22));
             _showLineIcon = UiKit.Image(showLineRow, "ShowLineIcon", Color.white);
@@ -337,10 +343,11 @@ namespace BankruptVtuber
             _showLineIcon.raycastTarget = false;
             _showLine = UiKit.Label(showLineRow, "ShowLine", "", 18, Palette.Pink, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(_showLine.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0.5f), new Vector2(28f, 0f), new Vector2(-4f, 0f));
-            _headline = UiKit.Label(root, "Headline", "", 32, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
-            UiKit.Layout(_headline.rectTransform, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(40, -90), new Vector2(0, 56));
+            _headline = UiKit.Label(_headlineClip.transform, "Headline", "", 26, Palette.Ink, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_headline.rectTransform, new Vector2(0.07f, 0.10f), new Vector2(0.93f, 0.62f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             UiKit.Wrap(_headline);
             _headline.lineSpacing = 1.1f;
+            _headlineClip.gameObject.SetActive(false);
 
             var recap = UiKit.Panel(root, "Recap", new Color(0, 0, 0, 0));
             UiKit.Layout(recap, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(20, -148), new Vector2(0, 190));
@@ -2109,8 +2116,11 @@ namespace BankruptVtuber
             string line = DayHeadline.Build(run);
             if (_headline != null)
                 _headline.text = line;
+            bool on = !string.IsNullOrEmpty(line);
+            if (_headlineClip != null)
+                _headlineClip.gameObject.SetActive(on);
             if (_headlineTag != null)
-                _headlineTag.gameObject.SetActive(!string.IsNullOrEmpty(line));
+                _headlineTag.gameObject.SetActive(on);
             if (_clearHeadline != null)
                 _clearHeadline.text = line;
             if (_stampHeadline != null)

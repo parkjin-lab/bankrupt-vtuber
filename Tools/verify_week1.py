@@ -7284,6 +7284,8 @@ def check_headline_clip() -> None:
     player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
     build = week_cs.split("void Build()", 1)[-1].split("void RefreshYesterday", 1)[0]
     yest = week_cs.split("void RefreshYesterday", 1)[-1].split("void RefreshLastDay", 1)[0]
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    apply = settle_cs.split("void ApplyHeadline", 1)[-1].split("void PaintShowLine", 1)[0]
     png = ROOT / "Assets/Resources/Art/headline_clip.png"
     data = png.read_bytes() if png.exists() else b""
     w = h = color = 0
@@ -7303,6 +7305,16 @@ def check_headline_clip() -> None:
         fail("WeekStart does not hang Art/headline_clip under 어제")
     elif '"Yesterday"' not in build or "YesterdayLine" not in yest:
         fail("headline clip dropped the 어제 text line")
+    elif "ArtSprites.HeadlineClip" not in settle_build or '"HeadlineClip"' not in settle_build:
+        fail("Settlement does not hang Art/headline_clip under 오늘 헤드라인")
+    elif '"Headline"' not in settle_build or "오늘 헤드라인" not in settle_build:
+        fail("settlement clip dropped 오늘 헤드라인 copy")
+    elif "DayHeadline.Remember" not in apply or "DayHeadline.Build" not in apply:
+        fail("settlement clip unhooked Remember / Build")
+    elif "TickIncomeCount" not in settle_cs or "ShowShortfall" not in settle_cs or "청구 미달" not in settle_cs:
+        fail("settlement clip dropped count-up / bill-short")
+    elif "LeaveSettle(() => gm.NextMorning())" not in settle_cs and "NextMorning()" not in settle_cs:
+        fail("settlement clip changed next-morning routing")
     elif '"어제: "' not in head_cs or "day <= 1" not in head_cs:
         fail("headline clip changed 어제 copy or day math")
     elif "lastHeadline" not in state_cs or "data.lastHeadline ?? \"\"" not in save_cs:
@@ -7330,7 +7342,7 @@ def check_headline_clip() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("headline clip moved Unity off 6000.5.9f1")
     else:
-        ok("어제 headline sits on a newspaper clipping; copy / save / day math stay")
+        ok("오늘 / 어제 headlines share headline_clip scrap; copy / counts / morning stay")
 
 
 def check_mental_sfx() -> None:
