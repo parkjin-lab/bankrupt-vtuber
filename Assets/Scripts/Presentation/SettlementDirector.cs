@@ -398,6 +398,8 @@ namespace BankruptVtuber
             if (_billsTile != null)
             {
                 _billsImg = _billsTile.GetComponent<Image>();
+                if (_billsImg != null)
+                    ArtSprites.ApplySliced(_billsImg, ArtSprites.BillNotice, Color.white, new Vector4(28f, 24f, 28f, 24f));
                 var capT = _billsTile.Find("L");
                 if (capT != null)
                     _billsCap = capT.GetComponent<Text>();
@@ -1108,7 +1110,11 @@ namespace BankruptVtuber
                 if (_billsCap != null)
                     _billsCap.color = Color.Lerp(Color.white, Palette.MoneyRed, u);
                 if (_billsImg != null)
-                    _billsImg.color = Color.Lerp(Palette.MoneyRed, new Color(1f, 0.12f, 0.22f, 1f), u);
+                    ArtSprites.ApplySliced(
+                        _billsImg,
+                        ArtSprites.BillNotice,
+                        Color.Lerp(Color.white, Palette.MoneyRed, u),
+                        new Vector4(28f, 24f, 28f, 24f));
                 if (_billsTile != null)
                     _billsTile.localScale = Vector3.one * (1f + 0.16f * u);
             }
@@ -1118,7 +1124,7 @@ namespace BankruptVtuber
                 if (_billsCap != null)
                     _billsCap.color = Color.white;
                 if (_billsImg != null)
-                    _billsImg.color = Palette.MoneyRed;
+                    ArtSprites.ApplySliced(_billsImg, ArtSprites.BillNotice, Color.white, new Vector4(28f, 24f, 28f, 24f));
                 _billsTile.localScale = Vector3.one;
             }
         }

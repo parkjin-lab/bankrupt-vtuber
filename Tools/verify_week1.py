@@ -1489,6 +1489,7 @@ def check_project() -> None:
     check_rival_webcam_bezel()
     check_bill_notice()
     check_live_bill_notice()
+    check_settle_bill_notice()
     check_stream_overlay()
     check_title_studio()
     check_title_wordmark()
@@ -5104,6 +5105,8 @@ def check_bill_notice() -> None:
         fail("live 청구 chip is not on the 고지서 sprite")
     elif "ArtSprites.BillNotice" not in settle_build or '"Debt"' not in settle_build or '"부채"' not in settle_build:
         fail("settlement 부채 is not on the 고지서 sprite")
+    elif '"Bills"' not in settle_build or settle_build.split('_billsTile = recap.Find("Bills")', 1)[-1].split("var shortHost", 1)[0].count("ArtSprites.BillNotice") < 1:
+        fail("settlement 청구 is not on the 고지서 sprite")
     elif "ContinueDebtNotice" not in title_cs or "ArtSprites.BillNotice" not in title_cs:
         fail("Title continue debt is not on the same 고지서 sprite")
     elif "SetActive(_hasSave)" not in title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]:
@@ -5201,6 +5204,63 @@ def check_live_bill_notice() -> None:
         fail("README should mention live bill_notice reuse")
     else:
         ok("live 청구 chip sits on bill_notice; fill / PAID / numbers stay")
+
+
+def check_settle_bill_notice() -> None:
+    """Settlement tonight-bill tile reuses bill_notice so it matches morning / live / 부채."""
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    bills = settle_cs.split('_billsTile = recap.Find("Bills")', 1)[-1].split("var shortHost", 1)[0]
+    debt = settle_cs.split('_debtTile = recap.Find("Debt")', 1)[-1].split('_billsTile = recap.Find("Bills")', 1)[0]
+    tick = settle_cs.split("void TickShortfall", 1)[-1].split("void Render", 1)[0]
+    render = settle_cs.split("void Render()", 1)[-1].split("void TickDebtCount", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+    live_hud = live_cs.split("void RefreshHud", 1)[-1].split("void TickEventWarn", 1)[0]
+
+    if 'BillNotice = "Art/bill_notice"' not in art_cs:
+        fail("ArtSprites does not hook Art/bill_notice")
+    elif "ArtSprites.BillNotice" not in money or '"오늘 청구"' not in week_cs:
+        fail("settlement bill_notice reuse dropped morning 오늘 청구")
+    elif "ArtSprites.BillNotice" not in live_hud or "ApplySliced" not in live_hud:
+        fail("settlement bill_notice reuse dropped the live 청구 chip")
+    elif "ArtSprites.BillNotice" not in debt or "ApplySliced" not in debt:
+        fail("settlement bill_notice reuse dropped 부채")
+    elif "ContinueDebtNotice" not in title_cs or "ArtSprites.BillNotice" not in title_cs:
+        fail("settlement bill_notice reuse dropped title 부채")
+    elif "ArtSprites.BillNotice" not in bills or "ApplySliced" not in bills:
+        fail("settlement 청구 tile does not hang Art/bill_notice")
+    elif "ArtSprites.BillNotice" not in tick or "ApplySliced" not in tick:
+        fail("TickShortfall dropped bill_notice on the 청구 tile")
+    elif '"청구"' not in settle_cs or "lastBills" not in render:
+        fail("settlement 청구 tile dropped tonight's bill amount")
+    elif "lastBills =" in bills or "billRent =" in tick:
+        fail("settlement 청구 notice writes bill amounts")
+    elif "ArtSprites.BillShort" not in settle_cs or "청구 미달" not in settle_cs or "청구보다 부족" not in settle_cs:
+        fail("settlement 청구 notice dropped bill_short stamps")
+    elif "TickLeftCash" not in settle_cs or '"남은 현금"' not in settle_cs:
+        fail("settlement 청구 notice dropped leftover cash")
+    elif "TickIncomeCount" not in settle_cs or "TickDebtCount" not in settle_cs:
+        fail("settlement 청구 notice dropped income / debt count-ups")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("settlement 청구 notice retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("settlement 청구 notice broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising settlement 청구 notice / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("settlement 청구 notice dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("settlement 청구 notice moved Unity off 6000.5.9f1")
+    elif "Art/bill_notice" not in readme or "오늘 청구" not in readme:
+        fail("README should mention settlement 청구 bill_notice reuse")
+    else:
+        ok("settlement 청구 tile sits on bill_notice; leftover / 미달 / counts stay")
 
 
 def check_stream_overlay() -> None:
