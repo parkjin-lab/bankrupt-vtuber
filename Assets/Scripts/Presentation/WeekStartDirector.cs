@@ -896,7 +896,7 @@ namespace BankruptVtuber
             if (threat)
                 ArtSprites.ApplySliced(
                     card.GetComponent<Image>(),
-                    ArtSprites.ThreatBanner,
+                    ArtSprites.EventWarn,
                     threatLook.Fx != ExtraThreatFx.None ? threatLook.Tint : Palette.MoneyRed,
                     new Vector4(28f, 24f, 28f, 24f));
             else if (bill.Gain)
