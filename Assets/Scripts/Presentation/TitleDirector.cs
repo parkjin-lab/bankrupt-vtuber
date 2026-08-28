@@ -30,6 +30,7 @@ namespace BankruptVtuber
         Image _continueRankingPin;
         Image _continueClipPin;
         Image _continueConcertPin;
+        Image _continueSponsorPin;
         Text _continueMoney;
         Text _continueDebt;
         Text _continueHead;
@@ -313,6 +314,12 @@ namespace BankruptVtuber
             _continueConcertPin.preserveAspect = true;
             _continueConcertPin.raycastTarget = false;
             _continueConcertPin.gameObject.SetActive(false);
+            _continueSponsorPin = UiKit.Image(_continue.transform, "ContinueSponsorPin", Color.white);
+            UiKit.Layout(_continueSponsorPin.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-476f, 10f), new Vector2(72f, 48f));
+            ArtSprites.Apply(_continueSponsorPin, ArtSprites.SponsorCard, Color.white, Color.white);
+            _continueSponsorPin.preserveAspect = true;
+            _continueSponsorPin.raycastTarget = false;
+            _continueSponsorPin.gameObject.SetActive(false);
             _how = UiKit.Button(titleParent, "HowTo", "조작 설명", OpenHowTo, Palette.StudioHi, Palette.Pastel);
             StyleMenuButton(_how, new Vector2(56, -224), new Vector2(420, 70), Palette.StudioHi);
 
@@ -491,6 +498,8 @@ namespace BankruptVtuber
                 _continueClipPin.gameObject.SetActive(false);
             if (_continueConcertPin != null && !_hasSave)
                 _continueConcertPin.gameObject.SetActive(false);
+            if (_continueSponsorPin != null && !_hasSave)
+                _continueSponsorPin.gameObject.SetActive(false);
             if (_continueClip != null)
                 _continueClip.gameObject.SetActive(hasHead);
             if (!_hasSave && _continueWarn != null)
@@ -527,6 +536,8 @@ namespace BankruptVtuber
                 _continueClipPin.gameObject.SetActive(peek.clipUploaded);
             if (_continueConcertPin != null)
                 _continueConcertPin.gameObject.SetActive(peek.concertBooked);
+            if (_continueSponsorPin != null)
+                _continueSponsorPin.gameObject.SetActive(peek.sponsorMentioned);
             int bills = EconomyRules.TonightBills(peek);
             bool shortfall = bills > 0 && peek.cash < bills;
             if (_continueMoney != null)
