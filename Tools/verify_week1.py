@@ -1542,6 +1542,7 @@ def check_project() -> None:
     check_ending_day_tab()
     check_readme_ending_clip_tab()
     check_readme_onair_led()
+    check_readme_rival_hud()
     check_letter_card()
     check_letter_keycaps()
     check_pad_sfx()
@@ -8845,6 +8846,72 @@ def check_readme_onair_led() -> None:
         ok("README names onair_led HUD sting/90s/blink/end-cut, GO LIVE pip, and rival cam")
 
 
+def check_readme_rival_hud() -> None:
+    """README names the Week 3 rival HUD stack: bezel + duel LED + badge + pop."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    duel_cs = (ROOT / "Assets/Scripts/Presentation/RivalDuelView.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    face = readme.split("웹캠 파산냥", 1)[-1].split("라이브는", 1)[0]
+    week3 = readme.split("**3주차**", 1)[-1].split("**4주차**", 1)[0]
+    nyang = next((ln for ln in readme.splitlines() if ln.startswith("- `Art/rival_nyang`") or ln.startswith("  - `Art/rival_nyang`")), "")
+    cam = duel_cs.split('"RivalCam"', 1)[-1].split("var bars", 1)[0] if '"RivalCam"' in duel_cs else ""
+
+    missing = next(
+        (
+            f"{label} {token}"
+            for label, block in (("face", face), ("Week 3", week3), ("rival_nyang", nyang))
+            for token in (
+                "라이벌 HUD",
+                "webcam_bezel",
+                "onair_led",
+                "viewer_badge",
+                "viewer_pop",
+            )
+            if token not in block
+        ),
+        "",
+    )
+
+    if missing:
+        fail(f"README {missing} must name the rival HUD stack")
+    elif "ArtSprites.WebcamBezel" not in duel_cs or '"Bezel"' not in duel_cs:
+        fail("README rival HUD lost webcam_bezel")
+    elif "ArtSprites.OnAirLed" not in cam or '"RivalOnAir"' not in cam:
+        fail("README rival HUD lost duel onair_led")
+    elif "ArtSprites.ViewerBadge" not in cam or '"RivalViewerBadge"' not in cam or '"RivalCamCount"' not in cam:
+        fail("README rival HUD lost viewer_badge count")
+    elif "ArtSprites.ViewerPop" not in cam or '"StealFlash"' not in cam:
+        fail("README rival HUD lost viewer_pop +/-")
+    elif "ArtSprites.ViewerBadge" not in live_cs or '"ViewerPopChip"' not in live_cs or '"HudOnAir"' not in live_cs:
+        fail("README rival HUD dropped the player HUD badge / pop / LED")
+    elif "ArtSprites.OnAirLed" not in live_cs or '"HudOnAir"' not in live_cs:
+        fail("README rival HUD lost the player HUD LED")
+    elif "ArtSprites.OnAirLed" not in week_cs or '"LivePip"' not in week_cs:
+        fail("README rival HUD lost the GO LIVE pip")
+    elif "rivalPerfectSteal: 0.6" not in w3_asset or "rivalWinCash: 20000" not in w3_asset or "rivalLoseMental: 12" not in w3_asset:
+        fail("README rival HUD retuned Week3 rival numbers")
+    elif "playerViewers > rivalViewers" not in w3r_cs or "ApplyRivalResult" not in w3r_cs:
+        fail("README rival HUD changed win/lose routing")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("README rival HUD retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README rival HUD broke pads, 입력됨, or added timeScale")
+    elif "Week3" in title_cs or "라이벌" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising rival HUD / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README rival HUD dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README rival HUD moved Unity off 6000.5.9f1")
+    else:
+        ok("README names 라이벌 HUD (webcam_bezel + onair_led + viewer_badge + viewer_pop)")
+
+
 def check_letter_card() -> None:
     import struct
 
@@ -11997,6 +12064,10 @@ def check_readme_playable() -> None:
         fail("README Week 3 dropped rival viewer_badge")
     elif "viewer_pop" not in readme.split("**3주차**", 1)[-1].split("**4주차**", 1)[0]:
         fail("README Week 3 dropped rival viewer_pop")
+    elif "라이벌 HUD" not in readme.split("**3주차**", 1)[-1].split("**4주차**", 1)[0]:
+        fail("README Week 3 dropped 라이벌 HUD")
+    elif "webcam_bezel" not in readme.split("**3주차**", 1)[-1].split("**4주차**", 1)[0]:
+        fail("README Week 3 dropped rival webcam_bezel")
     elif "ranking_board" not in readme or "concert_stage" not in readme:
         fail("README dropped ranking / concert art")
     elif "책상 종이" not in readme:
@@ -12151,7 +12222,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
