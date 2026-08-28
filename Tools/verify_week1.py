@@ -1663,6 +1663,7 @@ def check_project() -> None:
     check_settle_threat_sfx()
     check_title_event_warn()
     check_title_threat_sfx()
+    check_title_newgame_threat_sfx()
     check_live_threat_sfx()
     check_event_sting_overlays()
     check_mental_sfx()
@@ -22531,6 +22532,122 @@ def check_title_threat_sfx() -> None:
         fail("title continue sfx_threat moved Unity off 6000.5.9f1")
     else:
         ok("title continue extra-threat plays sfx_threat once; no-save / no-extra / leave stay silent")
+
+
+def check_title_newgame_threat_sfx() -> None:
+    """No-save Title plays sfx_threat once with NewGameBill; continue Title does not double-fire."""
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    extra_cs = (ROOT / "Assets/Scripts/Data/ExtraThreat.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    awake = title_cs.split("void Awake()", 1)[-1].split("void OnDestroy()", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    shot = title_cs.split("void PlayNewGameBillThreat", 1)[-1].split("void PlayThreatSfx", 1)[0]
+    play = title_cs.split("void PlayThreatSfx", 1)[-1]
+    leave = title_cs.split("void LeaveTitle", 1)[-1].split("IEnumerator FadeTitleBgmThen", 1)[0]
+    pulse = title_cs.split("void TickContinuePulse", 1)[-1].split("void OpenHowTo", 1)[0]
+    start = title_cs.split("void OnStartBroadcast", 1)[-1].split("void BeginNewRun", 1)[0]
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    bill = start_hang.split("_startBill = UiKit.Image", 1)[-1] if "_startBill = UiKit.Image" in start_hang else ""
+    if "_startCash = UiKit.Image" in bill:
+        bill = bill.split("_startCash = UiKit.Image", 1)[0]
+    cash = start_hang.split("_startCash = UiKit.Image", 1)[-1] if "_startCash = UiKit.Image" in start_hang else ""
+    if "_startMental = UiKit.Image" in cash:
+        cash = cash.split("_startMental = UiKit.Image", 1)[0]
+    mental = start_hang.split("_startMental = UiKit.Image", 1)[-1] if "_startMental = UiKit.Image" in start_hang else ""
+    build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    spawn = week_cs.split("void SpawnIncoming", 1)[-1].split("IEnumerator Slam", 1)[0]
+    bind = settle_cs.split("void BindExtraWarn", 1)[-1].split("void ApplyHeadline", 1)[0]
+    apply = live_cs.split("void ApplyThreatShow", 1)[-1].split("void AddThreatBadge", 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_threat.wav"
+
+    if "Audio/sfx_threat" not in title_cs or "PlayThreatSfx" not in title_cs:
+        fail("new-game Title does not load / play Audio/sfx_threat")
+    elif "PlayNewGameBillThreat();" not in awake:
+        fail("new-game Title does not slam sfx_threat when Title opens")
+    elif awake.find("RefreshContinue();") < 0 or awake.find("RefreshContinue();") > awake.find("PlayNewGameBillThreat();"):
+        fail("new-game Title slams sfx_threat before NewGameBill is shown")
+    elif "if (_hasSave" not in shot or "PlayThreatSfx();" not in shot or shot.count("PlayThreatSfx();") != 1:
+        fail("new-game Title sfx_threat is not a single shot with NewGameBill")
+    elif "_startBill" not in shot:
+        fail("new-game Title sfx_threat is not tied to NewGameBill")
+    elif "PlayThreatSfx" in hide or "PlayNewGameBillThreat" in hide:
+        fail("new-game Title sfx_threat double-fires from continue RefreshContinue")
+    elif "PlayThreatSfx();" not in fill or fill.count("PlayThreatSfx();") != 1:
+        fail("new-game Title sfx_threat dropped the continue extra-threat shot")
+    elif "if (extraOn)" not in fill or "PlayThreatSfx();" not in fill.split("if (extraOn)", 1)[-1]:
+        fail("new-game Title sfx_threat retimed the continue extra-threat shot")
+    elif play.count("PlayOneShot") != 1:
+        fail("new-game Title sfx_threat can fire more than one shot")
+    elif "_threatSfxPlayed" not in play or "_threatSfxPlayed = true" not in play:
+        fail("new-game Title sfx_threat is not one-shot")
+    elif "PlayThreatSfx" in leave or "PlayThreatSfx" in pulse or "PlayThreatSfx" in start:
+        fail("new-game Title sfx_threat plays on title leave / pulse / new game")
+    elif "PlayThreatSfx" in bill or "PlayThreatSfx" in cash or "PlayThreatSfx" in mental:
+        fail("new-game Title sfx_threat sat on a desk paper hang")
+    elif '"NewGameBill"' not in start_hang or "16f, -10f" not in bill or "176f, 170f" not in bill:
+        fail("new-game Title sfx_threat restyled NewGameBill")
+    elif '"NewGameCash"' not in start_hang or "200f, 68f" not in cash or "204f, -10f" not in cash:
+        fail("new-game Title sfx_threat restyled NewGameCash")
+    elif '"NewGameMental"' not in start_hang or "160f, 110f" not in mental or "204f, -86f" not in mental:
+        fail("new-game Title sfx_threat restyled NewGameMental")
+    elif "_startBill" not in hide or "SetActive(!_hasSave)" not in hide:
+        fail("new-game Title sfx_threat dropped the no-save NewGameBill show")
+    elif '"ContinueWarn"' not in build or "ArtSprites.EventWarn" not in build:
+        fail("new-game Title sfx_threat dropped the continue threat plate")
+    elif '"ContinueMemberPin"' not in build or "-8f, 10f" not in build:
+        fail("new-game Title sfx_threat dropped the membership continue pin")
+    elif '"ContinueAgencyPin"' not in build or "-86f, 10f" not in build:
+        fail("new-game Title sfx_threat dropped the agency continue pin")
+    elif '"ContinueGoodsPin"' not in build or "-164f, 10f" not in build:
+        fail("new-game Title sfx_threat dropped the goods continue pin")
+    elif '"ContinueRankingPin"' not in build or "-242f, 10f" not in build:
+        fail("new-game Title sfx_threat dropped the ranking continue pin")
+    elif '"ContinueClipPin"' not in build or "-320f, 10f" not in build:
+        fail("new-game Title sfx_threat dropped the clip continue pin")
+    elif '"ContinueConcertPin"' not in build or "-398f, 10f" not in build:
+        fail("new-game Title sfx_threat dropped the concert continue pin")
+    elif '"ContinueSponsorPin"' not in build or "-476f, 10f" not in build:
+        fail("new-game Title sfx_threat dropped the sponsor continue pin")
+    elif "PlayThreatSfx();" not in spawn or spawn.count("PlayThreatSfx();") != 1:
+        fail("new-game Title sfx_threat dropped the morning extra-threat slam")
+    elif "PlayThreatSfx();" not in bind or bind.count("PlayThreatSfx();") != 1:
+        fail("new-game Title sfx_threat dropped the settlement extra-threat shot")
+    elif "PlayThreatSfx();" not in apply or apply.count("PlayThreatSfx();") != 1:
+        fail("new-game Title sfx_threat dropped the live extra-threat chip")
+    elif "PlayThreatSfx" in live_cs.split("void TickEventWarn", 1)[-1].split("void TickStrike", 1)[0]:
+        fail("new-game Title sfx_threat plays on live 안티/렉 telegraph")
+    elif not path.exists() or path.stat().st_size < 2000:
+        fail("sfx_threat.wav is missing")
+    elif title_cs.count("Audio/sfx_threat") != 1:
+        fail("new-game Title sfx_threat added a second Audio hook")
+    elif "장비 고장" not in extra_cs or "minWon = 7000" not in extra_cs:
+        fail("new-game Title sfx_threat retuned extra threat names / table")
+    elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
+        fail("new-game Title sfx_threat retuned live 안티 온다 / 렉 온다")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("new-game Title sfx_threat retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("new-game Title sfx_threat retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("new-game Title sfx_threat retuned week-clear gates")
+    elif "lastBills =" in week_cs or "billRent =" in title_cs or "TonightBills =" in title_cs:
+        fail("new-game Title sfx_threat writes bill amounts")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("new-game Title sfx_threat broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising new-game sfx_threat / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("new-game Title sfx_threat dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("new-game Title sfx_threat moved Unity off 6000.5.9f1")
+    else:
+        ok("no-save Title plays sfx_threat once with NewGameBill; continue Title does not double it")
 
 
 def check_live_threat_sfx() -> None:

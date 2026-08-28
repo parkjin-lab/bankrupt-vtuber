@@ -73,6 +73,7 @@ namespace BankruptVtuber
             Build();
             StartTitleBgm();
             RefreshContinue();
+            PlayNewGameBillThreat();
         }
 
         void OnDestroy()
@@ -844,6 +845,13 @@ namespace BankruptVtuber
                 _titleBgm.Stop();
             }
             next?.Invoke();
+        }
+
+        void PlayNewGameBillThreat()
+        {
+            if (_hasSave || _startBill == null)
+                return;
+            PlayThreatSfx();
         }
 
         void PlayThreatSfx()
