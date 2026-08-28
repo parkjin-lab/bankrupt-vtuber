@@ -101,6 +101,7 @@ namespace BankruptVtuber
         float _echoFlash;
         Image _tensionFill;
         Image _hypeFlash;
+        Image _hypeFrame;
         AudioSource _audio;
         AudioSource _bed;
         AudioClip _ok;
@@ -849,6 +850,12 @@ namespace BankruptVtuber
             _hypeFlash = UiKit.Image(root, "HypeFlash", new Color(1f, 0.82f, 0.25f, 0f));
             UiKit.Stretch(_hypeFlash.rectTransform);
             _hypeFlash.raycastTarget = false;
+            _hypeFrame = UiKit.Image(root, "HypeFrame", Color.white);
+            UiKit.Stretch(_hypeFrame.rectTransform);
+            ArtSprites.Apply(_hypeFrame, ArtSprites.HypeFrame, Palette.Gold, Color.white);
+            _hypeFrame.preserveAspect = false;
+            _hypeFrame.raycastTarget = false;
+            _hypeFrame.gameObject.SetActive(false);
             _hypeBanner = UiKit.Label(root, "HypeBanner", "", 62, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_hypeBanner.rectTransform, new Vector2(0.08f, 0.58f), new Vector2(0.52f, 0.58f), new Vector2(0.5f, 0.5f), new Vector2(0, 36), new Vector2(0, 72));
             _hypeCount = UiKit.Label(root, "HypeCount", "", 34, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -2624,6 +2631,15 @@ namespace BankruptVtuber
                     _washVeil.color = new Color(1f, 0.84f, 0.22f, 0.40f + 0.10f * pulse);
                 if (_hypeFlash != null)
                     _hypeFlash.color = new Color(1f, 0.86f, 0.22f, 0.46f + 0.12f * pulse);
+                if (_hypeFrame != null)
+                {
+                    _hypeFrame.gameObject.SetActive(true);
+                    ArtSprites.Apply(_hypeFrame, ArtSprites.HypeFrame, Palette.Gold, Color.white);
+                    _hypeFrame.preserveAspect = false;
+                    var fc = _hypeFrame.color;
+                    fc.a = 0.88f + 0.12f * pulse;
+                    _hypeFrame.color = fc;
+                }
                 if (_hypeChatGlow != null)
                     _hypeChatGlow.color = new Color(1f, 0.88f, 0.32f, 0.16f + 0.06f * pulse);
                 if (_hypeBanner != null)
@@ -2648,6 +2664,8 @@ namespace BankruptVtuber
                 }
                 if (_hypeFlash != null)
                     _hypeFlash.color = new Color(1f, 0.82f, 0.25f, _comboStingFlash * 0.20f);
+                if (_hypeFrame != null)
+                    _hypeFrame.gameObject.SetActive(false);
                 if (_hypeChatGlow != null)
                     _hypeChatGlow.color = new Color(1f, 0.86f, 0.28f, 0f);
                 if (_hypeBanner != null)

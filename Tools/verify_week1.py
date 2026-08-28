@@ -220,6 +220,7 @@ def check_project() -> None:
         "mental_note.png": "멘탈 메모",
         "combo_plate.png": "콤보 배지",
         "combo_break.png": "콤보 끊김 스탬프",
+        "hype_frame.png": "하이프 프레임",
         "viewer_badge.png": "시청 배지",
         "clock_plate.png": "시계 배지",
         "onair_led.png": "ON AIR LED",
@@ -1502,6 +1503,7 @@ def check_project() -> None:
     check_superchat_chip()
     check_end_cut_card()
     check_combo_break_stamp()
+    check_hype_frame()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -2436,6 +2438,8 @@ def check_hype_wash() -> None:
     hype = live_cs.split("void RefreshHypeShow", 1)[-1].split("void RefreshMentalShow", 1)[0]
     if "RefreshHypeShow" not in live_cs or "HypeBanner" not in live_cs:
         fail("hype does not eat the screen")
+    elif "ArtSprites.HypeFrame" not in hype or '"HypeFrame"' not in live_cs:
+        fail("hype has no gold overlay frame")
     elif "하이프" not in live_cs or "hypeIncomeMultiplier" not in live_cs:
         fail("하이프 2.5x ticker was dropped")
     elif "HypeLeft" not in live_cs or "HypeCount" not in live_cs:
@@ -2473,7 +2477,7 @@ def check_hype_wash() -> None:
     elif "billRent: 8000" not in balance:
         fail("Week 1 bills were retuned by the hype wash")
     else:
-        ok("hype eats the screen gold; combo 5 is a smaller sting; numbers unchanged")
+        ok("hype eats the screen gold with hype_frame; combo 5 is a smaller sting; numbers unchanged")
 
 
 def check_combo_break() -> None:
@@ -8164,6 +8168,69 @@ def check_combo_break_stamp() -> None:
         ok("콤보 끊김 sits on combo_break stamp; red sting / SFX / chip pop / rules stay")
 
 
+def check_hype_frame() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/hype_frame.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    hype = live_cs.split("void RefreshHypeShow", 1)[-1].split("void RefreshMentalShow", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("hype_frame.png is missing")
+    elif w < 480 or h < 720 or h <= w:
+        fail("hype_frame.png is not a readable portrait overlay frame")
+    elif color != 6:
+        fail("hype_frame.png is not RGBA")
+    elif 'HypeFrame = "Art/hype_frame"' not in art_cs:
+        fail("ArtSprites does not hook Art/hype_frame")
+    elif "ArtSprites.HypeFrame" not in live_cs or '"HypeFrame"' not in live_cs:
+        fail("LiveStream does not hang Art/hype_frame during hype")
+    elif "ArtSprites.HypeFrame" not in hype or "_hypeFrame" not in hype:
+        fail("RefreshHypeShow does not show the gold overlay frame")
+    elif "SetActive(false)" not in hype:
+        fail("hype frame does not hide when hype ends")
+    elif "HypeFlash" not in live_cs or "0.46f + 0.12f * pulse" not in hype:
+        fail("hype frame dropped the gold wash flash")
+    elif "PlaySfx(_hypeCue" not in hype or "Audio/sfx_hype" not in live_cs:
+        fail("hype frame dropped sfx_hype")
+    elif "hype && !_hypeWasOn" not in hype:
+        fail("hype frame cheer is not a one-shot on start")
+    elif "interval *= 0.5f" not in session_cs:
+        fail("hype frame dropped chat ~2x spawn")
+    elif "HypeLeft = Balance.hypeSeconds" not in session_cs:
+        fail("hype frame retuned duration assignment")
+    elif "hypePerfectCombo: 9" not in balance or "hypeSeconds: 12" not in balance:
+        fail("hype frame retuned combo-9 trigger or duration")
+    elif "hypeIncomeMultiplier: 2.5" not in balance or "return b.hypeIncomeMultiplier;" not in rules_cs:
+        fail("hype frame retuned 2.5x payout")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("hype frame retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("hype frame broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising hype frame / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("hype frame dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("hype frame moved Unity off 6000.5.9f1")
+    elif "Art/hype_frame" not in readme or "하이프" not in readme:
+        fail("README should mention hype_frame")
+    else:
+        ok("hype sits on hype_frame gold overlay; wash / chat 2x / SFX / combo-9 stay")
+
+
 def check_mental_sfx() -> None:
     import wave
 
@@ -8721,6 +8788,8 @@ def check_readme_playable() -> None:
         fail("README dropped combo_plate live badge")
     elif "combo_break" not in readme or "sfx_combo_break" not in readme:
         fail("README dropped combo_break stamp")
+    elif "hype_frame" not in readme or "sfx_hype" not in readme or "하이프" not in readme:
+        fail("README dropped hype_frame gold overlay")
     elif "viewer_badge" not in readme or "시청자" not in readme or ("시청 +" not in readme and "시청 ±" not in readme):
         fail("README dropped viewer_badge live follower badge")
     elif "clock_plate" not in readme or "남은 시간" not in readme or "sfx_clock_tick" not in readme:
