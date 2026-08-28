@@ -1472,6 +1472,7 @@ def check_project() -> None:
     check_pick_sfx()
     check_letter_sfx()
     check_rival_sfx()
+    check_membership_sfx()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -6676,6 +6677,96 @@ def check_rival_sfx() -> None:
         fail("rival SFX moved Unity off 6000.5.9f1")
     else:
         ok("rival duel plays distinct win/lose one-shots; tick / steal / numbers stay")
+
+
+def check_membership_sfx() -> None:
+    import wave
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    w2_asset = (ROOT / "Assets/Resources/Balance/Week2Balance.asset").read_text(encoding="utf-8")
+    w2r_cs = (ROOT / "Assets/Scripts/Economy/Week2Rules.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    show = settle_cs.split("void ShowMemberSplash", 1)[-1].split("void OnMemberAck", 1)[0]
+    ack = settle_cs.split("void OnMemberAck", 1)[-1].split("void ShowClipCard", 1)[0]
+    clip = settle_cs.split("void ShowClipCard", 1)[-1].split("void CloseClipCard", 1)[0]
+    play = settle_cs.split("void PlayMemberSfx", 1)[-1].split("void LeaveSettle", 1)[0]
+    beats = settle_cs.split("void AdvanceBeats", 1)[-1].split("void ShowMemberSplash", 1)[0]
+    member_build = settle_cs.split('MemberRoot"', 1)[-1].split('ClipRoot"', 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_membership.wav"
+
+    if not path.exists() or path.stat().st_size < 2000:
+        fail("sfx_membership.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("sfx_membership.wav is not a readable PCM badge chime")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.16 or dur > 0.45:
+            fail(f"sfx_membership.wav duration {dur:.3f}s is not a short badge chime")
+            return
+
+    if "Audio/sfx_membership" not in settle_cs or "PlayMemberSfx" not in settle_cs:
+        fail("Settlement does not load / play Audio/sfx_membership")
+    elif "PlayMemberSfx();" not in show or show.count("PlayMemberSfx();") != 1:
+        fail("membership unlock card does not play a single badge chime")
+    elif play.count("PlayOneShot") != 1:
+        fail("membership chime can fire more than one shot")
+    elif "PlayMemberSfx" in ack:
+        fail("membership chime plays on 정산으로 dismiss")
+    elif "PlayMemberSfx" in clip or "sfx_membership" in clip or "sfx_clip" in settle_cs:
+        fail("clip card gained SFX this slice")
+    elif "membershipJustUnlocked" not in beats or "ShowMemberSplash" not in beats:
+        fail("membership SFX unhooked the unlock splash")
+    elif beats.find("ShouldOfferLetter") > beats.find("membershipJustUnlocked"):
+        fail("membership SFX moved splash ahead of the fan letter")
+    elif beats.find("membershipJustUnlocked") > beats.find("CanOfferClip"):
+        fail("membership SFX moved splash after the clip card")
+    elif 'MembershipCard = "Art/membership_card"' not in art_cs or "ArtSprites.MembershipCard" not in member_build:
+        fail("membership SFX dropped badge art")
+    elif "멤버십 해금" not in member_build or "정산으로" not in member_build:
+        fail("membership SFX covered unlock copy")
+    elif "시작 {start}명" not in show or "정산 때 멤버" not in show:
+        fail("membership SFX dropped splash body copy")
+    elif "unlockPeakViewers: 40" not in w2_asset or "unlockSuccessfulStreams: 4" not in w2_asset:
+        fail("membership SFX retuned unlock thresholds")
+    elif "startingMembers: 8" not in w2_asset or "membershipPassivePerMember: 150" not in w2_asset:
+        fail("membership SFX retuned membership numbers")
+    elif "peakViewersEver >= w2.unlockPeakViewers" not in sched_cs or "successfulStreams >= w2.unlockSuccessfulStreams" not in sched_cs:
+        fail("membership SFX changed unlock routing")
+    elif "오늘 클립 올릴까" not in settle_cs or "AttemptClip" not in settle_cs or "DeclineClip" not in settle_cs:
+        fail("membership SFX dropped clip card")
+    elif "Audio/sfx_letter" not in settle_cs or "PlayLetterSfx" not in settle_cs:
+        fail("membership SFX dropped letter reply confirm")
+    elif "Audio/sfx_rival_win" not in live_cs or "Audio/sfx_rival_lose" not in live_cs:
+        fail("membership SFX dropped rival win/lose SFX")
+    elif "Audio/sfx_membership" in title_cs or "Audio/sfx_membership" in week_cs or "Audio/sfx_membership" in live_cs:
+        fail("membership SFX leaked onto Title / WeekStart / LiveStream")
+    elif "ShowMemberSplash" in debug_cs or "sfx_membership" in debug_cs:
+        fail("F10 skip is no longer mute-safe")
+    elif "clipCash: 30000" not in w2_asset or "clipChance: 30" not in w2_asset or "clipPerfectsRequired: 25" not in w2_asset:
+        fail("membership SFX retuned clip numbers")
+    elif "CanOfferClip" not in w2r_cs or "InWeek2" not in w2r_cs.split("CanOfferClip", 1)[-1][:300]:
+        fail("membership SFX changed clip routing")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("membership SFX retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("membership SFX broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising membership SFX / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("membership SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("membership SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("멤버십 해금 plays sfx_membership once; clip silent; letter / rival stay")
 
 
 def check_mental_sfx() -> None:
