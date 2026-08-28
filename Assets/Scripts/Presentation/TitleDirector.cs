@@ -26,6 +26,8 @@ namespace BankruptVtuber
         Text _continueHead;
         Image _continueClip;
         Image _continueCashSlip;
+        Image _continueShortStamp;
+        Text _continueShort;
         Image _continueDebtNotice;
         Image _continueMentalNote;
         Text _continueMental;
@@ -171,6 +173,15 @@ namespace BankruptVtuber
             _continueCashSlip.raycastTarget = false;
             _continueMoney = UiKit.Label(_continueCashSlip.transform, "SaveMoney", "", 15, Palette.MoneyRed, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(_continueMoney.rectTransform, new Vector2(0.08f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
+            _continueShortStamp = UiKit.Image(moneyPlate, "ContinueShortStamp", Color.white);
+            UiKit.Layout(_continueShortStamp.rectTransform, new Vector2(0f, 0f), new Vector2(0.34f, 0f), new Vector2(0.5f, 1f), new Vector2(4f, -2f), new Vector2(-2f, 28f));
+            ArtSprites.Apply(_continueShortStamp, ArtSprites.BillShort, Palette.MoneyRed, Color.white);
+            _continueShortStamp.preserveAspect = false;
+            _continueShortStamp.raycastTarget = false;
+            _continueShortStamp.gameObject.SetActive(false);
+            _continueShort = UiKit.Label(_continueShortStamp.transform, "ContinueShort", "청구보다 부족", 13, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_continueShort.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -1f), new Vector2(-8f, -4f));
+            _continueShort.gameObject.SetActive(false);
             _continueDebtNotice = UiKit.Image(moneyPlate, "ContinueDebtNotice", Color.white);
             UiKit.Layout(_continueDebtNotice.rectTransform, new Vector2(0.33f, 0f), new Vector2(0.67f, 1f), new Vector2(0f, 0.5f), new Vector2(2f, 0f), new Vector2(-2f, 0f));
             ArtSprites.ApplySliced(_continueDebtNotice, ArtSprites.BillNotice, Color.white, new Vector4(28f, 16f, 28f, 16f));
@@ -346,6 +357,13 @@ namespace BankruptVtuber
                 FillContinue(peek);
             if (_continueCashSlip != null)
                 _continueCashSlip.gameObject.SetActive(_hasSave);
+            if (!_hasSave)
+            {
+                if (_continueShortStamp != null)
+                    _continueShortStamp.gameObject.SetActive(false);
+                if (_continueShort != null)
+                    _continueShort.gameObject.SetActive(false);
+            }
             if (_continueDebtNotice != null)
                 _continueDebtNotice.gameObject.SetActive(_hasSave);
             if (_continueMentalNote != null)
@@ -373,6 +391,24 @@ namespace BankruptVtuber
             {
                 _continueMoney.text = "현금 " + EconomyRules.FormatWon(peek.cash);
                 _continueMoney.color = shortfall ? Palette.MoneyRed : Palette.Pastel;
+            }
+            if (_continueShortStamp != null)
+            {
+                if (shortfall)
+                {
+                    ArtSprites.Apply(_continueShortStamp, ArtSprites.BillShort, Palette.MoneyRed, Color.white);
+                    _continueShortStamp.preserveAspect = false;
+                }
+                _continueShortStamp.gameObject.SetActive(shortfall);
+            }
+            if (_continueShort != null)
+            {
+                if (shortfall)
+                {
+                    _continueShort.text = "청구보다 부족";
+                    _continueShort.color = Palette.MoneyRed;
+                }
+                _continueShort.gameObject.SetActive(shortfall);
             }
             if (_continueDebt != null)
             {

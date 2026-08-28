@@ -3359,6 +3359,10 @@ def check_title_broke_login() -> None:
         fail("title wordmark text changed")
     elif "TonightBills" not in title_cs or "peek.cash <" not in title_cs:
         fail("continue cash is not compared to a known next bill")
+    elif "ArtSprites.BillShort" not in title_cs or '"ContinueShortStamp"' not in title_cs:
+        fail("title continue shortfall is not on reused bill_short stamp")
+    elif "청구보다 부족" not in title_cs:
+        fail("title continue stamp dropped 청구보다 부족")
     elif "Palette.MoneyRed" not in title_cs or "Palette.Gold" not in title_cs.split("_continueDebt", 1)[-1]:
         fail("continue cash/debt are not panic red/gold")
     elif '"현금 "' not in title_cs or '"부채 "' not in title_cs or "FormatWon" not in title_cs:
@@ -5733,6 +5737,14 @@ def check_bill_short_stamp() -> None:
         fail("morning bill_short reuse dropped cash_slip")
     elif "run.cash <" not in week_cs or "PeekTodayBills" not in warn:
         fail("morning bill_short reuse dropped cash < bill compare")
+    elif "ArtSprites.BillShort" not in title_cs or '"ContinueShortStamp"' not in title_cs:
+        fail("Title continue does not reuse Art/bill_short under 청구보다 부족")
+    elif "청구보다 부족" not in title_cs or "TonightBills" not in title_cs or "peek.cash <" not in title_cs:
+        fail("title bill_short reuse dropped Korean copy or cash < bill compare")
+    elif "ContinueCashSlip" not in title_cs or "ArtSprites.CashSlip" not in title_cs:
+        fail("title bill_short reuse dropped cash_slip")
+    elif "TryLoad" not in title_cs or "_hasSave" not in title_cs:
+        fail("title bill_short reuse dropped save peek / hide-without-save")
     elif "_incomeTarget < _incomeBill" not in count or "ShowShortfall" not in count:
         fail("bill_short stamp does not fire after short-night count snap")
     elif "ShowShortfall" in settle_cs.split("if (!_coverCrossed && _incomeTarget >= _incomeBill", 1)[-1].split("void ShowShortfall", 1)[0]:
@@ -5747,6 +5759,8 @@ def check_bill_short_stamp() -> None:
         fail("bill_short stamp retuned bills / TonightBills")
     elif "startingCash: 45000" not in balance or "billElectricNet: 4000" not in balance:
         fail("bill_short stamp retuned Week 1 economy")
+    elif "₩22,000" not in readme:
+        fail("README dropped typical daily bill ₩22,000 next to bill_short reuse")
     elif "청구 미달" not in head_cs:
         fail("headline lost 청구 미달")
     elif "1f + 0.22f" not in tick or "Palette.MoneyRed" not in tick:
@@ -5761,8 +5775,10 @@ def check_bill_short_stamp() -> None:
         fail("bill_short stamp moved Unity off 6000.5.9f1")
     elif "Art/bill_short" not in readme or "청구 미달" not in readme or "청구보다 부족" not in readme:
         fail("README should mention bill_short / 청구 미달 / 청구보다 부족")
+    elif "이어서 하기" not in readme or "ContinueShortStamp" not in title_cs:
+        fail("README / title dropped continue bill_short stamp")
     else:
-        ok("청구 미달 + morning 청구보다 부족 share bill_short; red / cash_slip / numbers stay")
+        ok("청구 미달 + morning/title 청구보다 부족 share bill_short; red / cash_slip / numbers stay")
 
 
 def check_hype_sfx() -> None:
@@ -9327,7 +9343,9 @@ def check_readme_playable() -> None:
     elif "bill_cover" not in readme or "청구 커버" not in readme or "sfx_bill_cover" not in readme:
         fail("README dropped bill_cover PAID stamp")
     elif "bill_short" not in readme or "청구 미달" not in readme or "청구보다 부족" not in readme:
-        fail("README dropped bill_short on settle 청구 미달 / morning 청구보다 부족")
+        fail("README dropped bill_short on settle 청구 미달 / morning·title 청구보다 부족")
+    elif "이어서 하기" not in readme or "bill_short" not in readme:
+        fail("README dropped title continue bill_short reuse")
     elif "won_pop" not in readme or "+₩" not in readme:
         fail("README dropped won_pop +₩ cash slip")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
