@@ -27,6 +27,8 @@ namespace BankruptVtuber
         Image _continueClip;
         Image _continueCashSlip;
         Image _continueDebtNotice;
+        Image _continueMentalNote;
+        Text _continueMental;
         Text _wordmark;
         Button _how;
         Text _hint;
@@ -142,7 +144,7 @@ namespace BankruptVtuber
             if (startCap != null)
                 startCap.offsetMin = new Vector2(56f, 0f);
             _continue = UiKit.Button(titleParent, "Continue", "이어서 하기", OnContinue, Palette.Gold, Palette.Ink);
-            StyleMenuButton(_continue, new Vector2(56, -154), new Vector2(420, 128), Palette.Gold);
+            StyleMenuButton(_continue, new Vector2(56, -154), new Vector2(560, 128), Palette.Gold);
             _continueRt = _continue.GetComponent<RectTransform>();
             _continueDay = _continue.transform.Find("Caption") != null
                 ? _continue.transform.Find("Caption").GetComponent<Text>()
@@ -161,22 +163,30 @@ namespace BankruptVtuber
             var contChipT = UiKit.Label(_continueChip, "T", "이어", 14, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Stretch(contChipT.rectTransform);
             var moneyPlate = UiKit.Panel(_continue.transform, "MoneyPlate", new Color(0, 0, 0, 0));
-            UiKit.Layout(moneyPlate, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -42f), new Vector2(-16f, 28f));
+            UiKit.Layout(moneyPlate, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -42f), new Vector2(-16f, 32f));
             _continueCashSlip = UiKit.Image(moneyPlate, "ContinueCashSlip", Color.white);
-            UiKit.Layout(_continueCashSlip.rectTransform, new Vector2(0f, 0f), new Vector2(0.52f, 1f), new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(-4f, 0f));
+            UiKit.Layout(_continueCashSlip.rectTransform, new Vector2(0f, 0f), new Vector2(0.34f, 1f), new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(-2f, 0f));
             ArtSprites.Apply(_continueCashSlip, ArtSprites.CashSlip, new Color(0.98f, 0.94f, 0.86f, 0.98f), Color.white);
             _continueCashSlip.preserveAspect = false;
             _continueCashSlip.raycastTarget = false;
-            _continueMoney = UiKit.Label(_continueCashSlip.transform, "SaveMoney", "", 18, Palette.MoneyRed, TextAnchor.MiddleLeft, FontStyle.Bold);
+            _continueMoney = UiKit.Label(_continueCashSlip.transform, "SaveMoney", "", 15, Palette.MoneyRed, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(_continueMoney.rectTransform, new Vector2(0.08f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
             _continueDebtNotice = UiKit.Image(moneyPlate, "ContinueDebtNotice", Color.white);
-            UiKit.Layout(_continueDebtNotice.rectTransform, new Vector2(0.50f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(-4f, 0f));
+            UiKit.Layout(_continueDebtNotice.rectTransform, new Vector2(0.33f, 0f), new Vector2(0.67f, 1f), new Vector2(0f, 0.5f), new Vector2(2f, 0f), new Vector2(-2f, 0f));
             ArtSprites.ApplySliced(_continueDebtNotice, ArtSprites.BillNotice, Color.white, new Vector4(28f, 16f, 28f, 16f));
             _continueDebtNotice.raycastTarget = false;
-            _continueDebt = UiKit.Label(_continueDebtNotice.transform, "SaveDebt", "", 18, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
+            _continueDebt = UiKit.Label(_continueDebtNotice.transform, "SaveDebt", "", 15, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(_continueDebt.rectTransform, new Vector2(0.08f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
+            _continueMentalNote = UiKit.Image(moneyPlate, "ContinueMentalNote", Color.white);
+            UiKit.Layout(_continueMentalNote.rectTransform, new Vector2(0.66f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0.5f), new Vector2(2f, 0f), new Vector2(-4f, 0f));
+            ArtSprites.Apply(_continueMentalNote, ArtSprites.MentalNote, new Color(1f, 0.95f, 0.72f, 0.98f), Color.white);
+            _continueMentalNote.preserveAspect = false;
+            _continueMentalNote.raycastTarget = false;
+            _continueMental = UiKit.Label(_continueMentalNote.transform, "SaveMental", "", 15, Palette.Ink, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_continueMental.rectTransform, new Vector2(0.08f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
             _continueCashSlip.gameObject.SetActive(false);
             _continueDebtNotice.gameObject.SetActive(false);
+            _continueMentalNote.gameObject.SetActive(false);
             _continueClip = UiKit.Image(titleParent, "ContinueClip", Color.white);
             UiKit.Layout(_continueClip.rectTransform, new Vector2(0, 0.52f), new Vector2(0, 0.52f), new Vector2(0, 0.5f), new Vector2(56, -286), new Vector2(420, 72));
             ArtSprites.Apply(_continueClip, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
@@ -338,6 +348,8 @@ namespace BankruptVtuber
                 _continueCashSlip.gameObject.SetActive(_hasSave);
             if (_continueDebtNotice != null)
                 _continueDebtNotice.gameObject.SetActive(_hasSave);
+            if (_continueMentalNote != null)
+                _continueMentalNote.gameObject.SetActive(_hasSave);
             if (_continueClip != null)
                 _continueClip.gameObject.SetActive(hasHead);
             var caption = _start.transform.Find("Caption") != null
@@ -366,6 +378,11 @@ namespace BankruptVtuber
             {
                 _continueDebt.text = "부채 " + EconomyRules.FormatWon(peek.debt);
                 _continueDebt.color = Palette.Gold;
+            }
+            if (_continueMental != null)
+            {
+                _continueMental.text = "멘탈 " + peek.mental;
+                _continueMental.color = peek.mental <= 20 ? Palette.MoneyRed : Palette.Ink;
             }
             bool hasHead = peek.lastHeadline != null && peek.lastHeadline.Length > 0;
             if (_continueHead != null)

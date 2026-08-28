@@ -4215,6 +4215,8 @@ def check_title_continue_preview() -> None:
         fail("Title continue does not show 이어하기 n일차")
     elif "현금 " not in title_cs or "부채 " not in title_cs or "FormatWon" not in title_cs:
         fail("Title continue does not show saved cash/debt")
+    elif '"멘탈 "' not in title_cs or "peek.mental" not in title_cs or "ContinueMentalNote" not in title_cs:
+        fail("Title continue does not show saved mental on mental_note")
     elif "lastHeadline" not in title_cs or '"어제: "' not in title_cs:
         fail("Title continue dropped lastHeadline when present")
     elif "TryLoad" not in title_cs or "HasValidSave" not in title_cs:
@@ -4236,7 +4238,7 @@ def check_title_continue_preview() -> None:
     elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
         fail("Title started advertising later weeks / fandom")
     else:
-        ok("Title with a save shows 이어하기 n일차 + 현금/부채")
+        ok("Title with a save shows 이어하기 n일차 + 현금/부채/멘탈")
 
 
 def check_start_pulse() -> None:
@@ -4322,6 +4324,8 @@ def check_continue_pulse() -> None:
         fail("continue pulse does not hang cash on Art/cash_slip")
     elif "ContinueDebtNotice" not in click or "ArtSprites.BillNotice" not in click:
         fail("continue pulse does not hang debt on Art/bill_notice")
+    elif "ContinueMentalNote" not in click or "ArtSprites.MentalNote" not in click:
+        fail("continue pulse does not hang mental on Art/mental_note")
     elif "activeInHierarchy" not in pulse or "_hasSave" not in hide or "SetActive(_hasSave)" not in hide:
         fail("continue pulse is not hidden when there is no save")
     elif "SetActive(hasHead)" not in hide:
@@ -4334,6 +4338,8 @@ def check_continue_pulse() -> None:
         fail("continue pulse unhooked wipe confirm")
     elif "MoneyPlate" not in title_cs or "이어하기 " not in title_cs or '"현금 "' not in cont or '"부채 "' not in cont:
         fail("continue pulse dropped day + cash/debt")
+    elif '"멘탈 "' not in cont or "peek.mental" not in cont:
+        fail("continue pulse dropped mental memo")
     elif "peek.cash <" not in cont or "Palette.MoneyRed" not in cont or "Palette.Gold" not in cont:
         fail("continue cash/debt panic colors changed")
     elif '"어제: "' not in title_cs or "lastHeadline" not in title_cs:
@@ -7540,6 +7546,16 @@ def check_mental_note() -> None:
         fail("live 멘탈 위험 is not on the same Art/mental_note")
     elif "ArtSprites.MentalNote" not in money or '"MentalChip"' not in week_cs or '"멘탈"' not in week_cs:
         fail("WeekStart 멘탈 is not on the same Art/mental_note")
+    elif "ContinueMentalNote" not in title_cs or "ArtSprites.MentalNote" not in title_cs or '"멘탈 "' not in title_cs:
+        fail("Title continue mental is not on the same Art/mental_note")
+    elif "SetActive(_hasSave)" not in title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]:
+        fail("Title mental note is not hidden without a save")
+    elif "peek.mental" not in title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]:
+        fail("Title mental note does not read saved mental")
+    elif "TickContinuePulse" not in title_cs or "ContinueRun()" not in title_cs:
+        fail("Title mental note dropped continue pulse / load")
+    elif "ContinueCashSlip" not in title_cs or "ContinueDebtNotice" not in title_cs:
+        fail("Title mental note dropped cash / debt slips")
     elif "_mental.text" not in hud or "run.mental" not in hud or "/100" not in hud:
         fail("morning mental note dropped the display-only mental number")
     elif "청구보다 부족" not in week_cs or "Palette.MoneyRed" not in warn_cash:
@@ -7591,7 +7607,7 @@ def check_mental_note() -> None:
     elif "Art/mental_note" not in (ROOT / "README.md").read_text(encoding="utf-8"):
         fail("README should mention Art/mental_note")
     else:
-        ok("morning / live danger / settlement share mental_note; wash / sting / count stay")
+        ok("title continue / morning / live danger / settlement share mental_note; pulse stays")
 
 
 def check_mental_sfx() -> None:
@@ -8139,8 +8155,8 @@ def check_readme_playable() -> None:
         fail("README dropped headline scrap on settlement / morning / title continue")
     elif "cash_slip" not in readme or "남은 현금" not in readme or "이어서 하기" not in readme or "지금 수입" not in readme or "오늘 수입" not in readme:
         fail("README dropped cash_slip on title / morning / live / settlement")
-    elif "mental_note" not in readme or "멘탈 위험" not in readme or "멘탈" not in readme:
-        fail("README dropped mental_note on morning / live danger / settlement 멘탈")
+    elif "mental_note" not in readme or "멘탈 위험" not in readme or "이어서 하기" not in readme or "멘탈" not in readme:
+        fail("README dropped mental_note on title / morning / live / settlement 멘탈")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:
