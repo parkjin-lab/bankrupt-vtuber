@@ -24,6 +24,7 @@ namespace BankruptVtuber
         Text _continueMoney;
         Text _continueDebt;
         Text _continueHead;
+        Image _continueClip;
         Text _wordmark;
         Button _how;
         Text _hint;
@@ -163,9 +164,15 @@ namespace BankruptVtuber
             UiKit.Layout(_continueMoney.rectTransform, new Vector2(0f, 0f), new Vector2(0.52f, 1f), new Vector2(0f, 0.5f), new Vector2(10f, 0f), new Vector2(-6f, 0f));
             _continueDebt = UiKit.Label(moneyPlate, "SaveDebt", "", 18, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(_continueDebt.rectTransform, new Vector2(0.50f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(-10f, 0f));
-            _continueHead = UiKit.Label(_continue.transform, "SaveHead", "", 16, Palette.Ink, TextAnchor.UpperLeft, FontStyle.Bold);
-            UiKit.Layout(_continueHead.rectTransform, new Vector2(0, 0), new Vector2(1, 0.42f), new Vector2(0, 0), new Vector2(18, 8), new Vector2(-28, 0));
+            _continueClip = UiKit.Image(titleParent, "ContinueClip", Color.white);
+            UiKit.Layout(_continueClip.rectTransform, new Vector2(0, 0.52f), new Vector2(0, 0.52f), new Vector2(0, 0.5f), new Vector2(56, -286), new Vector2(420, 72));
+            ArtSprites.Apply(_continueClip, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
+            _continueClip.preserveAspect = false;
+            _continueClip.raycastTarget = false;
+            _continueHead = UiKit.Label(_continueClip.transform, "SaveHead", "", 16, Palette.Ink, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_continueHead.rectTransform, new Vector2(0.07f, 0.14f), new Vector2(0.93f, 0.86f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             UiKit.Wrap(_continueHead);
+            _continueClip.gameObject.SetActive(false);
             _continue.gameObject.SetActive(false);
             _how = UiKit.Button(titleParent, "HowTo", "조작 설명", OpenHowTo, Palette.StudioHi, Palette.Pastel);
             StyleMenuButton(_how, new Vector2(56, -224), new Vector2(420, 70), Palette.StudioHi);
@@ -311,8 +318,11 @@ namespace BankruptVtuber
             var peek = new GameRunState();
             _hasSave = RunSave.HasValidSave() && RunSave.TryLoad(peek);
             _continue.gameObject.SetActive(_hasSave);
+            bool hasHead = _hasSave && peek.lastHeadline != null && peek.lastHeadline.Length > 0;
             if (_hasSave)
                 FillContinue(peek);
+            if (_continueClip != null)
+                _continueClip.gameObject.SetActive(hasHead);
             var caption = _start.transform.Find("Caption") != null
                 ? _start.transform.Find("Caption").GetComponent<Text>()
                 : null;
@@ -321,7 +331,7 @@ namespace BankruptVtuber
             if (_hint != null)
                 _hint.text = _hasSave ? "Space / Enter  이어서 하기" : "Space / Enter  방송 시작";
             if (_how != null)
-                StyleMenuButton(_how, new Vector2(56, _hasSave ? -252 : -132), new Vector2(420, 70), Palette.StudioHi);
+                StyleMenuButton(_how, new Vector2(56, !_hasSave ? -132 : hasHead ? -340 : -252), new Vector2(420, 70), Palette.StudioHi);
         }
 
         void FillContinue(GameRunState peek)

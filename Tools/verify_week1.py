@@ -4296,8 +4296,12 @@ def check_continue_pulse() -> None:
         fail("이어서 하기 does not soft-pulse at 1.03")
     elif "OnContinue" not in click or "ContinueChip" not in click:
         fail("이어 chip is not on the continue button")
+    elif "ContinueClip" not in click or "ArtSprites.HeadlineClip" not in click:
+        fail("continue pulse does not hang last night's scrap")
     elif "activeInHierarchy" not in pulse or "_hasSave" not in hide or "SetActive(_hasSave)" not in hide:
         fail("continue pulse is not hidden when there is no save")
+    elif "SetActive(hasHead)" not in hide:
+        fail("continue scrap is not hidden without a headline")
     elif "ContinueRun()" not in load:
         fail("continue pulse changed continue load")
     elif "진행 중인 " not in wipe or "지울까?" not in wipe or "지우고 시작" not in wipe or "취소" not in wipe:
@@ -7286,6 +7290,9 @@ def check_headline_clip() -> None:
     yest = week_cs.split("void RefreshYesterday", 1)[-1].split("void RefreshLastDay", 1)[0]
     settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
     apply = settle_cs.split("void ApplyHeadline", 1)[-1].split("void PaintShowLine", 1)[0]
+    title_build = title_cs.split("void Build()", 1)[-1].split("void BuildHowTo", 1)[0]
+    title_refresh = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    title_fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
     png = ROOT / "Assets/Resources/Art/headline_clip.png"
     data = png.read_bytes() if png.exists() else b""
     w = h = color = 0
@@ -7331,6 +7338,18 @@ def check_headline_clip() -> None:
         fail("headline clip dropped ranking / concert-book SFX")
     elif "오늘 헤드라인" not in settle_cs or "청구 커버" not in head_cs:
         fail("headline clip dropped today's settlement headline")
+    elif "ArtSprites.HeadlineClip" not in title_build or '"ContinueClip"' not in title_build:
+        fail("Title does not hang Art/headline_clip near 이어서 하기")
+    elif "SetActive(hasHead)" not in title_refresh:
+        fail("Title does not hide the scrap unless a save and lastHeadline exist")
+    elif '"어제: "' not in title_fill or "lastHeadline" not in title_fill:
+        fail("Title scrap dropped 어제: + lastHeadline")
+    elif "TickContinuePulse" not in title_cs or "ContinueRun()" not in title_cs:
+        fail("Title scrap dropped continue pulse / load")
+    elif "진행 중인 " not in title_cs or "지울까?" not in title_cs or "지우고 시작" not in title_cs:
+        fail("Title scrap changed wipe copy")
+    elif "Audio/bgm_title" not in title_cs or "PlayTitleSfx" not in title_cs:
+        fail("Title scrap dropped title BGM / SFX")
     elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
         fail("headline clip retuned Week 1 economy")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
@@ -7342,7 +7361,7 @@ def check_headline_clip() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("headline clip moved Unity off 6000.5.9f1")
     else:
-        ok("오늘 / 어제 headlines share headline_clip scrap; copy / counts / morning stay")
+        ok("Title / morning / settlement share headline_clip scrap; copy / counts stay")
 
 
 def check_mental_sfx() -> None:
