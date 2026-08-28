@@ -133,6 +133,7 @@ namespace BankruptVtuber
         Text _comboSting;
         float _comboStingFlash;
         Text _comboBreak;
+        Image _comboBreakStamp;
         float _comboBreakLeft;
         float _comboPop;
         bool _comboPopBig;
@@ -854,6 +855,12 @@ namespace BankruptVtuber
             UiKit.Layout(_hypeCount.rectTransform, new Vector2(0.08f, 0.58f), new Vector2(0.52f, 0.58f), new Vector2(0.5f, 0.5f), new Vector2(0, -18), new Vector2(0, 40));
             _comboSting = UiKit.Label(root, "ComboSting", "", 28, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_comboSting.rectTransform, new Vector2(0.12f, 0.54f), new Vector2(0.48f, 0.54f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 36));
+            _comboBreakStamp = UiKit.Image(root, "ComboBreakStamp", Color.white);
+            UiKit.Layout(_comboBreakStamp.rectTransform, new Vector2(0.34f, 0.16f), new Vector2(0.34f, 0.16f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420f, 84f));
+            ArtSprites.Apply(_comboBreakStamp, ArtSprites.ComboBreak, Palette.MoneyRed, Color.white);
+            _comboBreakStamp.preserveAspect = false;
+            _comboBreakStamp.raycastTarget = false;
+            _comboBreakStamp.gameObject.SetActive(false);
             _comboBreak = UiKit.Label(root, "ComboBreak", "", 40, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_comboBreak.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.58f, 0.16f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 44));
             var warn = UiKit.Panel(root, "MentalWarnBox", new Color(1f, 0.95f, 0.72f, 0.98f));
@@ -2577,12 +2584,28 @@ namespace BankruptVtuber
                 var c = Palette.MoneyRed;
                 c.a = Mathf.Clamp01(u);
                 _comboBreak.color = c;
-                _comboBreak.rectTransform.localScale = Vector3.one * (1f + 0.28f * u);
+                var scale = Vector3.one * (1f + 0.28f * u);
+                _comboBreak.rectTransform.localScale = scale;
+                if (_comboBreakStamp != null)
+                {
+                    _comboBreakStamp.gameObject.SetActive(true);
+                    ArtSprites.Apply(_comboBreakStamp, ArtSprites.ComboBreak, Palette.MoneyRed, Color.white);
+                    _comboBreakStamp.preserveAspect = false;
+                    var sc = _comboBreakStamp.color;
+                    sc.a = c.a;
+                    _comboBreakStamp.color = sc;
+                    _comboBreakStamp.rectTransform.localScale = scale;
+                }
             }
             else
             {
                 _comboBreak.text = "";
                 _comboBreak.rectTransform.localScale = Vector3.one;
+                if (_comboBreakStamp != null)
+                {
+                    _comboBreakStamp.gameObject.SetActive(false);
+                    _comboBreakStamp.rectTransform.localScale = Vector3.one;
+                }
             }
         }
 
