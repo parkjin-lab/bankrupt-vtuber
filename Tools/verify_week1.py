@@ -2722,6 +2722,8 @@ def check_income_count() -> None:
 
     if "TickIncomeCount" not in settle_cs or "_incomeCountT / 0.6f" not in settle_cs:
         fail("오늘 수입 does not count up over ~0.6s")
+    elif "ArtSprites.CashSlip" not in settle_cs or '"Income"' not in settle_cs or '"오늘 수입"' not in settle_cs:
+        fail("오늘 수입 is not on Art/cash_slip")
     elif "FormatWon(0)" not in settle_cs or "FormatWon(shown)" not in settle_cs:
         fail("income count does not start at 0 and use FormatWon")
     elif "lastStreamIncome" not in settle_cs or "_incomeTarget = run.lastStreamIncome" not in settle_cs:
@@ -2736,6 +2738,8 @@ def check_income_count() -> None:
         fail("income count writes save/payout numbers")
     elif '"오늘 수입"' not in settle_cs or "오늘 헤드라인" not in settle_cs:
         fail("income count dropped 오늘 수입 / 오늘 헤드라인")
+    elif "LeftCashSlip" not in settle_cs or "ShowShortfall" not in settle_cs or "청구 미달" not in settle_cs:
+        fail("income slip dropped leftover slip or bill-short")
     elif "ShowEndCut" not in live_cs or "ShowIncomeDelta" not in live_cs:
         fail("income count dropped 방송 종료 or +₩ popup")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
@@ -7430,6 +7434,10 @@ def check_cash_slip() -> None:
         fail("live income slip dropped +₩ popups")
     elif "BillChip" not in live_cs or "BillFill" not in live_cs or "ArtSprites.BillNotice" not in live_cs:
         fail("live income slip dropped bill chip / fill / 고지서")
+    elif 'recap.Find("Income")' not in settle_cs or '"오늘 수입"' not in settle_cs:
+        fail("settlement 오늘 수입 is not on Art/cash_slip")
+    elif settle_cs.count("ArtSprites.CashSlip") < 2:
+        fail("settlement dropped leftover slip or 오늘 수입 slip")
     elif "Palette.MoneyRed" not in left or "PeekTomorrowTypical" not in settle_cs:
         fail("cash slip dropped short-red tint / tomorrow bill peek")
     elif "gm.Run.cash" not in left and "run.cash" not in left:
@@ -7438,6 +7446,8 @@ def check_cash_slip() -> None:
         fail("cash slip writes cash / bill math")
     elif "TickIncomeCount" not in settle_cs or "ShowShortfall" not in settle_cs or "청구 미달" not in settle_cs:
         fail("cash slip dropped count-up / bill-short")
+    elif "_incomeCountT / 0.6f" not in settle_cs or "LeftCashSlip" not in settle_cs:
+        fail("cash slip dropped income count-up or leftover slip")
     elif "ArtSprites.HeadlineClip" not in build or '"HeadlineClip"' not in build:
         fail("cash slip dropped the headline scrap")
     elif "LeaveSettle(() => gm.NextMorning())" not in settle_cs and "NextMorning()" not in settle_cs:
@@ -7459,7 +7469,7 @@ def check_cash_slip() -> None:
     elif "Art/cash_slip" not in (ROOT / "README.md").read_text(encoding="utf-8"):
         fail("README should mention Art/cash_slip")
     else:
-        ok("title / morning / live / settlement cash share cash_slip; +₩ / 고지서 stay")
+        ok("title / morning / live / settlement 오늘 수입+남은 현금 share cash_slip; count / short stay")
 
 
 def check_mental_sfx() -> None:
@@ -8005,7 +8015,7 @@ def check_readme_playable() -> None:
         fail("README dropped ranking / concert art")
     elif "headline_clip" not in readme or "오늘 헤드라인" not in readme or "어제:" not in readme or "이어서 하기" not in readme:
         fail("README dropped headline scrap on settlement / morning / title continue")
-    elif "cash_slip" not in readme or "남은 현금" not in readme or "이어서 하기" not in readme or "지금 수입" not in readme:
+    elif "cash_slip" not in readme or "남은 현금" not in readme or "이어서 하기" not in readme or "지금 수입" not in readme or "오늘 수입" not in readme:
         fail("README dropped cash_slip on title / morning / live / settlement")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")

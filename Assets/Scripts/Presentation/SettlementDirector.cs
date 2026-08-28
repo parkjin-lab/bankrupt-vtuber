@@ -267,12 +267,12 @@ namespace BankruptVtuber
             _incomeCoverFlash = Mathf.MoveTowards(_incomeCoverFlash, 0f, Time.deltaTime * 2.2f);
             if (_tileIncome != null && _incomeCoverFlash > 0.02f)
             {
-                _tileIncome.color = Color.Lerp(Color.white, Palette.Gold, _incomeCoverFlash);
+                _tileIncome.color = Color.Lerp(Palette.Ink, Palette.Gold, _incomeCoverFlash);
                 _tileIncome.rectTransform.localScale = Vector3.one * (1f + 0.16f * _incomeCoverFlash);
             }
             else if (_tileIncome != null && !_incomeCounting)
             {
-                _tileIncome.color = Color.white;
+                _tileIncome.color = Palette.Ink;
                 _tileIncome.rectTransform.localScale = Vector3.one;
             }
             _clipSlamFlash = Mathf.MoveTowards(_clipSlamFlash, 0f, Time.deltaTime * 0.7f);
@@ -353,6 +353,26 @@ namespace BankruptVtuber
             var recap = UiKit.Panel(root, "Recap", new Color(0, 0, 0, 0));
             UiKit.Layout(recap, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(20, -148), new Vector2(0, 190));
             _tileIncome = StudioChrome.RecapTile(recap, "Income", "오늘 수입", Palette.CashGreen, 0f, 0.25f, 0.48f, 0.52f, true);
+            var incomeTile = recap.Find("Income") as RectTransform;
+            if (incomeTile != null)
+            {
+                var incomeImg = incomeTile.GetComponent<Image>();
+                if (incomeImg != null)
+                {
+                    ArtSprites.Apply(incomeImg, ArtSprites.CashSlip, new Color(0.98f, 0.94f, 0.86f, 0.98f), Color.white);
+                    incomeImg.preserveAspect = false;
+                    incomeImg.raycastTarget = false;
+                }
+                var incomeCap = incomeTile.Find("L");
+                if (incomeCap != null)
+                {
+                    var incomeCapT = incomeCap.GetComponent<Text>();
+                    if (incomeCapT != null)
+                        incomeCapT.color = Palette.Ink;
+                }
+            }
+            if (_tileIncome != null)
+                _tileIncome.color = Palette.Ink;
             _tileBills = StudioChrome.RecapTile(recap, "Bills", "청구", Palette.MoneyRed, 0.25f, 0.50f, 0.48f, 0.52f, false);
             _tileCash = StudioChrome.RecapTile(recap, "Cash", "현금", Palette.CashGreen, 0.50f, 0.75f, 0.48f, 0.52f, true);
             _tileDebt = StudioChrome.RecapTile(recap, "Debt", "부채", Palette.MoneyRed, 0.75f, 1f, 0.48f, 0.52f, false);
