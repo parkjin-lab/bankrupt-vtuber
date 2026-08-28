@@ -13,6 +13,7 @@ namespace BankruptVtuber
         Text _log;
         Text _day;
         Text _dayHead;
+        RectTransform _dayTab;
         float _daySlam;
         Text _fandom;
         Text _superfans;
@@ -111,7 +112,12 @@ namespace BankruptVtuber
                 _billTile.localScale = Vector3.one * (1f + 0.24f * u);
             }
             _daySlam = Mathf.MoveTowards(_daySlam, 0f, Time.deltaTime);
-            if (_dayHead != null)
+            if (_dayTab != null)
+            {
+                float u = _daySlam / 0.25f;
+                _dayTab.localScale = Vector3.one * (1f + 0.28f * u);
+            }
+            else if (_dayHead != null)
             {
                 float u = _daySlam / 0.25f;
                 _dayHead.rectTransform.localScale = Vector3.one * (1f + 0.28f * u);
@@ -164,8 +170,14 @@ namespace BankruptVtuber
 
             var title = UiKit.Label(root, "Title", "파산 버튜버", 48, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
             UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(36, -16), new Vector2(400, 54));
-            _dayHead = UiKit.Label(root, "DayHead", "", 52, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UiKit.Layout(_dayHead.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(430, -12), new Vector2(420, 58));
+            var dayTabImg = UiKit.Image(root, "DayTab", Color.white);
+            _dayTab = dayTabImg.rectTransform;
+            UiKit.Layout(_dayTab, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(430, -8), new Vector2(300, 72));
+            ArtSprites.Apply(dayTabImg, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            dayTabImg.preserveAspect = false;
+            dayTabImg.raycastTarget = false;
+            _dayHead = UiKit.Label(_dayTab, "DayHead", "", 44, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_dayHead.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -4f), new Vector2(-28f, -18f));
             _day = UiKit.Label(root, "DayLabel", "", 24, Palette.Pink, TextAnchor.UpperLeft);
             UiKit.Layout(_day.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -68), new Vector2(720, 32));
             _fandom = UiKit.Label(root, "FandomHud", "", 18, Palette.Pastel, TextAnchor.UpperLeft);

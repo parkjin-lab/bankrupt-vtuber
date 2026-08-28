@@ -218,6 +218,7 @@ def check_project() -> None:
         "letter_reply.png": "답장하기 키캡",
         "letter_ignore.png": "나중에 키캡",
         "newgame_card.png": "새 방송 지우기 고지",
+        "day_tab.png": "n일차 달력 탭",
         "headline_clip.png": "어제 헤드라인",
         "cash_slip.png": "남은 현금",
         "won_pop.png": "+₩ 슬립",
@@ -1457,6 +1458,7 @@ def check_project() -> None:
     check_next_pulse()
     check_event_warn()
     check_day_slam()
+    check_day_tab()
     check_bill_chip()
     check_bill_fill()
     check_mental_fatigue()
@@ -3838,6 +3840,8 @@ def check_day_slam() -> None:
         fail("WeekStart has no n일차 morning header")
     elif "_daySlam = 0.25f" not in week_cs or "_daySlam / 0.25f" not in slam:
         fail("n일차 does not slam in 0.25s")
+    elif "ArtSprites.DayTab" not in week_cs or 'DayTab = "Art/day_tab"' not in (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8"):
+        fail("n일차 is not on day_tab calendar tab")
     elif "run.day +" not in hud and "run.day + \"일차\"" not in hud and 'run.day + "일차"' not in hud:
         fail("n일차 header does not read run.day")
     elif "run.day = " in week_cs or "day += " in week_cs or "day -= " in week_cs:
@@ -3870,6 +3874,67 @@ def check_day_slam() -> None:
         fail("n일차 slam moved Unity off 6000.5.9f1")
     else:
         ok("WeekStart slams n일차 0.25s; last-day / 어제 / 청구 / cards stay")
+
+
+def check_day_tab() -> None:
+    import struct
+
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    schedule_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0] if "void Build()" in week_cs else week_cs
+    # DayTab is built in Awake/Build block before RefreshHud — use day head construction slice
+    head = week_cs.split('"DayTab"', 1)[-1].split('"DayLabel"', 1)[0] if '"DayTab"' in week_cs else ""
+    slam = week_cs.split("_daySlam = Mathf.MoveTowards", 1)[-1].split("TickGoLivePulse", 1)[0]
+    hud = week_cs.split("void RefreshHud", 1)[-1].split("void RefreshCashShort", 1)[0]
+    png = ROOT / "Assets/Resources/Art/day_tab.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("day_tab.png is missing")
+    elif w < 280 or h < 100 or w <= h:
+        fail("day_tab.png is not a readable landscape calendar tab")
+    elif color != 6:
+        fail("day_tab.png is not RGBA")
+    elif 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif "ArtSprites.DayTab" not in week_cs or '"DayTab"' not in week_cs:
+        fail("WeekStart does not hang Art/day_tab under n일차")
+    elif "DayHead" not in head and "_dayHead" not in week_cs:
+        fail("day_tab dropped DayHead label")
+    elif "Palette.Gold" not in week_cs or '"일차"' not in week_cs:
+        fail("day_tab dropped gold Korean n일차")
+    elif "_daySlam = 0.25f" not in week_cs or "_daySlam / 0.25f" not in slam or "_dayTab" not in slam:
+        fail("day_tab dropped the 0.25s slam on the tab")
+    elif "run.day +" not in hud and 'run.day + "일차"' not in hud:
+        fail("day_tab does not read run.day into n일차")
+    elif "run.day = " in week_cs or "day += " in week_cs or "day -= " in week_cs:
+        fail("day_tab writes the day index")
+    elif "LastDayOfCurrentWeek" not in schedule_cs or "WeekNumber" not in schedule_cs:
+        fail("day_tab dropped week day math")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("day_tab retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("day_tab broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising day_tab / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("day_tab dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("day_tab moved Unity off 6000.5.9f1")
+    elif "Art/day_tab" not in readme or "일차" not in readme:
+        fail("README should mention day_tab / n일차")
+    else:
+        ok("n일차 sits on day_tab calendar; slam / gold / numbers stay")
 
 
 def check_bill_chip() -> None:
@@ -9863,6 +9928,8 @@ def check_readme_playable() -> None:
         fail("README dropped letter_reply / letter_ignore fan-letter keycaps")
     elif "newgame_card" not in readme or "지울까?" not in readme or "지우고 시작" not in readme:
         fail("README dropped newgame_card wipe notice")
+    elif "day_tab" not in readme or "일차" not in readme:
+        fail("README dropped day_tab calendar tab")
     elif "chat_bubble" not in readme or "note_chip" not in readme or "superchat_chip" not in readme or "content_*" not in readme:
         fail("README dropped chat / note / superchat envelope / content icons")
     elif "content_plate" not in readme or "콘텐츠" not in readme:
