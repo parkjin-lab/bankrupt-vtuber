@@ -57,6 +57,7 @@ namespace BankruptVtuber
         public const string PadRight = "Art/pad_right";
         public const string PadUp = "Art/pad_up";
         public const string PadSuperchat = "Art/pad_superchat";
+        public const string GoLiveKey = "Art/golive_key";
         public const string Superchat = "Art/badge_superchat";
         public const string Troll = "Art/badge_troll";
         public const string BubblePill = "Art/bubble_pill";

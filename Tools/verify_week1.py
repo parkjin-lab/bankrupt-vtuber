@@ -243,6 +243,7 @@ def check_project() -> None:
         "pad_right.png": "→ 키캡",
         "pad_up.png": "↑ 키캡",
         "pad_superchat.png": "슈퍼챗 키캡",
+        "golive_key.png": "방송 켜기 키캡",
         "chat_bubble.png": "채팅 버블",
         "note_chip.png": "노트 칩",
         "superchat_chip.png": "슈퍼챗 봉투",
@@ -1484,6 +1485,7 @@ def check_project() -> None:
     check_bill_short_stamp()
     check_superchat_fly_envelope()
     check_hype_chip()
+    check_golive_keycap()
     check_hype_sfx()
     check_event_sfx()
     check_content_icons()
@@ -3524,6 +3526,8 @@ def check_go_live_pulse() -> None:
         fail("GO LIVE does not soft-pulse at 1.04")
     elif "Palette.MoneyRed" not in pulse or "_goLivePip" not in pulse:
         fail("GO LIVE pip is not warning-red")
+    elif "ArtSprites.GoLiveKey" not in click or '"GoLive"' not in week_cs:
+        fail("GO LIVE button is not on golive_key keycap")
     elif "() => GameManager.Instance.GoLive()" not in click:
         fail("GO LIVE click no longer starts the stream")
     elif "StreamBindings.Confirm" not in confirm or "GameManager.Instance.GoLive()" not in confirm:
@@ -5920,6 +5924,65 @@ def check_hype_chip() -> None:
         ok("hype leftover sits on hype_chip; frame / 2x chat / sfx / 12s / combo-9 stay")
 
 
+def check_golive_keycap() -> None:
+    import struct
+
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/golive_key.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    click = week_cs.split("_goLive = UiKit.Button", 1)[-1].split("_conflictRoot", 1)[0]
+    pulse = week_cs.split("void TickGoLivePulse", 1)[-1].split("void Build()", 1)[0]
+    leave = week_cs.split("void LeaveMorning", 1)[-1].split("IEnumerator FadeMorningBgmThen", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("golive_key.png is missing")
+    elif w < 360 or h < 140 or w <= h:
+        fail("golive_key.png is not a readable landscape stream-deck keycap")
+    elif color != 6:
+        fail("golive_key.png is not RGBA")
+    elif 'GoLiveKey = "Art/golive_key"' not in art_cs:
+        fail("ArtSprites does not hook Art/golive_key")
+    elif "ArtSprites.GoLiveKey" not in click or '"GoLive"' not in week_cs:
+        fail("GO LIVE button does not hang Art/golive_key")
+    elif '"방송 켜기  (Space)"' not in week_cs or "콘서트 방송" not in week_cs:
+        fail("golive_key dropped 방송 켜기 / 콘서트 방송 captions")
+    elif "ConcertStreamReady" not in week_cs:
+        fail("golive_key dropped concert button reuse")
+    elif "TickGoLivePulse" not in week_cs or "LivePip" not in week_cs or "1f + 0.04f" not in pulse:
+        fail("golive_key dropped pulse / LIVE pip")
+    elif "Audio/sfx_golive" not in week_cs or "PlayGoLiveSfx();" not in leave:
+        fail("golive_key dropped sfx_golive")
+    elif "() => GameManager.Instance.GoLive()" not in click:
+        fail("golive_key click no longer starts the stream")
+    elif "public void GoLive()" not in gm:
+        fail("golive_key changed GameManager.GoLive routing")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("golive_key retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("golive_key broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising golive_key / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("golive_key dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("golive_key moved Unity off 6000.5.9f1")
+    elif "Art/golive_key" not in readme or "방송 켜기" not in readme:
+        fail("README should mention golive_key / 방송 켜기")
+    else:
+        ok("방송 켜기 sits on golive_key; pulse / LIVE pip / sfx / concert reuse stay")
+
+
 def check_hype_sfx() -> None:
     import wave
 
@@ -6825,6 +6888,8 @@ def check_golive_sfx() -> None:
         fail("GO LIVE SFX dropped morning BGM fade")
     elif "TickGoLivePulse" not in week_cs or "LivePip" not in week_cs or "1f + 0.04f" not in pulse:
         fail("GO LIVE SFX dropped pulse / LIVE pip")
+    elif "ArtSprites.GoLiveKey" not in click or '"GoLive"' not in week_cs:
+        fail("GO LIVE SFX dropped golive_key keycap")
     elif '"방송 켜기  (Space)"' not in week_cs:
         fail("GO LIVE caption is no longer 방송 켜기")
     elif "Audio/sfx_onair" not in live_cs or "PlaySfx(_onAirCue" not in start_live or "0.6f" not in start_live:
@@ -9413,6 +9478,8 @@ def check_readme_playable() -> None:
         fail("README dropped judge / event / ending SFX")
     elif "title_studio" not in readme or "morning_room" not in readme or "settlement_desk" not in readme or "pad_*" not in readme:
         fail("README dropped room / pad art")
+    elif "golive_key" not in readme or "방송 켜기" not in readme or "sfx_golive" not in readme:
+        fail("README dropped golive_key morning keycap")
     elif "chat_bubble" not in readme or "note_chip" not in readme or "superchat_chip" not in readme or "content_*" not in readme:
         fail("README dropped chat / note / superchat envelope / content icons")
     elif "rival_nyang" not in readme or "goods_stand" not in readme or "agency_card" not in readme:
