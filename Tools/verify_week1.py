@@ -1516,6 +1516,7 @@ def check_project() -> None:
     check_superchat_fly_envelope()
     check_hype_chip()
     check_golive_keycap()
+    check_golive_onair_led()
     check_title_keycaps()
     check_newgame_card()
     check_nextday_keycap()
@@ -3634,6 +3635,8 @@ def check_go_live_pulse() -> None:
         fail("GO LIVE does not soft-pulse at 1.04")
     elif "Palette.MoneyRed" not in pulse or "_goLivePip" not in pulse:
         fail("GO LIVE pip is not warning-red")
+    elif "ArtSprites.OnAirLed" not in click or '"LivePip"' not in click:
+        fail("GO LIVE pip is not on onair_led")
     elif "ArtSprites.GoLiveKey" not in click or '"GoLive"' not in week_cs:
         fail("GO LIVE button is not on golive_key keycap")
     elif "() => GameManager.Instance.GoLive()" not in click:
@@ -6950,6 +6953,8 @@ def check_golive_keycap() -> None:
         fail("golive_key dropped concert button reuse")
     elif "TickGoLivePulse" not in week_cs or "LivePip" not in week_cs or "1f + 0.04f" not in pulse:
         fail("golive_key dropped pulse / LIVE pip")
+    elif "ArtSprites.OnAirLed" not in click or '"LivePip"' not in click:
+        fail("golive_key LIVE pip is not on Art/onair_led")
     elif "Audio/sfx_golive" not in week_cs or "PlayGoLiveSfx();" not in leave:
         fail("golive_key dropped sfx_golive")
     elif "() => GameManager.Instance.GoLive()" not in click:
@@ -6970,6 +6975,71 @@ def check_golive_keycap() -> None:
         fail("README should mention golive_key / 방송 켜기")
     else:
         ok("방송 켜기 sits on golive_key; pulse / LIVE pip / sfx / concert reuse stay")
+
+
+def check_golive_onair_led() -> None:
+    """GO LIVE / 콘서트 방송 LIVE pip reuses the live HUD onair_led."""
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    click = week_cs.split("_goLive = UiKit.Button", 1)[-1].split("_conflictRoot", 1)[0]
+    pulse = week_cs.split("void TickGoLivePulse", 1)[-1].split("void Build()", 1)[0]
+    leave = week_cs.split("void LeaveMorning", 1)[-1].split("IEnumerator FadeMorningBgmThen", 1)[0]
+    hud = live_cs.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in live_cs else ""
+    morning = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    golive_inv = next((ln for ln in readme.splitlines() if "Art/golive_key" in ln and "sfx_golive" in ln), "")
+
+    if 'OnAirLed = "Art/onair_led"' not in art_cs:
+        fail("ArtSprites does not hook Art/onair_led")
+    elif "ArtSprites.OnAirLed" not in hud or '"HudOnAir"' not in live_cs:
+        fail("GO LIVE onair_led reuse dropped the live HUD LED")
+    elif "ArtSprites.OnAirLed" not in click or '"LivePip"' not in click:
+        fail("GO LIVE pip does not hang Art/onair_led")
+    elif "ArtSprites.GoLiveKey" not in click or '"GoLive"' not in week_cs:
+        fail("GO LIVE onair_led dropped golive_key keycap")
+    elif "TickGoLivePulse" not in week_cs or "1f + 0.04f" not in pulse or "LivePip" not in week_cs:
+        fail("GO LIVE onair_led dropped pulse / LIVE pip")
+    elif "Palette.MoneyRed" not in pulse or "_goLivePip" not in pulse:
+        fail("GO LIVE onair_led dropped the red pip blink")
+    elif '"방송 켜기  (Space)"' not in week_cs or "콘서트 방송" not in week_cs:
+        fail("GO LIVE onair_led dropped 방송 켜기 / 콘서트 방송 captions")
+    elif "ConcertStreamReady" not in week_cs:
+        fail("GO LIVE onair_led dropped concert button reuse")
+    elif "Audio/sfx_golive" not in week_cs or "PlayGoLiveSfx();" not in leave:
+        fail("GO LIVE onair_led dropped sfx_golive")
+    elif "() => GameManager.Instance.GoLive()" not in click:
+        fail("GO LIVE onair_led click no longer starts the stream")
+    elif "public void GoLive()" not in gm:
+        fail("GO LIVE onair_led changed GameManager.GoLive routing")
+    elif "_onAirLeft = 0.6f" not in live_cs or "Audio/sfx_onair" not in live_cs:
+        fail("GO LIVE onair_led retuned the live ON AIR sting")
+    elif "안티 웨이브" not in event_cs or "장비 렉" not in event_cs:
+        fail("GO LIVE onair_led retuned QTE events")
+    elif "ApplyEndingHeadline" not in settle_cs or "ApplyEndingDay" not in settle_cs:
+        fail("GO LIVE onair_led touched ending clip / day tab")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("GO LIVE onair_led retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("GO LIVE onair_led broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising GO LIVE onair_led / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("GO LIVE onair_led dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("GO LIVE onair_led moved Unity off 6000.5.9f1")
+    elif "onair_led" not in morning or "golive_key" not in morning or "LIVE" not in morning:
+        fail("README loop does not name GO LIVE onair_led pip")
+    elif "onair_led" not in golive_inv or "LIVE" not in golive_inv:
+        fail("README golive_key inventory must name onair_led LIVE pip")
+    else:
+        ok("GO LIVE pip sits on onair_led; pulse / keycap / sfx / concert / HUD LED stay")
 
 
 def check_title_keycaps() -> None:
@@ -8755,6 +8825,8 @@ def check_golive_sfx() -> None:
         fail("GO LIVE SFX dropped morning BGM fade")
     elif "TickGoLivePulse" not in week_cs or "LivePip" not in week_cs or "1f + 0.04f" not in pulse:
         fail("GO LIVE SFX dropped pulse / LIVE pip")
+    elif "ArtSprites.OnAirLed" not in click or '"LivePip"' not in click:
+        fail("GO LIVE SFX dropped onair_led pip")
     elif "ArtSprites.GoLiveKey" not in click or '"GoLive"' not in week_cs:
         fail("GO LIVE SFX dropped golive_key keycap")
     elif '"방송 켜기  (Space)"' not in week_cs:
@@ -11555,6 +11627,8 @@ def check_readme_playable() -> None:
         fail("README dropped room / pad art")
     elif "golive_key" not in readme or "방송 켜기" not in readme or "sfx_golive" not in readme:
         fail("README dropped golive_key morning keycap")
+    elif "onair_led" not in readme or "LIVE" not in readme or "golive_key" not in readme:
+        fail("README dropped GO LIVE onair_led pip")
     elif "title_start" not in readme or "title_continue" not in readme or "새 방송 시작" not in readme or "이어서 하기" not in readme:
         fail("README dropped title_start / title_continue lobby keycaps")
     elif "nextday_key" not in readme or "다음날" not in readme or "sfx_nextday" not in readme:

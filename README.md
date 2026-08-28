@@ -47,7 +47,7 @@
 
 **Title**은 `Art/title_studio` 파산 스튜디오 바탕 위에 `Art/title_wordmark` 네온 로고 플레이트(**「파산 버튜버」** 골드, 1.04 펄스)·버튼이 그대로 올라간다. `Audio/bgm_title` 불안한 네온 루프(로비만. 떠나면 0.2초 페이드). **새 방송 시작**은 `Art/title_start` 스트림덱 키캡 + 작은 **시작** 칩과 함께 1.03으로 숨쉰다. 세이브가 있으면 **이어서 하기**도 `Art/title_continue` 키캡 + 작은 **이어** 칩과 함께 1.03으로 숨쉬고(세이브 없으면 키캡 숨김), **n일차**가 아침과 같은 `Art/day_tab` 달력 탭(세이브 없으면 탭 숨김) + 현금(`Art/cash_slip` 영수증. 청구를 알면 부족은 빨강 + 아침·정산과 같은 `Art/bill_short` 스탬프 **청구보다 부족**. 세이브 없거나 충분하면 스탬프 숨김)/부채(`Art/bill_notice` 고지서. 골드)/멘탈(`Art/mental_note` 스티키. `멘탈 N`. ≤20이면 빨강. 세이브 없으면 영수증·고지서·메모 숨김). 어제 헤드라인이 있으면 그 줄이 `Art/headline_clip` 신문 스크랩으로 이어하기 옆에 붙는다(세이브·헤드라인 없으면 숨김). **새 방송 시작**은 `Art/newgame_card` 지우기 고지 카드에 **진행 중인 n일차를 지울까?** 확인(**지우고 시작** / **취소**) 후 지운다. 로비를 떠나면(`방송 시작` / `이어서 하기` / `지우고 시작`) `Audio/sfx_title` 확인이 한 번 난다.
 
-**Title** → **WeekStart**는 `Art/morning_room` 청구 아침 방 위에 `Audio/bgm_morning` 불안한 청구 루프(타이틀보다 작고 날카로움. **방송 켜기**/콘서트 시작으로 떠나면 0.2초 페이드)와 **n일차**가 `Art/day_tab` 찢긴 달력 탭 위에서 크게 0.25초 팝 → **오늘 청구**가 `Art/bill_notice` 고지서 칸에서 0.25초 슬램(**현금**은 정산·타이틀과 같은 `Art/cash_slip` 영수증. 청구보다 적으면 경고 빨강 + 정산과 같은 `Art/bill_short` 스탬프 **청구보다 부족**. 막히면 그대로. **멘탈**은 정산·라이브·타이틀과 같은 `Art/mental_note` 스티키 메모에 `N/100`) → 청구 카드 → 콘텐츠 픽(토크/게임/노래/리액션, 네 장 모두 `Art/content_plate` 스트림 카드 플레이트 + `Art/content_*` 아이콘 + 액센트 + 편하게 잡담 / 같이 깨자 / 고음 승부 / 같이 보자. 고르면 `Audio/sfx_pick` 확인이 한 번) → **방송 켜기**(콘서트면 **콘서트 방송**)가 `Art/golive_key` 스트림덱 키캡 + 빨간 LIVE 핍과 함께 1.04로 숨쉬고, 누르면 `Audio/sfx_golive` 확인 후쉬가 한 번 난 뒤 아침 베드가 0.2초 페이드 → 라이브 화면의 0.6초 **ON AIR**(`Audio/sfx_onair`)는 그대로 → **90초 라이브** → **Settlement**.
+**Title** → **WeekStart**는 `Art/morning_room` 청구 아침 방 위에 `Audio/bgm_morning` 불안한 청구 루프(타이틀보다 작고 날카로움. **방송 켜기**/콘서트 시작으로 떠나면 0.2초 페이드)와 **n일차**가 `Art/day_tab` 찢긴 달력 탭 위에서 크게 0.25초 팝 → **오늘 청구**가 `Art/bill_notice` 고지서 칸에서 0.25초 슬램(**현금**은 정산·타이틀과 같은 `Art/cash_slip` 영수증. 청구보다 적으면 경고 빨강 + 정산과 같은 `Art/bill_short` 스탬프 **청구보다 부족**. 막히면 그대로. **멘탈**은 정산·라이브·타이틀과 같은 `Art/mental_note` 스티키 메모에 `N/100`) → 청구 카드 → 콘텐츠 픽(토크/게임/노래/리액션, 네 장 모두 `Art/content_plate` 스트림 카드 플레이트 + `Art/content_*` 아이콘 + 액센트 + 편하게 잡담 / 같이 깨자 / 고음 승부 / 같이 보자. 고르면 `Audio/sfx_pick` 확인이 한 번) → **방송 켜기**(콘서트면 **콘서트 방송**)가 `Art/golive_key` 스트림덱 키캡 + 라이브 HUD와 같은 `Art/onair_led` LIVE 핍과 함께 1.04로 숨쉬고, 누르면 `Audio/sfx_golive` 확인 후쉬가 한 번 난 뒤 아침 베드가 0.2초 페이드 → 라이브 화면의 0.6초 **ON AIR**(`Audio/sfx_onair`)는 그대로 → **90초 라이브** → **Settlement**.
 
 웹캠 파산냥은 `Art/pasan_nyang` 256px 2D 얼굴이고, 바깥은 `Art/webcam_bezel` 스트림 캠 베젤이다. 3주차 라이벌 캠(`Art/rival_nyang`)도 같은 `Art/webcam_bezel`을 쓴다. Perfect 펀치 · Good 끄덕 · Miss 흔들 · 멘탈 ≤40 지침 · 시청 틱·승/패 SFX는 그대로다.
 
@@ -70,7 +70,7 @@
 - **스트림덱 키캡** — 메뉴·아침·정산 확인 버튼이 같은 키캡 패밀리로 읽힌다(펄스·칩·SFX·라우팅은 그대로).
   - `Art/title_start` — 타이틀 **새 방송 시작** (`sfx_title`, **시작** 칩)
   - `Art/title_continue` — 타이틀 **이어서 하기** (`sfx_title`, **이어** 칩. 세이브 없으면 숨김)
-  - `Art/golive_key` — 아침 **방송 켜기** / **콘서트 방송** (`sfx_golive`, LIVE 핍)
+  - `Art/golive_key` — 아침 **방송 켜기** / **콘서트 방송** (`sfx_golive`, 라이브 HUD와 같은 `Art/onair_led` LIVE 핍)
   - `Art/nextday_key` — 정산 **다음날** (`sfx_nextday`, **다음** 칩)
   - `Art/letter_reply` / `Art/letter_ignore` — 팬레터 **답장하기** / **나중에** (`sfx_letter`는 답장만)
 - **카드 / 탭** — 타이틀·아침·라이브·정산 카드 플레이트가 이미 붙어 있다(숫자·라우팅·SFX는 그대로).
@@ -93,7 +93,7 @@
   - `Art/viewer_pop` — 시청 ± 작은 팔로워 칩(`viewer_badge` 1.12 팝·초록/빨강 그대로)
   - `Art/bill_short` — **부족 스탬프** 공유 재사용: 타이틀 **이어서 하기** · 아침 **현금** · 정산 **청구 미달** · 정산 **남은 현금** · **엔딩 스탬프** 파산 **청구 미달**(클리어는 숨김) (**청구보다 부족** / **청구 미달**. 같은 PNG. 충분하면 숨김)
 - **라이브 HUD 스택** — 라이브 한 판에서 보이는 오버레이·스탬프·칩(히트창·콤보·하이프·이벤트·경제 숫자는 그대로).
-  - **칩 / 배지** — `Art/combo_plate`(**COMBO**) · `Art/viewer_badge`(**시청자**) · `Art/viewer_pop`(시청 ± 칩) · `Art/hype_chip`(**하이프 N** 남은 초) · `Art/clock_plate`(**남은 시간**, 마지막 10초 · `sfx_clock_tick`) · `Art/onair_led` — **ON AIR** 네 박: 시작 0.6초 스팅(`sfx_onair` · **방송 시작**) · 웹캠 코너 90초 점등 · 마지막 10초 시계와 같이 깜빡임 · **방송 종료**에 꺼짐
+  - **칩 / 배지** — `Art/combo_plate`(**COMBO**) · `Art/viewer_badge`(**시청자**) · `Art/viewer_pop`(시청 ± 칩) · `Art/hype_chip`(**하이프 N** 남은 초) · `Art/clock_plate`(**남은 시간**, 마지막 10초 · `sfx_clock_tick`) · `Art/onair_led` — **ON AIR** 네 박: 시작 0.6초 스팅(`sfx_onair` · **방송 시작**) · 웹캠 코너 90초 점등 · 마지막 10초 시계와 같이 깜빡임 · **방송 종료**에 꺼짐 · 같은 LED: 아침 **방송 켜기** LIVE 핍
   - **판정 스탬프** — `Art/judge_perfect`(**PERFECT**) · `Art/judge_good`(**GOOD**) · `Art/judge_miss`(**MISS**) · `Art/combo_break`(**콤보 끊김**, `sfx_combo_break`)
   - **노트 / 컷** — `Art/superchat_chip`(슈퍼챗 금 봉투) · `Art/superchat_pip`(0.4초 금 핍, `sfx_superchat`) · `Art/superchat_fly`(성공 ₩ 플라이 금 봉투) · `Art/won_pop`(히트 **+₩** 현금 슬립) · `Art/bill_cover`(라이브·클리어 **청구 커버** PAID 스탬프, `sfx_bill_cover`. 파산은 숨김) · `Art/bill_short`(타이틀·아침·정산 **남은 현금** **청구보다 부족** / 정산·파산 **청구 미달**. 클리어는 숨김) · `Art/end_cut`(**방송 종료**, `sfx_end_cut`)
   - **피크 / 사고** — `Art/hype_frame`(하이프 골드 프레임, `sfx_hype`) · `Art/hype_chip`(**하이프 N**) · `Art/event_warn`(**안티 온다** / **렉 온다**) · `Art/anti_sting`(`sfx_anti`) · `Art/lag_sting`(`sfx_lag`)

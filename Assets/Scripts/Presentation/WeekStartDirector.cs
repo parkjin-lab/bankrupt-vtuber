@@ -262,11 +262,12 @@ namespace BankruptVtuber
                 goLiveImg.raycastTarget = true;
             }
             _goLivePip = UiKit.Image(_goLive.transform, "LivePip", Palette.MoneyRed);
-            UiKit.Layout(_goLivePip.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(28f, 0f), new Vector2(16f, 16f));
+            UiKit.Layout(_goLivePip.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(32f, 0f), new Vector2(56f, 16f));
+            ArtSprites.Apply(_goLivePip, ArtSprites.OnAirLed, Palette.MoneyRed, Color.white);
             _goLivePip.raycastTarget = false;
             var goCap = _goLive.transform.Find("Caption") as RectTransform;
             if (goCap != null)
-                goCap.offsetMin = new Vector2(36f, 0f);
+                goCap.offsetMin = new Vector2(62f, 0f);
             _goLive.gameObject.SetActive(false);
 
             var conflictGo = new GameObject("ConflictRoot", typeof(RectTransform));
