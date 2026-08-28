@@ -12801,7 +12801,7 @@ def check_morning_day1_headline() -> None:
         fail("morning day-1 headline paper restyled settlement headline_clip")
     elif "ArtSprites.HeadlineClip" in live_cs:
         fail("morning day-1 headline paper hung headline_clip on live")
-    elif "run.day =" in week_cs or "day += " in week_cs or "day -= " in week_cs:
+    elif re.search(r"run\.day\s*=(?!=)", week_cs) or "day += " in week_cs or "day -= " in week_cs:
         fail("morning day-1 headline paper writes the day index")
     elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
         fail("morning day-1 headline paper moved last-day week gates")
