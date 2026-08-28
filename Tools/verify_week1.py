@@ -254,6 +254,7 @@ def check_project() -> None:
         "nextday_key.png": "다음날 키캡",
         "chat_bubble.png": "채팅 버블",
         "chat_nick.png": "채팅 닉 네임플레이트",
+        "chat_troll.png": "트롤 닉 빨간 네임플레이트",
         "note_chip.png": "노트 칩",
         "superchat_chip.png": "슈퍼챗 봉투",
         "superchat_pip.png": "슈퍼챗 핍",
@@ -1485,6 +1486,7 @@ def check_project() -> None:
     check_pad_keycaps()
     check_chat_bubble()
     check_chat_nick()
+    check_chat_troll()
     check_note_chip()
     check_hit_rail()
     check_judge_sfx()
@@ -5311,6 +5313,78 @@ def check_chat_nick() -> None:
         fail("README should mention chat_nick nameplate")
     else:
         ok("regular chat nicks sit on chat_nick nameplates; bubble / lines / hype 2x stay")
+
+
+def check_chat_troll() -> None:
+    """Troll/anti chat nicks sit on a tiny red 2D nameplate (chat_troll.png)."""
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8") if (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").exists() else ""
+    if not event_cs:
+        # event types may live in StreamSession / LiveStream
+        event_cs = session_cs + live_cs
+    catalog = (ROOT / "Assets/Resources/Balance/ChatCatalog.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    make = live_cs.split("RectTransform MakeBubble", 1)[-1].split("static void DimNamedBubble", 1)[0]
+    png = ROOT / "Assets/Resources/Art/chat_troll.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 4000:
+        fail("chat_troll.png is missing")
+    elif w < 140 or h < 36 or w <= h:
+        fail("chat_troll.png is not a readable tiny landscape nameplate")
+    elif color != 6:
+        fail("chat_troll.png is not RGBA")
+    elif 'ChatTroll = "Art/chat_troll"' not in art_cs:
+        fail("ArtSprites does not hook Art/chat_troll")
+    elif 'ChatNick = "Art/chat_nick"' not in art_cs or "ArtSprites.ChatNick" not in make:
+        fail("chat_troll dropped regular chat_nick nameplates")
+    elif "ArtSprites.ChatTroll" not in make or '"NickPlate"' not in make:
+        fail("troll chat nicks do not hang Art/chat_troll")
+    elif "troll ? ArtSprites.ChatTroll : ArtSprites.ChatNick" not in make and "troll?ArtSprites.ChatTroll:ArtSprites.ChatNick" not in make.replace(" ", ""):
+        fail("MakeBubble does not pick ChatTroll for troll nicks")
+    elif "chatBubble || troll" not in make and "chatBubble||troll" not in make.replace(" ", ""):
+        fail("troll nicks still skip the nameplate path")
+    elif "ArtSprites.ChatBubble" not in make or "ArtSprites.TrollBubble" not in make:
+        fail("chat_troll dropped chat_bubble / troll bubble art")
+    elif '"Nick"' not in make or "note.User" not in make or "note.Text" not in make:
+        fail("chat_troll dropped nick label or Korean copy")
+    elif "ArtSprites.SuperchatBanner" not in make:
+        fail("chat_troll changed superchat treatment")
+    elif "안티 웨이브" not in event_cs and "안티 웨이브" not in live_cs:
+        fail("chat_troll dropped anti event rules")
+    elif "Audio/sfx_anti" not in live_cs or "ArtSprites.AntiSting" not in live_cs:
+        fail("chat_troll dropped anti SFX / sting")
+    elif "interval *= 0.5f" not in session_cs or "HypeActive" not in session_cs:
+        fail("chat_troll dropped hype 2x spawn")
+    elif "chatSpawnStart: 1.55" not in balance or "chatSpawnEnd: 1.05" not in balance:
+        fail("chat_troll retuned chat spawn table")
+    elif "positive:" not in catalog or "empathy:" not in catalog or "laugh:" not in catalog or "thanks:" not in catalog:
+        fail("chat_troll dropped ChatCatalog kinds")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("chat_troll retuned Week 1 economy / hype")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("chat_troll broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising chat_troll / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("chat_troll dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("chat_troll moved Unity off 6000.5.9f1")
+    elif "Art/chat_troll" not in readme or "트롤" not in readme:
+        fail("README should mention chat_troll red nameplate")
+    else:
+        ok("troll chat nicks sit on chat_troll red nameplates; chat_nick / anti / economy stay")
 
 
 def check_note_chip() -> None:
@@ -10066,6 +10140,8 @@ def check_readme_playable() -> None:
         fail("README dropped chat / note / superchat envelope / content icons")
     elif "chat_nick" not in readme or "닉" not in readme:
         fail("README dropped chat_nick nameplate")
+    elif "chat_troll" not in readme or "트롤" not in readme:
+        fail("README dropped chat_troll red nameplate")
     elif "content_plate" not in readme or "콘텐츠" not in readme:
         fail("README dropped content_plate stream card plate")
     elif (
