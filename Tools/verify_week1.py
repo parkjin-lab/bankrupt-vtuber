@@ -1543,6 +1543,7 @@ def check_project() -> None:
     check_readme_ending_clip_tab()
     check_readme_onair_led()
     check_readme_rival_hud()
+    check_readme_morning_event_warn()
     check_letter_card()
     check_letter_keycaps()
     check_pad_sfx()
@@ -8913,6 +8914,63 @@ def check_readme_rival_hud() -> None:
         ok("README names 라이벌 HUD (webcam_bezel + onair_led + viewer_badge + viewer_pop)")
 
 
+def check_readme_morning_event_warn() -> None:
+    """README names morning 오늘의 위협 slams on the live event_warn plate."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    extra_cs = (ROOT / "Assets/Scripts/Data/ExtraThreat.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    morning = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    live_loop = readme.split("위협 오버레이", 1)[-1].split("정산:", 1)[0]
+    warn_inv = next((ln for ln in readme.splitlines() if "Art/event_warn" in ln and "안티 온다" in ln), "")
+    spawn = week_cs.split("void SpawnIncoming", 1)[-1].split("IEnumerator Slam", 1)[0]
+
+    missing = next(
+        (
+            f"{label} {token}"
+            for label, block in (("morning", morning), ("live overlay", live_loop), ("event_warn", warn_inv))
+            for token in (
+                "아침 경고",
+                "event_warn",
+                "오늘의 위협",
+                "안티 온다",
+                "렉 온다",
+            )
+            if token not in block
+        ),
+        "",
+    )
+
+    if missing:
+        fail(f"README {missing} must name the morning event_warn reuse")
+    elif "ArtSprites.EventWarn" not in spawn or "ApplySliced" not in spawn:
+        fail("README morning event_warn lost the extra-threat slam plate")
+    elif "ArtSprites.EventWarn" not in live_cs or "EventWarnBox" not in live_cs:
+        fail("README morning event_warn lost the live 안티 온다 / 렉 온다 plate")
+    elif '"오늘의 위협"' not in spawn or "오늘은 추가 위협이 없습니다." not in week_cs:
+        fail("README morning event_warn dropped 오늘의 위협 / no-extra log")
+    elif "장비 고장" not in extra_cs or "라이벌 견제" not in extra_cs or "인터넷 끊김" not in extra_cs:
+        fail("README morning event_warn retuned extra threat names")
+    elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
+        fail("README morning event_warn retuned live warn copy")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("README morning event_warn retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README morning event_warn broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising morning event_warn / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README morning event_warn dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README morning event_warn moved Unity off 6000.5.9f1")
+    else:
+        ok("README names 아침 경고 (오늘의 위협 slam on event_warn = live 안티 온다 / 렉 온다)")
+
+
 def check_letter_card() -> None:
     import struct
 
@@ -11333,9 +11391,11 @@ def check_morning_event_warn() -> None:
         fail("morning event_warn dropped the Android Portrait lock")
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("morning event_warn moved Unity off 6000.5.9f1")
-    elif "event_warn" not in morning or "오늘의 위협" not in morning:
+    elif "event_warn" not in morning or "오늘의 위협" not in morning or "아침 경고" not in morning:
         fail("README morning loop does not name extra-threat event_warn")
-    elif "event_warn" not in warn_inv or "오늘의 위협" not in warn_inv:
+    elif "안티 온다" not in morning or "렉 온다" not in morning:
+        fail("README morning loop does not name live 안티 온다 / 렉 온다 plate reuse")
+    elif "event_warn" not in warn_inv or "오늘의 위협" not in warn_inv or "아침 경고" not in warn_inv:
         fail("README event_warn inventory must name morning 오늘의 위협")
     else:
         ok("morning extra-threat slam sits on event_warn; names / amounts / slam / live plate stay")
@@ -12228,6 +12288,8 @@ def check_readme_playable() -> None:
         fail("README dropped event_warn warning plate")
     elif "event_warn" not in readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0] or "오늘의 위협" not in readme:
         fail("README morning dropped extra-threat event_warn")
+    elif "아침 경고" not in readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]:
+        fail("README morning dropped 아침 경고 event_warn reuse")
     elif "anti_sting" not in readme or "lag_sting" not in readme or "sfx_lag" not in readme:
         fail("README dropped anti_sting / lag_sting overlays")
     elif "viewer_badge" not in readme or "시청자" not in readme or ("시청 +" not in readme and "시청 ±" not in readme):
