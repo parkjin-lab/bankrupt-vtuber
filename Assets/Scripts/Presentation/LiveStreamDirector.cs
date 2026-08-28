@@ -181,6 +181,7 @@ namespace BankruptVtuber
         Image _concertBadge;
         bool _sponsorPinShow;
         Image _sponsorBadge;
+        Image _day1Headline;
         float _bedVolume;
         float _bedDuck;
         bool _threatGear;
@@ -1154,6 +1155,15 @@ namespace BankruptVtuber
             UiKit.Stretch(_billFill.rectTransform, 8, 8, 6, 6);
             _billFill.rectTransform.anchorMax = new Vector2(0f, 1f);
             _billFill.raycastTarget = false;
+
+            _day1Headline = UiKit.Image(root, "LiveDay1Headline", Color.white);
+            UiKit.Layout(_day1Headline.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -272f), new Vector2(168f, 68f));
+            ArtSprites.Apply(_day1Headline, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
+            _day1Headline.preserveAspect = true;
+            _day1Headline.raycastTarget = false;
+            var day1HeadT = UiKit.Label(_day1Headline.transform, "T", "헤드라인", 16, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(day1HeadT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _day1Headline.gameObject.SetActive(false);
 
             _avatar = new AvatarView(root as RectTransform);
             _rivalDuel = new RivalDuelView(root as RectTransform);
@@ -3205,6 +3215,8 @@ namespace BankruptVtuber
                 _concertBadge.gameObject.SetActive(_concertPinShow);
             if (_sponsorBadge != null)
                 _sponsorBadge.gameObject.SetActive(_sponsorPinShow);
+            if (_day1Headline != null)
+                _day1Headline.gameObject.SetActive(1 == GameManager.Instance.Run.day);
             UiKit.EnsureCamera(look.Wash);
             _avatar?.ApplyShow(look);
             if (_bed != null)

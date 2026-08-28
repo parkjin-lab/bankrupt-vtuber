@@ -1582,6 +1582,7 @@ def check_project() -> None:
     check_title_week_start_headline()
     check_title_last_day_headline()
     check_title_day1_headline()
+    check_live_day1_headline()
     check_title_day1_tab()
     check_concert_live_badge()
     check_sponsor_live_badge()
@@ -12818,7 +12819,7 @@ def check_morning_day1_headline() -> None:
         fail("morning day-1 headline paper dropped continue 어제: + lastHeadline")
     elif "ArtSprites.HeadlineClip" not in settle_build or "36, -66" not in settle_clip or "오늘 헤드라인" not in settle_cs:
         fail("morning day-1 headline paper restyled settlement headline_clip")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("morning day-1 headline paper hung headline_clip on live")
     elif re.search(r"run\.day\s*=(?!=)", week_cs) or "day += " in week_cs or "day -= " in week_cs:
         fail("morning day-1 headline paper writes the day index")
@@ -12973,7 +12974,7 @@ def check_settle_day1_headline() -> None:
         fail("settlement day-1 headline paper restyled continue headline scrap")
     elif '"어제: "' not in fill or "lastHeadline" not in fill:
         fail("settlement day-1 headline paper dropped continue 어제: + lastHeadline")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("settlement day-1 headline paper hung headline_clip on live")
     elif re.search(r"run\.day\s*=(?!=)", settle_cs) or "day += " in settle_cs or "day -= " in settle_cs:
         fail("settlement day-1 headline paper writes the day index")
@@ -13276,7 +13277,7 @@ def check_morning_week_start_headline() -> None:
         fail("morning week-start headline paper restyled SettleDay1")
     elif "ArtSprites.HeadlineClip" not in settle_build or "36, -66" not in settle_clip or "오늘 헤드라인" not in settle_cs:
         fail("morning week-start headline paper restyled settlement headline_clip")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("morning week-start headline paper hung headline_clip on live")
     elif re.search(r"run\.day\s*=(?!=)", week_cs) or "day += " in week_cs or "day -= " in week_cs:
         fail("morning week-start headline paper writes the day index")
@@ -13483,7 +13484,7 @@ def check_morning_last_day_headline() -> None:
         fail("morning last-day headline paper changed SettleHeadline hide")
     elif "ArtSprites.HeadlineClip" not in settle_build or "36, -66" not in settle_clip or "오늘 헤드라인" not in settle_cs:
         fail("morning last-day headline paper restyled the 오늘 헤드라인 scrap")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("morning last-day headline paper hung headline_clip on live")
     elif "매드라인" in week_cs:
         fail("morning last-day headline paper used 매드라인 instead of 헤드라인")
@@ -13768,7 +13769,7 @@ def check_settle_week_start_headline() -> None:
         fail("settlement week-start headline paper restyled continue headline scrap")
     elif '"어제: "' not in fill or "lastHeadline" not in fill:
         fail("settlement week-start headline paper dropped continue 어제: + lastHeadline")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("settlement week-start headline paper hung headline_clip on live")
     elif "run.day =" in settle_cs or "day += " in settle_cs or "day -= " in settle_cs:
         fail("settlement week-start headline paper writes the day index")
@@ -13965,7 +13966,7 @@ def check_settle_last_day_headline() -> None:
         fail("settlement last-day headline paper restyled continue headline scrap")
     elif '"어제: "' not in fill or "lastHeadline" not in fill:
         fail("settlement last-day headline paper dropped continue 어제: + lastHeadline")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("settlement last-day headline paper hung headline_clip on live")
     elif "매드라인" in settle_cs:
         fail("settlement last-day headline paper used 매드라인 instead of 헤드라인")
@@ -14412,7 +14413,7 @@ def check_title_week_start_headline() -> None:
         fail("title week-start headline paper changed SettleHeadline hide")
     elif "ArtSprites.HeadlineClip" not in settle_build or "36, -66" not in settle_clip or "오늘 헤드라인" not in settle_cs:
         fail("title week-start headline paper restyled the 오늘 헤드라인 scrap")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("title week-start headline paper hung headline_clip on live")
     elif "peek.day =" in title_cs or "day += " in title_cs or "day -= " in title_cs:
         fail("title week-start headline paper writes the day index")
@@ -14621,7 +14622,7 @@ def check_title_last_day_headline() -> None:
         fail("title last-day headline paper changed SettleHeadline hide")
     elif "ArtSprites.HeadlineClip" not in settle_build or "36, -66" not in settle_clip or "오늘 헤드라인" not in settle_cs:
         fail("title last-day headline paper restyled the 오늘 헤드라인 scrap")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("title last-day headline paper hung headline_clip on live")
     elif "매드라인" in title_cs:
         fail("title last-day headline paper used 매드라인 instead of 헤드라인")
@@ -14856,7 +14857,7 @@ def check_title_day1_headline() -> None:
         fail("title day-1 headline paper changed SettleHeadline hide")
     elif "ArtSprites.HeadlineClip" not in settle_build or "36, -66" not in settle_clip or "오늘 헤드라인" not in settle_cs:
         fail("title day-1 headline paper restyled the 오늘 헤드라인 scrap")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("title day-1 headline paper hung headline_clip on live")
     elif "매드라인" in title_cs:
         fail("title day-1 headline paper used 매드라인 instead of 헤드라인")
@@ -14880,6 +14881,189 @@ def check_title_day1_headline() -> None:
         fail("title day-1 headline paper moved Unity off 6000.5.9f1")
     else:
         ok("day-1 continue hangs headline_clip as debut news; other continue / new-game hide it; week-start / last-day / morning / settlement headlines stay")
+
+
+def check_live_day1_headline() -> None:
+    """Day-1 live hangs headline_clip as a tiny HUD debut paper; other lives hide it; Title / morning / settlement headlines and live scraps / pins stay."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    head_cs = (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    paper = build.split('"LiveDay1Headline"', 1)[-1].split("_avatar = new AvatarView", 1)[0] if '"LiveDay1Headline"' in build else ""
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    show = build.split('"ShowChip"', 1)[-1].split('"BillChip"', 1)[0] if '"ShowChip"' in build else ""
+    bill = build.split('"BillChip"', 1)[-1].split('"LiveDay1Headline"', 1)[0] if '"LiveDay1Headline"' in build else ""
+    hud = build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in build else ""
+    chat = build.split('"ChatDock"', 1)[-1].split('"Lane"', 1)[0] if '"ChatDock"' in build else ""
+    pads = build.split('"PadRow"', 1)[-1].split('"MissSting"', 1)[0] if '"PadRow"' in build else ""
+    coach = build.split('"CoachCard"', 1)[-1].split('"CoachStamp"', 1)[0] if '"CoachCard"' in build else ""
+    timer = build.split('"Timer"', 1)[-1].split('"Cash"', 1)[0] if '"Timer"' in build else ""
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_paper = start_hang.split("_startHeadline = UiKit.Image", 1)[-1] if "_startHeadline = UiKit.Image" in start_hang else ""
+    title_build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    continue_paper = title_build.split('"ContinueDay1Headline"', 1)[-1].split('"ContinueMemberPin"', 1)[0] if '"ContinueDay1Headline"' in title_build else ""
+    continue_clip = title_build.split('"ContinueClip"', 1)[-1].split('"ContinueGoodsPin"', 1)[0] if '"ContinueClip"' in title_build else ""
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    morning_build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
+    morning_paper = morning_build.split('"MorningHeadline"', 1)[-1].split('"LastDayBanner"', 1)[0] if '"MorningHeadline"' in morning_build else ""
+    morning_clip = week_cs.split('"YesterdayClip"', 1)[-1].split('"Yesterday"', 1)[0] if '"YesterdayClip"' in week_cs else ""
+    day1_refresh = week_cs.split("void RefreshDay1", 1)[-1].split("void RefreshLastDay", 1)[0] if "void RefreshDay1" in week_cs else ""
+    yest = week_cs.split("void RefreshYesterday", 1)[-1].split("void RefreshWeekStart", 1)[0]
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    settle_paper = settle_build.split('"SettleHeadline"', 1)[-1].split('"SettleLastHeadline"', 1)[0] if '"SettleLastHeadline"' in settle_build else ""
+    settle_clip = settle_build.split('"HeadlineClip"', 1)[-1].split('"HeadlineTag"', 1)[0] if '"HeadlineClip"' in settle_build else ""
+    settle_render = settle_cs.split("void Render()", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+    settle_day1_gate = settle_render.split("if (_day1Tab", 1)[-1].split("bool last", 1)[0]
+
+    if 'HeadlineClip = "Art/headline_clip"' not in art_cs:
+        fail("ArtSprites does not hook Art/headline_clip")
+    elif '"LiveDay1Headline"' not in build or "ArtSprites.HeadlineClip" not in paper:
+        fail("day-1 live does not hang Art/headline_clip as a HUD debut paper")
+    elif "preserveAspect = true" not in paper:
+        fail("live day-1 headline paper is not preserveAspect")
+    elif "72f, 48f" in paper:
+        fail("live day-1 headline paper was hung as a 72×48 pin")
+    elif "168f, 68f" not in paper or "24f, -272f" not in paper:
+        fail("live day-1 headline paper is not a tiny HUD scrap under the show chip")
+    elif "0.93f, 0.88f, 0.74f" not in paper:
+        fail("live day-1 headline paper dropped the gold paper grade")
+    elif '"헤드라인"' not in paper:
+        fail("live day-1 headline paper is not Korean debut-news copy")
+    elif "1일차" in paper or "마지막 날" in paper or "주차 마지막" in paper or "2주차" in paper:
+        fail("live day-1 headline paper reused calendar-tab copy")
+    elif "어제:" in paper or "오늘 헤드라인" in paper or "lastHeadline" in paper:
+        fail("live day-1 headline paper reused live / continue / settlement headline copy")
+    elif "NewGameHeadline" in paper or "412f, -78f" in paper or "240f, 88f" in paper:
+        fail("live day-1 headline paper sat on Title NewGameHeadline")
+    elif "ContinueDay1Headline" in paper or "576f, -76f" in paper or "228f, 92f" in paper:
+        fail("live day-1 headline paper sat on Title ContinueDay1Headline")
+    elif "MorningHeadline" in paper or "8f, -284f" in paper or "0.74f, 1f" in paper:
+        fail("live day-1 headline paper sat on MorningHeadline")
+    elif "SettleHeadline" in paper or "8f, -212f" in paper or "0.80f, 1f" in paper:
+        fail("live day-1 headline paper sat on SettleHeadline")
+    elif "36, -66" in paper or '"HeadlineTag"' in paper:
+        fail("live day-1 headline paper sat on the 오늘 헤드라인 scrap")
+    elif "56, -286" in paper or "420, 72" in paper or '"ContinueClip"' in paper:
+        fail("live day-1 headline paper sat on the continue headline scrap")
+    elif "0, -42" in paper or "0, 78" in paper or "YesterdayClip" in paper:
+        fail("live day-1 headline paper sat on YesterdayClip")
+    elif "24, -214" in paper or "168, 44" in paper or '"ShowChip"' in paper:
+        fail("live day-1 headline paper covers the show chip")
+    elif "460, -210" in paper or "248, 52" in paper or '"BillChip"' in paper:
+        fail("live day-1 headline paper covers the live bill chip")
+    elif "710, -228" in paper or "180, 18" in paper:
+        fail("live day-1 headline paper covers the bill fill")
+    elif "ClockPlate" in paper or '"Timer"' in paper or "0.64f, 1f" in paper:
+        fail("live day-1 headline paper covers the timer")
+    elif "ChatDock" in paper or "420, -220" in paper or "실시간 채팅" in paper:
+        fail("live day-1 headline paper covers chat")
+    elif "PadRow" in paper or "AddColumnPad" in paper or "1–4" in paper:
+        fail("live day-1 headline paper covers QTE / pads")
+    elif "CoachCard" in paper or "720, 220" in paper or "-80, 0" in paper:
+        fail("live day-1 headline paper covers the day-1 coach")
+    elif "MemberBadgeHud" in paper or "AgencyBadgeHud" in paper or "GoodsBadgeHud" in paper:
+        fail("live day-1 headline paper sat on an unlock pin")
+    elif "RankingBadgeHud" in paper or "ClipBadgeHud" in paper or "ConcertBadgeHud" in paper or "SponsorBadgeHud" in paper:
+        fail("live day-1 headline paper sat on an unlock pin")
+    elif "-10f, -10f" in paper or "-10f, -322f" in paper or "72f, 48f" in paper:
+        fail("live day-1 headline paper covers a webcam unlock pin")
+    elif "360, 70" in paper or '"GoLive"' in paper:
+        fail("live day-1 headline paper sat on morning GO LIVE")
+    elif "UiKit.Stretch" in paper:
+        fail("live day-1 headline paper was stretched over the HUD")
+    elif "SetActive(false)" not in paper:
+        fail("live day-1 headline paper is not hidden until ApplyContentShow")
+    elif "_day1Headline" not in apply or "1 == GameManager.Instance.Run.day" not in apply:
+        fail("live day-1 headline paper is not shown only on day 1")
+    elif "SetActive(1 == GameManager.Instance.Run.day)" not in apply:
+        fail("live day-1 headline paper is not hidden on other lives")
+    elif "LastDayOfCurrentWeek" in apply or "6 == " in apply or "run.day == 6" in apply:
+        fail("live day-1 headline paper reused last-day or week-start gate")
+    elif '"MorningHeadline"' in live_cs or '"SettleHeadline"' in live_cs or '"NewGameHeadline"' in live_cs:
+        fail("live day-1 headline paper folded Title / morning / settlement headline onto live")
+    elif '"ContinueDay1Headline"' in live_cs or '"ContinueWeekHeadline"' in live_cs or '"ContinueLastHeadline"' in live_cs:
+        fail("live day-1 headline paper folded a Title continue headline onto live")
+    elif '"MorningWeekHeadline"' in live_cs or '"SettleWeekHeadline"' in live_cs or '"MorningLastHeadline"' in live_cs or '"SettleLastHeadline"' in live_cs:
+        fail("live day-1 headline paper folded a week-start / last-day headline onto live")
+    elif '"NewGameHeadline"' not in start_hang or "412f, -78f" not in title_paper or "240f, 88f" not in title_paper:
+        fail("live day-1 headline paper restyled Title NewGameHeadline")
+    elif '"헤드라인"' not in title_paper or "preserveAspect = true" not in title_paper:
+        fail("live day-1 headline paper restyled NewGameHeadline copy")
+    elif "SetActive(!_hasSave)" not in hide:
+        fail("live day-1 headline paper changed Title NewGameHeadline hide")
+    elif '"ContinueDay1Headline"' not in title_build or "576f, -76f" not in continue_paper or "228f, 92f" not in continue_paper:
+        fail("live day-1 headline paper restyled ContinueDay1Headline")
+    elif '"헤드라인"' not in continue_paper or "1 == peek.day" not in fill:
+        fail("live day-1 headline paper changed ContinueDay1Headline hide")
+    elif '"ContinueClip"' not in title_build or "56, -286" not in continue_clip or "420, 72" not in continue_clip:
+        fail("live day-1 headline paper restyled continue headline scrap")
+    elif '"어제: "' not in fill or "lastHeadline" not in fill:
+        fail("live day-1 headline paper dropped continue 어제: + lastHeadline")
+    elif '"MorningHeadline"' not in morning_build or "8f, -284f" not in morning_paper or "228f, 92f" not in morning_paper:
+        fail("live day-1 headline paper restyled MorningHeadline")
+    elif "run.day == 1" not in day1_refresh or "_day1Headline" not in day1_refresh or "SetActive(day1)" not in day1_refresh:
+        fail("live day-1 headline paper changed MorningHeadline hide")
+    elif "0, -42" not in morning_clip or "0, 78" not in morning_clip:
+        fail("live day-1 headline paper restyled YesterdayClip")
+    elif "YesterdayLine" not in yest or "SetActive(on)" not in yest:
+        fail("live day-1 headline paper changed scrolling headline chips")
+    elif "day <= 1" not in head_cs or '"어제: "' not in head_cs:
+        fail("live day-1 headline paper changed 어제 copy or day math")
+    elif '"SettleHeadline"' not in settle_build or "8f, -212f" not in settle_paper or "228f, 92f" not in settle_paper:
+        fail("live day-1 headline paper restyled SettleHeadline")
+    elif "1 == run.day" not in settle_day1_gate or "_day1Headline" not in settle_day1_gate:
+        fail("live day-1 headline paper changed SettleHeadline hide")
+    elif "ArtSprites.HeadlineClip" not in settle_clip or "36, -66" not in settle_clip or "오늘 헤드라인" not in settle_cs:
+        fail("live day-1 headline paper restyled the 오늘 헤드라인 scrap")
+    elif '"ClearHeadlineClip"' not in settle_cs or '"StampHeadlineClip"' not in settle_cs:
+        fail("live day-1 headline paper dropped ending headline scraps")
+    elif "24, -214" not in show or "168, 44" not in show:
+        fail("live day-1 headline paper restyled the show chip")
+    elif "460, -210" not in bill or "248, 52" not in bill or "ArtSprites.BillNotice" not in bill:
+        fail("live day-1 headline paper restyled the live bill chip")
+    elif "ArtSprites.ClockPlate" not in timer:
+        fail("live day-1 headline paper dropped the timer plate")
+    elif "ArtSprites.ChatDock" not in chat:
+        fail("live day-1 headline paper dropped chat dock")
+    elif "AddColumnPad" not in pads or "슈퍼챗" not in pads:
+        fail("live day-1 headline paper dropped live pads")
+    elif "ArtSprites.CoachCard" not in coach or "720, 220" not in coach:
+        fail("live day-1 headline paper dropped the day-1 coach")
+    elif '"MemberBadgeHud"' not in hud or "72f, 48f" not in hud or "-10f, -10f" not in hud:
+        fail("live day-1 headline paper restyled the membership pin")
+    elif '"SponsorBadgeHud"' not in hud or "-10f, -322f" not in hud:
+        fail("live day-1 headline paper restyled the sponsor pin")
+    elif "SetActive(_memberShow)" not in apply or "SetActive(_sponsorPinShow)" not in apply:
+        fail("live day-1 headline paper changed unlock pin hide")
+    elif "run.day =" in live_cs or "day += " in live_cs or "day -= " in live_cs:
+        fail("live day-1 headline paper writes the day index")
+    elif "peek.day =" in title_cs or "day += " in title_cs or "day -= " in title_cs:
+        fail("live day-1 headline paper writes the Title day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("live day-1 headline paper moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("live day-1 headline paper retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("live day-1 headline paper retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("live day-1 headline paper retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("live day-1 headline paper broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising live day-1 headline / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("live day-1 headline paper dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("live day-1 headline paper moved Unity off 6000.5.9f1")
+    else:
+        ok("day-1 live hangs headline_clip as HUD debut news; other lives hide it; Title / morning / settlement headlines and live scraps / pins stay")
 
 
 def check_title_day1_tab() -> None:
@@ -20940,7 +21124,7 @@ def check_readme_morning_day1_headline() -> None:
         fail("README morning day-1 headline dropped continue 어제: + lastHeadline")
     elif "ArtSprites.HeadlineClip" not in settle_build or "36, -66" not in settle_clip or "오늘 헤드라인" not in settle_cs:
         fail("README morning day-1 headline restyled settlement headline_clip")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("README morning day-1 headline hung headline_clip on live")
     elif re.search(r"run\.day\s*=(?!=)", week_cs) or "day += " in week_cs or "day -= " in week_cs:
         fail("README morning day-1 headline writes the day index")
@@ -21104,7 +21288,7 @@ def check_readme_settle_day1_headline() -> None:
         fail("README settlement day-1 headline restyled continue headline scrap")
     elif '"어제: "' not in fill or "lastHeadline" not in fill:
         fail("README settlement day-1 headline dropped continue 어제: + lastHeadline")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("README settlement day-1 headline hung headline_clip on live")
     elif re.search(r"run\.day\s*=(?!=)", settle_cs) or "day += " in settle_cs or "day -= " in settle_cs:
         fail("README settlement day-1 headline writes the day index")
@@ -21298,7 +21482,7 @@ def check_readme_morning_week_start_headline() -> None:
         fail("README morning week-start headline restyled SettleHeadline")
     elif "ArtSprites.HeadlineClip" not in settle_build or "36, -66" not in settle_clip or "오늘 헤드라인" not in settle_cs:
         fail("README morning week-start headline restyled the 오늘 헤드라인 scrap")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("README morning week-start headline hung headline_clip on live")
     elif re.search(r"run\.day\s*=(?!=)", week_cs) or "day += " in week_cs or "day -= " in week_cs:
         fail("README morning week-start headline writes the day index")
@@ -21518,7 +21702,7 @@ def check_readme_settle_week_start_headline() -> None:
         fail("README settlement week-start headline dropped continue 어제: + lastHeadline")
     elif "ArtSprites.HeadlineClip" not in build or "36, -66" not in settle_clip or "오늘 헤드라인" not in settle_cs:
         fail("README settlement week-start headline restyled the 오늘 헤드라인 scrap")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("README settlement week-start headline hung headline_clip on live")
     elif "run.day =" in settle_cs or "day += " in settle_cs or "day -= " in settle_cs:
         fail("README settlement week-start headline writes the day index")
@@ -21729,7 +21913,7 @@ def check_readme_title_week_start_headline() -> None:
         fail("README title week-start headline changed SettleHeadline hide")
     elif "day <= 1" not in head_cs or '"어제: "' not in head_cs:
         fail("README title week-start headline changed 어제 copy or day math")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("README title week-start headline hung headline_clip on live")
     elif "peek.day =" in title_cs or "day += " in title_cs or "day -= " in title_cs:
         fail("README title week-start headline writes the day index")
@@ -21968,7 +22152,7 @@ def check_readme_morning_last_day_headline() -> None:
         fail("README morning last-day headline changed SettleHeadline hide")
     elif "ArtSprites.HeadlineClip" not in settle_build or "36, -66" not in settle_clip or "오늘 헤드라인" not in settle_cs:
         fail("README morning last-day headline restyled the 오늘 헤드라인 scrap")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("README morning last-day headline hung headline_clip on live")
     elif re.search(r"run\.day\s*=(?!=)", week_cs) or "day += " in week_cs or "day -= " in week_cs:
         fail("README morning last-day headline writes the day index")
@@ -22237,7 +22421,7 @@ def check_readme_settle_last_day_headline() -> None:
         fail("README settlement last-day headline restyled continue headline scrap")
     elif '"어제: "' not in fill or "lastHeadline" not in fill:
         fail("README settlement last-day headline dropped continue 어제: + lastHeadline")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("README settlement last-day headline hung headline_clip on live")
     elif "run.day =" in settle_cs or "day += " in settle_cs or "day -= " in settle_cs:
         fail("README settlement last-day headline writes the day index")
@@ -22520,7 +22704,7 @@ def check_readme_title_last_day_headline() -> None:
         fail("README title last-day headline changed SettleHeadline hide")
     elif "ArtSprites.HeadlineClip" not in settle_build or "36, -66" not in settle_clip or "오늘 헤드라인" not in settle_cs:
         fail("README title last-day headline restyled the 오늘 헤드라인 scrap")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("README title last-day headline hung headline_clip on live")
     elif "peek.day =" in title_cs or "day += " in title_cs or "day -= " in title_cs:
         fail("README title last-day headline writes the day index")
@@ -22816,7 +23000,7 @@ def check_readme_title_day1_headline() -> None:
         fail("README title day-1 headline changed SettleHeadline hide")
     elif "ArtSprites.HeadlineClip" not in settle_build or "36, -66" not in settle_clip or "오늘 헤드라인" not in settle_cs:
         fail("README title day-1 headline restyled the 오늘 헤드라인 scrap")
-    elif "ArtSprites.HeadlineClip" in live_cs:
+    elif "ArtSprites.HeadlineClip" in live_cs and '"LiveDay1Headline"' not in live_cs:
         fail("README title day-1 headline hung headline_clip on live")
     elif "peek.day =" in title_cs or "day += " in title_cs or "day -= " in title_cs:
         fail("README title day-1 headline writes the day index")
