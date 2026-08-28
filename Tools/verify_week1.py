@@ -1646,6 +1646,7 @@ def check_project() -> None:
     check_readme_morning_week_start()
     check_readme_settle_week_start()
     check_readme_title_week_start()
+    check_readme_title_day1_tab()
     check_readme_concert_live_badge()
     check_readme_sponsor_live_badge()
     check_readme_clip_card_plate()
@@ -23569,6 +23570,233 @@ def check_readme_title_week_start() -> None:
         fail("README title week-start moved Unity off 6000.5.9f1")
     else:
         ok("README names 이어하기 주차 첫날 vs last-day tabs, 1일차 tabs, and other week-start tabs")
+
+
+def check_readme_title_day1_tab() -> None:
+    """README names the Title continue day-1 calendar vs other 1일차 tabs, week-start / last-day, and 이어하기 1일차 헤드라인."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    title_loop = readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]
+    morning_loop = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    desk_paper = readme.split("- **책상 종이**", 1)[-1].split("- **돈 스탬프", 1)[0]
+    card_tabs = readme.split("- **카드 / 탭**", 1)[-1].split("- **책상 종이**", 1)[0]
+    continue_day1_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **이어하기 1일차**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    continue_day1_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **이어하기 1일차 헤드라인**")), "")
+    continue_week_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **이어하기 주차 첫날**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    settle_week_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **정산 주차 첫날**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    week_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **아침 주차 첫날**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    settle_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **정산 1일차**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    morning_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **아침 1일차**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    newgame_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 1일차**")), "")
+    tab_inv = next((ln for ln in card_tabs.splitlines() if "Art/day_tab" in ln), "")
+    mental_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 멘탈**")), "")
+    cash_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 현금**")), "")
+    bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 청구서**")), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    sponsor_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **이어하기 스폰서 핀**")), "")
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_day = start_hang.split("_startDay = UiKit.Image", 1)[-1] if "_startDay = UiKit.Image" in start_hang else ""
+    if "_startHeadline = UiKit.Image" in title_day:
+        title_day = title_day.split("_startHeadline = UiKit.Image", 1)[0]
+    title_build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    tab = title_build.split('"ContinueDay1"', 1)[-1].split('"ContinueWeekStart"', 1)[0] if '"ContinueDay1"' in title_build else ""
+    week_start = title_build.split('"ContinueWeekStart"', 1)[-1].split('"ContinueWeekHeadline"', 1)[0] if '"ContinueWeekHeadline"' in title_build else ""
+    last_tab = title_build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in title_build else ""
+    headline = title_build.split('"ContinueDay1Headline"', 1)[-1].split('"ContinueMemberPin"', 1)[0] if '"ContinueDay1Headline"' in title_build else ""
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    day1_gate = fill.split("if (_continueDay1 ", 1)[-1].split("if (_continueDay1Headline", 1)[0] if "if (_continueDay1 " in fill else ""
+    head_gate = fill.split("if (_continueDay1Headline", 1)[-1].split("if (_continueWeekStart", 1)[0] if "if (_continueDay1Headline" in fill else ""
+    week_gate = fill.split("if (_continueWeekStart", 1)[-1].split("bool last", 1)[0] if "if (_continueWeekStart" in fill else ""
+    last_gate = fill.split("bool last", 1)[-1].split("if (_continueMemberPin", 1)[0]
+    morning_build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
+    morning_day1 = morning_build.split('"MorningDay1"', 1)[-1].split('"MorningHeadline"', 1)[0] if '"MorningDay1"' in morning_build else ""
+    morning_week = morning_build.split('"MorningWeekStart"', 1)[-1].split('"MorningWeekHeadline"', 1)[0] if '"MorningWeekHeadline"' in morning_build else ""
+    day1_refresh = week_cs.split("void RefreshDay1", 1)[-1].split("void RefreshLastDay", 1)[0] if "void RefreshDay1" in week_cs else ""
+    week_refresh = week_cs.split("void RefreshWeekStart", 1)[-1].split("void RefreshDay1", 1)[0] if "void RefreshWeekStart" in week_cs else ""
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    settle_day1 = settle_build.split('"SettleDay1"', 1)[-1].split('"SettleHeadline"', 1)[0] if '"SettleDay1"' in settle_build else ""
+    settle_week = settle_build.split('"SettleWeekStart"', 1)[-1].split('"SettleWeekHeadline"', 1)[0] if '"SettleWeekHeadline"' in settle_build else ""
+    settle_render = settle_cs.split("void Render()", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+    settle_gate = settle_render.split("if (_weekStartTab", 1)[-1].split("if (_day1Tab", 1)[0] if "if (_weekStartTab" in settle_render else ""
+    settle_day1_gate = settle_render.split("if (_day1Tab", 1)[-1].split("bool last", 1)[0]
+
+    if "이어하기 1일차" not in title_loop or "ContinueDay1" not in title_loop or "day_tab" not in title_loop:
+        fail("README title loop must name 이어하기 1일차 on Art/day_tab")
+    elif "1일차" not in title_loop or "preserveAspect" not in title_loop or "숨김" not in title_loop:
+        fail("README title loop must name the day-1 continue calendar vs hidden")
+    elif "마지막 날" not in title_loop or "n일차" not in title_loop or "새 게임 1일차" not in title_loop:
+        fail("README title loop must keep 이어하기 1일차 distinct from n일차 / last-day / 새 게임 1일차")
+    elif "이어하기 주차 첫날" not in title_loop or "ContinueWeekStart" not in title_loop:
+        fail("README title loop dropped 이어하기 주차 첫날")
+    elif "이어하기 1일차 헤드라인" not in title_loop or "ContinueDay1Headline" not in title_loop:
+        fail("README title loop dropped 이어하기 1일차 헤드라인")
+    elif "아침 주차 첫날" in title_loop or "MorningWeekStart" in title_loop:
+        fail("README hung 아침 주차 첫날 on the Title continue day-1 calendar")
+    elif "정산 주차 첫날" in title_loop or "SettleWeekStart" in title_loop:
+        fail("README hung 정산 주차 첫날 on the Title continue day-1 calendar")
+    elif "아침 1일차" in title_loop or "MorningDay1" in title_loop:
+        fail("README hung 아침 1일차 on the Title continue day-1 calendar")
+    elif "정산 1일차" in title_loop or "SettleDay1" in title_loop:
+        fail("README hung 정산 1일차 on the Title continue day-1 calendar")
+    elif "**2주차**" in title_loop or "**3주차**" in title_loop or "**4주차**" in title_loop or "**5주차**" in title_loop:
+        fail("README title day-1 calendar used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "이어하기 1일차" not in continue_day1_inv or "ContinueDay1" not in continue_day1_inv or "day_tab" not in continue_day1_inv:
+        fail("README must inventory 이어하기 1일차 on its own line")
+    elif "1일차" not in continue_day1_inv or "preserveAspect" not in continue_day1_inv:
+        fail("README 이어하기 1일차 line must name the day-1 calendar")
+    elif "헤드라인" in continue_day1_inv.split("—", 1)[0]:
+        fail("README 이어하기 1일차 line must stay a calendar, not the headline")
+    elif "새 게임 1일차" not in continue_day1_inv or "마지막 날" not in continue_day1_inv:
+        fail("README 이어하기 1일차 line must stay distinct from Title 1일차 / last-day")
+    elif "아침 1일차" not in continue_day1_inv or "정산 1일차" not in continue_day1_inv:
+        fail("README 이어하기 1일차 line must stay distinct from 아침 / 정산 1일차")
+    elif "이어하기 주차 첫날" not in continue_day1_inv or "이어하기 1일차 헤드라인" not in continue_day1_inv:
+        fail("README 이어하기 1일차 line must stay distinct from 이어하기 주차 첫날 / 이어하기 1일차 헤드라인")
+    elif "ContinueWeekStart" not in continue_day1_inv or "ContinueDay1Headline" not in continue_day1_inv:
+        fail("README 이어하기 1일차 line must stay distinct from ContinueWeekStart / ContinueDay1Headline")
+    elif continue_day1_inv == tab_inv or continue_day1_inv == continue_week_inv or continue_day1_inv == continue_day1_head_inv:
+        fail("README must keep 이어하기 1일차 distinct from shared day_tab, week-start, and the day-1 headline")
+    elif continue_day1_inv == settle_inv or continue_day1_inv == morning_inv or continue_day1_inv == newgame_inv:
+        fail("README must keep 이어하기 1일차 distinct from other 1일차 tabs")
+    elif continue_day1_inv == week_inv or continue_day1_inv == settle_week_inv:
+        fail("README must keep 이어하기 1일차 distinct from morning / settlement week-start")
+    elif readme.index(continue_week_inv) >= readme.index(continue_day1_inv):
+        fail("README 이어하기 주차 첫날 line must stay before 이어하기 1일차")
+    elif readme.index(continue_day1_inv) >= readme.index(continue_day1_head_inv):
+        fail("README 이어하기 1일차 calendar line must stay before 이어하기 1일차 헤드라인")
+    elif "ContinueDay1" in tab_inv or "이어하기 1일차" in tab_inv:
+        fail("README folded 이어하기 1일차 into the shared day_tab inventory")
+    elif "여덟 곳" not in tab_inv or "마지막 날" not in tab_inv or "이어서 하기" not in tab_inv:
+        fail("README 이어하기 1일차 rewrote the shared day_tab inventory")
+    elif "ContinueWeekStart" not in continue_week_inv or "6/11/16/21" not in continue_week_inv or "day_tab" not in continue_week_inv:
+        fail("README 이어하기 1일차 rewrote the 이어하기 주차 첫날 line")
+    elif "ContinueDay1" in continue_week_inv or "이어하기 1일차" in continue_week_inv:
+        fail("README folded 이어하기 1일차 into the 이어하기 주차 첫날 line")
+    elif "ContinueDay1Headline" not in continue_day1_head_inv or "headline_clip" not in continue_day1_head_inv:
+        fail("README 이어하기 1일차 rewrote the 이어하기 1일차 헤드라인 line")
+    elif continue_day1_head_inv == continue_day1_inv:
+        fail("README folded 이어하기 1일차 into the 이어하기 1일차 헤드라인 line")
+    elif "SettleWeekStart" not in settle_week_inv or "6/11/16/21" not in settle_week_inv or "아침 주차 첫날" not in settle_week_inv:
+        fail("README 이어하기 1일차 rewrote the 정산 주차 첫날 line")
+    elif "ContinueDay1" in settle_week_inv or "이어하기 1일차" in settle_week_inv:
+        fail("README folded 이어하기 1일차 into the 정산 주차 첫날 line")
+    elif "MorningWeekStart" not in week_inv or "6/11/16/21" not in week_inv or "아침 1일차" not in week_inv:
+        fail("README 이어하기 1일차 rewrote the 아침 주차 첫날 line")
+    elif "ContinueDay1" in week_inv or "이어하기 1일차" in week_inv:
+        fail("README folded 이어하기 1일차 into the 아침 주차 첫날 line")
+    elif "SettleDay1" not in settle_inv or "아침 1일차" not in settle_inv or "새 게임 1일차" not in settle_inv:
+        fail("README 이어하기 1일차 rewrote the 정산 1일차 line")
+    elif "ContinueDay1" in settle_inv or "이어하기 1일차" in settle_inv:
+        fail("README folded 이어하기 1일차 into the 정산 1일차 line")
+    elif "MorningDay1" not in morning_inv or "새 게임 1일차" not in morning_inv or "마지막 날" not in morning_inv:
+        fail("README 이어하기 1일차 rewrote the 아침 1일차 line")
+    elif "ContinueDay1" in morning_inv or "이어하기 1일차" in morning_inv:
+        fail("README folded 이어하기 1일차 into the 아침 1일차 line")
+    elif "NewGameDay" not in newgame_inv or "ContinueDayTab" not in newgame_inv or "마지막 날" not in newgame_inv:
+        fail("README 이어하기 1일차 rewrote the 새 게임 1일차 line")
+    elif "ContinueDay1" in newgame_inv or "이어하기 1일차" in newgame_inv:
+        fail("README folded 이어하기 1일차 into the 새 게임 1일차 line")
+    elif "NewGameMental" not in mental_inv or "ContinueMentalNote" not in mental_inv:
+        fail("README 이어하기 1일차 rewrote the 새 게임 멘탈 line")
+    elif "NewGameCash" not in cash_inv or "ContinueCashSlip" not in cash_inv:
+        fail("README 이어하기 1일차 rewrote the 새 게임 현금 line")
+    elif "NewGameBill" not in bill_inv or "ContinueDebtNotice" not in bill_inv:
+        fail("README 이어하기 1일차 rewrote the 새 게임 청구서 line")
+    elif "새 게임 1일차" not in title_loop or "NewGameDay" not in title_loop:
+        fail("README 이어하기 1일차 dropped Title 새 게임 1일차")
+    elif "아침 1일차" not in morning_loop or "MorningDay1" not in morning_loop:
+        fail("README 이어하기 1일차 dropped 아침 1일차")
+    elif "이어하기 1일차" in morning_loop or "ContinueDay1" in morning_loop:
+        fail("README hung 이어하기 1일차 on the morning day-1 calendar")
+    elif "정산 1일차" not in settle_loop or "SettleDay1" not in settle_loop:
+        fail("README 이어하기 1일차 dropped 정산 1일차")
+    elif "이어하기 1일차" in settle_loop or "ContinueDay1" in settle_loop:
+        fail("README hung 이어하기 1일차 on the settlement day-1 calendar")
+    elif "이어하기 1일차" not in desk_paper or "ContinueDay1" not in desk_paper or "ContinueWeekStart" not in desk_paper:
+        fail("README desk paper dropped 이어하기 1일차 vs 이어하기 주차 첫날")
+    elif "NewGameDay" not in desk_paper or "MorningDay1" not in desk_paper or "SettleDay1" not in desk_paper:
+        fail("README desk paper dropped other 1일차 calendars")
+    elif "ContinueDay1Headline" not in desk_paper:
+        fail("README desk paper dropped 이어하기 1일차 헤드라인")
+    elif "오늘의 위협" not in sfx_inv or "새 게임 청구서" not in sfx_inv or sfx_inv.count("sfx_threat") < 5:
+        fail("README 이어하기 1일차 rewrote the five sfx_threat uses")
+    elif "ContinueSponsorPin" not in sponsor_inv or "타일 가득" not in sponsor_inv:
+        fail("README 이어하기 1일차 rewrote the Title continue sponsor pin")
+    elif '"ContinueDay1"' not in title_build or "ArtSprites.DayTab" not in tab:
+        fail("README title day-1 calendar lost the ContinueDay1 hang")
+    elif "preserveAspect = true" not in tab or "180f, 56f" not in tab or "576f, -8f" not in tab:
+        fail("README title day-1 calendar restyled the ContinueDay1 hang")
+    elif '"1일차"' not in tab or "1 == peek.day" not in day1_gate:
+        fail("README title day-1 calendar is not a saved-day-1 1일차 tab")
+    elif "_continueDay1 != null && !_hasSave" not in hide:
+        fail("README title day-1 calendar is not hidden without a save")
+    elif '"ContinueDay1"' in start_hang or "576f, -8f" in start_hang:
+        fail("no-save Title shows the day-1 continue calendar instead of NewGameDay")
+    elif '"NewGameDay"' not in start_hang or "412f, -10f" not in title_day or '"1일차"' not in title_day:
+        fail("README title day-1 calendar restyled Title NewGameDay")
+    elif '"ContinueWeekStart"' not in title_build or "576f, -8f" not in week_start or '"2주차"' not in week_start:
+        fail("README title day-1 calendar restyled ContinueWeekStart")
+    elif "6 == peek.day" not in week_gate or "21 == peek.day" not in week_gate:
+        fail("README title day-1 calendar dropped week-start ContinueWeekStart")
+    elif re.search(r"(?<!\d)1 == peek\.day", week_gate) or "_continueDay1" in week_gate:
+        fail("week-start continue also shows the day-1 calendar")
+    elif '"ContinueLastDayTab"' not in title_build or "166f, -6f" not in last_tab or '"마지막 날"' not in last_tab:
+        fail("README title day-1 calendar moved the continue last-day tab")
+    elif "LastDayOfCurrentWeek" not in last_gate or "SetActive(last)" not in last_gate:
+        fail("README title day-1 calendar changed last-day tab logic")
+    elif re.search(r"(?<!\d)1 == peek\.day", last_gate) or "_continueDay1" in last_gate:
+        fail("last-day continue also shows the day-1 calendar")
+    elif '"ContinueDay1Headline"' not in title_build or "576f, -76f" not in headline or '"헤드라인"' not in headline:
+        fail("README title day-1 calendar restyled ContinueDay1Headline")
+    elif "1 == peek.day" not in head_gate or "_continueDay1Headline" not in head_gate:
+        fail("README title day-1 calendar changed ContinueDay1Headline hide")
+    elif '"MorningDay1"' not in morning_build or "8f, -220f" not in morning_day1 or '"1일차"' not in morning_day1:
+        fail("README title day-1 calendar restyled MorningDay1")
+    elif "run.day == 1" not in day1_refresh or "_day1Tab" not in day1_refresh:
+        fail("README title day-1 calendar changed MorningDay1 hide")
+    elif '"MorningWeekStart"' not in morning_build or "8f, -220f" not in morning_week or '"2주차"' not in morning_week:
+        fail("README title day-1 calendar restyled MorningWeekStart")
+    elif "run.day == 6" not in week_refresh or "run.day == 21" not in week_refresh:
+        fail("README title day-1 calendar changed MorningWeekStart gate")
+    elif '"SettleDay1"' not in settle_build or "8f, -148f" not in settle_day1 or '"1일차"' not in settle_day1:
+        fail("README title day-1 calendar restyled SettleDay1")
+    elif "1 == run.day" not in settle_day1_gate or "_day1Tab" not in settle_day1_gate:
+        fail("README title day-1 calendar changed SettleDay1 hide")
+    elif '"SettleWeekStart"' not in settle_build or "8f, -148f" not in settle_week or '"2주차"' not in settle_week:
+        fail("README title day-1 calendar restyled SettleWeekStart")
+    elif "6 == run.day" not in settle_gate or "21 == run.day" not in settle_gate:
+        fail("README title day-1 calendar changed SettleWeekStart gate")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("README title day-1 calendar moved last-day week gates")
+    elif 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif "peek.day =" in title_cs or "day += " in title_cs or "day -= " in title_cs:
+        fail("README title day-1 calendar writes the day index")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README title day-1 calendar retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README title day-1 calendar retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README title day-1 calendar retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README title day-1 calendar broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising README title day-1 calendar / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README title day-1 calendar dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README title day-1 calendar moved Unity off 6000.5.9f1")
+    else:
+        ok("README names 이어하기 1일차 vs Title 새 게임 1일차, morning / settlement 1일차, week-start / last-day tabs, and 이어하기 1일차 헤드라인")
 
 
 def check_readme_concert_live_badge() -> None:
