@@ -1551,6 +1551,7 @@ def check_project() -> None:
     check_clock_plate()
     check_onair_led()
     check_hud_onair_led()
+    check_hud_onair_blink()
     check_judge_stamps()
     check_superchat_chip()
     check_superchat_pip_art()
@@ -9643,6 +9644,8 @@ def check_hud_onair_led() -> None:
         fail("HUD onair LED dropped end-cut LIVE pip-off")
     elif "RefreshClockChip" not in live_cs or "sfx_clock_tick" not in live_cs:
         fail("HUD onair LED dropped clock pulse")
+    elif "PaintHudOnAir" not in live_cs.split("void RefreshClockChip", 1)[-1].split("void RefreshHud", 1)[0]:
+        fail("HUD onair LED does not blink with the last-10s clock")
     elif "WaitForSeconds(0.5f)" not in live_cs.split("EndRoutine", 1)[-1]:
         fail("HUD onair LED retuned 방송 종료 cut timing")
     elif "streamSeconds: 90" not in balance or "TimeLeft = balance.streamSeconds" not in session_cs:
@@ -9665,6 +9668,60 @@ def check_hud_onair_led() -> None:
         fail("README should mention persistent onair_led")
     else:
         ok("HUD ON AIR stays lit on onair_led; sting / end-cut off / clock stay")
+
+
+def check_hud_onair_blink() -> None:
+    """Persistent onair_led blinks in the same last-10s window as the clock pulse / tick."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    clock = live_cs.split("void RefreshClockChip", 1)[-1].split("void RefreshHud", 1)[0]
+    last = clock.split("else if (lastTen)", 1)[-1].split("else", 1)[0] if "else if (lastTen)" in clock else ""
+    sting = live_cs.split("void TickOnAir", 1)[-1].split("void RefreshCoach", 1)[0]
+    show = live_cs.split("void ShowEndCut", 1)[-1].split("void ", 1)[0]
+
+    if "PaintHudOnAir" not in last or "pulse > 0.42f" not in last:
+        fail("ON AIR does not blink in the last-10s clock window")
+    elif "Sin(Time.time * 9f)" not in clock or "1f + 0.10f * pulse" not in clock:
+        fail("ON AIR blink drifted off the clock pulse")
+    elif "Audio/sfx_clock_tick" not in live_cs or "PlaySfx(_clockTick" not in last:
+        fail("ON AIR blink dropped per-second clock tick SFX")
+    elif "shown != _lastClockSec" not in last or "shown >= 1" not in last:
+        fail("ON AIR blink retuned the 10…1 tick")
+    elif "PlaySfx(_clockTick" in clock.split("TimeLeft <= 0f", 1)[0]:
+        fail("ON AIR blink added a tick at 0")
+    elif "_onAirLeft = 0.6f" not in live_cs or "_onAirLeft / 0.6f" not in sting:
+        fail("ON AIR blink retuned the 0.6s start sting")
+    elif "PlaySfx(_onAirCue" not in live_cs or "Audio/sfx_onair" not in live_cs:
+        fail("ON AIR blink dropped the start sting")
+    elif "_hudOnAir" not in show or "SetActive(false)" not in show:
+        fail("ON AIR blink dropped end-cut off")
+    elif "_liveDot" not in show or "0.2f, 0.02f, 0.04f, 0.2f" not in show:
+        fail("ON AIR blink dropped LIVE pip-off")
+    elif "streamSeconds: 90" not in balance or "TimeLeft = balance.streamSeconds" not in session_cs:
+        fail("ON AIR blink retuned the 90s stream")
+    elif "perfectWindow" not in (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8"):
+        fail("ON AIR blink retuned hit windows")
+    elif "안티 웨이브" not in event_cs or "장비 렉" not in event_cs:
+        fail("ON AIR blink retuned QTE events")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("ON AIR blink retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("ON AIR blink broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising ON AIR blink / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("ON AIR blink dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("ON AIR blink moved Unity off 6000.5.9f1")
+    elif "onair_led" not in readme or "깜빡" not in readme:
+        fail("README should mention last-10s ON AIR blink")
+    else:
+        ok("HUD ON AIR blinks in the last 10s; clock pulse / tick / sting / end-cut stay")
 
 
 def check_judge_stamps() -> None:

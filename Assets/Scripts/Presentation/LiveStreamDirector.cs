@@ -47,6 +47,7 @@ namespace BankruptVtuber
         Image _onAirWash;
         Image _onAirLed;
         Image _hudOnAir;
+        Text _hudOnAirCopy;
         Image _onAirPip;
         Text _onAirLive;
         Text _onAirCopy;
@@ -1098,8 +1099,8 @@ namespace BankruptVtuber
                 ArtSprites.Apply(_hudOnAir, ArtSprites.OnAirLed, Color.white, Color.white);
                 _hudOnAir.preserveAspect = false;
                 _hudOnAir.raycastTarget = false;
-                var hudOnAirT = UiKit.Label(_hudOnAir.transform, "T", "ON AIR", 16, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
-                UiKit.Stretch(hudOnAirT.rectTransform, 18f, 18f, 6f, 6f);
+                _hudOnAirCopy = UiKit.Label(_hudOnAir.transform, "T", "ON AIR", 16, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+                UiKit.Stretch(_hudOnAirCopy.rectTransform, 18f, 18f, 6f, 6f);
             }
 
             var chatPanel = UiKit.Panel(root, "Chat", new Color(0.07f, 0.05f, 0.1f, 0.40f));
@@ -1703,6 +1704,7 @@ namespace BankruptVtuber
                     _timerChip.localScale = Vector3.one;
                 if (_timerChipImg != null)
                     _timerChipImg.color = Color.Lerp(Color.white, Palette.MoneyRed, 0.72f);
+                PaintHudOnAir(1f);
             }
             else if (lastTen)
             {
@@ -1713,6 +1715,7 @@ namespace BankruptVtuber
                     _timerChip.localScale = Vector3.one * (1f + 0.10f * pulse);
                 if (_timerChipImg != null)
                     _timerChipImg.color = Color.Lerp(Color.white, Palette.MoneyRed, 0.35f + pulse * 0.55f);
+                PaintHudOnAir(pulse > 0.42f ? 1f : 0.16f);
                 if (shown != _lastClockSec && shown >= 1)
                     PlaySfx(_clockTick, 0.38f);
             }
@@ -1724,8 +1727,19 @@ namespace BankruptVtuber
                     _timerChip.localScale = Vector3.one;
                 if (_timerChipImg != null)
                     _timerChipImg.color = Color.white;
+                PaintHudOnAir(1f);
             }
             _lastClockSec = shown;
+        }
+
+        void PaintHudOnAir(float lit)
+        {
+            var c = Color.white;
+            c.a = lit;
+            if (_hudOnAir != null)
+                _hudOnAir.color = c;
+            if (_hudOnAirCopy != null)
+                _hudOnAirCopy.color = c;
         }
 
         void RefreshHud()
