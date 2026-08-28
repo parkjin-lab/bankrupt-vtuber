@@ -67,8 +67,13 @@ namespace BankruptVtuber
             var tagL = UiKit.Label(tag, "L", "라이벌", 16, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Stretch(tagL.rectTransform);
 
-            _camCount = UiKit.Label(cam, "RivalCamCount", "25", 18, Palette.Pastel, TextAnchor.MiddleRight, FontStyle.Bold);
-            UiKit.Layout(_camCount.rectTransform, new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-12, -10), new Vector2(140, 28));
+            var camBadge = UiKit.Image(cam, "RivalViewerBadge", Color.white);
+            UiKit.Layout(camBadge.rectTransform, new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-12, -10), new Vector2(140, 32));
+            ArtSprites.Apply(camBadge, ArtSprites.ViewerBadge, new Color(0.16f, 0.22f, 0.38f, 0.96f), Color.white);
+            camBadge.preserveAspect = false;
+            camBadge.raycastTarget = false;
+            _camCount = UiKit.Label(camBadge.transform, "RivalCamCount", "25", 18, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Stretch(_camCount.rectTransform, 10f, 10f, 4f, 4f);
 
             var bars = UiKit.Panel(_root, "RivalBars", new Color(0.06f, 0.04f, 0.08f, 0.88f));
             UiKit.Layout(bars, new Vector2(0.08f, 1f), new Vector2(0.58f, 1f), new Vector2(0f, 1f), new Vector2(8f, -268f), new Vector2(-8f, 68f));

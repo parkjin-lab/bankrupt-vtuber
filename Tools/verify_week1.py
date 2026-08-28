@@ -1490,6 +1490,7 @@ def check_project() -> None:
     check_webcam_bezel()
     check_rival_webcam_bezel()
     check_rival_onair_led()
+    check_rival_viewer_badge()
     check_bill_notice()
     check_live_bill_notice()
     check_settle_bill_notice()
@@ -5296,6 +5297,71 @@ def check_rival_onair_led() -> None:
         fail("README Week 3 must name rival onair_led hide-after-resolve")
     else:
         ok("rival cam shows onair_led during the duel and hides it after; ticks / sfx / bezel / numbers stay")
+
+
+def check_rival_viewer_badge() -> None:
+    """Week 3 rival cam count sits on the same viewer_badge as the player HUD."""
+    duel_cs = (ROOT / "Assets/Scripts/Presentation/RivalDuelView.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    cam = duel_cs.split('"RivalCam"', 1)[-1].split("var bars", 1)[0] if '"RivalCam"' in duel_cs else ""
+    result = duel_cs.split("void ShowResult", 1)[-1].split("void RefreshBars", 1)[0]
+    week3 = readme.split("**3주차**", 1)[-1].split("**4주차**", 1)[0]
+    face = readme.split("웹캠 파산냥", 1)[-1].split("라이브는", 1)[0]
+    hud_stack = readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]
+
+    if 'ViewerBadge = "Art/viewer_badge"' not in art_cs:
+        fail("ArtSprites does not hook Art/viewer_badge")
+    elif "ArtSprites.ViewerBadge" not in live_cs or '"시청자"' not in live_cs:
+        fail("rival viewer_badge reuse dropped the player HUD badge")
+    elif "ArtSprites.ViewerBadge" not in cam or '"RivalViewerBadge"' not in cam:
+        fail("rival cam count does not sit on Art/viewer_badge")
+    elif '"RivalCamCount"' not in cam or "RefreshBars" not in duel_cs:
+        fail("rival viewer_badge dropped ticking viewers")
+    elif "ArtSprites.ViewerPop" not in live_cs or "시청 +" not in live_cs:
+        fail("rival viewer_badge dropped player viewer_pop")
+    elif "ArtSprites.OnAirLed" not in cam or '"RivalOnAir"' not in cam:
+        fail("rival viewer_badge dropped onair_led")
+    elif "_onAir" not in result or "SetActive(false)" not in result:
+        fail("rival viewer_badge dropped hide-on-resolve onair_led")
+    elif "ArtSprites.WebcamBezel" not in duel_cs or '"Bezel"' not in duel_cs:
+        fail("rival viewer_badge dropped webcam_bezel")
+    elif "ArtSprites.RivalAvatar" not in cam:
+        fail("rival viewer_badge dropped rival_nyang face")
+    elif "Audio/sfx_rival_win" not in live_cs or "Audio/sfx_rival_lose" not in live_cs:
+        fail("rival viewer_badge dropped win/lose SFX")
+    elif "스틸 +" not in duel_cs or "라이벌 승" not in duel_cs or "라이벌 패" not in duel_cs:
+        fail("rival viewer_badge dropped steal / win-lose feedback")
+    elif "rivalPerfectSteal: 0.6" not in w3_asset or "rivalWinCash: 20000" not in w3_asset or "rivalLoseMental: 12" not in w3_asset:
+        fail("rival viewer_badge retuned Week3 rival numbers")
+    elif "playerViewers > rivalViewers" not in w3r_cs or "ApplyRivalResult" not in w3r_cs:
+        fail("rival viewer_badge changed win/lose routing")
+    elif "perfectViewerDelta: 0.5" not in balance or "missViewerDelta: -1.2" not in balance:
+        fail("rival viewer_badge retuned Perfect / Miss viewer deltas")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("rival viewer_badge retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("rival viewer_badge broke pads, 입력됨, or added timeScale")
+    elif "Week3" in title_cs or "라이벌" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising rival viewer_badge / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("rival viewer_badge dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("rival viewer_badge moved Unity off 6000.5.9f1")
+    elif "viewer_badge" not in face or "라이벌" not in face:
+        fail("README face loop does not name rival viewer_badge")
+    elif "viewer_badge" not in week3:
+        fail("README Week 3 must name rival viewer_badge")
+    elif "viewer_badge" not in hud_stack or "라이벌" not in hud_stack:
+        fail("README HUD stack must name rival viewer_badge")
+    else:
+        ok("rival cam count sits on viewer_badge; ticks / pop / onair / bezel / numbers stay")
 
 
 def check_bill_notice() -> None:
@@ -11866,6 +11932,8 @@ def check_readme_playable() -> None:
         fail("README dropped rival / goods / agency art")
     elif "onair_led" not in readme.split("**3주차**", 1)[-1].split("**4주차**", 1)[0]:
         fail("README Week 3 dropped rival onair_led")
+    elif "viewer_badge" not in readme.split("**3주차**", 1)[-1].split("**4주차**", 1)[0]:
+        fail("README Week 3 dropped rival viewer_badge")
     elif "ranking_board" not in readme or "concert_stage" not in readme:
         fail("README dropped ranking / concert art")
     elif "책상 종이" not in readme:
