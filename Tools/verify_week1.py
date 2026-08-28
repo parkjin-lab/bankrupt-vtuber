@@ -10841,6 +10841,7 @@ def check_readme_playable() -> None:
     player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
     title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
     live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    hud_stack = readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]
 
     if "6000.5.9f1" not in readme or "Title.unity" not in readme:
         fail("README does not tell a clone which Unity / scene to open")
@@ -11011,8 +11012,17 @@ def check_readme_playable() -> None:
         fail("README dropped viewer_pop +/- chip")
     elif "clock_plate" not in readme or "남은 시간" not in readme or "sfx_clock_tick" not in readme:
         fail("README dropped clock_plate live broadcast clock")
-    elif "onair_led" not in readme or "ON AIR" not in readme or "sfx_onair" not in readme:
-        fail("README dropped onair_led broadcast LED")
+    elif (
+        "onair_led" not in hud_stack
+        or "ON AIR" not in hud_stack
+        or "90초" not in hud_stack
+        or "깜빡" not in hud_stack
+        or "시계" not in hud_stack
+        or "방송 시작" not in hud_stack
+        or "방송 종료" not in hud_stack
+        or "sfx_onair" not in hud_stack
+    ):
+        fail("README Live HUD stack dropped persistent/blinking onair_led ON AIR")
     elif "end_cut" not in readme or "방송 종료" not in readme or "sfx_end_cut" not in readme:
         fail("README dropped end_cut broadcast cut card")
     elif (
@@ -11055,7 +11065,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:

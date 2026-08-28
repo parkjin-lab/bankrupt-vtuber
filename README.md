@@ -93,7 +93,7 @@
   - `Art/viewer_pop` — 시청 ± 작은 팔로워 칩(`viewer_badge` 1.12 팝·초록/빨강 그대로)
   - `Art/bill_short` — **부족 스탬프** 공유 재사용: 타이틀 **이어서 하기** · 아침 **현금** · 정산 **청구 미달** · 정산 **남은 현금** (**청구보다 부족** / **청구 미달**. 같은 PNG. 충분하면 숨김)
 - **라이브 HUD 스택** — 라이브 한 판에서 보이는 오버레이·스탬프·칩(히트창·콤보·하이프·이벤트·경제 숫자는 그대로).
-  - **칩 / 배지** — `Art/combo_plate`(**COMBO**) · `Art/viewer_badge`(**시청자**) · `Art/viewer_pop`(시청 ± 칩) · `Art/hype_chip`(**하이프 N** 남은 초) · `Art/clock_plate`(**남은 시간**, 마지막 10초 · `sfx_clock_tick`) · `Art/onair_led`(**ON AIR** / **방송 시작** 0.6초 스팅 + 웹캠 코너 90초 LED, 마지막 10초 깜빡임, `sfx_onair`. **방송 종료**에 꺼짐)
+  - **칩 / 배지** — `Art/combo_plate`(**COMBO**) · `Art/viewer_badge`(**시청자**) · `Art/viewer_pop`(시청 ± 칩) · `Art/hype_chip`(**하이프 N** 남은 초) · `Art/clock_plate`(**남은 시간**, 마지막 10초 · `sfx_clock_tick`) · `Art/onair_led` — **ON AIR** 네 박: 시작 0.6초 스팅(`sfx_onair` · **방송 시작**) · 웹캠 코너 90초 점등 · 마지막 10초 시계와 같이 깜빡임 · **방송 종료**에 꺼짐
   - **판정 스탬프** — `Art/judge_perfect`(**PERFECT**) · `Art/judge_good`(**GOOD**) · `Art/judge_miss`(**MISS**) · `Art/combo_break`(**콤보 끊김**, `sfx_combo_break`)
   - **노트 / 컷** — `Art/superchat_chip`(슈퍼챗 금 봉투) · `Art/superchat_pip`(0.4초 금 핍, `sfx_superchat`) · `Art/superchat_fly`(성공 ₩ 플라이 금 봉투) · `Art/won_pop`(히트 **+₩** 현금 슬립) · `Art/bill_cover`(**청구 커버** PAID 스탬프, `sfx_bill_cover`) · `Art/bill_short`(타이틀·아침·정산 **남은 현금** **청구보다 부족** / 정산 **청구 미달**) · `Art/end_cut`(**방송 종료**, `sfx_end_cut`)
   - **피크 / 사고** — `Art/hype_frame`(하이프 골드 프레임, `sfx_hype`) · `Art/hype_chip`(**하이프 N**) · `Art/event_warn`(**안티 온다** / **렉 온다**) · `Art/anti_sting`(`sfx_anti`) · `Art/lag_sting`(`sfx_lag`)
