@@ -1627,6 +1627,7 @@ def check_project() -> None:
     check_readme_title_newgame_headline()
     check_readme_morning_day1_headline()
     check_readme_settle_day1_headline()
+    check_readme_morning_week_start_headline()
     check_readme_morning_day1()
     check_readme_settle_day1()
     check_readme_morning_week_start()
@@ -19700,6 +19701,200 @@ def check_readme_settle_day1_headline() -> None:
         fail("README settlement day-1 headline moved Unity off 6000.5.9f1")
     else:
         ok("README names 정산 1일차 헤드라인 vs Title 새 게임 헤드라인, 아침 1일차 헤드라인, and other headlines")
+
+
+def check_readme_morning_week_start_headline() -> None:
+    """README names the WeekStart week-start headline paper vs Title / day-1 / settlement headlines and 아침 주차 첫날."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    head_cs = (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    title_loop = readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]
+    morning_loop = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    desk_paper = readme.split("- **책상 종이**", 1)[-1].split("- **돈 스탬프", 1)[0]
+    card_tabs = readme.split("- **카드 / 탭**", 1)[-1].split("- **책상 종이**", 1)[0]
+    week_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **아침 주차 첫날 헤드라인**")), "")
+    settle_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **정산 1일차 헤드라인**")), "")
+    morning_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **아침 1일차 헤드라인**")), "")
+    newgame_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 헤드라인**")), "")
+    shared_head = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **헤드라인 `Art/headline_clip`**")), "")
+    week_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **아침 주차 첫날**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    settle_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **정산 1일차**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    morning_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **아침 1일차**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    newgame_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 1일차**")), "")
+    tab_inv = next((ln for ln in card_tabs.splitlines() if "Art/day_tab" in ln), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    sponsor_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **이어하기 스폰서 핀**")), "")
+    build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
+    paper = build.split('"MorningWeekHeadline"', 1)[-1].split('"MorningDay1"', 1)[0] if '"MorningWeekHeadline"' in build else ""
+    week_start = build.split('"MorningWeekStart"', 1)[-1].split('"MorningWeekHeadline"', 1)[0] if '"MorningWeekHeadline"' in build else ""
+    day1_paper = build.split('"MorningHeadline"', 1)[-1].split('"LastDayBanner"', 1)[0] if '"MorningHeadline"' in build else ""
+    day1 = build.split('"MorningDay1"', 1)[-1].split('"MorningHeadline"', 1)[0] if '"MorningHeadline"' in build else ""
+    morning_clip = week_cs.split('"YesterdayClip"', 1)[-1].split('"Yesterday"', 1)[0] if '"YesterdayClip"' in week_cs else ""
+    day1_refresh = week_cs.split("void RefreshDay1", 1)[-1].split("void RefreshLastDay", 1)[0] if "void RefreshDay1" in week_cs else ""
+    week_refresh = week_cs.split("void RefreshWeekStart", 1)[-1].split("void RefreshDay1", 1)[0] if "void RefreshWeekStart" in week_cs else ""
+    yest = week_cs.split("void RefreshYesterday", 1)[-1].split("void RefreshWeekStart", 1)[0]
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_paper = start_hang.split("_startHeadline = UiKit.Image", 1)[-1] if "_startHeadline = UiKit.Image" in start_hang else ""
+    title_build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    continue_clip = title_build.split('"ContinueClip"', 1)[-1].split('"ContinueGoodsPin"', 1)[0] if '"ContinueClip"' in title_build else ""
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    settle_paper = settle_build.split('"SettleHeadline"', 1)[-1].split('"Sheet"', 1)[0] if '"SettleHeadline"' in settle_build else ""
+    settle_clip = settle_build.split('"HeadlineClip"', 1)[-1].split('"HeadlineTag"', 1)[0] if '"HeadlineClip"' in settle_build else ""
+
+    if "아침 주차 첫날 헤드라인" not in morning_loop or "MorningWeekHeadline" not in morning_loop or "headline_clip" not in morning_loop:
+        fail("README morning loop must name 아침 주차 첫날 헤드라인 on Art/headline_clip")
+    elif "헤드라인" not in morning_loop or "preserveAspect" not in morning_loop or "숨김" not in morning_loop:
+        fail("README morning loop must name the week-start headline paper vs hidden")
+    elif "ContinueClip" not in morning_loop or "어제:" not in morning_loop or "오늘 헤드라인" not in morning_loop:
+        fail("README morning loop must keep 아침 주차 첫날 헤드라인 distinct from yesterday / continue / today scraps")
+    elif "아침 주차 첫날" not in morning_loop or "MorningWeekStart" not in morning_loop:
+        fail("README morning loop dropped 아침 주차 첫날")
+    elif "아침 1일차 헤드라인" not in morning_loop or "MorningHeadline" not in morning_loop:
+        fail("README morning loop dropped 아침 1일차 헤드라인")
+    elif "새 게임 헤드라인" in morning_loop or "NewGameHeadline" in morning_loop:
+        fail("README hung Title 새 게임 헤드라인 on the morning week-start headline")
+    elif "정산 1일차" in morning_loop or "SettleDay1" in morning_loop:
+        fail("README hung 정산 1일차 on the morning week-start headline")
+    elif "정산 1일차 헤드라인" in morning_loop or "SettleHeadline" in morning_loop:
+        fail("README hung 정산 1일차 헤드라인 on the morning week-start headline")
+    elif "새 게임 1일차" in morning_loop or "NewGameDay" in morning_loop:
+        fail("README hung Title 새 게임 1일차 on the morning week-start headline")
+    elif "**2주차**" in morning_loop or "**3주차**" in morning_loop or "**4주차**" in morning_loop or "**5주차**" in morning_loop:
+        fail("README morning week-start headline used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "아침 주차 첫날 헤드라인" not in week_head_inv or "MorningWeekHeadline" not in week_head_inv or "headline_clip" not in week_head_inv:
+        fail("README must inventory 아침 주차 첫날 헤드라인 on its own line")
+    elif "ContinueClip" not in week_head_inv or "어제:" not in week_head_inv or "오늘 헤드라인" not in week_head_inv:
+        fail("README 아침 주차 첫날 헤드라인 line must stay distinct from live / continue / today scraps")
+    elif "새 게임 헤드라인" not in week_head_inv or "아침 1일차 헤드라인" not in week_head_inv or "정산 1일차 헤드라인" not in week_head_inv:
+        fail("README 아침 주차 첫날 헤드라인 line must stay distinct from Title / day-1 / settlement headlines")
+    elif "아침 주차 첫날" not in week_head_inv or "MorningWeekStart" not in week_head_inv:
+        fail("README 아침 주차 첫날 헤드라인 line must stay distinct from 아침 주차 첫날")
+    elif week_head_inv == shared_head or week_head_inv == newgame_head_inv or week_head_inv == morning_head_inv or week_head_inv == settle_head_inv or week_head_inv == week_inv:
+        fail("README must keep 아침 주차 첫날 헤드라인 distinct from shared scrap, other headlines, and 아침 주차 첫날")
+    elif readme.index(week_inv) >= readme.index(week_head_inv):
+        fail("README 아침 주차 첫날 calendar line must stay before 아침 주차 첫날 헤드라인")
+    elif "MorningWeekHeadline" in shared_head or "아침 주차 첫날 헤드라인" in shared_head:
+        fail("README folded 아침 주차 첫날 헤드라인 into the shared headline_clip inventory")
+    elif "오늘 헤드라인" not in shared_head or "어제:" not in shared_head or "이어서 하기" not in shared_head or "엔딩 클립" not in shared_head:
+        fail("README 아침 주차 첫날 헤드라인 rewrote the shared headline_clip inventory")
+    elif "NewGameHeadline" not in newgame_head_inv or "어제:" not in newgame_head_inv or "오늘 헤드라인" not in newgame_head_inv:
+        fail("README 아침 주차 첫날 헤드라인 rewrote the 새 게임 헤드라인 line")
+    elif "MorningWeekHeadline" in newgame_head_inv or "아침 주차 첫날 헤드라인" in newgame_head_inv:
+        fail("README folded 아침 주차 첫날 헤드라인 into the 새 게임 헤드라인 line")
+    elif "MorningHeadline" not in morning_head_inv or "어제:" not in morning_head_inv or "오늘 헤드라인" not in morning_head_inv:
+        fail("README 아침 주차 첫날 헤드라인 rewrote the 아침 1일차 헤드라인 line")
+    elif "MorningWeekHeadline" in morning_head_inv or "아침 주차 첫날 헤드라인" in morning_head_inv:
+        fail("README folded 아침 주차 첫날 헤드라인 into the 아침 1일차 헤드라인 line")
+    elif "SettleHeadline" not in settle_head_inv or "어제:" not in settle_head_inv or "오늘 헤드라인" not in settle_head_inv:
+        fail("README 아침 주차 첫날 헤드라인 rewrote the 정산 1일차 헤드라인 line")
+    elif "MorningWeekHeadline" in settle_head_inv or "아침 주차 첫날 헤드라인" in settle_head_inv:
+        fail("README folded 아침 주차 첫날 헤드라인 into the 정산 1일차 헤드라인 line")
+    elif "MorningWeekStart" not in week_inv or "6/11/16/21" not in week_inv or "day_tab" not in week_inv:
+        fail("README 아침 주차 첫날 헤드라인 rewrote the 아침 주차 첫날 line")
+    elif "MorningWeekHeadline" in week_inv or "아침 주차 첫날 헤드라인" in week_inv:
+        fail("README folded 아침 주차 첫날 헤드라인 into the 아침 주차 첫날 line")
+    elif "SettleDay1" not in settle_inv or "새 게임 1일차" not in settle_inv or "아침 1일차" not in settle_inv:
+        fail("README 아침 주차 첫날 헤드라인 rewrote the 정산 1일차 line")
+    elif "MorningDay1" not in morning_inv or "새 게임 1일차" not in morning_inv or "마지막 날" not in morning_inv:
+        fail("README 아침 주차 첫날 헤드라인 rewrote the 아침 1일차 line")
+    elif "NewGameDay" not in newgame_inv or "ContinueDayTab" not in newgame_inv:
+        fail("README 아침 주차 첫날 헤드라인 rewrote the 새 게임 1일차 line")
+    elif "여덟 곳" not in tab_inv or "마지막 날" not in tab_inv or "이어서 하기" not in tab_inv:
+        fail("README 아침 주차 첫날 헤드라인 rewrote the shared day_tab inventory")
+    elif "MorningWeekHeadline" in tab_inv or "아침 주차 첫날 헤드라인" in tab_inv:
+        fail("README folded 아침 주차 첫날 헤드라인 into the shared day_tab inventory")
+    elif "**2주차**" in week_head_inv or "**3주차**" in week_head_inv or "**4주차**" in week_head_inv or "**5주차**" in week_head_inv:
+        fail("README 아침 주차 첫날 헤드라인 line used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "새 게임 헤드라인" not in title_loop or "NewGameHeadline" not in title_loop:
+        fail("README 아침 주차 첫날 헤드라인 dropped Title 새 게임 헤드라인")
+    elif "아침 주차 첫날 헤드라인" in title_loop or "MorningWeekHeadline" in title_loop:
+        fail("README hung 아침 주차 첫날 헤드라인 on the Title new-game headline")
+    elif "정산 1일차 헤드라인" not in settle_loop or "SettleHeadline" not in settle_loop or "오늘 헤드라인" not in settle_loop:
+        fail("README 아침 주차 첫날 헤드라인 dropped 정산 1일차 헤드라인")
+    elif "아침 주차 첫날 헤드라인" in settle_loop or "MorningWeekHeadline" in settle_loop:
+        fail("README hung 아침 주차 첫날 헤드라인 on the settlement day-1 headline")
+    elif "아침 주차 첫날 헤드라인" not in desk_paper or "MorningWeekHeadline" not in desk_paper or "MorningWeekStart" not in desk_paper:
+        fail("README desk paper dropped 아침 주차 첫날 헤드라인 vs 아침 주차 첫날")
+    elif "MorningHeadline" not in desk_paper or "NewGameHeadline" not in desk_paper or "SettleHeadline" not in desk_paper:
+        fail("README desk paper dropped Title / day-1 / settlement headlines")
+    elif "오늘의 위협" not in sfx_inv or "새 게임 청구서" not in sfx_inv or sfx_inv.count("sfx_threat") < 5:
+        fail("README 아침 주차 첫날 헤드라인 rewrote the five sfx_threat uses")
+    elif "ContinueSponsorPin" not in sponsor_inv or "타일 가득" not in sponsor_inv:
+        fail("README 아침 주차 첫날 헤드라인 rewrote the Title continue sponsor pin")
+    elif "매드라인" in readme or "매드라인" in week_cs:
+        fail("README week-start headline used 매드라인 instead of 헤드라인")
+    elif '"MorningWeekHeadline"' not in build or "ArtSprites.HeadlineClip" not in paper:
+        fail("README morning week-start headline lost the WeekStart hang")
+    elif "preserveAspect = true" not in paper or "228f, 92f" not in paper or "8f, -284f" not in paper:
+        fail("README morning week-start headline restyled the WeekStart hang")
+    elif "0.74f, 1f" not in paper or '"헤드라인"' not in paper:
+        fail("README morning week-start headline is not Korean week-news copy under MorningWeekStart")
+    elif "run.day == 6" not in week_refresh or "run.day == 11" not in week_refresh:
+        fail("README morning week-start headline is not shown on days 6 / 11")
+    elif "run.day == 16" not in week_refresh or "run.day == 21" not in week_refresh:
+        fail("README morning week-start headline is not shown on days 16 / 21")
+    elif "_weekStartHeadline" not in week_refresh or "SetActive(on)" not in week_refresh:
+        fail("README morning week-start headline is not hidden on other mornings")
+    elif '"MorningWeekStart"' not in build or "8f, -220f" not in week_start or "180f, 56f" not in week_start or '"2주차"' not in week_start:
+        fail("README morning week-start headline restyled MorningWeekStart")
+    elif '"MorningHeadline"' not in build or "8f, -284f" not in day1_paper or "228f, 92f" not in day1_paper or '"헤드라인"' not in day1_paper:
+        fail("README morning week-start headline restyled MorningHeadline")
+    elif "run.day == 1" not in day1_refresh or "_day1Headline" not in day1_refresh or "SetActive(day1)" not in day1_refresh:
+        fail("README morning week-start headline changed MorningHeadline hide")
+    elif "_weekStartHeadline" in day1_refresh:
+        fail("README morning week-start headline folded into RefreshDay1")
+    elif '"MorningDay1"' not in build or "8f, -220f" not in day1 or '"1일차"' not in day1:
+        fail("README morning week-start headline restyled MorningDay1")
+    elif "0, -42" not in morning_clip or "0, 78" not in morning_clip:
+        fail("README morning week-start headline restyled YesterdayClip")
+    elif "YesterdayLine" not in yest or "SetActive(on)" not in yest:
+        fail("README morning week-start headline changed scrolling headline chips")
+    elif "day <= 1" not in head_cs or '"어제: "' not in head_cs:
+        fail("README morning week-start headline changed 어제 copy or day math")
+    elif '"NewGameHeadline"' not in start_hang or "412f, -78f" not in title_paper or "240f, 88f" not in title_paper:
+        fail("README morning week-start headline restyled Title NewGameHeadline")
+    elif "SetActive(!_hasSave)" not in hide:
+        fail("README morning week-start headline changed Title NewGameHeadline hide")
+    elif '"ContinueClip"' not in title_build or "56, -286" not in continue_clip:
+        fail("README morning week-start headline restyled continue headline scrap")
+    elif '"어제: "' not in fill or "lastHeadline" not in fill:
+        fail("README morning week-start headline dropped continue 어제: + lastHeadline")
+    elif '"SettleHeadline"' not in settle_build or "8f, -212f" not in settle_paper:
+        fail("README morning week-start headline restyled SettleHeadline")
+    elif "ArtSprites.HeadlineClip" not in settle_build or "36, -66" not in settle_clip or "오늘 헤드라인" not in settle_cs:
+        fail("README morning week-start headline restyled the 오늘 헤드라인 scrap")
+    elif "ArtSprites.HeadlineClip" in live_cs:
+        fail("README morning week-start headline hung headline_clip on live")
+    elif re.search(r"run\.day\s*=(?!=)", week_cs) or "day += " in week_cs or "day -= " in week_cs:
+        fail("README morning week-start headline writes the day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("README morning week-start headline moved last-day week gates")
+    elif 'HeadlineClip = "Art/headline_clip"' not in art_cs:
+        fail("ArtSprites does not hook Art/headline_clip")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README morning week-start headline retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README morning week-start headline retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README morning week-start headline retuned week-clear gates")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising README morning week-start headline / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README morning week-start headline dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README morning week-start headline moved Unity off 6000.5.9f1")
+    else:
+        ok("README names 아침 주차 첫날 헤드라인 vs Title 새 게임 헤드라인, 아침 1일차 헤드라인, 정산 1일차 헤드라인, and 아침 주차 첫날")
 
 
 def check_readme_morning_day1() -> None:
