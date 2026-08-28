@@ -1512,6 +1512,7 @@ def check_project() -> None:
     check_chat_dock()
     check_note_chip()
     check_note_lane()
+    check_note_lane_tint()
     check_hit_rail()
     check_judge_sfx()
     check_stream_stings()
@@ -6576,6 +6577,75 @@ def check_note_lane() -> None:
         ok("note paths sit on note_lane bed; hit_rail strike / chips / timings stay")
 
 
+def check_note_lane_tint() -> None:
+    """Four note_lane beds tint to kind pad colors; hit_rail / chips / timings stay."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    lane = live_cs.split('_lane = UiKit.Panel', 1)[-1].split("var bottom = UiKit.Panel", 1)[0]
+    make = live_cs.split("RectTransform MakeBubble", 1)[-1].split("static void DimNamedBubble", 1)[0]
+    sync = live_cs.split("void SyncNotes", 1)[-1].split("void RefreshPromoOverlay", 1)[0]
+    live_loop = readme.split("떨어지는 채팅은", 1)[-1].split("하이프 시작 시", 1)[0]
+    hud_stack = readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]
+    lane_inv = next((ln for ln in readme.splitlines() if "Art/note_lane" in ln and "레인" in ln), "")
+
+    missing_kind = next(
+        (kind for kind in ("ChatKind.Positive", "ChatKind.Empathy", "ChatKind.Laugh", "ChatKind.Thanks") if kind not in lane),
+        "",
+    )
+    missing_color = next(
+        (token for token in ("파랑", "초록", "트롤", "골드") if token not in live_loop or token not in hud_stack or token not in lane_inv),
+        "",
+    )
+
+    if "Palette.ForKind" not in lane or "i < 4" not in lane or '"NoteLane" + i' not in lane:
+        fail("note_lane beds are not split into four kind-tinted paths")
+    elif missing_kind:
+        fail(f"note_lane tint dropped {missing_kind}")
+    elif "ArtSprites.NoteLane" not in lane or '"NoteLane"' not in lane:
+        fail("note_lane tint dropped the note_lane sprite")
+    elif "SetAsFirstSibling" not in lane:
+        fail("note_lane tint is not drawn under the note paths")
+    elif "ArtSprites.HitRail" not in lane or '"HitRail"' not in lane or "SetSiblingIndex(1)" not in lane:
+        fail("note_lane tint dropped hit_rail as the strike pocket")
+    elif "ArtSprites.NoteChip" not in make or "ArtSprites.SuperchatChip" not in make:
+        fail("note_lane tint dropped note_chip / superchat_chip")
+    elif "abs <= 0.15f" not in sync or '"Hot"' not in live_cs:
+        fail("note_lane tint dropped Perfect window glow")
+    elif "const float LaneHit = -210f" not in live_cs or "const float LaneTop = 260f" not in live_cs:
+        fail("note_lane tint moved the hit line or lane top")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("note_lane tint retuned QTE windows")
+    elif "approachSeconds: 1.35" not in balance:
+        fail("note_lane tint retuned travel speed")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("note_lane tint retuned Judge scoring")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("note_lane tint retuned Week 1 economy / hype")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("note_lane tint broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising note_lane tint / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("note_lane tint dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("note_lane tint moved Unity off 6000.5.9f1")
+    elif 'NoteLane = "Art/note_lane"' not in art_cs:
+        fail("note_lane tint lost ArtSprites.NoteLane")
+    elif missing_color:
+        fail(f"README note_lane tint dropped pad color {missing_color}")
+    elif "패드 색" not in live_loop or "패드 색" not in hud_stack or "패드 색" not in lane_inv:
+        fail("README does not say note_lane beds tint to pad colors")
+    elif "note_lane" not in live_loop or "hit_rail" not in live_loop:
+        fail("README live loop dropped note_lane / hit_rail while tinting beds")
+    else:
+        ok("four note_lane beds tint to pad colors; hit_rail strike / chips / timings stay")
+
+
 def check_hit_rail() -> None:
     import struct
 
@@ -9420,6 +9490,8 @@ def check_readme_note_lane() -> None:
         fail(f"README {missing} must name note_lane under the four note paths")
     elif "노트 레인" not in hud_stack or "스트라이크 포켓" not in lane_hud:
         fail("README Live HUD dropped 노트 레인 / hit_rail strike pocket")
+    elif "패드 색" not in lane_hud or "파랑" not in lane_hud or "골드" not in lane_hud:
+        fail("README Live HUD note_lane dropped kind pad colors")
     elif "note_lane" not in lane_inv or "레인" not in lane_inv:
         fail("README inventory dropped note_lane bed")
     elif "채팅 독" not in hud_stack or "패드 트레이" not in hud_stack:

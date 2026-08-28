@@ -1123,17 +1123,37 @@ namespace BankruptVtuber
             var laneFade = _lane.gameObject.AddComponent<CanvasGroup>();
             laneFade.blocksRaycasts = false;
             laneFade.interactable = false;
-            var noteLane = UiKit.Image(_lane, "NoteLane", Color.white);
-            UiKit.Stretch(noteLane.rectTransform);
-            ArtSprites.Apply(noteLane, ArtSprites.NoteLane, Color.white, new Color(1f, 1f, 1f, 0.96f));
-            noteLane.preserveAspect = false;
-            noteLane.raycastTarget = false;
+            var noteLane = UiKit.Panel(_lane, "NoteLane", new Color(0, 0, 0, 0));
+            UiKit.Stretch(noteLane);
+            ChatKind[] laneKinds =
+            {
+                ChatKind.Positive,
+                ChatKind.Empathy,
+                ChatKind.Laugh,
+                ChatKind.Thanks
+            };
+            for (int i = 0; i < 4; i++)
+            {
+                var tint = Palette.ForKind(laneKinds[i]);
+                tint.a = 0.88f;
+                var bed = UiKit.Image(noteLane, "NoteLane" + i, tint);
+                float a = i / 4f;
+                float b = (i + 1) / 4f;
+                bed.rectTransform.anchorMin = new Vector2(a, 0f);
+                bed.rectTransform.anchorMax = new Vector2(b, 1f);
+                bed.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+                bed.rectTransform.offsetMin = new Vector2(2f, 0f);
+                bed.rectTransform.offsetMax = new Vector2(-2f, 0f);
+                ArtSprites.Apply(bed, ArtSprites.NoteLane, tint, tint);
+                bed.preserveAspect = false;
+                bed.raycastTarget = false;
+            }
             var hitRail = UiKit.Image(_lane, "HitRail", Color.white);
             UiKit.Stretch(hitRail.rectTransform);
             ArtSprites.Apply(hitRail, ArtSprites.HitRail, Color.white, new Color(1f, 1f, 1f, 0.94f));
             hitRail.preserveAspect = false;
             hitRail.raycastTarget = false;
-            noteLane.transform.SetAsFirstSibling();
+            noteLane.SetAsFirstSibling();
             hitRail.transform.SetSiblingIndex(1);
             _hypeChatGlow = UiKit.Image(_lane, "HypeChatGlow", new Color(1f, 0.86f, 0.28f, 0f));
             UiKit.Stretch(_hypeChatGlow.rectTransform);
