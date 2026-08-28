@@ -52,6 +52,7 @@ namespace BankruptVtuber
         float _onAirLeft;
         RectTransform _endCutRoot;
         Image _endCutWash;
+        Image _endCutCard;
         Image _endCutPip;
         Text _endCutCopy;
         Text _stub;
@@ -786,6 +787,12 @@ namespace BankruptVtuber
             _endCutRoot.SetAsLastSibling();
             if (_endCutWash != null)
                 _endCutWash.color = new Color(0f, 0f, 0f, 0.96f);
+            if (_endCutCard != null)
+            {
+                ArtSprites.Apply(_endCutCard, ArtSprites.EndCut, new Color(0.20f, 0.04f, 0.08f, 0.98f), Color.white);
+                _endCutCard.preserveAspect = false;
+                _endCutCard.rectTransform.localScale = Vector3.one * 1.06f;
+            }
             if (_endCutPip != null)
                 _endCutPip.color = new Color(0.28f, 0.03f, 0.06f, 1f);
             if (_endCutCopy != null)
@@ -1233,13 +1240,18 @@ namespace BankruptVtuber
             _endCutWash = _endCutRoot.GetComponent<Image>();
             if (_endCutWash != null)
                 _endCutWash.raycastTarget = false;
-            _endCutPip = UiKit.Image(_endCutRoot, "Pip", new Color(0.35f, 0.04f, 0.08f, 1f));
-            UiKit.Layout(_endCutPip.rectTransform, new Vector2(0.5f, 0.58f), new Vector2(0.5f, 0.58f), new Vector2(0.5f, 0.5f), new Vector2(-120f, 8f), new Vector2(22f, 22f));
+            _endCutCard = UiKit.Image(_endCutRoot, "EndCutCard", Color.white);
+            UiKit.Layout(_endCutCard.rectTransform, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(560f, 140f));
+            ArtSprites.Apply(_endCutCard, ArtSprites.EndCut, new Color(0.20f, 0.04f, 0.08f, 0.98f), Color.white);
+            _endCutCard.preserveAspect = false;
+            _endCutCard.raycastTarget = false;
+            _endCutPip = UiKit.Image(_endCutCard.transform, "Pip", new Color(0.28f, 0.03f, 0.06f, 1f));
+            UiKit.Layout(_endCutPip.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(40f, 0f), new Vector2(20f, 20f));
             _endCutPip.raycastTarget = false;
-            var endLive = UiKit.Label(_endCutRoot, "Live", "LIVE", 72, new Color(0.45f, 0.12f, 0.16f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(endLive.rectTransform, new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.5f), new Vector2(18f, 0f), new Vector2(420f, 88f));
-            _endCutCopy = UiKit.Label(_endCutRoot, "Copy", "방송 종료", 40, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_endCutCopy.rectTransform, new Vector2(0.5f, 0.46f), new Vector2(0.5f, 0.46f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420f, 48f));
+            var endLive = UiKit.Label(_endCutCard.transform, "Live", "LIVE", 28, new Color(0.45f, 0.12f, 0.16f, 1f), TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(endLive.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(58f, 0f), new Vector2(90f, 36f));
+            _endCutCopy = UiKit.Label(_endCutCard.transform, "Copy", "방송 종료", 52, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Stretch(_endCutCopy.rectTransform, 48f, 36f, 18f, 18f);
             _endCutRoot.gameObject.SetActive(false);
 
             _forceEndRoot = UiKit.Panel(canvasRoot, "ForceEnd", new Color(0.10f, 0.02f, 0.05f, 0.88f));

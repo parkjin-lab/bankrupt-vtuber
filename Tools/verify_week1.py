@@ -222,6 +222,7 @@ def check_project() -> None:
         "viewer_badge.png": "시청 배지",
         "clock_plate.png": "시계 배지",
         "onair_led.png": "ON AIR LED",
+        "end_cut.png": "방송 종료 컷",
         "judge_perfect.png": "PERFECT 스탬프",
         "judge_good.png": "GOOD 스탬프",
         "judge_miss.png": "MISS 스탬프",
@@ -1498,6 +1499,7 @@ def check_project() -> None:
     check_onair_led()
     check_judge_stamps()
     check_superchat_chip()
+    check_end_cut_card()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -2704,6 +2706,8 @@ def check_end_cut() -> None:
     show = live_cs.split("void ShowEndCut", 1)[-1].split("void Build", 1)[0]
     if "ShowEndCut" not in live_cs or "방송 종료" not in live_cs:
         fail("90s end has no 방송 종료 cut")
+    elif "ArtSprites.EndCut" not in live_cs or '"EndCutCard"' not in live_cs:
+        fail("방송 종료 is not on the end_cut card")
     elif "WaitForSeconds(0.5f)" not in end:
         fail("방송 종료 cut is not 0.5s")
     elif "EndCut" not in live_cs or "0f, 0f, 0f, 0.96f" not in live_cs:
@@ -2733,7 +2737,7 @@ def check_end_cut() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("end cut moved Unity off 6000.5.9f1")
     else:
-        ok("90s end cuts with 0.5s 방송 종료; F10 still jumps to settlement")
+        ok("90s end cuts with 0.5s 방송 종료 on end_cut card; F10 still jumps to settlement")
 
 
 def check_income_count() -> None:
@@ -8027,6 +8031,70 @@ def check_superchat_chip() -> None:
         ok("traveling superchat notes sit on a gold envelope; telegraph / fly / SFX / pad stay")
 
 
+def check_end_cut_card() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/end_cut.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    end = live_cs.split("EndRoutine", 1)[-1].split("void Build", 1)[0]
+    show = live_cs.split("void ShowEndCut", 1)[-1].split("void ", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("end_cut.png is missing")
+    elif w < 360 or h < 160 or w <= h:
+        fail("end_cut.png is not a readable landscape cut card")
+    elif color != 6:
+        fail("end_cut.png is not RGBA")
+    elif 'EndCut = "Art/end_cut"' not in art_cs:
+        fail("ArtSprites does not hook Art/end_cut")
+    elif "ArtSprites.EndCut" not in live_cs or '"EndCutCard"' not in live_cs or "방송 종료" not in live_cs:
+        fail("LiveStream does not hang Art/end_cut under 방송 종료")
+    elif "ArtSprites.EndCut" not in show or "_endCutCard" not in show:
+        fail("ShowEndCut does not show the cut card")
+    elif "WaitForSeconds(0.5f)" not in end:
+        fail("end cut card is not 0.5s")
+    elif "0f, 0f, 0f, 0.96f" not in show and "0f, 0f, 0f, 0.96f" not in live_cs:
+        fail("end cut card dropped the black flash")
+    elif "_liveDot" not in show or "0.2f, 0.02f, 0.04f, 0.2f" not in show:
+        fail("end cut card dropped LIVE pip-off")
+    elif "PlaySfx(_endCutCue" not in show or "Audio/sfx_end_cut" not in live_cs:
+        fail("end cut card dropped sfx_end_cut")
+    elif "GoSettlement" not in end or "ApplyStreamPayout" not in end:
+        fail("end cut card dropped settlement routing")
+    elif "gm.GoSettlement()" not in debug_cs or "ShowEndCut" in debug_cs:
+        fail("F10 no longer jumps straight to settlement")
+    elif "streamSeconds: 90" not in balance or "TimeLeft = balance.streamSeconds" not in session_cs:
+        fail("end cut card retuned stream length")
+    elif "강제 종료" not in end or "WaitForSeconds(1.25f)" not in end:
+        fail("end cut card replaced the force-end sting")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("end cut card retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("end cut card broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising end cut card / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("end cut card dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("end cut card moved Unity off 6000.5.9f1")
+    elif "Art/end_cut" not in readme or "방송 종료" not in readme:
+        fail("README should mention end_cut / 방송 종료")
+    else:
+        ok("방송 종료 sits on end_cut card; 0.5s flash / pip-off / SFX / settlement stay")
+
+
 def check_mental_sfx() -> None:
     import wave
 
@@ -8588,6 +8656,8 @@ def check_readme_playable() -> None:
         fail("README dropped clock_plate live broadcast clock")
     elif "onair_led" not in readme or "ON AIR" not in readme or "sfx_onair" not in readme:
         fail("README dropped onair_led broadcast LED")
+    elif "end_cut" not in readme or "방송 종료" not in readme or "sfx_end_cut" not in readme:
+        fail("README dropped end_cut broadcast cut card")
     elif (
         "judge_perfect" not in readme
         or "judge_good" not in readme

@@ -51,7 +51,7 @@
 
 웹캠 파산냥은 `Art/pasan_nyang` 256px 2D 얼굴이다. Perfect 펀치 · Good 끄덕 · Miss 흔들 · 멘탈 ≤40 지침은 그대로다.
 
-라이브는 `Art/onair_led` LED 배지 **ON AIR** / **방송 시작**(0.6초, `Audio/sfx_onair` 시작 스팅)과 함께 `Audio/bgm_stream`이 타이틀보다 작게 루프한다. 5주차 콘서트 라이브만 `Audio/bgm_concert`가 스트림보다 크고 밝게 루프하고, 판정·슈퍼챗·하이프 SFX는 그대로 위에 뜬다. HUD가 이어진다. 바탕은 `Art/stream_overlay` 2D 오버레이(LIVE 핍 · 웹캠 베젤 · 채팅 테두리). 하단 키는 `Art/pad_*` 스트림덱 키캡(←파랑 / ↓초록 / →트롤 / ↑골드 / 슈퍼챗 골드). 칩 · 히트바 · FX · 0.08초 프레스 플래시는 그대로다. 1일차 코치는 그 다음. 90초가 끝나면 **방송 종료** 컷(검정 플래시 · LIVE 점 꺼짐, 0.5초, `Audio/sfx_end_cut` 컷 스팅 · 베드 0.2초 페이드) 뒤 정산. F10 스킵은 조용히 정산으로. 정산은 `Art/settlement_desk` 방송 끝난 책상 바탕 위에 기존 카드가 그대로 올라간다.
+라이브는 `Art/onair_led` LED 배지 **ON AIR** / **방송 시작**(0.6초, `Audio/sfx_onair` 시작 스팅)과 함께 `Audio/bgm_stream`이 타이틀보다 작게 루프한다. 5주차 콘서트 라이브만 `Audio/bgm_concert`가 스트림보다 크고 밝게 루프하고, 판정·슈퍼챗·하이프 SFX는 그대로 위에 뜬다. HUD가 이어진다. 바탕은 `Art/stream_overlay` 2D 오버레이(LIVE 핍 · 웹캠 베젤 · 채팅 테두리). 하단 키는 `Art/pad_*` 스트림덱 키캡(←파랑 / ↓초록 / →트롤 / ↑골드 / 슈퍼챗 골드). 칩 · 히트바 · FX · 0.08초 프레스 플래시는 그대로다. 1일차 코치는 그 다음. 90초가 끝나면 `Art/end_cut` 컷 카드 **방송 종료**(검정 플래시 · LIVE 점 꺼짐, 0.5초, `Audio/sfx_end_cut` 컷 스팅 · 베드 0.2초 페이드) 뒤 정산. F10 스킵은 조용히 정산으로. 정산은 `Art/settlement_desk` 방송 끝난 책상 바탕 위에 기존 카드가 그대로 올라간다.
 
 라이브 HUD에 있는 것:
 
@@ -76,6 +76,7 @@
 - **시청 배지** — 라이브 **시청자** 가 `Art/viewer_badge` 팔로워 배지 (1.12 팝 · 초록 증가/빨강 감소 · ± 팝업·청구/수입 칩·숫자 그대로)
 - **시계 배지** — 라이브 **남은 시간** 이 `Art/clock_plate` 방송 시계 배지 (마지막 10초 빨강 펄스 · `sfx_clock_tick` · ON AIR/종료 컷·90초 그대로)
 - **ON AIR LED** — 라이브 시작 **ON AIR** 가 `Art/onair_led` 방송 LED 배지 (0.6초 스팅 · `sfx_onair` · LIVE 핍/종료 컷 점 꺼짐·90초 그대로)
+- **종료 컷 카드** — 90초 끝 **방송 종료** 가 `Art/end_cut` 방송 컷 카드 (0.5초 검정 플래시 · LIVE 점 꺼짐 · `sfx_end_cut` · 정산 라우팅·90초 그대로)
 - **판정 스탬프** — 라이브 **PERFECT** / **GOOD** / **MISS** 가 `Art/judge_perfect` 금 스탬프 · `Art/judge_good` 흰 스탬프 · `Art/judge_miss` 빨간 X 스탬프 (크기 차이 · SFX · Perfect 웹캠 펀치·콤보 끊김·히트창 그대로)
 - **패드 / 채팅 / 노트** — `Art/pad_*` · `Art/chat_bubble` · `Art/note_chip` · `Art/superchat_chip` 금 봉투 · `Art/hit_rail`
 - **얼굴 / 아이콘** — `Art/pasan_nyang` · `Art/rival_nyang` · `Art/content_*`

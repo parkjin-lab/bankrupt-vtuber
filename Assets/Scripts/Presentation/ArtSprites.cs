@@ -36,6 +36,7 @@ namespace BankruptVtuber
         public const string ViewerBadge = "Art/viewer_badge";
         public const string ClockPlate = "Art/clock_plate";
         public const string OnAirLed = "Art/onair_led";
+        public const string EndCut = "Art/end_cut";
         public const string JudgePerfect = "Art/judge_perfect";
         public const string JudgeGood = "Art/judge_good";
         public const string JudgeMiss = "Art/judge_miss";
