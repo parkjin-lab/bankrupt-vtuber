@@ -172,6 +172,7 @@ namespace BankruptVtuber
         Image _scandalVeil;
         Text _feeChip;
         RectTransform _chatRoot;
+        RectTransform _coachCard;
         Text _coachHint;
         Text _coachPrompt;
         Image _coachPadIcon;
@@ -1156,17 +1157,24 @@ namespace BankruptVtuber
             UiKit.Layout(_sting.rectTransform, new Vector2(0.22f, 0.48f), new Vector2(0.22f, 0.48f), new Vector2(0.5f, 0.5f), new Vector2(0, 0), new Vector2(420, 80));
             _sting.color = new Color(1f, 0.18f, 0.32f, 0f);
 
-            _coachHint = UiKit.Label(root, "CoachHint", "색에 맞는 키 또는 아래 버튼을 눌러.", 22, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_coachHint.rectTransform, new Vector2(0.5f, 0.30f), new Vector2(0.5f, 0.30f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(640, 36));
-            _coachHint.gameObject.SetActive(false);
-            _coachLegend = BuildCoachLegend(root);
-            _coachLegend.gameObject.SetActive(false);
-            _coachPadIcon = UiKit.Image(root, "CoachPadIcon", Color.white);
-            UiKit.Layout(_coachPadIcon.rectTransform, new Vector2(0.5f, 0.40f), new Vector2(0.5f, 0.40f), new Vector2(0.5f, 0.5f), new Vector2(-280, 0), new Vector2(84, 84));
+            _coachCard = UiKit.Panel(root, "CoachCard", Color.white);
+            UiKit.Layout(_coachCard, new Vector2(0.5f, 0.36f), new Vector2(0.5f, 0.36f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(720, 220));
+            var coachCardImg = _coachCard.GetComponent<Image>();
+            if (coachCardImg != null)
+            {
+                ArtSprites.ApplySliced(coachCardImg, ArtSprites.CoachCard, Color.white, new Vector4(48f, 40f, 48f, 40f));
+                coachCardImg.raycastTarget = false;
+            }
+            _coachCard.gameObject.SetActive(false);
+            _coachHint = UiKit.Label(_coachCard, "CoachHint", "색에 맞는 키 또는 아래 버튼을 눌러.", 22, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_coachHint.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -22), new Vector2(640, 36));
+            _coachLegend = BuildCoachLegend(_coachCard);
+            _coachPadIcon = UiKit.Image(_coachCard, "CoachPadIcon", Color.white);
+            UiKit.Layout(_coachPadIcon.rectTransform, new Vector2(0.5f, 0.62f), new Vector2(0.5f, 0.62f), new Vector2(0.5f, 0.5f), new Vector2(-220, 0), new Vector2(76, 76));
             _coachPadIcon.raycastTarget = false;
             _coachPadIcon.gameObject.SetActive(false);
-            _coachPrompt = UiKit.Label(root, "CoachPrompt", "", 56, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_coachPrompt.rectTransform, new Vector2(0.5f, 0.40f), new Vector2(0.5f, 0.40f), new Vector2(0.5f, 0.5f), new Vector2(-20, 0), new Vector2(560, 72));
+            _coachPrompt = UiKit.Label(_coachCard, "CoachPrompt", "", 48, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_coachPrompt.rectTransform, new Vector2(0.5f, 0.62f), new Vector2(0.5f, 0.62f), new Vector2(0.5f, 0.5f), new Vector2(40, 0), new Vector2(520, 72));
             _coachPrompt.gameObject.SetActive(false);
 
             _judgeStamp = UiKit.Image(root, "JudgeStamp", Color.white);
@@ -1399,7 +1407,7 @@ namespace BankruptVtuber
         RectTransform BuildCoachLegend(Transform root)
         {
             var row = UiKit.Panel(root, "CoachLegend", new Color(0f, 0f, 0f, 0f));
-            UiKit.Layout(row, new Vector2(0.5f, 0.345f), new Vector2(0.5f, 0.345f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(700, 64));
+            UiKit.Layout(row, new Vector2(0.5f, 0.28f), new Vector2(0.5f, 0.28f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(660, 64));
             var rowImg = row.GetComponent<Image>();
             if (rowImg != null)
                 rowImg.raycastTarget = false;
@@ -1428,7 +1436,7 @@ namespace BankruptVtuber
                 ArtSprites.Apply(icon, tips[i].art, Color.white, Color.white);
                 icon.preserveAspect = true;
                 icon.raycastTarget = false;
-                var bind = UiKit.Label(cell, "Bind", tips[i].bind, 18, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
+                var bind = UiKit.Label(cell, "Bind", tips[i].bind, 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
                 UiKit.Layout(bind.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0.38f), new Vector2(0.5f, 0f), Vector2.zero, Vector2.zero);
             }
             return row;
@@ -1597,10 +1605,8 @@ namespace BankruptVtuber
         void RefreshCoach()
         {
             bool on = _session != null && _session.CoachActive && _onAirLeft <= 0f;
-            if (_coachHint != null)
-                _coachHint.gameObject.SetActive(on);
-            if (_coachLegend != null)
-                _coachLegend.gameObject.SetActive(on);
+            if (_coachCard != null)
+                _coachCard.gameObject.SetActive(on);
             var held = on ? _session.CoachHeld : null;
             if (_coachPrompt != null)
             {

@@ -221,6 +221,7 @@ def check_project() -> None:
         "letter_ignore.png": "나중에 키캡",
         "newgame_card.png": "새 방송 지우기 고지",
         "day_tab.png": "n일차 달력 탭",
+        "coach_card.png": "1일차 코치 스티키",
         "title_wordmark.png": "타이틀 네온 워드마크",
         "headline_clip.png": "어제 헤드라인",
         "cash_slip.png": "남은 현금",
@@ -1555,6 +1556,7 @@ def check_project() -> None:
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
+    check_coach_card()
     check_rival_portrait()
     check_goods_stand()
     check_week4_card_art()
@@ -10013,6 +10015,8 @@ def check_coach_pad_icons() -> None:
         fail("coach legend missing arrow / Space bindings")
     elif "ArtSprites.PadSuperchat" not in refresh or "KeycapFor" not in refresh:
         fail("held coach note does not show its pad keycap")
+    elif "ArtSprites.CoachCard" not in live_cs or '"CoachCard"' not in live_cs:
+        fail("Day-1 coach panel is not on coach_card")
     elif "색에 맞는 키 또는 아래 버튼을 눌러" not in live_cs:
         fail("coach pad icons dropped the Korean hint")
     elif "← 긍정" not in live_cs or "↓ 공감" not in live_cs or "→ 웃음" not in live_cs or "↑ 감사" not in live_cs:
@@ -10043,6 +10047,78 @@ def check_coach_pad_icons() -> None:
         fail("coach pad icons moved Unity off 6000.5.9f1")
     else:
         ok("Day-1 coach shows pad_* keycaps next to ←↓→↑ Space; teach stays")
+
+
+def check_coach_card() -> None:
+    """Day-1 coach panel sits on a sticky desk card (coach_card.png)."""
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    offer = session_cs.split("ShouldOfferFirstStreamCoach", 1)[-1].split("public void EnableFirstStreamCoach", 1)[0]
+    refresh = live_cs.split("void RefreshCoach", 1)[-1].split("StreamPadButton EventPad", 1)[0]
+    legend = live_cs.split("RectTransform BuildCoachLegend", 1)[-1].split("void BuildSuperchatPip", 1)[0]
+    png = ROOT / "Assets/Resources/Art/coach_card.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 4000:
+        fail("coach_card.png is missing")
+    elif w < 480 or h < 240 or w <= h:
+        fail("coach_card.png is not a readable landscape sticky card")
+    elif color != 6:
+        fail("coach_card.png is not RGBA")
+    elif 'CoachCard = "Art/coach_card"' not in art_cs:
+        fail("ArtSprites does not hook Art/coach_card")
+    elif "ArtSprites.CoachCard" not in live_cs or '"CoachCard"' not in live_cs:
+        fail("Day-1 coach does not hang Art/coach_card")
+    elif "ApplySliced(coachCardImg, ArtSprites.CoachCard" not in live_cs and "ApplySliced(coachCardImg,ArtSprites.CoachCard" not in live_cs.replace(" ", ""):
+        fail("coach_card is not applied sliced on CoachCard")
+    elif "_coachCard" not in refresh or "SetActive(on)" not in refresh:
+        fail("RefreshCoach does not show/hide the coach card")
+    elif "BuildCoachLegend" not in live_cs or "CoachPadIcon" not in live_cs:
+        fail("coach_card dropped pad keycap tip UI")
+    elif "ArtSprites.PadLeft" not in legend or "ArtSprites.PadSuperchat" not in legend:
+        fail("coach_card dropped pad_* legend art")
+    elif '"←"' not in legend or '"Space"' not in legend:
+        fail("coach_card dropped Korean/arrow bindings")
+    elif "색에 맞는 키 또는 아래 버튼을 눌러" not in live_cs:
+        fail("coach_card dropped the Korean hint")
+    elif "← 긍정" not in live_cs or "슈퍼챗 Space" not in live_cs:
+        fail("coach_card changed kind / superchat teach copy")
+    elif "CoachSuccessTarget = 3" not in session_cs or "CoachSeconds = 8f" not in session_cs:
+        fail("coach_card changed dismiss (3 / 8s)")
+    elif "day != 1" not in offer and "day == 1" not in offer:
+        fail("coach_card is not Day-1 only")
+    elif "EnableFirstStreamCoach" not in live_cs or "_onAirLeft <= 0f" not in refresh:
+        fail("coach_card broke Day-1 arm / ON AIR wait")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("coach_card retuned hit windows")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("coach_card retuned Judge windows")
+    elif "chatSpawnStart: 1.55" not in balance or "billRent: 8000" not in balance:
+        fail("coach_card retuned spawn / economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("coach_card broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising coach_card / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("coach_card dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("coach_card moved Unity off 6000.5.9f1")
+    elif "Art/coach_card" not in readme or "코치" not in readme:
+        fail("README should mention coach_card")
+    else:
+        ok("Day-1 coach sits on coach_card sticky; pad art / bindings / Day-1 rule stay")
 
 
 def check_rival_portrait() -> None:
@@ -10420,6 +10496,8 @@ def check_readme_playable() -> None:
         or "title_wordmark" not in readme
     ):
         fail("README card/tab inventory dropped content_plate / letter keys / newgame_card / day_tab / title_wordmark")
+    elif "coach_card" not in readme or "코치" not in readme:
+        fail("README dropped coach_card Day-1 sticky")
     elif "webcam_bezel" not in readme or "베젤" not in readme:
         fail("README dropped webcam_bezel live cam frame")
     elif "웹캠 베젤" not in readme:

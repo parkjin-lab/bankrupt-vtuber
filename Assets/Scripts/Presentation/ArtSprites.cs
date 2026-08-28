@@ -85,6 +85,7 @@ namespace BankruptVtuber
         public const string NewGameCard = "Art/newgame_card";
         public const string DayTab = "Art/day_tab";
         public const string TitleWordmark = "Art/title_wordmark";
+        public const string CoachCard = "Art/coach_card";
 
         public static string ForContent(StreamContentType type) => type switch
         {
