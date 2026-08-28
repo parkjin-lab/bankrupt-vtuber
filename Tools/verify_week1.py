@@ -1557,6 +1557,7 @@ def check_project() -> None:
     check_readme_note_lane()
     check_readme_note_lane_tint()
     check_readme_coach_pad_dock()
+    check_readme_threat_slam_sfx()
     check_letter_card()
     check_letter_keycaps()
     check_pad_sfx()
@@ -9679,6 +9680,81 @@ def check_readme_coach_pad_dock() -> None:
         fail("README coach tray lost ArtSprites.PadDock")
     else:
         ok("README names the Day-1 coach tray on the live pad_dock")
+
+
+def check_readme_threat_slam_sfx() -> None:
+    """README: 오늘의 위협 slam plays sfx_threat once; silent if no extra."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    extra_cs = (ROOT / "Assets/Scripts/Data/ExtraThreat.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    morning = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    live_loop = readme.split("위협 오버레이", 1)[-1].split("정산:", 1)[0]
+    hud = next((ln for ln in readme.splitlines() if "피크 / 사고" in ln and "event_warn" in ln), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    spawn = week_cs.split("void SpawnIncoming", 1)[-1].split("IEnumerator Slam", 1)[0]
+    wave_cs = week_cs.split("IEnumerator BillWave", 1)[-1].split("void SpawnIncoming", 1)[0]
+    play = week_cs.split("void PlayThreatSfx", 1)[-1].split("}", 1)[0]
+
+    missing = next(
+        (
+            f"{label} {token}"
+            for label, block in (
+                ("morning", morning),
+                ("live overlay", live_loop),
+                ("HUD peak", hud),
+                ("SFX inventory", sfx_inv),
+            )
+            for token in ("sfx_threat", "오늘의 위협")
+            if token not in block
+        ),
+        "",
+    )
+
+    if missing:
+        fail(f"README {missing} must name the 오늘의 위협 slam + sfx_threat")
+    elif "한 번" not in morning or "한 번" not in live_loop or "한 번" not in hud or "한 번" not in sfx_inv:
+        fail("README must say sfx_threat plays once on the 오늘의 위협 slam")
+    elif "스팅 없음" not in morning or "스팅 없음" not in live_loop:
+        fail("README morning/overlay must stay silent if no extra threat")
+    elif "안티 온다" not in live_loop or "렉 온다" not in live_loop:
+        fail("README threat slam overlay dropped live 안티 온다 / 렉 온다")
+    elif "없으면 숨김" not in live_loop or "이어서 하기" not in live_loop:
+        fail("README threat slam overlay dropped hide-if-none / continue")
+    elif "PlayThreatSfx();" not in spawn or spawn.count("PlayThreatSfx();") != 1:
+        fail("README sfx_threat lost the extra-threat slam shot")
+    elif "if (threat)" not in spawn:
+        fail("README sfx_threat does not fire on the extra-threat slam")
+    elif play.count("PlayOneShot") != 1 or "_threatSfxPlayed" not in play:
+        fail("README sfx_threat is not one-shot")
+    elif "PlayThreatSfx" in wave_cs:
+        fail("README sfx_threat plays on the no-extra log line")
+    elif "오늘은 추가 위협이 없습니다." not in wave_cs:
+        fail("README sfx_threat dropped the no-extra log line")
+    elif "ArtSprites.EventWarn" not in spawn or '"오늘의 위협"' not in spawn:
+        fail("README sfx_threat dropped the event_warn 오늘의 위협 slam")
+    elif "장비 고장" not in extra_cs or "라이벌 견제" not in extra_cs:
+        fail("README sfx_threat retuned extra threat names")
+    elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
+        fail("README sfx_threat retuned live 안티 온다 / 렉 온다")
+    elif "Audio/sfx_pick" not in week_cs or "Audio/sfx_golive" not in week_cs:
+        fail("README sfx_threat dropped pick / GO LIVE confirm")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("README sfx_threat retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README sfx_threat broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising sfx_threat / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README sfx_threat dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README sfx_threat moved Unity off 6000.5.9f1")
+    else:
+        ok("README names 오늘의 위협 slam sfx_threat once; silent if no extra")
 
 
 def check_letter_card() -> None:
