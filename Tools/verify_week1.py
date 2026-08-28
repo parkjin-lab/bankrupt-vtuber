@@ -1586,6 +1586,7 @@ def check_project() -> None:
     check_live_week_start_headline()
     check_live_last_day_headline()
     check_live_day1_tab()
+    check_live_week_start_tab()
     check_title_day1_tab()
     check_concert_live_badge()
     check_sponsor_live_badge()
@@ -15772,6 +15773,266 @@ def check_live_day1_tab() -> None:
         fail("live day-1 calendar moved Unity off 6000.5.9f1")
     else:
         ok("day-1 live hangs 1일차 day_tab as HUD calendar; other lives hide it; LiveDay1Headline / Title / morning / settlement calendars stay")
+
+
+def check_live_week_start_tab() -> None:
+    """Week-start lives hang day_tab as a tiny HUD 2–5주차 calendar; other lives hide it; LiveDay1 / LiveWeekHeadline / Title / morning / settlement week calendars stay."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
+    build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    tab = build.split('"LiveWeekStart"', 1)[-1].split('"LiveLastHeadline"', 1)[0] if '"LiveWeekStart"' in build else ""
+    day1_tab = build.split('"LiveDay1"', 1)[-1].split('"LiveWeekHeadline"', 1)[0] if '"LiveDay1"' in build else ""
+    paper = build.split('"LiveDay1Headline"', 1)[-1].split("_avatar = new AvatarView", 1)[0] if '"LiveDay1Headline"' in build else ""
+    week_paper = build.split('"LiveWeekHeadline"', 1)[-1].split("_rivalDuel = new RivalDuelView", 1)[0] if '"LiveWeekHeadline"' in build else ""
+    last_paper = build.split('"LiveLastHeadline"', 1)[-1].split("if (_avatar != null && _avatar.Root != null)", 1)[0] if '"LiveLastHeadline"' in build else ""
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    week_live_gate = live_cs.split("static bool LiveWeekStartDay", 1)[-1].split("static Color ShowChipAccent", 1)[0] if "static bool LiveWeekStartDay" in live_cs else ""
+    last_live_gate = live_cs.split("static bool LiveLastDay", 1)[-1].split("void ApplyThreatShow", 1)[0] if "static bool LiveLastDay" in live_cs else ""
+    show = build.split('"ShowChip"', 1)[-1].split('"BillChip"', 1)[0] if '"ShowChip"' in build else ""
+    bill = build.split('"BillChip"', 1)[-1].split('"LiveDay1Headline"', 1)[0] if '"LiveDay1Headline"' in build else ""
+    hud = build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in build else ""
+    chat = build.split('"ChatDock"', 1)[-1].split('"Lane"', 1)[0] if '"ChatDock"' in build else ""
+    pads = build.split('"PadRow"', 1)[-1].split('"MissSting"', 1)[0] if '"PadRow"' in build else ""
+    coach = build.split('"CoachCard"', 1)[-1].split('"CoachStamp"', 1)[0] if '"CoachCard"' in build else ""
+    timer = build.split('"Timer"', 1)[-1].split('"Cash"', 1)[0] if '"Timer"' in build else ""
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_day = start_hang.split("_startDay = UiKit.Image", 1)[-1] if "_startDay = UiKit.Image" in start_hang else ""
+    if "_startHeadline = UiKit.Image" in title_day:
+        title_day = title_day.split("_startHeadline = UiKit.Image", 1)[0]
+    title_build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    continue_day1 = title_build.split('"ContinueDay1"', 1)[-1].split('"ContinueWeekStart"', 1)[0] if '"ContinueDay1"' in title_build else ""
+    continue_week = title_build.split('"ContinueWeekStart"', 1)[-1].split('"ContinueWeekHeadline"', 1)[0] if '"ContinueWeekHeadline"' in title_build else ""
+    last_tab = title_build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in title_build else ""
+    n일차 = title_build.split('"ContinueDayTab"', 1)[-1].split('"ContinueLastDayTab"', 1)[0] if '"ContinueDayTab"' in title_build else ""
+    continue_paper = title_build.split('"ContinueDay1Headline"', 1)[-1].split('"ContinueMemberPin"', 1)[0] if '"ContinueDay1Headline"' in title_build else ""
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    day1_gate = fill.split("if (_continueDay1 ", 1)[-1].split("if (_continueDay1Headline", 1)[0] if "if (_continueDay1 " in fill else ""
+    week_gate = fill.split("if (_continueWeekStart", 1)[-1].split("bool last", 1)[0] if "if (_continueWeekStart" in fill else ""
+    last_gate = fill.split("bool last", 1)[-1].split("if (_continueMemberPin", 1)[0]
+    morning_build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
+    morning_day1 = morning_build.split('"MorningDay1"', 1)[-1].split('"MorningHeadline"', 1)[0] if '"MorningDay1"' in morning_build else ""
+    morning_week = morning_build.split('"MorningWeekStart"', 1)[-1].split('"MorningWeekHeadline"', 1)[0] if '"MorningWeekHeadline"' in morning_build else ""
+    day1_refresh = week_cs.split("void RefreshDay1", 1)[-1].split("void RefreshLastDay", 1)[0] if "void RefreshDay1" in week_cs else ""
+    week_refresh = week_cs.split("void RefreshWeekStart", 1)[-1].split("void RefreshDay1", 1)[0] if "void RefreshWeekStart" in week_cs else ""
+    last_refresh = week_cs.split("void RefreshLastDay", 1)[-1].split("static string LastDayClearReminder", 1)[0]
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    settle_day1 = settle_build.split('"SettleDay1"', 1)[-1].split('"SettleHeadline"', 1)[0] if '"SettleDay1"' in settle_build else ""
+    settle_week = settle_build.split('"SettleWeekStart"', 1)[-1].split('"SettleWeekHeadline"', 1)[0] if '"SettleWeekHeadline"' in settle_build else ""
+    settle_render = settle_cs.split("void Render()", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+    settle_gate = settle_render.split("if (_weekStartTab", 1)[-1].split("if (_day1Tab", 1)[0] if "if (_weekStartTab" in settle_render else ""
+    settle_day1_gate = settle_render.split("if (_day1Tab", 1)[-1].split("bool last", 1)[0]
+    live_week_apply = apply.split("if (_liveWeekStart", 1)[-1].split("if (_lastHeadline", 1)[0] if "if (_liveWeekStart" in apply else ""
+
+    if 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif '"LiveWeekStart"' not in build or "ArtSprites.DayTab" not in tab:
+        fail("week-start live does not hang Art/day_tab as a HUD week calendar")
+    elif "preserveAspect = true" not in tab:
+        fail("live week-start calendar is not preserveAspect")
+    elif "72f, 48f" in tab:
+        fail("live week-start calendar was hung as a 72×48 pin")
+    elif "132f, 40f" not in tab or "200f, -276f" not in tab:
+        fail("live week-start calendar is not a tiny HUD tab beside the show chip / LiveWeekHeadline")
+    elif "180f, 56f" in tab or "576f, -8f" in tab or "412f, -10f" in tab:
+        fail("live week-start calendar sat on a Title desk calendar")
+    elif "8f, -220f" in tab or "8f, -148f" in tab or "0.74f, 1f" in tab or "0.80f, 1f" in tab:
+        fail("live week-start calendar sat on MorningWeekStart or SettleWeekStart")
+    elif '"2주차"' not in tab:
+        fail("live week-start calendar is not Korean week-start copy")
+    elif "1일차" in tab or "헤드라인" in tab or "HeadlineClip" in tab or "LiveWeekHeadline" in tab:
+        fail("live week-start calendar reused the live week-start headline paper or day-1 copy")
+    elif "168f, 68f" in tab or "24f, -272f" in tab:
+        fail("live week-start calendar covers LiveWeekHeadline")
+    elif "마지막 날" in tab or "주차 마지막" in tab:
+        fail("live week-start calendar reused last-day copy")
+    elif "24, -214" in tab or "168, 44" in tab or '"ShowChip"' in tab:
+        fail("live week-start calendar covers the show chip")
+    elif "460, -210" in tab or "248, 52" in tab or '"BillChip"' in tab:
+        fail("live week-start calendar covers the live bill chip")
+    elif "710, -228" in tab or "180, 18" in tab:
+        fail("live week-start calendar covers the bill fill")
+    elif "ClockPlate" in tab or '"Timer"' in tab or "0.64f, 1f" in tab:
+        fail("live week-start calendar covers the timer")
+    elif "ChatDock" in tab or "420, -220" in tab or "실시간 채팅" in tab:
+        fail("live week-start calendar covers chat")
+    elif "PadRow" in tab or "AddColumnPad" in tab or "1–4" in tab:
+        fail("live week-start calendar covers QTE / pads")
+    elif "CoachCard" in tab or "720, 220" in tab or "-80, 0" in tab:
+        fail("live week-start calendar covers the day-1 coach")
+    elif "MemberBadgeHud" in tab or "AgencyBadgeHud" in tab or "GoodsBadgeHud" in tab:
+        fail("live week-start calendar sat on an unlock pin")
+    elif "RankingBadgeHud" in tab or "ClipBadgeHud" in tab or "ConcertBadgeHud" in tab or "SponsorBadgeHud" in tab:
+        fail("live week-start calendar sat on an unlock pin")
+    elif "-10f, -10f" in tab or "-10f, -322f" in tab:
+        fail("live week-start calendar covers a webcam unlock pin")
+    elif "360, 70" in tab or '"GoLive"' in tab:
+        fail("live week-start calendar sat on morning GO LIVE")
+    elif "LiveDay1Headline" in tab or "LiveLastHeadline" in tab:
+        fail("live week-start calendar folded a live headline paper into the same hang")
+    elif "NewGameDay" in tab or "ContinueDay1" in tab or "MorningDay1" in tab or "SettleDay1" in tab:
+        fail("live week-start calendar sat on a Title / morning / settlement calendar")
+    elif "ContinueWeekStart" in tab or "MorningWeekStart" in tab or "SettleWeekStart" in tab:
+        fail("live week-start calendar sat on a Title / morning / settlement week calendar")
+    elif "UiKit.Stretch" in tab:
+        fail("live week-start calendar was stretched over the HUD")
+    elif "SetActive(false)" not in tab:
+        fail("live week-start calendar is not hidden until ApplyContentShow")
+    elif "_liveWeekStart" not in apply or "LiveWeekStartDay" not in live_week_apply:
+        fail("live week-start calendar is not shown on week-start lives")
+    elif 'WeekNumber(GameManager.Instance.Run) + "주차"' not in live_week_apply:
+        fail("live week-start calendar does not write 2주차 / 3주차 / 4주차 / 5주차")
+    elif "SetActive(weekStart)" not in live_week_apply:
+        fail("live week-start calendar is not hidden on other lives")
+    elif "LastDayOfCurrentWeek" in live_week_apply or "1 == GameManager.Instance.Run.day" in live_week_apply:
+        fail("live week-start calendar reused last-day or day-1 gate")
+    elif "day == 6" not in week_live_gate or "day == 11" not in week_live_gate or "day == 16" not in week_live_gate or "day == 21" not in week_live_gate:
+        fail("live week-start calendar is not shown on days 6 / 11 / 16 / 21")
+    elif re.search(r"day == 1\b", week_live_gate) or re.search(r"day == 5\b", week_live_gate) or re.search(r"day == 2\b", week_live_gate) or re.search(r"day == 7\b", week_live_gate):
+        fail("live week-start calendar also shows on a non-week-start live")
+    elif "SetActive(1 == GameManager.Instance.Run.day)" not in apply or "_liveDay1" not in apply:
+        fail("live week-start calendar dropped LiveDay1 day-1 hide")
+    elif "SetActive(1 == GameManager.Instance.Run.day)" not in apply or "_day1Headline" not in apply:
+        fail("live week-start calendar dropped LiveDay1Headline day-1 hide")
+    elif '"LiveDay1"' not in build or "ArtSprites.DayTab" not in day1_tab:
+        fail("live week-start calendar dropped LiveDay1")
+    elif "132f, 40f" not in day1_tab or "200f, -276f" not in day1_tab or '"1일차"' not in day1_tab:
+        fail("live week-start calendar restyled LiveDay1")
+    elif "2주차" in day1_tab or "LiveWeekStart" in day1_tab:
+        fail("LiveDay1 hang folded in the week-start live calendar")
+    elif '"LiveDay1Headline"' not in build or "ArtSprites.HeadlineClip" not in paper:
+        fail("live week-start calendar dropped LiveDay1Headline")
+    elif "168f, 68f" not in paper or "24f, -272f" not in paper or '"헤드라인"' not in paper:
+        fail("live week-start calendar restyled LiveDay1Headline")
+    elif "LiveWeekStart" in paper:
+        fail("LiveDay1Headline hang folded in the week-start live calendar")
+    elif '"LiveWeekHeadline"' not in build or "ArtSprites.HeadlineClip" not in week_paper:
+        fail("live week-start calendar dropped LiveWeekHeadline")
+    elif "168f, 68f" not in week_paper or "24f, -272f" not in week_paper or '"헤드라인"' not in week_paper:
+        fail("live week-start calendar restyled LiveWeekHeadline")
+    elif "LiveWeekStart" in week_paper or "2주차" in week_paper or "DayTab" in week_paper:
+        fail("LiveWeekHeadline hang folded in the week-start live calendar")
+    elif "LiveWeekStartDay" not in apply or "_weekHeadline" not in apply:
+        fail("live week-start calendar dropped LiveWeekHeadline week-start hide")
+    elif '"LiveLastHeadline"' not in build or "ArtSprites.HeadlineClip" not in last_paper:
+        fail("live week-start calendar dropped LiveLastHeadline")
+    elif "168f, 68f" not in last_paper or "24f, -272f" not in last_paper or '"헤드라인"' not in last_paper:
+        fail("live week-start calendar restyled LiveLastHeadline")
+    elif "LiveWeekStart" in last_paper or "2주차" in last_paper:
+        fail("LiveLastHeadline hang folded in the week-start live calendar")
+    elif "LiveLastDay" not in apply or "_lastHeadline" not in apply:
+        fail("live week-start calendar dropped LiveLastHeadline last-day hide")
+    elif "day == 5" not in last_live_gate or "day == 25" not in last_live_gate:
+        fail("live week-start calendar changed LiveLastHeadline days")
+    elif '"MorningWeekStart"' in live_cs or '"SettleWeekStart"' in live_cs or '"ContinueWeekStart"' in live_cs:
+        fail("live week-start calendar folded Title / morning / settlement week calendar onto live")
+    elif '"MorningDay1"' in live_cs or '"SettleDay1"' in live_cs or '"NewGameDay"' in live_cs:
+        fail("live week-start calendar folded Title / morning / settlement calendar onto live")
+    elif '"ContinueDay1"' in live_cs or '"ContinueLastDayTab"' in live_cs:
+        fail("live week-start calendar folded a Title continue calendar onto live")
+    elif '"NewGameDay"' not in start_hang or "412f, -10f" not in title_day or '"1일차"' not in title_day:
+        fail("live week-start calendar restyled NewGameDay")
+    elif "180f, 56f" not in title_day or "preserveAspect = true" not in title_day:
+        fail("live week-start calendar restyled the NewGameDay calendar")
+    elif "SetActive(!_hasSave)" not in hide:
+        fail("live week-start calendar changed Title NewGameDay hide")
+    elif '"ContinueDay1"' not in title_build or "576f, -8f" not in continue_day1 or '"1일차"' not in continue_day1:
+        fail("live week-start calendar restyled ContinueDay1")
+    elif "180f, 56f" not in continue_day1 or "preserveAspect = true" not in continue_day1:
+        fail("live week-start calendar restyled the ContinueDay1 calendar")
+    elif "1 == peek.day" not in day1_gate or "_continueDay1" not in day1_gate:
+        fail("live week-start calendar changed ContinueDay1 hide")
+    elif '"ContinueWeekStart"' not in title_build or "576f, -8f" not in continue_week or '"2주차"' not in continue_week:
+        fail("live week-start calendar restyled ContinueWeekStart")
+    elif "180f, 56f" not in continue_week or "preserveAspect = true" not in continue_week:
+        fail("live week-start calendar restyled the ContinueWeekStart calendar")
+    elif "6 == peek.day" not in week_gate or "21 == peek.day" not in week_gate:
+        fail("live week-start calendar changed ContinueWeekStart hide")
+    elif 'WeekNumber(peek) + "주차"' not in week_gate:
+        fail("live week-start calendar changed ContinueWeekStart week copy")
+    elif "ArtSprites.DayTab" not in last_tab or '"마지막 날"' not in last_tab or "166f, -6f" not in last_tab:
+        fail("live week-start calendar dropped the continue last-day tab")
+    elif "ArtSprites.DayTab" not in n일차 or "ContinueDayHead" not in n일차 or "-10f, -6f" not in n일차:
+        fail("live week-start calendar rewrote continue n일차")
+    elif '"ContinueDay1Headline"' not in title_build or "576f, -76f" not in continue_paper or '"헤드라인"' not in continue_paper:
+        fail("live week-start calendar restyled ContinueDay1Headline")
+    elif '"MorningDay1"' not in morning_build or "8f, -220f" not in morning_day1 or '"1일차"' not in morning_day1:
+        fail("live week-start calendar restyled MorningDay1")
+    elif "run.day == 1" not in day1_refresh or "_day1Tab" not in day1_refresh or "SetActive(day1)" not in day1_refresh:
+        fail("live week-start calendar changed MorningDay1 hide")
+    elif '"MorningWeekStart"' not in morning_build or "8f, -220f" not in morning_week or '"2주차"' not in morning_week:
+        fail("live week-start calendar restyled MorningWeekStart")
+    elif "180f, 56f" not in morning_week or "preserveAspect = true" not in morning_week:
+        fail("live week-start calendar restyled the MorningWeekStart calendar")
+    elif "run.day == 6" not in week_refresh or "run.day == 21" not in week_refresh:
+        fail("live week-start calendar changed MorningWeekStart hide")
+    elif 'WeekNumber(run) + "주차"' not in week_refresh:
+        fail("live week-start calendar changed MorningWeekStart week copy")
+    elif "LastDayOfCurrentWeek" not in last_refresh:
+        fail("live week-start calendar changed morning last-day gate")
+    elif '"SettleDay1"' not in settle_build or "8f, -148f" not in settle_day1 or '"1일차"' not in settle_day1:
+        fail("live week-start calendar restyled SettleDay1")
+    elif "1 == run.day" not in settle_day1_gate or "_day1Tab" not in settle_day1_gate:
+        fail("live week-start calendar changed SettleDay1 hide")
+    elif '"SettleWeekStart"' not in settle_build or "8f, -148f" not in settle_week or '"2주차"' not in settle_week:
+        fail("live week-start calendar restyled SettleWeekStart")
+    elif "180f, 56f" not in settle_week or "preserveAspect = true" not in settle_week:
+        fail("live week-start calendar restyled the SettleWeekStart calendar")
+    elif "6 == run.day" not in settle_gate or "21 == run.day" not in settle_gate:
+        fail("live week-start calendar changed SettleWeekStart hide")
+    elif "24, -214" not in show or "168, 44" not in show:
+        fail("live week-start calendar restyled the show chip")
+    elif "460, -210" not in bill or "248, 52" not in bill or "ArtSprites.BillNotice" not in bill:
+        fail("live week-start calendar restyled the live bill chip")
+    elif "ArtSprites.ClockPlate" not in timer:
+        fail("live week-start calendar dropped the timer plate")
+    elif "ArtSprites.ChatDock" not in chat:
+        fail("live week-start calendar dropped chat dock")
+    elif "AddColumnPad" not in pads or "슈퍼챗" not in pads:
+        fail("live week-start calendar dropped live pads")
+    elif "ArtSprites.CoachCard" not in coach or "720, 220" not in coach:
+        fail("live week-start calendar dropped the day-1 coach")
+    elif '"MemberBadgeHud"' not in hud or "72f, 48f" not in hud or "-10f, -10f" not in hud:
+        fail("live week-start calendar restyled the membership pin")
+    elif '"SponsorBadgeHud"' not in hud or "-10f, -322f" not in hud:
+        fail("live week-start calendar restyled the sponsor pin")
+    elif "SetActive(_memberShow)" not in apply or "SetActive(_sponsorPinShow)" not in apply:
+        fail("live week-start calendar changed unlock pin hide")
+    elif "run.day =" in live_cs or "day += " in live_cs or "day -= " in live_cs:
+        fail("live week-start calendar writes the day index")
+    elif "peek.day =" in title_cs or "day += " in title_cs or "day -= " in title_cs:
+        fail("live week-start calendar writes the Title day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("live week-start calendar moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("live week-start calendar retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("live week-start calendar retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("live week-start calendar retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("live week-start calendar broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising live week-start calendar / later weeks")
+    elif "def check_live_day1_tab()" not in verify_src or "def check_live_week_start_headline()" not in verify_src:
+        fail("live week-start calendar dropped LiveDay1 / LiveWeekHeadline hang locks")
+    elif "def check_morning_week_start_tab()" not in verify_src or "def check_settle_week_start_tab()" not in verify_src:
+        fail("live week-start calendar dropped MorningWeekStart / SettleWeekStart hang locks")
+    elif "def check_title_week_start_tab()" not in verify_src:
+        fail("live week-start calendar dropped ContinueWeekStart hang lock")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("live week-start calendar dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("live week-start calendar moved Unity off 6000.5.9f1")
+    else:
+        ok("week-start lives hang 2–5주차 day_tab as HUD calendar; other lives hide it; LiveDay1 / LiveWeekHeadline / Title / morning / settlement calendars stay")
 
 
 def check_title_day1_tab() -> None:

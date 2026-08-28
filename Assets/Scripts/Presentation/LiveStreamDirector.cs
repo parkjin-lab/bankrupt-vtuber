@@ -183,6 +183,8 @@ namespace BankruptVtuber
         Image _sponsorBadge;
         Image _day1Headline;
         Image _liveDay1;
+        Image _liveWeekStart;
+        Text _liveWeekStartLabel;
         Image _weekHeadline;
         Image _lastHeadline;
         float _bedVolume;
@@ -1186,6 +1188,14 @@ namespace BankruptVtuber
             UiKit.Layout(weekHeadT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _weekHeadline.gameObject.SetActive(false);
             _rivalDuel = new RivalDuelView(root as RectTransform);
+            _liveWeekStart = UiKit.Image(root, "LiveWeekStart", Color.white);
+            UiKit.Layout(_liveWeekStart.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(200f, -276f), new Vector2(132f, 40f));
+            ArtSprites.Apply(_liveWeekStart, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _liveWeekStart.preserveAspect = true;
+            _liveWeekStart.raycastTarget = false;
+            _liveWeekStartLabel = UiKit.Label(_liveWeekStart.transform, "T", "2주차", 16, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_liveWeekStartLabel.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _liveWeekStart.gameObject.SetActive(false);
             _lastHeadline = UiKit.Image(root, "LiveLastHeadline", Color.white);
             UiKit.Layout(_lastHeadline.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -272f), new Vector2(168f, 68f));
             ArtSprites.Apply(_lastHeadline, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
@@ -3248,6 +3258,13 @@ namespace BankruptVtuber
                 _liveDay1.gameObject.SetActive(1 == GameManager.Instance.Run.day);
             if (_weekHeadline != null)
                 _weekHeadline.gameObject.SetActive(LiveWeekStartDay(GameManager.Instance.Run.day));
+            if (_liveWeekStart != null)
+            {
+                bool weekStart = LiveWeekStartDay(GameManager.Instance.Run.day);
+                _liveWeekStart.gameObject.SetActive(weekStart);
+                if (weekStart && _liveWeekStartLabel != null)
+                    _liveWeekStartLabel.text = WeekSchedule.WeekNumber(GameManager.Instance.Run) + "주차";
+            }
             if (_lastHeadline != null)
                 _lastHeadline.gameObject.SetActive(LiveLastDay(GameManager.Instance.Run.day));
             UiKit.EnsureCamera(look.Wash);
