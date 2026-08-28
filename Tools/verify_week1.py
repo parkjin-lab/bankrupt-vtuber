@@ -1614,6 +1614,7 @@ def check_project() -> None:
     check_readme_title_newgame_bill()
     check_readme_title_newgame_cash()
     check_readme_title_newgame_mental()
+    check_readme_title_newgame_day()
     check_readme_concert_live_badge()
     check_readme_sponsor_live_badge()
     check_readme_clip_card_plate()
@@ -17860,6 +17861,130 @@ def check_readme_title_newgame_mental() -> None:
         ok("README names 새 게임 멘탈 vs morning 멘탈, ending sticky, 새 게임 청구서, and 새 게임 현금")
 
 
+def check_readme_title_newgame_day() -> None:
+    """README names the Title new-game 1일차 calendar vs last-day tabs and the other new-game papers."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    title_loop = readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]
+    morning_loop = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    desk_paper = readme.split("- **책상 종이**", 1)[-1].split("- **돈 스탬프", 1)[0]
+    card_tabs = readme.split("- **카드 / 탭**", 1)[-1].split("- **책상 종이**", 1)[0]
+    day_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 1일차**")), "")
+    tab_inv = next((ln for ln in card_tabs.splitlines() if "Art/day_tab" in ln), "")
+    mental_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 멘탈**")), "")
+    cash_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 현금**")), "")
+    bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 청구서**")), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    sponsor_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **이어하기 스폰서 핀**")), "")
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    bill = start_hang.split("_startBill = UiKit.Image", 1)[-1] if "_startBill = UiKit.Image" in start_hang else ""
+    if "_startCash = UiKit.Image" in bill:
+        bill = bill.split("_startCash = UiKit.Image", 1)[0]
+    cash = start_hang.split("_startCash = UiKit.Image", 1)[-1] if "_startCash = UiKit.Image" in start_hang else ""
+    if "_startMental = UiKit.Image" in cash:
+        cash = cash.split("_startMental = UiKit.Image", 1)[0]
+    mental = start_hang.split("_startMental = UiKit.Image", 1)[-1] if "_startMental = UiKit.Image" in start_hang else ""
+    if "_startDay = UiKit.Image" in mental:
+        mental = mental.split("_startDay = UiKit.Image", 1)[0]
+    day = start_hang.split("_startDay = UiKit.Image", 1)[-1] if "_startDay = UiKit.Image" in start_hang else ""
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    last_tab = build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in build else ""
+
+    if "새 게임 1일차" not in title_loop or "NewGameDay" not in title_loop or "day_tab" not in title_loop:
+        fail("README title loop must name 새 게임 1일차 on Art/day_tab")
+    elif "1일차" not in title_loop or "preserveAspect" not in title_loop or "숨김" not in title_loop:
+        fail("README title loop must name the new-game 1일차 calendar vs hidden")
+    elif "ContinueDayTab" not in title_loop or "마지막 날" not in title_loop:
+        fail("README title loop must keep 새 게임 1일차 distinct from continue / last-day")
+    elif "새 게임 청구서" not in title_loop or "새 게임 현금" not in title_loop or "새 게임 멘탈" not in title_loop:
+        fail("README title loop dropped 새 게임 청구서 / 현금 / 멘탈")
+    elif "새 게임 1일차" not in day_inv or "NewGameDay" not in day_inv or "day_tab" not in day_inv:
+        fail("README must inventory 새 게임 1일차 on its own line")
+    elif "ContinueDayTab" not in day_inv or "마지막 날" not in day_inv:
+        fail("README 새 게임 1일차 line must stay distinct from continue / last-day")
+    elif day_inv == tab_inv or day_inv == mental_inv or day_inv == cash_inv or day_inv == bill_inv:
+        fail("README must keep 새 게임 1일차 distinct from last-day tabs and other new-game papers")
+    elif "NewGameDay" in tab_inv or "새 게임 1일차" in tab_inv:
+        fail("README folded 새 게임 1일차 into the shared day_tab inventory")
+    elif "여덟 곳" not in tab_inv or "마지막 날" not in tab_inv or "이어서 하기" not in tab_inv:
+        fail("README 새 게임 1일차 rewrote the shared day_tab inventory")
+    elif "NewGameMental" not in mental_inv or "ContinueMentalNote" not in mental_inv or "엔딩 멘탈" not in mental_inv:
+        fail("README 새 게임 1일차 rewrote the 새 게임 멘탈 line")
+    elif "NewGameDay" in mental_inv:
+        fail("README folded 새 게임 1일차 into the 새 게임 멘탈 line")
+    elif "NewGameCash" not in cash_inv or "ContinueCashSlip" not in cash_inv:
+        fail("README 새 게임 1일차 rewrote the 새 게임 현금 line")
+    elif "NewGameBill" not in bill_inv or "ContinueDebtNotice" not in bill_inv:
+        fail("README 새 게임 1일차 rewrote the 새 게임 청구서 line")
+    elif "마지막 날" not in morning_loop or "주차 마지막" not in morning_loop or "day_tab" not in morning_loop:
+        fail("README 새 게임 1일차 dropped morning last-day")
+    elif "새 게임 1일차" in morning_loop or "NewGameDay" in morning_loop:
+        fail("README hung 새 게임 1일차 on the morning last-day tab")
+    elif "마지막 날" not in settle_loop or "주차 마지막" not in settle_loop:
+        fail("README 새 게임 1일차 dropped settlement last-day")
+    elif "새 게임 1일차" in settle_loop or "NewGameDay" in settle_loop:
+        fail("README hung 새 게임 1일차 on the settlement last-day tab")
+    elif "새 게임 1일차" not in desk_paper or "ContinueDayTab" not in desk_paper:
+        fail("README desk paper dropped 새 게임 1일차 vs continue n일차")
+    elif "오늘의 위협" not in sfx_inv or "새 게임 청구서" not in sfx_inv or sfx_inv.count("sfx_threat") < 5:
+        fail("README 새 게임 1일차 rewrote the five sfx_threat uses")
+    elif "ContinueSponsorPin" not in sponsor_inv or "타일 가득" not in sponsor_inv:
+        fail("README 새 게임 1일차 rewrote the Title continue sponsor pin")
+    elif '"NewGameDay"' not in start_hang or "ArtSprites.DayTab" not in day:
+        fail("README new-game 1일차 lost the start-card hang")
+    elif "_start.transform" not in day or "preserveAspect = true" not in day or "180f, 56f" not in day:
+        fail("README new-game 1일차 restyled the start-card hang")
+    elif "412f, -10f" not in day or '"1일차"' not in day:
+        fail("README new-game 1일차 is not a 1일차 calendar beside NewGameCash")
+    elif "SetActive(!_hasSave)" not in hide:
+        fail("README new-game 1일차 is not hidden when continue is showing")
+    elif '"NewGameBill"' not in start_hang or "16f, -10f" not in bill or "176f, 170f" not in bill:
+        fail("README new-game 1일차 restyled NewGameBill")
+    elif '"NewGameCash"' not in start_hang or "200f, 68f" not in cash or "204f, -10f" not in cash:
+        fail("README new-game 1일차 restyled NewGameCash")
+    elif '"NewGameMental"' not in start_hang or "160f, 110f" not in mental or "204f, -86f" not in mental:
+        fail("README new-game 1일차 restyled NewGameMental")
+    elif '"ContinueDayTab"' not in build or '"ContinueLastDayTab"' not in build:
+        fail("README new-game 1일차 dropped continue n일차 / last-day")
+    elif "166f, -6f" not in last_tab or "176f, 48f" not in last_tab or '"마지막 날"' not in last_tab:
+        fail("README new-game 1일차 moved the continue last-day tab")
+    elif "LastDayOfCurrentWeek" not in fill or "SetActive(last)" not in fill:
+        fail("README new-game 1일차 changed continue last-day logic")
+    elif "ArtSprites.DayTab" not in week_cs or '"DayTab"' not in week_cs or "RefreshLastDay" not in week_cs:
+        fail("README new-game 1일차 dropped morning n일차 / last-day")
+    elif '"SettleDayTab"' not in settle_cs or '"SettleLastDayTab"' not in settle_cs:
+        fail("README new-game 1일차 dropped settlement day_tab")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("README new-game 1일차 moved last-day week gates")
+    elif 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif "PlayNewGameBillThreat" not in title_cs:
+        fail("README new-game 1일차 dropped new-game sfx_threat")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README new-game 1일차 retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README new-game 1일차 retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README new-game 1일차 retuned week-clear gates")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising README new-game 1일차 / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README new-game 1일차 dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README new-game 1일차 moved Unity off 6000.5.9f1")
+    else:
+        ok("README names 새 게임 1일차 vs last-day tabs, 새 게임 청구서, 새 게임 현금, and 새 게임 멘탈")
+
+
 def check_readme_concert_live_badge() -> None:
     """README names the post-book webcam concert_stage pin vs backdrop vs both settlement plates."""
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -24012,6 +24137,10 @@ def check_readme_playable() -> None:
         fail("README does not inventory the Title new-game mental paper")
     elif "NewGameMental" not in desk_paper or "ContinueMentalNote" not in desk_paper:
         fail("README desk paper dropped 새 게임 멘탈 vs continue mental")
+    elif "새 게임 1일차" not in readme or "새 게임 1일차" not in readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]:
+        fail("README does not inventory the Title new-game 1일차 calendar")
+    elif "NewGameDay" not in desk_paper or "ContinueDayTab" not in desk_paper:
+        fail("README desk paper dropped 새 게임 1일차 vs continue n일차")
     elif "클립 플레이트" not in readme or "클립 업로드" not in readme.split("**2주차**", 1)[-1].split("**3주차**", 1)[0]:
         fail("README does not inventory clip-upload settlement clip_card plate")
     elif "클립 핀" not in readme or "클립 핀" not in readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]:
@@ -24201,7 +24330,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + 새 게임 청구서 + 새 게임 현금 + 새 게임 멘탈 + content_plate morning/live/settle + coach_card + 코치 스탬프 + 콘서트 바탕 + 콘서트 핀 + 이어하기 콘서트 핀 + 콘서트 개최 플레이트 + 콘서트 결과 플레이트 + 굿즈 선반 + 굿즈 핀 + 이어하기 굿즈 핀 + 굿즈 해금 플레이트 + 스폰서 플레이트 + 스폰서 핀 + 이어하기 스폰서 핀 + 랭킹 플레이트 + 랭킹 핀 + 이어하기 랭킹 핀 + 에이전시 핀 + 이어하기 에이전시 핀 + 에이전시 플레이트 + 멤버십 배지 + 이어하기 멤버십 핀 + 멤버십 플레이트 + 클립 핀 + 이어하기 클립 핀 + 클립 플레이트 + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + 새 게임 청구서 + 새 게임 현금 + 새 게임 멘탈 + 새 게임 1일차 + content_plate morning/live/settle + coach_card + 코치 스탬프 + 콘서트 바탕 + 콘서트 핀 + 이어하기 콘서트 핀 + 콘서트 개최 플레이트 + 콘서트 결과 플레이트 + 굿즈 선반 + 굿즈 핀 + 이어하기 굿즈 핀 + 굿즈 해금 플레이트 + 스폰서 플레이트 + 스폰서 핀 + 이어하기 스폰서 핀 + 랭킹 플레이트 + 랭킹 핀 + 이어하기 랭킹 핀 + 에이전시 핀 + 이어하기 에이전시 핀 + 에이전시 플레이트 + 멤버십 배지 + 이어하기 멤버십 핀 + 멤버십 플레이트 + 클립 핀 + 이어하기 클립 핀 + 클립 플레이트 + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
