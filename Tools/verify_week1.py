@@ -1572,6 +1572,7 @@ def check_project() -> None:
     check_morning_day1_headline()
     check_morning_week_start_tab()
     check_settle_day1_tab()
+    check_settle_day1_headline()
     check_settle_week_start_tab()
     check_title_week_start_tab()
     check_concert_live_badge()
@@ -12822,6 +12823,161 @@ def check_morning_day1_headline() -> None:
         fail("morning day-1 headline paper moved Unity off 6000.5.9f1")
     else:
         ok("day-1 morning hangs headline_clip as debut news; other mornings hide it; Title / live headlines stay")
+
+
+def check_settle_day1_headline() -> None:
+    """Day-1 Settlement hangs headline_clip as debut news paper; other settlements hide it; Title / morning / live headlines stay."""
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    head_cs = (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    paper = build.split('"SettleHeadline"', 1)[-1].split('"Sheet"', 1)[0] if '"SettleHeadline"' in build else ""
+    day1 = build.split('"SettleDay1"', 1)[-1].split('"SettleHeadline"', 1)[0] if '"SettleHeadline"' in build else ""
+    week_start = build.split('"SettleWeekStart"', 1)[-1].split('"SettleDay1"', 1)[0] if '"SettleWeekStart"' in build else ""
+    last_tab = build.split('"SettleLastDayTab"', 1)[-1].split('"Recap"', 1)[0] if '"SettleLastDayTab"' in build else ""
+    n일차 = build.split('"SettleDayTab"', 1)[-1].split('"HeadlineClip"', 1)[0] if '"SettleDayTab"' in build else ""
+    recap = build.split('"Recap"', 1)[-1].split('"SettleWeekStart"', 1)[0] if '"SettleWeekStart"' in build else ""
+    settle_clip = build.split('"HeadlineClip"', 1)[-1].split('"HeadlineTag"', 1)[0] if '"HeadlineClip"' in build else ""
+    render = settle_cs.split("void Render()", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+    day1_gate = render.split("if (_day1Tab", 1)[-1].split("bool last", 1)[0]
+    morning_build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
+    morning_paper = morning_build.split('"MorningHeadline"', 1)[-1].split('"LastDayBanner"', 1)[0] if '"MorningHeadline"' in morning_build else ""
+    morning_day1 = morning_build.split('"MorningDay1"', 1)[-1].split('"MorningHeadline"', 1)[0] if '"MorningHeadline"' in morning_build else ""
+    morning_clip = week_cs.split('"YesterdayClip"', 1)[-1].split('"Yesterday"', 1)[0] if '"YesterdayClip"' in week_cs else ""
+    day1_refresh = week_cs.split("void RefreshDay1", 1)[-1].split("void RefreshLastDay", 1)[0] if "void RefreshDay1" in week_cs else ""
+    yest = week_cs.split("void RefreshYesterday", 1)[-1].split("void RefreshWeekStart", 1)[0]
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_paper = start_hang.split("_startHeadline = UiKit.Image", 1)[-1] if "_startHeadline = UiKit.Image" in start_hang else ""
+    title_day = start_hang.split("_startDay = UiKit.Image", 1)[-1] if "_startDay = UiKit.Image" in start_hang else ""
+    if "_startHeadline = UiKit.Image" in title_day:
+        title_day = title_day.split("_startHeadline = UiKit.Image", 1)[0]
+    title_build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    continue_clip = title_build.split('"ContinueClip"', 1)[-1].split('"ContinueGoodsPin"', 1)[0] if '"ContinueClip"' in title_build else ""
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+
+    if 'HeadlineClip = "Art/headline_clip"' not in art_cs:
+        fail("ArtSprites does not hook Art/headline_clip")
+    elif '"SettleHeadline"' not in build or "ArtSprites.HeadlineClip" not in paper:
+        fail("day-1 settlement does not hang Art/headline_clip as debut news paper")
+    elif "preserveAspect = true" not in paper:
+        fail("settlement day-1 headline paper is not preserveAspect")
+    elif "72f, 48f" in paper:
+        fail("settlement day-1 headline paper was hung as a 72×48 pin")
+    elif "228f, 92f" not in paper or "8f, -212f" not in paper or "0.80f, 1f" not in paper:
+        fail("settlement day-1 headline paper is not a desk scrap under SettleDay1")
+    elif '"헤드라인"' not in paper:
+        fail("settlement day-1 headline paper is not Korean debut-news copy")
+    elif "1일차" in paper or "마지막 날" in paper or "주차 마지막" in paper:
+        fail("settlement day-1 headline paper reused calendar-tab copy")
+    elif "어제:" in paper or "오늘 헤드라인" in paper or "lastHeadline" in paper:
+        fail("settlement day-1 headline paper reused live / continue / settlement headline copy")
+    elif "NewGameHeadline" in paper or "412f, -78f" in paper or "240f, 88f" in paper:
+        fail("settlement day-1 headline paper sat on Title NewGameHeadline")
+    elif "MorningHeadline" in paper or "8f, -284f" in paper or "0.74f, 1f" in paper:
+        fail("settlement day-1 headline paper sat on MorningHeadline")
+    elif "8f, -148f" in paper or "180f, 56f" in paper:
+        fail("settlement day-1 headline paper covers SettleDay1")
+    elif "20, -148" in paper or '"Income"' in paper or '"Bills"' in paper:
+        fail("settlement day-1 headline paper covers recap papers")
+    elif "360, 60" in paper or '"Next"' in paper:
+        fail("settlement day-1 headline paper covers the next button")
+    elif "0, 168" in paper or '"Result"' in paper:
+        fail("settlement day-1 headline paper covers the result line")
+    elif "220, -12" in paper or "188, 48" in paper:
+        fail("settlement day-1 headline paper covers n일차 SettleDayTab")
+    elif "416, -12" in paper or "176, 48" in paper:
+        fail("settlement day-1 headline paper covers the last-day tab")
+    elif "36, -66" in paper or "오늘 헤드라인" in paper:
+        fail("settlement day-1 headline paper sat on the 오늘 헤드라인 scrap")
+    elif "SetActive(false)" not in paper:
+        fail("settlement day-1 headline paper is not hidden until Render")
+    elif "1 == run.day" not in day1_gate or "_day1Headline" not in day1_gate:
+        fail("settlement day-1 headline paper is not shown only on day 1")
+    elif "SetActive(1 == run.day)" not in day1_gate:
+        fail("settlement day-1 headline paper is not hidden on other settlements")
+    elif "LastDayOfCurrentWeek" in day1_gate:
+        fail("settlement day-1 headline paper reused last-day gate")
+    elif "6 == run.day" in day1_gate or "_weekStartTab" in day1_gate:
+        fail("settlement day-1 headline paper reused week-start gate")
+    elif '"SettleDay1"' not in build or "8f, -148f" not in day1 or '"1일차"' not in day1:
+        fail("settlement day-1 headline paper restyled SettleDay1")
+    elif "ArtSprites.DayTab" not in day1 or "180f, 56f" not in day1 or "preserveAspect = true" not in day1:
+        fail("settlement day-1 headline paper restyled the 1일차 calendar")
+    elif '"SettleWeekStart"' not in build or "8f, -148f" not in week_start or '"2주차"' not in week_start:
+        fail("settlement day-1 headline paper restyled SettleWeekStart")
+    elif "ArtSprites.DayTab" not in last_tab or '"마지막 날"' not in last_tab or "416, -12" not in last_tab:
+        fail("settlement day-1 headline paper dropped the last-day tab")
+    elif "ArtSprites.DayTab" not in n일차 or "SettleDayHead" not in n일차 or "220, -12" not in n일차:
+        fail("settlement day-1 headline paper rewrote n일차 SettleDayTab")
+    elif "ArtSprites.CashSlip" not in recap or "ArtSprites.BillNotice" not in recap or "ArtSprites.MentalNote" not in recap:
+        fail("settlement day-1 headline paper dropped recap papers")
+    elif '"Next"' not in build or "360, 60" not in build:
+        fail("settlement day-1 headline paper dropped the next button")
+    elif "ArtSprites.HeadlineClip" not in settle_clip or "36, -66" not in settle_clip:
+        fail("settlement day-1 headline paper restyled the 오늘 헤드라인 scrap")
+    elif "오늘 헤드라인" not in settle_cs:
+        fail("settlement day-1 headline paper dropped 오늘 헤드라인 copy")
+    elif '"ClearHeadlineClip"' not in settle_cs or '"StampHeadlineClip"' not in settle_cs:
+        fail("settlement day-1 headline paper dropped ending headline scraps")
+    elif "LastDayOfCurrentWeek" not in render or "SetActive(last)" not in render:
+        fail("settlement day-1 headline paper changed last-day tab logic")
+    elif '"MorningHeadline"' not in morning_build or "ArtSprites.HeadlineClip" not in morning_paper:
+        fail("settlement day-1 headline paper dropped MorningHeadline")
+    elif "8f, -284f" not in morning_paper or "228f, 92f" not in morning_paper or '"헤드라인"' not in morning_paper:
+        fail("settlement day-1 headline paper restyled MorningHeadline")
+    elif "run.day == 1" not in day1_refresh or "_day1Headline" not in day1_refresh or "SetActive(day1)" not in day1_refresh:
+        fail("settlement day-1 headline paper changed MorningHeadline hide")
+    elif '"MorningDay1"' not in morning_build or "8f, -220f" not in morning_day1 or '"1일차"' not in morning_day1:
+        fail("settlement day-1 headline paper restyled MorningDay1")
+    elif "ArtSprites.HeadlineClip" not in week_cs or '"YesterdayClip"' not in week_cs:
+        fail("settlement day-1 headline paper dropped morning 어제 scrap")
+    elif "0, -42" not in morning_clip or "0, 78" not in morning_clip:
+        fail("settlement day-1 headline paper restyled YesterdayClip")
+    elif "YesterdayLine" not in yest or "SetActive(on)" not in yest:
+        fail("settlement day-1 headline paper changed scrolling headline chips")
+    elif "day <= 1" not in head_cs or '"어제: "' not in head_cs:
+        fail("settlement day-1 headline paper changed 어제 copy or day math")
+    elif '"NewGameHeadline"' not in start_hang or "ArtSprites.HeadlineClip" not in title_paper:
+        fail("settlement day-1 headline paper dropped Title NewGameHeadline")
+    elif "412f, -78f" not in title_paper or "240f, 88f" not in title_paper or '"헤드라인"' not in title_paper:
+        fail("settlement day-1 headline paper restyled Title NewGameHeadline")
+    elif "SetActive(!_hasSave)" not in hide:
+        fail("settlement day-1 headline paper changed Title NewGameHeadline hide")
+    elif '"NewGameDay"' not in start_hang or "412f, -10f" not in title_day or '"1일차"' not in title_day:
+        fail("settlement day-1 headline paper restyled Title NewGameDay")
+    elif '"ContinueClip"' not in title_build or "56, -286" not in continue_clip or "420, 72" not in continue_clip:
+        fail("settlement day-1 headline paper restyled continue headline scrap")
+    elif '"어제: "' not in fill or "lastHeadline" not in fill:
+        fail("settlement day-1 headline paper dropped continue 어제: + lastHeadline")
+    elif "ArtSprites.HeadlineClip" in live_cs:
+        fail("settlement day-1 headline paper hung headline_clip on live")
+    elif re.search(r"run\.day\s*=(?!=)", settle_cs) or "day += " in settle_cs or "day -= " in settle_cs:
+        fail("settlement day-1 headline paper writes the day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("settlement day-1 headline paper moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("settlement day-1 headline paper retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("settlement day-1 headline paper retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("settlement day-1 headline paper retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("settlement day-1 headline paper broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising settlement day-1 headline / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("settlement day-1 headline paper dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("settlement day-1 headline paper moved Unity off 6000.5.9f1")
+    else:
+        ok("day-1 settlement hangs headline_clip as debut news; other settlements hide it; Title / morning headlines stay")
 
 
 def check_morning_week_start_tab() -> None:
