@@ -9017,7 +9017,9 @@ def check_ranking_board_plate() -> None:
         fail("ranking plate dropped the post-upload clip live pin")
     elif "SetActive(_concertPinShow)" not in apply or '"ConcertBadgeHud"' not in live_cs:
         fail("ranking plate dropped the post-book concert live pin")
-    elif '"RankingBoardHud"' in title_cs or "ArtSprites.RankingBoard" in title_cs:
+    elif '"RankingBoardHud"' in title_cs or '"RankPanel"' in title_cs:
+        fail("ranking_board plate leaked onto Title")
+    elif "ArtSprites.RankingBoard" in title_cs and '"ContinueRankingPin"' not in title_cs:
         fail("ranking_board leaked onto Title")
     elif '"RankingBoardHud"' in week_cs or "ArtSprites.RankingBoard" in week_cs:
         fail("ranking_board leaked onto WeekStart")
