@@ -1602,6 +1602,7 @@ def check_project() -> None:
     check_readme_ranking_live_badge()
     check_readme_title_ranking_pin()
     check_readme_clip_live_badge()
+    check_readme_title_clip_pin()
     check_readme_concert_live_badge()
     check_readme_sponsor_live_badge()
     check_readme_clip_card_plate()
@@ -16095,6 +16096,190 @@ def check_readme_clip_live_badge() -> None:
         ok("README names the post-upload webcam clip pin vs settlement plate")
 
 
+def check_readme_title_clip_pin() -> None:
+    """README names the Title continue clip pin vs the live pin and settlement plate."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    w2_asset = (ROOT / "Assets/Resources/Balance/Week2Balance.asset").read_text(encoding="utf-8")
+    w2r_cs = (ROOT / "Assets/Scripts/Economy/Week2Rules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    title_loop = readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]
+    live_loop = readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]
+    hud_stack = readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]
+    week_cards = next((ln for ln in readme.splitlines() if "주차 카드" in ln and "concert_stage" in ln), "")
+    pin_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **이어하기 클립 핀**")), "")
+    live_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **클립 핀**")), "")
+    plate_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **클립 플레이트**")), "")
+    rank_pin = next((ln for ln in readme.splitlines() if ln.startswith("- **이어하기 랭킹 핀**")), "")
+    goods_pin = next((ln for ln in readme.splitlines() if ln.startswith("- **이어하기 굿즈 핀**")), "")
+    agency_pin = next((ln for ln in readme.splitlines() if ln.startswith("- **이어하기 에이전시 핀**")), "")
+    member_pin = next((ln for ln in readme.splitlines() if ln.startswith("- **이어하기 멤버십 핀**")), "")
+    week2 = readme.split("**2주차**", 1)[-1].split("**3주차**", 1)[0]
+    week5 = readme.split("**5주차**", 1)[-1].split("이름 팬", 1)[0]
+    title_build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    last_tab = title_build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in title_build else ""
+    member_hang = title_build.split("_continueMemberPin = UiKit.Image", 1)[-1].split('"MoneyPlate"', 1)[0] if "_continueMemberPin = UiKit.Image" in title_build else ""
+    agency_hang = title_build.split("_continueAgencyPin = UiKit.Image", 1)[-1].split('"ContinueClip"', 1)[0] if "_continueAgencyPin = UiKit.Image" in title_build else ""
+    goods_hang = title_build.split("_continueGoodsPin = UiKit.Image", 1)[-1].split('"ContinueWarn"', 1)[0] if "_continueGoodsPin = UiKit.Image" in title_build else ""
+    ranking_hang = title_build.split("_continueRankingPin = UiKit.Image", 1)[-1].split("_continue.gameObject.SetActive(false)", 1)[0] if "_continueRankingPin = UiKit.Image" in title_build else ""
+    title_pin = title_build.split("_continueClipPin = UiKit.Image", 1)[-1].split("_how = UiKit.Button", 1)[0] if "_continueClipPin = UiKit.Image" in title_build else ""
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    hud = live_build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in live_build else ""
+    live_pin = live_build.split('"ClipBadgeHud"', 1)[-1]
+    if '"ConcertBadgeHud"' in live_pin:
+        live_pin = live_pin.split('"ConcertBadgeHud"', 1)[0]
+    else:
+        live_pin = live_pin.split("var chatPanel", 1)[0] if '"ClipBadgeHud"' in live_build else ""
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    clip_build = settle_build.split('ClipRoot"', 1)[-1].split('GoodsRoot"', 1)[0]
+    clip_plate = clip_build.split('"ClipCardHud"', 1)[-1].split('"ClipTag"', 1)[0] if '"ClipCardHud"' in clip_build else ""
+    clip_show = settle_cs.split("void ShowClipCard", 1)[-1].split("void CloseClipCard", 1)[0]
+
+    missing = next(
+        (
+            f"{label} {token}"
+            for label, block in (
+                ("title loop", title_loop),
+                ("week-card inventory", week_cards),
+                ("title-clip inventory", pin_inv),
+                ("Week 2", week2),
+            )
+            for token in ("clip_card", "이어하기 클립 핀")
+            if token not in block
+        ),
+        "",
+    )
+
+    if missing:
+        fail(f"README {missing} must name the Title continue clip pin")
+    elif "이어서 하기" not in title_loop or "숨김" not in title_loop or "72" not in title_loop:
+        fail("README title loop must name the continue clip pin vs hidden")
+    elif "이어하기 랭킹 핀" not in title_loop or "이어하기 굿즈 핀" not in title_loop:
+        fail("README title clip pin covered the ranking / goods continue pins")
+    elif "이어하기 에이전시 핀" not in title_loop or "이어하기 멤버십 핀" not in title_loop:
+        fail("README title clip pin covered the agency / membership continue pins")
+    elif "day_tab" not in title_loop or "마지막 날" not in title_loop:
+        fail("README title clip pin covered last-day day_tab")
+    elif "둘째" not in title_loop or "옆" not in title_loop or "골드" not in title_loop:
+        fail("README title clip pin dropped last-day day_tab copy")
+    elif "다른 날" not in title_loop or "5/10/15/20/25" not in title_loop:
+        fail("README title clip pin dropped last-day hide / day list")
+    elif "클립 핀" not in title_loop or "클립 플레이트" not in title_loop:
+        fail("README title loop must keep the pin distinct from the live pin and settlement plate")
+    elif "이어서 하기" not in pin_inv or "숨김" not in pin_inv or "72" not in pin_inv:
+        fail("README title-clip inventory must name the continue tile pin vs hidden")
+    elif "클립 플레이트" not in pin_inv:
+        fail("README title-clip inventory must stay distinct from the settlement plate")
+    elif "sfx_clip" not in pin_inv:
+        fail("README title-clip inventory dropped sfx_clip")
+    elif "day_tab" not in pin_inv:
+        fail("README title-clip inventory must stay off last-day day_tab")
+    elif pin_inv == live_inv or pin_inv == plate_inv:
+        fail("README must keep title clip pin / live pin / settlement plate on separate lines")
+    elif pin_inv == rank_pin or pin_inv == goods_pin or pin_inv == agency_pin or pin_inv == member_pin:
+        fail("README must keep title clip pin distinct from 이어하기 랭킹 핀 / 이어하기 굿즈 핀 / 이어하기 에이전시 핀 / 이어하기 멤버십 핀")
+    elif "웹캠" not in live_inv or "랭킹 핀" not in live_inv or "클립 플레이트" not in live_inv:
+        fail("README title clip pin rewrote the live clip-pin line")
+    elif "이어하기" in live_inv:
+        fail("README live clip pin inventory must stay the webcam hang")
+    elif "클립 업로드" not in plate_inv or "라이브 HUD" not in plate_inv:
+        fail("README title clip pin rewrote the settlement clip-plate line")
+    elif "이어하기" in plate_inv:
+        fail("README clip plate inventory must stay the settlement hang")
+    elif "ContinueRankingPin" not in rank_pin or "sfx_ranking" not in rank_pin:
+        fail("README title clip pin rewrote the Title ranking-pin line")
+    elif "ContinueGoodsPin" not in goods_pin or "sfx_goods" not in goods_pin:
+        fail("README title clip pin rewrote the Title goods-pin line")
+    elif "ContinueAgencyPin" not in agency_pin or "sfx_agency" not in agency_pin:
+        fail("README title clip pin rewrote the Title agency-pin line")
+    elif "ContinueMemberPin" not in member_pin or "sfx_membership" not in member_pin:
+        fail("README title clip pin rewrote the Title membership-pin line")
+    elif "이어하기 클립 핀" in live_loop or "이어하기 클립 핀" in hud_stack:
+        fail("README hung the Title continue clip pin on the live webcam cluster")
+    elif "클립 핀" not in live_loop or "클립 핀" not in hud_stack:
+        fail("README title clip pin dropped the live webcam pin")
+    elif "클립 핀" not in week_cards or "클립 플레이트" not in week_cards:
+        fail("README week-card inventory dropped live pin / settlement plate")
+    elif "클립 핀" not in week2 or "sfx_clip" not in week2 or "클립 업로드" not in week2:
+        fail("README Week 2 dropped live pin / settlement plate / sfx_clip")
+    elif "종이" not in week2:
+        fail("README Week 2 dropped clip-upload paper")
+    elif "이어하기 랭킹 핀" not in week_cards or "이어하기 랭킹 핀" not in week5:
+        fail("README title clip pin dropped the Title ranking pin")
+    elif '"ContinueClipPin"' not in title_build or "ArtSprites.ClipCard" not in title_pin:
+        fail("README title clip pin lost the continue HUD hang")
+    elif "72f, 48f" not in title_pin or "preserveAspect = true" not in title_pin or "-320f, 10f" not in title_pin:
+        fail("README title clip pin restyled the tiny continue card")
+    elif "SetActive(peek.clipUploaded)" not in fill:
+        fail("README title clip pin lost clipUploaded gating")
+    elif "_continueClipPin" not in hide or "SetActive(false)" not in hide:
+        fail("README title clip pin is not hidden without a save")
+    elif '"ContinueRankingPin"' not in title_build or "-242f, 10f" not in ranking_hang:
+        fail("README title clip pin dropped the ranking continue hang")
+    elif "WeekSchedule.RankingUnlocked(peek)" not in fill:
+        fail("README title clip pin unhooked ranking continue pin gating")
+    elif '"ContinueGoodsPin"' not in title_build or "-164f, 10f" not in goods_hang:
+        fail("README title clip pin dropped the goods continue hang")
+    elif "SetActive(peek.goodsUnlocked)" not in fill:
+        fail("README title clip pin unhooked goods continue pin gating")
+    elif '"ContinueAgencyPin"' not in title_build or "-86f, 10f" not in agency_hang:
+        fail("README title clip pin dropped the agency continue hang")
+    elif "SetActive(peek.agencyFounded)" not in fill:
+        fail("README title clip pin unhooked agency continue pin gating")
+    elif '"ContinueMemberPin"' not in title_build or "-8f, 10f" not in member_hang:
+        fail("README title clip pin dropped the membership continue hang")
+    elif "SetActive(peek.membershipUnlocked)" not in fill:
+        fail("README title clip pin unhooked membership continue pin gating")
+    elif "ArtSprites.DayTab" not in last_tab or '"ContinueLastDayTab"' not in title_build:
+        fail("README title clip pin dropped the last-day day_tab")
+    elif "ArtSprites.ClipCard" in ranking_hang or '"ContinueClipPin"' in ranking_hang:
+        fail("README title clip pin sat on top of the ranking continue pin hang")
+    elif '"ClipBadgeHud"' not in hud or "ArtSprites.ClipCard" not in live_pin:
+        fail("README title clip pin dropped the live webcam pin hang")
+    elif "-10f, -218f" not in live_pin or "72f, 48f" not in live_pin:
+        fail("README title clip pin moved the live webcam pin")
+    elif "SetActive(_clipPinShow)" not in apply or "clipUploaded" not in start:
+        fail("README title clip pin unhooked live pin upload gating")
+    elif '"ClipCardHud"' not in clip_build or "ArtSprites.ClipCard" not in clip_plate:
+        fail("README title clip pin dropped the settlement clip plate")
+    elif "PlayClipSfx();" not in clip_show or "클립 업로드" not in settle_cs:
+        fail("README title clip pin restyled the settlement clip plate")
+    elif "Audio/sfx_clip" in title_cs or "PlayClipSfx" in title_cs:
+        fail("README title clip pin stole sfx_clip off the settlement plate")
+    elif 'ClipCard = "Art/clip_card"' not in art_cs:
+        fail("ArtSprites does not hook Art/clip_card")
+    elif "clipCash: 30000" not in w2_asset or "clipChance: 30" not in w2_asset or "clipPerfectsRequired: 25" not in w2_asset:
+        fail("README title clip pin retuned clip numbers")
+    elif "CanOfferClip" not in w2r_cs or "AttemptClip" not in w2r_cs:
+        fail("README title clip pin changed clip routing")
+    elif "clipUploaded = true" not in w2r_cs:
+        fail("README title clip pin is not armed when AttemptClip succeeds")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README title clip pin retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README title clip pin retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README title clip pin retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README title clip pin broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "클립" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising title clip pin / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README title clip pin dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README title clip pin moved Unity off 6000.5.9f1")
+    else:
+        ok("README names the Title continue clip pin vs the live pin and settlement plate")
+
+
 def check_readme_concert_live_badge() -> None:
     """README names the post-book webcam concert_stage pin vs backdrop vs both settlement plates."""
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -22007,6 +22192,10 @@ def check_readme_playable() -> None:
         fail("README does not inventory the Title continue ranking pin")
     elif "이어하기 랭킹 핀" not in readme.split("**5주차**", 1)[-1].split("이름 팬", 1)[0]:
         fail("README Week 5 dropped the Title continue ranking pin")
+    elif "이어하기 클립 핀" not in readme or "이어하기 클립 핀" not in readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]:
+        fail("README does not inventory the Title continue clip pin")
+    elif "이어하기 클립 핀" not in readme.split("**2주차**", 1)[-1].split("**3주차**", 1)[0]:
+        fail("README Week 2 dropped the Title continue clip pin")
     elif "클립 플레이트" not in readme or "클립 업로드" not in readme.split("**2주차**", 1)[-1].split("**3주차**", 1)[0]:
         fail("README does not inventory clip-upload settlement clip_card plate")
     elif "클립 핀" not in readme or "클립 핀" not in readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]:
@@ -22196,7 +22385,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + 코치 스탬프 + 콘서트 바탕 + 콘서트 핀 + 콘서트 개최 플레이트 + 콘서트 결과 플레이트 + 굿즈 선반 + 굿즈 핀 + 이어하기 굿즈 핀 + 굿즈 해금 플레이트 + 스폰서 플레이트 + 스폰서 핀 + 랭킹 플레이트 + 랭킹 핀 + 이어하기 랭킹 핀 + 에이전시 핀 + 이어하기 에이전시 핀 + 에이전시 플레이트 + 멤버십 배지 + 이어하기 멤버십 핀 + 멤버십 플레이트 + 클립 핀 + 클립 플레이트 + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + 코치 스탬프 + 콘서트 바탕 + 콘서트 핀 + 콘서트 개최 플레이트 + 콘서트 결과 플레이트 + 굿즈 선반 + 굿즈 핀 + 이어하기 굿즈 핀 + 굿즈 해금 플레이트 + 스폰서 플레이트 + 스폰서 핀 + 랭킹 플레이트 + 랭킹 핀 + 이어하기 랭킹 핀 + 에이전시 핀 + 이어하기 에이전시 핀 + 에이전시 플레이트 + 멤버십 배지 + 이어하기 멤버십 핀 + 멤버십 플레이트 + 클립 핀 + 이어하기 클립 핀 + 클립 플레이트 + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
