@@ -67,6 +67,7 @@ namespace BankruptVtuber
         public const string ChatBubble = "Art/chat_bubble";
         public const string ChatNick = "Art/chat_nick";
         public const string ChatTroll = "Art/chat_troll";
+        public const string ChatSuper = "Art/chat_super";
         public const string NoteChip = "Art/note_chip";
         public const string SuperchatChip = "Art/superchat_chip";
         public const string SuperchatPip = "Art/superchat_pip";
