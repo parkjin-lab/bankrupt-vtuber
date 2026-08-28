@@ -1489,6 +1489,7 @@ def check_project() -> None:
     check_vtuber_face()
     check_webcam_bezel()
     check_rival_webcam_bezel()
+    check_rival_onair_led()
     check_bill_notice()
     check_live_bill_notice()
     check_settle_bill_notice()
@@ -5229,6 +5230,71 @@ def check_rival_webcam_bezel() -> None:
         fail("README should mention rival webcam_bezel reuse")
     else:
         ok("rival cam reuses webcam_bezel; face / ticks / win-lose SFX / rules stay")
+
+
+def check_rival_onair_led() -> None:
+    """Week 3 rival cam reuses the player HUD onair_led for the duel and hides it after resolve."""
+    duel_cs = (ROOT / "Assets/Scripts/Presentation/RivalDuelView.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    cam = duel_cs.split('"RivalCam"', 1)[-1].split("var bars", 1)[0] if '"RivalCam"' in duel_cs else ""
+    bind = duel_cs.split("void Bind", 1)[-1].split("void Tick", 1)[0]
+    result = duel_cs.split("void ShowResult", 1)[-1].split("void RefreshBars", 1)[0]
+    hud = live_cs.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in live_cs else ""
+    week3 = readme.split("**3주차**", 1)[-1].split("**4주차**", 1)[0]
+    face = readme.split("웹캠 파산냥", 1)[-1].split("라이브는", 1)[0]
+
+    if 'OnAirLed = "Art/onair_led"' not in art_cs:
+        fail("ArtSprites does not hook Art/onair_led")
+    elif "ArtSprites.OnAirLed" not in hud or '"HudOnAir"' not in live_cs:
+        fail("rival onair_led reuse dropped the player HUD LED")
+    elif "ArtSprites.OnAirLed" not in cam or '"RivalOnAir"' not in cam:
+        fail("rival cam does not hang Art/onair_led")
+    elif '"ON AIR"' not in cam:
+        fail("rival onair_led dropped ON AIR copy")
+    elif "_onAir" not in bind or "SetActive(on)" not in bind:
+        fail("rival onair_led is not shown when the duel starts")
+    elif "_onAir" not in result or "SetActive(false)" not in result:
+        fail("rival onair_led does not hide when the duel resolves")
+    elif "ArtSprites.WebcamBezel" not in duel_cs or '"Bezel"' not in duel_cs:
+        fail("rival onair_led dropped webcam_bezel")
+    elif "ArtSprites.RivalAvatar" not in cam:
+        fail("rival onair_led dropped rival_nyang face")
+    elif "RivalCamCount" not in duel_cs or "RefreshBars" not in duel_cs:
+        fail("rival onair_led dropped ticking viewers")
+    elif "Audio/sfx_rival_win" not in live_cs or "Audio/sfx_rival_lose" not in live_cs:
+        fail("rival onair_led dropped win/lose SFX")
+    elif "스틸 +" not in duel_cs or "라이벌 승" not in duel_cs or "라이벌 패" not in duel_cs:
+        fail("rival onair_led dropped steal / win-lose feedback")
+    elif "ArtSprites.OnAirLed" not in week_cs or '"LivePip"' not in week_cs:
+        fail("rival onair_led dropped GO LIVE pip reuse")
+    elif "rivalPerfectSteal: 0.6" not in w3_asset or "rivalWinCash: 20000" not in w3_asset or "rivalLoseMental: 12" not in w3_asset:
+        fail("rival onair_led retuned Week3 rival numbers")
+    elif "playerViewers > rivalViewers" not in w3r_cs or "ApplyRivalResult" not in w3r_cs:
+        fail("rival onair_led changed win/lose routing")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("rival onair_led retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("rival onair_led broke pads, 입력됨, or added timeScale")
+    elif "Week3" in title_cs or "라이벌" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising rival onair_led / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("rival onair_led dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("rival onair_led moved Unity off 6000.5.9f1")
+    elif "onair_led" not in face or "라이벌" not in face:
+        fail("README face loop does not name rival onair_led")
+    elif "onair_led" not in week3 or "꺼짐" not in week3:
+        fail("README Week 3 must name rival onair_led hide-after-resolve")
+    else:
+        ok("rival cam shows onair_led during the duel and hides it after; ticks / sfx / bezel / numbers stay")
 
 
 def check_bill_notice() -> None:
@@ -11725,6 +11791,8 @@ def check_readme_playable() -> None:
         fail("README bill_short inventory dropped leftover / title / morning / settlement / bankrupt reuse")
     elif "rival_nyang" not in readme or "goods_stand" not in readme or "agency_card" not in readme:
         fail("README dropped rival / goods / agency art")
+    elif "onair_led" not in readme.split("**3주차**", 1)[-1].split("**4주차**", 1)[0]:
+        fail("README Week 3 dropped rival onair_led")
     elif "ranking_board" not in readme or "concert_stage" not in readme:
         fail("README dropped ranking / concert art")
     elif "책상 종이" not in readme:

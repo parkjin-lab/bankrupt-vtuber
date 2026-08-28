@@ -15,6 +15,7 @@ namespace BankruptVtuber
         readonly Text _playerCount;
         readonly Text _rivalCount;
         readonly Text _camCount;
+        readonly Image _onAir;
         readonly Text _stealFlash;
         readonly Image _stealBg;
         readonly GameObject _resultRoot;
@@ -53,8 +54,16 @@ namespace BankruptVtuber
             ArtSprites.Apply(bust, ArtSprites.RivalAvatar, new Color(0.72f, 0.42f, 0.5f, 1f), Color.white);
             bust.preserveAspect = true;
 
+            _onAir = UiKit.Image(cam, "RivalOnAir", Color.white);
+            UiKit.Layout(_onAir.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(10f, 10f), new Vector2(120f, 30f));
+            ArtSprites.Apply(_onAir, ArtSprites.OnAirLed, Color.white, Color.white);
+            _onAir.preserveAspect = false;
+            _onAir.raycastTarget = false;
+            var onAirCopy = UiKit.Label(_onAir.transform, "T", "ON AIR", 14, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Stretch(onAirCopy.rectTransform, 14f, 14f, 4f, 4f);
+
             var tag = UiKit.Panel(cam, "RivalTag", new Color(0.86f, 0.12f, 0.22f, 0.96f));
-            UiKit.Layout(tag, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -8), new Vector2(108, 30));
+            UiKit.Layout(tag, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -44), new Vector2(108, 30));
             var tagL = UiKit.Label(tag, "L", "라이벌", 16, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Stretch(tagL.rectTransform);
 
@@ -100,6 +109,8 @@ namespace BankruptVtuber
             bool on = session != null && session.RivalActive;
             if (_root != null)
                 _root.gameObject.SetActive(on);
+            if (_onAir != null)
+                _onAir.gameObject.SetActive(on);
             if (_resultRoot != null)
                 _resultRoot.SetActive(false);
             _stealUntil = 0f;
@@ -178,6 +189,8 @@ namespace BankruptVtuber
         {
             if (_resultRoot == null || _session == null || !_session.RivalActive)
                 return;
+            if (_onAir != null)
+                _onAir.gameObject.SetActive(false);
             _resultRoot.SetActive(true);
             if (won)
             {
