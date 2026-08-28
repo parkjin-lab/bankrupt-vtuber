@@ -219,16 +219,18 @@ namespace BankruptVtuber
             _debt = MoneyChip(moneyBar, "DebtChip", "부채", Palette.MoneyRed, 0.52f, 0.76f);
             _mental = MoneyChip(moneyBar, "MentalChip", "멘탈", Palette.Pink, 0.76f, 1f);
 
-            _lastDayRoot = UiKit.Panel(root, "LastDayBanner", new Color(0.55f, 0.08f, 0.16f, 0.96f));
-            UiKit.Layout(_lastDayRoot, new Vector2(0.02f, 1), new Vector2(0.72f, 1), new Vector2(0, 1), new Vector2(0, -316), new Vector2(0, 88));
-            ArtSprites.ApplySliced(_lastDayRoot.GetComponent<Image>(), ArtSprites.ThreatBanner, Palette.MoneyRed, new Vector4(28f, 20f, 28f, 20f));
-            SafeFitCard.Bind(_lastDayRoot, 980f, 88f, 12f);
-            var lastTitle = UiKit.Label(_lastDayRoot, "LastDayTitle", "마지막 날", 36, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UiKit.Layout(lastTitle.rectTransform, new Vector2(0, 0.48f), new Vector2(0.42f, 1), new Vector2(0, 1), new Vector2(20, -4), new Vector2(-8, 0));
-            _lastDayWeek = UiKit.Label(_lastDayRoot, "LastDayWeek", "1주차 마지막", 22, Color.white, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UiKit.Layout(_lastDayWeek.rectTransform, new Vector2(0.42f, 0.48f), new Vector2(1, 1), new Vector2(0, 1), new Vector2(8, -4), new Vector2(-16, 0));
-            _lastDayNeed = UiKit.Label(_lastDayRoot, "LastDayNeed", "", 16, Palette.Pastel, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UiKit.Layout(_lastDayNeed.rectTransform, new Vector2(0, 0), new Vector2(1, 0.52f), new Vector2(0, 0), new Vector2(20, 6), new Vector2(-24, 0));
+            _lastDayRoot = UiKit.Panel(root, "LastDayBanner", Color.white);
+            UiKit.Layout(_lastDayRoot, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(744, -8), new Vector2(312, 108));
+            var lastTabImg = _lastDayRoot.GetComponent<Image>();
+            ArtSprites.Apply(lastTabImg, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            lastTabImg.preserveAspect = false;
+            lastTabImg.raycastTarget = false;
+            var lastTitle = UiKit.Label(_lastDayRoot, "LastDayTitle", "마지막 날", 26, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(lastTitle.rectTransform, new Vector2(0, 0.58f), new Vector2(1, 1), new Vector2(0, 1), new Vector2(16, -4), new Vector2(-28, 0));
+            _lastDayWeek = UiKit.Label(_lastDayRoot, "LastDayWeek", "1주차 마지막", 18, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_lastDayWeek.rectTransform, new Vector2(0, 0.34f), new Vector2(1, 0.62f), new Vector2(0, 1), new Vector2(16, 0), new Vector2(-28, 0));
+            _lastDayNeed = UiKit.Label(_lastDayRoot, "LastDayNeed", "", 13, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_lastDayNeed.rectTransform, new Vector2(0, 0), new Vector2(1, 0.38f), new Vector2(0, 0), new Vector2(16, 6), new Vector2(-28, 0));
             UiKit.Wrap(_lastDayNeed);
             _lastDayRoot.gameObject.SetActive(false);
 

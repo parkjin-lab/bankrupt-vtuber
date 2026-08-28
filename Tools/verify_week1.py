@@ -1480,6 +1480,7 @@ def check_project() -> None:
     check_bill_cover_slam()
     check_yesterday_headline()
     check_last_day_banner()
+    check_last_day_tab()
     check_title_continue_preview()
     check_title_day_tab()
     check_settle_day_tab()
@@ -4569,6 +4570,82 @@ def check_last_day_banner() -> None:
         fail("last-day banner retuned Week 1 clear or bills")
     else:
         ok("day 5/10/15/20/25 WeekStart shows 마지막 날; other mornings stay quiet")
+
+
+def check_last_day_tab() -> None:
+    """Morning last-day / week-last banner sits on a second day_tab; other mornings stay tab-free."""
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    banner = week_cs.split('"LastDayBanner"', 1)[-1].split('"WavePanel"', 1)[0]
+    refresh = week_cs.split("void RefreshLastDay", 1)[-1].split("static string LastDayClearReminder", 1)[0]
+    reminder = week_cs.split("static string LastDayClearReminder", 1)[-1].split("static string ContentPickName", 1)[0]
+    head = week_cs.split('"DayTab"', 1)[-1].split('"DayLabel"', 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
+
+    if 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif "ArtSprites.DayTab" not in week_cs or '"DayTab"' not in week_cs:
+        fail("last-day tab dropped morning n일차 day_tab")
+    elif "ArtSprites.DayTab" not in banner or '"LastDayBanner"' not in week_cs:
+        fail("last-day banner does not sit on Art/day_tab")
+    elif "ArtSprites.ThreatBanner" in banner:
+        fail("last-day banner is still a ThreatBanner, not day_tab paper")
+    elif '"마지막 날"' not in banner or "주차 마지막" not in banner:
+        fail("last-day tab changed Korean copy")
+    elif "Palette.Gold" not in banner:
+        fail("last-day tab dropped the gold calendar read")
+    elif "SetActive(false)" not in banner:
+        fail("last-day tab is not hidden on a normal morning")
+    elif "LastDayOfCurrentWeek" not in refresh or "SetActive(last)" not in refresh:
+        fail("last-day tab is not keyed off WeekSchedule last days")
+    elif "Week1LastDay = 5" not in sched_cs or "Week2LastDay = 10" not in sched_cs:
+        fail("last-day tab moved off days 5 / 10")
+    elif "Week3LastDay = 15" not in sched_cs or "Week4LastDay = 20" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("last-day tab moved off days 15 / 20 / 25")
+    elif "winDebtMax" not in reminder or "winCashMin" not in reminder:
+        fail("last-day tab dropped the existing cash/debt clear line")
+    elif "ArtSprites.DayTab" not in head or "DayHead" not in head:
+        fail("last-day tab stole the n일차 calendar tab")
+    elif "_daySlam = 0.25f" not in week_cs or "TickGoLivePulse" not in week_cs:
+        fail("last-day tab changed n일차 slam or GO LIVE pulse")
+    elif "WaitForSeconds(0.45f)" not in week_cs:
+        fail("last-day tab changed last-day slam wait")
+    elif "ArtSprites.ThreatBanner" not in week_cs:
+        fail("last-day tab dropped debt ThreatBanner reuse")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in live_cs:
+        fail("last-day tab dropped concert live concert_stage")
+    elif "ArtSprites.JudgePerfect" not in slam:
+        fail("last-day tab dropped Day-1 coach Perfect stamp")
+    elif "Audio/sfx_threat" not in live_cs or "PlayThreatSfx" not in live_cs:
+        fail("last-day tab dropped live sfx_threat")
+    elif "ContinueDayTab" not in title_cs or '"SettleDayTab"' not in settle_cs:
+        fail("last-day tab dropped title / settlement day_tab")
+    elif "perfectWindow: 0.07" not in balance or "perfectWindow * " not in rules_cs:
+        fail("last-day tab retuned hit windows")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("last-day tab retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("last-day tab retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("last-day tab retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("last-day tab broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising last-day tab / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("last-day tab dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("last-day tab moved Unity off 6000.5.9f1")
+    else:
+        ok("last-day banner sits on day_tab; other mornings stay quiet; copy / days stay")
 
 
 def check_title_continue_preview() -> None:
