@@ -1549,6 +1549,7 @@ def check_project() -> None:
     check_ending_headline_clip()
     check_ending_day_tab()
     check_ending_mental_note()
+    check_readme_ending_mental_note()
     check_readme_ending_clip_tab()
     check_readme_onair_led()
     check_readme_rival_hud()
@@ -9207,6 +9208,66 @@ def check_ending_mental_note() -> None:
         ok("clear / bankrupt mental sit on mental_note; desk paper / stamps / clip / sfx / rules stay")
 
 
+def check_readme_ending_mental_note() -> None:
+    """README names clear/bankrupt mental on the shared mental_note sticky."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    desk_paper = readme.split("- **책상 종이**", 1)[-1].split("- **돈 스탬프", 1)[0]
+    mental_line = next((ln for ln in desk_paper.splitlines() if "Art/mental_note" in ln), "")
+    splash = settle_cs.split("void ApplyResultSplashes", 1)[-1].split("void ApplyHeadline", 1)[0]
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    clear_build = build.split('ClearRoot"', 1)[-1].split('StampRoot"', 1)[0]
+    stamp_build = build.split('StampRoot"', 1)[-1].split('LetterRoot"', 1)[0]
+
+    if "엔딩 멘탈" not in settle_loop:
+        fail("README loop does not name 엔딩 멘탈")
+    elif "mental_note" not in settle_loop or "멘탈 N" not in settle_loop:
+        fail("README loop does not name ending mental on mental_note")
+    elif "번아웃" not in settle_loop or "멘탈 0" not in settle_loop:
+        fail("README loop dropped burnout mental copy")
+    elif "엔딩 스탬프" not in settle_loop or "cash_slip" not in settle_loop or "bill_notice" not in settle_loop:
+        fail("README ending mental dropped desk paper or ending stamps")
+    elif "엔딩 클립·탭" not in settle_loop or "headline_clip" not in settle_loop or "day_tab" not in settle_loop:
+        fail("README ending mental dropped ending clip / day tab")
+    elif "엔딩 멘탈" not in mental_line or "클리어" not in mental_line or "파산" not in mental_line:
+        fail("README mental_note inventory must name 엔딩 멘탈 클리어/파산")
+    elif "멘탈 N" not in mental_line or "멘탈 0" not in mental_line:
+        fail("README mental_note inventory must name 멘탈 N / burnout 멘탈 0")
+    elif "정산" not in mental_line or "멘탈 위험" not in mental_line or "아침" not in mental_line or "이어서 하기" not in mental_line:
+        fail("README mental_note inventory dropped morning / title / live / settlement reuse")
+    elif "ArtSprites.MentalNote" not in clear_build or '"ClearMentalNote"' not in clear_build:
+        fail("README ending mental lost week-clear mental_note")
+    elif "ArtSprites.MentalNote" not in stamp_build or '"StampMentalNote"' not in stamp_build:
+        fail("README ending mental lost bankrupt mental_note")
+    elif '"멘탈  "' not in splash or "run.mental" not in splash:
+        fail("README ending mental lost the current mental read")
+    elif "멘탈 0   ·   " not in splash or "zeroMentalDays" not in splash:
+        fail("README ending mental lost burnout mental copy")
+    elif "run.mental =" in splash:
+        fail("README ending mental writes mental")
+    elif "PlaySettleSfx(_clearCue" not in splash or "PlaySettleSfx(_bankruptCue" not in splash:
+        fail("README ending mental dropped sfx_clear / sfx_bankrupt")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README ending mental retuned Week 1 economy / bankrupt line")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README ending mental retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README ending mental broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising ending mental / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README ending mental dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README ending mental moved Unity off 6000.5.9f1")
+    else:
+        ok("README names ending mental sticky reuse (clear / bankrupt mental_note)")
+
+
 def check_readme_ending_clip_tab() -> None:
     """README names lastHeadline on headline_clip and n일차 on day_tab as the ending pair."""
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -13901,6 +13962,7 @@ def check_readme_playable() -> None:
         or "**현금**" not in settle_loop
         or "**부채**" not in settle_loop
         or "**멘탈**" not in settle_loop
+        or "엔딩 멘탈" not in settle_loop
         or "클리어는 숨김" not in settle_loop
         or "bill_cover" not in settle_loop
         or "청구 커버" not in settle_loop
