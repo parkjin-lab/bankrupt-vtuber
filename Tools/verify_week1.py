@@ -1570,6 +1570,7 @@ def check_project() -> None:
     check_readme_coach_perfect_stamp()
     check_readme_concert_live_stage()
     check_readme_goods_promo_live_stand()
+    check_readme_sponsor_mention_live_card()
     check_readme_last_day_tab()
     check_readme_title_last_day_tab()
     check_readme_settle_last_day_tab()
@@ -10853,6 +10854,132 @@ def check_readme_goods_promo_live_stand() -> None:
         ok("README names goods-promo live goods_stand shelf vs hidden on regular lives")
 
 
+def check_readme_sponsor_mention_live_card() -> None:
+    """README names Week 4 sponsor-mention live sponsor_card HUD plate vs hidden on regular lives."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    w4_asset = (ROOT / "Assets/Resources/Balance/Week4Balance.asset").read_text(encoding="utf-8")
+    w4r_cs = (ROOT / "Assets/Scripts/Economy/Week4Rules.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    live_loop = readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]
+    week_cards = next((ln for ln in readme.splitlines() if "주차 카드" in ln and "concert_stage" in ln), "")
+    plate_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **스폰서 플레이트**")), "")
+    shelf_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **굿즈 선반**")), "")
+    week4 = readme.split("**4주차**", 1)[-1].split("**5주차**", 1)[0]
+    week3 = readme.split("**3주차**", 1)[-1].split("**4주차**", 1)[0]
+    stage_inv = next((ln for ln in readme.splitlines() if "콘서트 바탕" in ln and "sfx_concert_book" in ln and "스테이지 숨김" in ln), "")
+    coach_stamp = next((ln for ln in readme.splitlines() if "코치 스탬프" in ln and "judge_perfect" in ln), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    plate = build.split('"SponsorCardHud"', 1)[-1].split('"GoodsStandHud"', 1)[0] if '"SponsorCardHud"' in build else ""
+    shelf = build.split('"GoodsStandHud"', 1)[-1].split('"HypeFlash"', 1)[0] if '"GoodsStandHud"' in build else ""
+    under = build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
+
+    missing = next(
+        (
+            f"{label} {token}"
+            for label, block in (
+                ("live loop", live_loop),
+                ("week-card inventory", week_cards),
+                ("sponsor-plate inventory", plate_inv),
+                ("Week 4", week4),
+            )
+            for token in ("sponsor_card", "스폰서 멘트")
+            if token not in block
+        ),
+        "",
+    )
+
+    if missing:
+        fail(f"README {missing} must name sponsor-mention live sponsor_card plate")
+    elif "플레이트" not in live_loop or "숨김" not in live_loop or "스폰서 멘트" not in live_loop:
+        fail("README live loop must name sponsor_card as a plate hidden on regular lives")
+    elif "플레이트" not in plate_inv or "숨김" not in plate_inv:
+        fail("README sponsor-plate inventory must name the live plate vs hidden")
+    elif "플레이트" not in week4 or "숨김" not in week4 or "sfx_sponsor" not in week4:
+        fail("README Week 4 must name sponsor_card live plate vs hidden")
+    elif "goods_stand" not in week_cards or "굿즈 홍보" not in week_cards:
+        fail("README week-card inventory dropped goods_stand live shelf")
+    elif "concert_stage" not in week_cards or "스튜디오 워시" not in week_cards:
+        fail("README week-card inventory dropped concert_stage studio wash")
+    elif "goods_stand" not in live_loop or "선반" not in live_loop:
+        fail("README must keep goods_stand as the shelf, not sponsor_card")
+    elif "concert_stage" not in live_loop or "콘서트 바탕" not in live_loop:
+        fail("README must keep concert_stage as the backdrop, not sponsor_card")
+    elif "선반 아님" not in live_loop and "선반 아님" not in plate_inv:
+        fail("README must say sponsor_card is not the goods_stand shelf")
+    elif "콘서트 바탕" not in stage_inv or "스테이지 숨김" not in stage_inv:
+        fail("README sponsor plate dropped concert backdrop")
+    elif "선반" not in shelf_inv or "goods_stand" not in shelf_inv:
+        fail("README sponsor plate dropped goods-stand inventory")
+    elif "선반" not in week3 or "숨김" not in week3 or "sfx_goods" not in week3:
+        fail("README Week 3 dropped goods_stand live shelf")
+    elif "숫자" not in week4 or "확인" not in week4:
+        fail("README Week 4 dropped sponsor copy / numbers")
+    elif "3,000" not in plate_inv or "15,000" not in plate_inv or "12" not in plate_inv:
+        fail("README sponsor-plate inventory dropped keep / fail / mental numbers")
+    elif "sfx_sponsor" not in plate_inv:
+        fail("README sponsor-plate inventory dropped sfx_sponsor")
+    elif "코치 스탬프" not in coach_stamp or "judge_miss" not in coach_stamp:
+        fail("README sponsor plate dropped Day-1 coach stamps")
+    elif sfx_inv.count("sfx_threat") < 4:
+        fail("README SFX inventory dropped the four sfx_threat uses")
+    elif '"SponsorCardHud"' not in build or "ArtSprites.SponsorCard" not in plate:
+        fail("README sponsor plate lost the live HUD hang")
+    elif "UiKit.Stretch" in plate:
+        fail("sponsor_card HUD became a full-screen backdrop")
+    elif "168f, 168f" in plate or "16f, 208f" in plate:
+        fail("sponsor_card stole the goods_stand shelf slot")
+    elif "SetActive(_sponsorShow)" not in apply or "EnableSponsorLine" not in start:
+        fail("README sponsor plate lost EnableSponsorLine / SetActive(_sponsorShow)")
+    elif "SetActive(_goodsShow)" not in apply or "ArtSprites.GoodsStand" not in shelf:
+        fail("README sponsor plate dropped goods-promo live goods_stand")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in under:
+        fail("README sponsor plate dropped concert live concert_stage")
+    elif 'SponsorCard = "Art/sponsor_card"' not in art_cs:
+        fail("ArtSprites does not hook Art/sponsor_card")
+    elif "ArtSprites.SponsorCard" not in live_cs or "EnableSponsorLine" not in session_cs:
+        fail("README sponsor plate dropped mention-card art / EnableSponsorLine")
+    elif "sponsorLineBonus: 3000" not in w4_asset or "sponsorFailCash: 15000" not in w4_asset or "sponsorFailMental: 12" not in w4_asset:
+        fail("README sponsor plate retuned line payout / fail")
+    elif "sponsorPeakViewers: 70" not in w4_asset or "sponsorDaily: 10000" not in w4_asset:
+        fail("README sponsor plate retuned sponsor deal numbers")
+    elif "ApplySponsorLine" not in w4r_cs or "w4.sponsorLineBonus" not in w4r_cs:
+        fail("README sponsor plate changed ApplySponsorLine payout")
+    elif "goodsUnlockCash: 60000" not in w3_asset or "goodsPromoMultiplier: 1.5" not in w3_asset:
+        fail("README sponsor plate retuned goods unlock / promo")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README sponsor plate retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README sponsor plate retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README sponsor plate retuned week-clear gates")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset:
+        fail("README sponsor plate retuned concert cost / payout")
+    elif "perfectWindow * " not in rules_cs:
+        fail("README sponsor plate retuned Judge windows")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README sponsor plate broke pads, 입력됨, or added timeScale")
+    elif "Week4" in title_cs or "스폰서" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising sponsor plate / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README sponsor plate dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README sponsor plate moved Unity off 6000.5.9f1")
+    else:
+        ok("README names sponsor-mention live sponsor_card plate vs hidden on regular lives")
+
+
 def check_readme_last_day_tab() -> None:
     """README names the morning last-day banner on a second day_tab next to n일차."""
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -15374,6 +15501,10 @@ def check_readme_playable() -> None:
         fail("README does not inventory goods-promo live goods_stand shelf")
     elif "선반" not in readme.split("**3주차**", 1)[-1].split("**4주차**", 1)[0]:
         fail("README Week 3 dropped goods_stand live shelf")
+    elif "스폰서 플레이트" not in readme or "sponsor_card" not in readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]:
+        fail("README does not inventory sponsor-mention live sponsor_card plate")
+    elif "플레이트" not in readme.split("**4주차**", 1)[-1].split("**5주차**", 1)[0]:
+        fail("README Week 4 dropped sponsor_card live plate")
     elif "책상 종이" not in readme:
         fail("README does not name the desk-paper stack")
     elif "라이브 HUD 스택" not in readme:
@@ -15543,7 +15674,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + 코치 스탬프 + 콘서트 바탕 + 굿즈 선반 + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + 코치 스탬프 + 콘서트 바탕 + 굿즈 선반 + 스폰서 플레이트 + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
