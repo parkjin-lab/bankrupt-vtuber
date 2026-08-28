@@ -1533,6 +1533,7 @@ def check_project() -> None:
     check_ending_desk_paper()
     check_ending_bill_short()
     check_ending_bill_cover()
+    check_readme_ending_stamps()
     check_letter_card()
     check_letter_keycaps()
     check_pad_sfx()
@@ -8240,6 +8241,57 @@ def check_ending_bill_cover() -> None:
         ok("week-clear shows bill_cover 청구 커버; bankrupt hides it; desk paper / sfx / rules stay")
 
 
+def check_readme_ending_stamps() -> None:
+    """README names week-clear bill_cover PAID and bankrupt bill_short as the ending pair."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    desk_paper = readme.split("- **책상 종이**", 1)[-1].split("- **돈 스탬프", 1)[0]
+    money = readme.split("- **돈 스탬프", 1)[-1].split("- **라이브 HUD", 1)[0]
+    splash = settle_cs.split("void ApplyResultSplashes", 1)[-1].split("void ApplyHeadline", 1)[0]
+
+    if "엔딩 스탬프" not in settle_loop:
+        fail("README loop does not name the ending stamp pair")
+    elif "bill_cover" not in settle_loop or "PAID" not in settle_loop or "청구 커버" not in settle_loop:
+        fail("README loop does not name week-clear bill_cover PAID")
+    elif "bill_short" not in settle_loop or "청구 미달" not in settle_loop:
+        fail("README loop does not name bankrupt bill_short")
+    elif "파산은 숨김" not in settle_loop or "클리어는 숨김" not in settle_loop:
+        fail("README loop dropped hide-on-opposite ending stamps")
+    elif "cash_slip" not in settle_loop or "bill_notice" not in settle_loop or "mental_note" not in settle_loop:
+        fail("README ending stamps dropped desk paper")
+    elif "bill_cover" not in desk_paper or "PAID" not in desk_paper or "파산은 숨김" not in desk_paper:
+        fail("README desk paper dropped week-clear bill_cover PAID")
+    elif "bill_short" not in desk_paper or "청구 미달" not in desk_paper or "클리어는 숨김" not in desk_paper:
+        fail("README desk paper dropped bankrupt bill_short")
+    elif "엔딩 스탬프" not in money or "bill_cover" not in money or "PAID" not in money:
+        fail("README money stamps dropped week-clear bill_cover PAID")
+    elif "엔딩 스탬프" not in money or "bill_short" not in money or "청구 미달" not in money:
+        fail("README money stamps dropped bankrupt bill_short")
+    elif "ArtSprites.BillCover" not in settle_cs or "ArtSprites.BillShort" not in settle_cs:
+        fail("README ending stamps lost week-clear bill_cover / bankrupt bill_short hooks")
+    elif "PlaySettleSfx(_clearCue" not in splash or "PlaySettleSfx(_bankruptCue" not in splash:
+        fail("README ending stamps dropped sfx_clear / sfx_bankrupt")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README ending stamps retuned Week 1 economy / bankrupt line")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README ending stamps retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README ending stamps broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising ending stamps / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README ending stamps dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README ending stamps moved Unity off 6000.5.9f1")
+    else:
+        ok("README names week-clear bill_cover PAID and bankrupt bill_short; desk paper / numbers stay")
+
+
 def check_letter_card() -> None:
     import struct
 
@@ -11436,10 +11488,14 @@ def check_readme_playable() -> None:
         or "bill_cover" not in settle_loop
         or "청구 커버" not in settle_loop
         or "파산은 숨김" not in settle_loop
+        or "엔딩 스탬프" not in settle_loop
+        or "PAID" not in settle_loop
     ):
-        fail("README loop does not name ending desk paper, bankrupt bill_short, or clear bill_cover")
+        fail("README loop does not name ending desk paper or both ending stamps")
     elif "bill_short" not in desk_paper or "클리어는 숨김" not in desk_paper or "파산" not in desk_paper:
         fail("README desk paper dropped bankrupt bill_short hide-on-clear")
+    elif "bill_cover" not in desk_paper or "PAID" not in desk_paper or "파산은 숨김" not in desk_paper:
+        fail("README desk paper dropped week-clear bill_cover PAID")
     elif "combo_plate" not in readme or "COMBO" not in readme or "콤보 끊김" not in readme:
         fail("README dropped combo_plate live badge")
     elif "combo_break" not in readme or "sfx_combo_break" not in readme:
@@ -11511,7 +11567,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names ending desk paper + bankrupt stamp + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names ending desk paper + ending stamps + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
