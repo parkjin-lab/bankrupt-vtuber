@@ -1658,6 +1658,7 @@ def check_project() -> None:
     check_readme_live_last_day_tab()
     check_readme_live_day1_bill()
     check_readme_live_last_day_bill()
+    check_readme_live_week_start_bill()
     check_readme_morning_day1()
     check_readme_settle_day1()
     check_readme_morning_week_start()
@@ -27123,6 +27124,258 @@ def check_readme_live_last_day_bill() -> None:
         fail("README live last-day bill moved Unity off 6000.5.9f1")
     else:
         ok("README names 라이브 마지막 날 청구서 vs 라이브 1일차 청구서, 새 게임 청구서, 아침 오늘 청구, 정산 청구, 라이브 마지막 날, and 라이브 마지막 날 헤드라인")
+
+
+def check_readme_live_week_start_bill() -> None:
+    """README names the LiveStream week-start bill paper vs 라이브 1일차 청구서, 라이브 마지막 날 청구서, Title 새 게임 청구서, morning 오늘 청구, settlement 청구, 라이브 주차 첫날, and 라이브 주차 첫날 헤드라인."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
+    title_loop = readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]
+    morning_loop = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    live_loop = readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    desk_paper = readme.split("- **책상 종이**", 1)[-1].split("- **돈 스탬프", 1)[0]
+    live_week_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 청구서**")), "")
+    live_last_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 청구서**")), "")
+    live_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 청구서**")), "")
+    live_day1_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차**") and "헤드라인" not in ln.split("—", 1)[0] and "청구서" not in ln.split("—", 1)[0]), "")
+    live_week_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날**") and "헤드라인" not in ln.split("—", 1)[0] and "청구서" not in ln.split("—", 1)[0]), "")
+    live_last_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날**") and "헤드라인" not in ln.split("—", 1)[0] and "청구서" not in ln.split("—", 1)[0]), "")
+    live_week_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 헤드라인**")), "")
+    live_last_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 헤드라인**")), "")
+    live_day1_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 헤드라인**")), "")
+    newgame_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 청구서**")), "")
+    shared_bill = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **고지서")), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    sponsor_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **이어하기 스폰서 핀**")), "")
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_bill = start_hang.split("_startBill = UiKit.Image", 1)[-1] if "_startBill = UiKit.Image" in start_hang else ""
+    if "_startCash = UiKit.Image" in title_bill:
+        title_bill = title_bill.split("_startCash = UiKit.Image", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    paper = live_build.split('"LiveWeekBill"', 1)[-1].split('"LiveLastDay"', 1)[0] if '"LiveWeekBill"' in live_build else ""
+    day1_bill = live_build.split('"LiveDay1Bill"', 1)[-1].split('"LiveLastBill"', 1)[0] if '"LiveLastBill"' in live_build else ""
+    last_bill = live_build.split('"LiveLastBill"', 1)[-1].split('"LiveWeekBill"', 1)[0] if '"LiveWeekBill"' in live_build else ""
+    week_tab = live_build.split('"LiveWeekStart"', 1)[-1].split('"LiveLastHeadline"', 1)[0] if '"LiveWeekStart"' in live_build else ""
+    week_head = live_build.split('"LiveWeekHeadline"', 1)[-1].split("_rivalDuel = new RivalDuelView", 1)[0] if '"LiveWeekHeadline"' in live_build else ""
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    week_bill_apply = apply.split("if (_weekBill", 1)[-1].split("if (_lastHeadline", 1)[0] if "if (_weekBill" in apply else ""
+    live_bill_apply = apply.split("if (_day1Bill", 1)[-1].split("if (_weekHeadline", 1)[0] if "if (_day1Bill" in apply else ""
+    last_bill_apply = apply.split("if (_lastBill", 1)[-1].split("UiKit.EnsureCamera", 1)[0] if "if (_lastBill" in apply else ""
+    week_live_gate = live_cs.split("static bool LiveWeekStartDay", 1)[-1].split("static Color ShowChipAccent", 1)[0] if "static bool LiveWeekStartDay" in live_cs else ""
+    last_live_gate = live_cs.split("static bool LiveLastDay", 1)[-1].split("void ApplyThreatShow", 1)[0] if "static bool LiveLastDay" in live_cs else ""
+
+    if "**라이브 주차 첫날 청구서**" not in desk_paper or "`LiveWeekBill`" not in desk_paper or "bill_notice" not in live_week_bill_inv:
+        fail("README must name 라이브 주차 첫날 청구서 on Art/bill_notice")
+    elif "청구서" not in live_week_bill_inv or "preserveAspect" not in live_week_bill_inv or "숨김" not in live_week_bill_inv:
+        fail("README must name the week-start live bill paper vs hidden")
+    elif "6/11/16/21" not in live_week_bill_inv:
+        fail("README must keep 라이브 주차 첫날 청구서 on days 6 / 11 / 16 / 21")
+    elif "**라이브 1일차 청구서**" not in live_loop or "`LiveDay1Bill`" not in live_loop:
+        fail("README live loop must keep 라이브 1일차 청구서 on its own bill paper")
+    elif "**라이브 마지막 날 청구서**" not in desk_paper or "`LiveLastBill`" not in desk_paper:
+        fail("README must keep 라이브 마지막 날 청구서 on its own bill paper")
+    elif "**라이브 주차 첫날**" not in live_loop or "`LiveWeekStart`" not in live_loop:
+        fail("README live loop must keep 라이브 주차 첫날 on its own calendar")
+    elif "라이브 주차 첫날 헤드라인" not in live_loop or "LiveWeekHeadline" not in live_loop:
+        fail("README live loop must keep 라이브 주차 첫날 헤드라인 on its own paper")
+    elif "새 게임 청구서" not in live_loop or "오늘 청구" not in live_loop or "정산 **청구**" not in live_loop:
+        fail("README live loop must keep 라이브 주차 첫날 청구서 distinct from Title / morning / settlement bills")
+    elif "새 SFX 없음" not in live_week_bill_inv:
+        fail("README must keep 라이브 주차 첫날 청구서 without a new sting")
+    elif "**라이브 주차 첫날 청구서**" in title_loop or "`LiveWeekBill`" in title_loop:
+        fail("README hung 라이브 주차 첫날 청구서 on the Title loop")
+    elif "**라이브 주차 첫날 청구서**" in morning_loop or "`LiveWeekBill`" in morning_loop:
+        fail("README hung 라이브 주차 첫날 청구서 on the morning loop")
+    elif "**라이브 주차 첫날 청구서**" in settle_loop or "`LiveWeekBill`" in settle_loop:
+        fail("README hung 라이브 주차 첫날 청구서 on the settlement loop")
+    elif "새 게임 청구서" not in title_loop or "NewGameBill" not in title_loop:
+        fail("README 라이브 주차 첫날 청구서 dropped Title 새 게임 청구서")
+    elif "오늘 청구" not in morning_loop or "bill_notice" not in morning_loop:
+        fail("README 라이브 주차 첫날 청구서 dropped morning 오늘 청구")
+    elif "청구" not in settle_loop or "부채" not in settle_loop:
+        fail("README 라이브 주차 첫날 청구서 dropped settlement 청구 / 부채")
+    elif "**2주차**" in title_loop or "**3주차**" in title_loop or "**4주차**" in title_loop or "**5주차**" in title_loop:
+        fail("README live week-start bill used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "**2주차**" in live_week_bill_inv or "**3주차**" in live_week_bill_inv or "**4주차**" in live_week_bill_inv or "**5주차**" in live_week_bill_inv:
+        fail("README 라이브 주차 첫날 청구서 line used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "**2주차**" in live_loop or "**3주차**" in live_loop or "**4주차**" in live_loop or "**5주차**" in live_loop:
+        fail("README live loop used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "**라이브 주차 첫날 청구서**" not in live_week_bill_inv or "`LiveWeekBill`" not in live_week_bill_inv or "bill_notice" not in live_week_bill_inv:
+        fail("README must inventory 라이브 주차 첫날 청구서 on its own bill line")
+    elif "preserveAspect" not in live_week_bill_inv or "청구서" not in live_week_bill_inv or "숨김" not in live_week_bill_inv:
+        fail("README 라이브 주차 첫날 청구서 line must name the preserveAspect Korean 청구서 paper vs hidden")
+    elif "6/11/16/21" not in live_week_bill_inv:
+        fail("README 라이브 주차 첫날 청구서 line must name days 6 / 11 / 16 / 21")
+    elif "헤드라인" in live_week_bill_inv.split("—", 1)[0]:
+        fail("README 라이브 주차 첫날 청구서 line must stay a bill paper, not the headline")
+    elif "headline_clip" in live_week_bill_inv or "day_tab" in live_week_bill_inv:
+        fail("README 라이브 주차 첫날 청구서 line must stay a bill_notice paper, not a headline or calendar")
+    elif "sfx_threat" in live_week_bill_inv:
+        fail("README 라이브 주차 첫날 청구서 line must not add a new threat sting")
+    elif "새 게임 청구서" not in live_week_bill_inv or "오늘 청구" not in live_week_bill_inv or "정산 **청구**" not in live_week_bill_inv:
+        fail("README 라이브 주차 첫날 청구서 line must stay distinct from Title / morning / settlement bills")
+    elif "라이브 1일차 청구서" not in live_week_bill_inv or "`LiveDay1Bill`" not in live_week_bill_inv:
+        fail("README 라이브 주차 첫날 청구서 line must stay distinct from 라이브 1일차 청구서")
+    elif "라이브 마지막 날 청구서" not in live_week_bill_inv or "`LiveLastBill`" not in live_week_bill_inv:
+        fail("README 라이브 주차 첫날 청구서 line must stay distinct from 라이브 마지막 날 청구서")
+    elif "라이브 주차 첫날" not in live_week_bill_inv or "`LiveWeekStart`" not in live_week_bill_inv:
+        fail("README 라이브 주차 첫날 청구서 line must stay distinct from 라이브 주차 첫날")
+    elif "라이브 주차 첫날 헤드라인" not in live_week_bill_inv or "`LiveWeekHeadline`" not in live_week_bill_inv:
+        fail("README 라이브 주차 첫날 청구서 line must stay distinct from 라이브 주차 첫날 헤드라인")
+    elif "`NewGameBill`" not in live_week_bill_inv or "ContinueDebtNotice" not in live_week_bill_inv:
+        fail("README 라이브 주차 첫날 청구서 line must stay distinct from NewGameBill / ContinueDebtNotice")
+    elif live_week_bill_inv == live_bill_inv or live_week_bill_inv == live_last_bill_inv or live_week_bill_inv == live_week_inv or live_week_bill_inv == live_week_head_inv or live_week_bill_inv == newgame_bill_inv or live_week_bill_inv == shared_bill:
+        fail("README must keep 라이브 주차 첫날 청구서 distinct from 라이브 1일차 청구서, 라이브 마지막 날 청구서, 라이브 주차 첫날, 라이브 주차 첫날 헤드라인, 새 게임 청구서, and the shared 고지서")
+    elif live_week_bill_inv == live_day1_inv or live_week_bill_inv == live_last_inv or live_week_bill_inv == live_day1_head_inv or live_week_bill_inv == live_last_head_inv:
+        fail("README must keep 라이브 주차 첫날 청구서 distinct from live calendars / headlines")
+    elif readme.index(live_last_bill_inv) >= readme.index(live_week_bill_inv):
+        fail("README 라이브 마지막 날 청구서 line must stay before 라이브 주차 첫날 청구서")
+    elif readme.index(live_week_head_inv) >= readme.index(live_week_bill_inv):
+        fail("README 라이브 주차 첫날 헤드라인 line must stay before 라이브 주차 첫날 청구서")
+    elif "`LiveWeekBill`" in shared_bill or "**라이브 주차 첫날 청구서**" in shared_bill:
+        fail("README folded 라이브 주차 첫날 청구서 into the shared 고지서 inventory")
+    elif "여섯 곳" not in shared_bill or "오늘 청구" not in shared_bill or "청구 ₩N" not in shared_bill:
+        fail("README 라이브 주차 첫날 청구서 rewrote the shared 고지서 inventory")
+    elif "`LiveDay1Bill`" not in live_bill_inv or "bill_notice" not in live_bill_inv or "청구서" not in live_bill_inv:
+        fail("README 라이브 주차 첫날 청구서 rewrote the 라이브 1일차 청구서 line")
+    elif "`LiveWeekBill`" in live_bill_inv or "**라이브 주차 첫날 청구서**" in live_bill_inv:
+        fail("README folded 라이브 주차 첫날 청구서 into the 라이브 1일차 청구서 line")
+    elif "`LiveLastBill`" not in live_last_bill_inv or "bill_notice" not in live_last_bill_inv or "5/10/15/20/25" not in live_last_bill_inv:
+        fail("README 라이브 주차 첫날 청구서 rewrote the 라이브 마지막 날 청구서 line")
+    elif "`LiveWeekBill`" in live_last_bill_inv or "**라이브 주차 첫날 청구서**" in live_last_bill_inv:
+        fail("README folded 라이브 주차 첫날 청구서 into the 라이브 마지막 날 청구서 line")
+    elif "`LiveDay1`" not in live_day1_inv or "day_tab" not in live_day1_inv or "1일차" not in live_day1_inv:
+        fail("README 라이브 주차 첫날 청구서 rewrote the 라이브 1일차 calendar line")
+    elif "`LiveWeekBill`" in live_day1_inv or "**라이브 주차 첫날 청구서**" in live_day1_inv:
+        fail("README folded 라이브 주차 첫날 청구서 into the 라이브 1일차 calendar line")
+    elif "LiveDay1Headline" not in live_day1_head_inv or "headline_clip" not in live_day1_head_inv:
+        fail("README 라이브 주차 첫날 청구서 rewrote the 라이브 1일차 헤드라인 line")
+    elif "`LiveWeekBill`" in live_day1_head_inv or "**라이브 주차 첫날 청구서**" in live_day1_head_inv:
+        fail("README folded 라이브 주차 첫날 청구서 into the 라이브 1일차 헤드라인 line")
+    elif "`LiveWeekStart`" not in live_week_inv or "day_tab" not in live_week_inv or "6/11/16/21" not in live_week_inv:
+        fail("README 라이브 주차 첫날 청구서 rewrote the 라이브 주차 첫날 calendar line")
+    elif "`LiveWeekBill`" in live_week_inv or "**라이브 주차 첫날 청구서**" in live_week_inv:
+        fail("README folded 라이브 주차 첫날 청구서 into the 라이브 주차 첫날 calendar line")
+    elif "LiveWeekHeadline" not in live_week_head_inv or "headline_clip" not in live_week_head_inv or "6/11/16/21" not in live_week_head_inv:
+        fail("README 라이브 주차 첫날 청구서 rewrote the 라이브 주차 첫날 헤드라인 line")
+    elif "`LiveWeekBill`" in live_week_head_inv or "**라이브 주차 첫날 청구서**" in live_week_head_inv:
+        fail("README folded 라이브 주차 첫날 청구서 into the 라이브 주차 첫날 헤드라인 line")
+    elif "`LiveLastDay`" not in live_last_inv or "day_tab" not in live_last_inv or "5/10/15/20/25" not in live_last_inv:
+        fail("README 라이브 주차 첫날 청구서 rewrote the 라이브 마지막 날 calendar line")
+    elif "`LiveWeekBill`" in live_last_inv or "**라이브 주차 첫날 청구서**" in live_last_inv:
+        fail("README folded 라이브 주차 첫날 청구서 into the 라이브 마지막 날 calendar line")
+    elif "LiveLastHeadline" not in live_last_head_inv or "headline_clip" not in live_last_head_inv:
+        fail("README 라이브 주차 첫날 청구서 rewrote the 라이브 마지막 날 헤드라인 line")
+    elif "`LiveWeekBill`" in live_last_head_inv or "**라이브 주차 첫날 청구서**" in live_last_head_inv:
+        fail("README folded 라이브 주차 첫날 청구서 into the 라이브 마지막 날 헤드라인 line")
+    elif "NewGameBill" not in newgame_bill_inv or "bill_notice" not in newgame_bill_inv or "오늘 청구" not in newgame_bill_inv:
+        fail("README 라이브 주차 첫날 청구서 rewrote the 새 게임 청구서 line")
+    elif "`LiveWeekBill`" in newgame_bill_inv or "**라이브 주차 첫날 청구서**" in newgame_bill_inv:
+        fail("README folded 라이브 주차 첫날 청구서 into the 새 게임 청구서 line")
+    elif "**라이브 주차 첫날 청구서**" not in desk_paper or "`LiveWeekBill`" not in desk_paper or "`LiveLastBill`" not in desk_paper:
+        fail("README desk paper dropped 라이브 주차 첫날 청구서 vs 라이브 마지막 날 청구서")
+    elif "`LiveDay1Bill`" not in desk_paper or "`LiveWeekStart`" not in desk_paper or "`LiveWeekHeadline`" not in desk_paper:
+        fail("README desk paper dropped 라이브 1일차 청구서 / 라이브 주차 첫날 / 라이브 주차 첫날 헤드라인")
+    elif "오늘의 위협" not in sfx_inv or "새 게임 청구서" not in sfx_inv or sfx_inv.count("sfx_threat") < 5:
+        fail("README 라이브 주차 첫날 청구서 rewrote the five sfx_threat uses")
+    elif "ContinueSponsorPin" not in sponsor_inv or "타일 가득" not in sponsor_inv:
+        fail("README 라이브 주차 첫날 청구서 rewrote the Title continue sponsor pin")
+    elif "매드라인" in readme or "매드라인" in live_cs:
+        fail("README live week-start bill used 매드라인 instead of 헤드라인")
+    elif "check_live_week_start_bill()" not in verify_src or "def check_live_week_start_bill()" not in verify_src:
+        fail("README live week-start bill dropped the existing check_live_week_start_bill hang lock")
+    elif "def check_live_day1_bill()" not in verify_src or "def check_live_last_day_bill()" not in verify_src:
+        fail("README live week-start bill dropped LiveDay1Bill / LiveLastBill hang locks")
+    elif "def check_readme_live_day1_bill()" not in verify_src or "def check_readme_live_last_day_bill()" not in verify_src:
+        fail("README live week-start bill dropped 라이브 1일차 청구서 / 라이브 마지막 날 청구서 README locks")
+    elif "def check_live_week_start_tab()" not in verify_src or "def check_live_week_start_headline()" not in verify_src:
+        fail("README live week-start bill dropped LiveWeekStart / LiveWeekHeadline hang locks")
+    elif "def check_title_newgame_bill()" not in verify_src or "def check_morning_bill()" not in verify_src:
+        fail("README live week-start bill dropped NewGameBill / morning bill locks")
+    elif "def check_live_bill_notice()" not in verify_src or "def check_settle_bill_notice()" not in verify_src:
+        fail("README live week-start bill dropped live / settlement bill_notice locks")
+    elif "def check_readme_live_week_start_tab()" not in verify_src or "def check_readme_live_week_start_headline()" not in verify_src:
+        fail("README live week-start bill dropped 라이브 주차 첫날 / 라이브 주차 첫날 헤드라인 README locks")
+    elif 'BillNotice = "Art/bill_notice"' not in art_cs:
+        fail("ArtSprites does not hook Art/bill_notice")
+    elif '"LiveWeekBill"' not in live_build or "ArtSprites.BillNotice" not in paper:
+        fail("README live week-start bill lost the LiveStream hang")
+    elif "preserveAspect = true" not in paper or "116f, 56f" not in paper or "338f, -268f" not in paper:
+        fail("README live week-start bill restyled the LiveStream hang")
+    elif '"청구서"' not in paper:
+        fail("README live week-start bill is not Korean 청구서 copy")
+    elif "헤드라인" in paper or "HeadlineClip" in paper or "DayTab" in paper:
+        fail("README live week-start bill reused a headline or calendar hang")
+    elif "168f, 68f" in paper or "24f, -272f" in paper or "132f, 40f" in paper or "200f, -276f" in paper:
+        fail("README live week-start bill covers LiveWeekStart / LiveWeekHeadline")
+    elif "SetActive(false)" not in paper:
+        fail("README live week-start bill is not hidden until ApplyContentShow")
+    elif "Audio/sfx_threat" in paper or "PlayThreatSfx" in paper:
+        fail("README live week-start bill added a new threat sting")
+    elif "_weekBill" not in apply or "SetActive(LiveWeekStartDay(GameManager.Instance.Run.day))" not in week_bill_apply:
+        fail("README live week-start bill is not shown on week-start lives only")
+    elif "1 == GameManager.Instance.Run.day" in week_bill_apply or "LiveLastDay" in week_bill_apply:
+        fail("README live week-start bill reused the day-1 or last-day live gate")
+    elif "day == 6" not in week_live_gate or "day == 21" not in week_live_gate:
+        fail("README live week-start bill dropped week-start days 6 / 21")
+    elif '"LiveDay1Bill"' not in live_build or "ArtSprites.BillNotice" not in day1_bill or '"청구서"' not in day1_bill:
+        fail("README live week-start bill restyled LiveDay1Bill")
+    elif "SetActive(1 == GameManager.Instance.Run.day)" not in live_bill_apply:
+        fail("README live week-start bill dropped LiveDay1Bill day-1 hide")
+    elif '"LiveLastBill"' not in live_build or "ArtSprites.BillNotice" not in last_bill or '"청구서"' not in last_bill:
+        fail("README live week-start bill restyled LiveLastBill")
+    elif "SetActive(LiveLastDay(GameManager.Instance.Run.day))" not in last_bill_apply:
+        fail("README live week-start bill dropped LiveLastBill last-day hide")
+    elif "day == 5" not in last_live_gate or "day == 25" not in last_live_gate:
+        fail("README live week-start bill changed LiveLastBill days")
+    elif '"LiveWeekStart"' not in live_build or "ArtSprites.DayTab" not in week_tab or '"2주차"' not in week_tab:
+        fail("README live week-start bill restyled LiveWeekStart")
+    elif "청구서" in week_tab or "BillNotice" in week_tab or "LiveWeekBill" in week_tab:
+        fail("LiveWeekStart hang folded in the week-start live bill paper")
+    elif '"LiveWeekHeadline"' not in live_build or "ArtSprites.HeadlineClip" not in week_head or '"헤드라인"' not in week_head:
+        fail("README live week-start bill restyled LiveWeekHeadline")
+    elif "LiveWeekBill" in week_head or "청구서" in week_head:
+        fail("LiveWeekHeadline hang folded in the week-start live bill paper")
+    elif '"NewGameBill"' not in start_hang or "176f, 170f" not in title_bill or '"부채"' not in title_bill:
+        fail("README live week-start bill restyled NewGameBill")
+    elif "SetActive(!_hasSave)" not in hide:
+        fail("README live week-start bill changed Title NewGameBill hide")
+    elif "ArtSprites.BillNotice" not in money or '"오늘 청구"' not in week_cs or "_billSlam = 0.25f" not in week_cs:
+        fail("README live week-start bill dropped morning 오늘 청구")
+    elif "ArtSprites.BillNotice" not in settle_build or '"부채"' not in settle_build:
+        fail("README live week-start bill dropped settlement 부채")
+    elif "run.day =" in live_cs or "day += " in live_cs or "day -= " in live_cs:
+        fail("README live week-start bill writes the day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("README live week-start bill moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README live week-start bill retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README live week-start bill retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README live week-start bill retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README live week-start bill broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising README live week-start bill / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README live week-start bill dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README live week-start bill moved Unity off 6000.5.9f1")
+    else:
+        ok("README names 라이브 주차 첫날 청구서 vs 라이브 1일차 청구서, 라이브 마지막 날 청구서, 새 게임 청구서, 아침 오늘 청구, 정산 청구, 라이브 주차 첫날, and 라이브 주차 첫날 헤드라인")
 
 
 def check_readme_morning_day1() -> None:
