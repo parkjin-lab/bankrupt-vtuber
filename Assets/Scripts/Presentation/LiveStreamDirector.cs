@@ -1065,12 +1065,12 @@ namespace BankruptVtuber
             _showChipIcon.raycastTarget = false;
             _showChip = UiKit.Label(showChip, "T", "", 20, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_showChip.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(36f, 0f), new Vector2(-10f, 0f));
-            var billChip = UiKit.Panel(root, "BillChip", new Color(0.55f, 0.08f, 0.16f, 0.94f));
-            UiKit.Layout(billChip, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(460, -214), new Vector2(240, 40));
+            var billChip = UiKit.Panel(root, "BillChip", Color.white);
+            UiKit.Layout(billChip, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(460, -210), new Vector2(248, 52));
             _billChipImg = billChip.GetComponent<Image>();
             if (_billChipImg != null)
             {
-                ArtSprites.ApplySliced(_billChipImg, ArtSprites.BillNotice, Color.white, new Vector4(28f, 16f, 28f, 16f));
+                ArtSprites.ApplySliced(_billChipImg, ArtSprites.BillNotice, Color.white, new Vector4(28f, 24f, 28f, 24f));
                 _billChipImg.raycastTarget = false;
             }
             _billChip = UiKit.Label(billChip, "T", "청구 ₩0", 22, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -1757,9 +1757,11 @@ namespace BankruptVtuber
                 _billChip.color = covered || _billsCovered ? Palette.Ink : Color.white;
             }
             if (_billChipImg != null)
-                _billChipImg.color = covered || _billsCovered
-                    ? Palette.Gold
-                    : Color.white;
+                ArtSprites.ApplySliced(
+                    _billChipImg,
+                    ArtSprites.BillNotice,
+                    covered || _billsCovered ? Palette.Gold : Color.white,
+                    new Vector4(28f, 24f, 28f, 24f));
             if (_billFill != null)
             {
                 float fill = _tonightBills <= 0 ? 1f : Mathf.Clamp01(ticking / (float)_tonightBills);

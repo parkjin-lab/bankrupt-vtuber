@@ -1488,6 +1488,7 @@ def check_project() -> None:
     check_webcam_bezel()
     check_rival_webcam_bezel()
     check_bill_notice()
+    check_live_bill_notice()
     check_stream_overlay()
     check_title_studio()
     check_title_wordmark()
@@ -4028,6 +4029,8 @@ def check_bill_chip() -> None:
 
     if "BillChip" not in live_cs or '"청구 "' not in live_cs:
         fail("LiveStream has no persistent 청구 ₩N chip")
+    elif "ArtSprites.BillNotice" not in hud or "ApplySliced" not in hud:
+        fail("청구 chip does not reuse morning bill_notice")
     elif "FormatWon(_tonightBills)" not in hud or '"청구 "' not in hud:
         fail("청구 chip does not show tonight's real bill")
     elif "Palette.Gold" not in hud or "_billsCovered" not in hud:
@@ -5139,6 +5142,65 @@ def check_bill_notice() -> None:
         fail("bill notice moved Unity off 6000.5.9f1")
     else:
         ok("title / morning / settlement debt share 고지서; pulse / cash slips stay")
+
+
+def check_live_bill_notice() -> None:
+    """Live 청구 chip reuses bill_notice so it matches morning 오늘 청구 and settlement 부채."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    chip = live_cs.split('var billChip = UiKit.Panel', 1)[-1].split("var billTrack", 1)[0]
+    hud = live_cs.split("void RefreshHud", 1)[-1].split("void TickEventWarn", 1)[0]
+    fill = hud.split("if (_billFill != null)", 1)[-1].split("if (_session.HypeActive)", 1)[0]
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+
+    if 'BillNotice = "Art/bill_notice"' not in art_cs:
+        fail("ArtSprites does not hook Art/bill_notice")
+    elif "ArtSprites.BillNotice" not in money or '"오늘 청구"' not in week_cs:
+        fail("live bill_notice reuse dropped morning 오늘 청구")
+    elif "ArtSprites.BillNotice" not in settle_build or '"부채"' not in settle_build:
+        fail("live bill_notice reuse dropped settlement 부채")
+    elif "ArtSprites.BillNotice" not in chip or "ApplySliced" not in chip:
+        fail("BillChip does not hang Art/bill_notice at build")
+    elif "ArtSprites.BillNotice" not in hud or "ApplySliced" not in hud:
+        fail("RefreshHud does not recolor bill_notice gold/white")
+    elif "FormatWon(_tonightBills)" not in hud or '"청구 "' not in hud:
+        fail("live bill_notice dropped 청구 ₩N copy")
+    elif "Palette.Gold" not in hud or "Palette.MoneyRed" not in fill:
+        fail("live bill_notice dropped gold-when-full / red-while-short")
+    elif "ticking / (float)_tonightBills" not in fill:
+        fail("live bill_notice dropped the bill_bar fill math")
+    elif "ArtSprites.BillBar" not in live_cs or "BillFillTrack" not in live_cs:
+        fail("live bill_notice dropped the bill_bar fill track")
+    elif "SlamBillCover()" not in live_cs or "ArtSprites.BillCover" not in live_cs:
+        fail("live bill_notice dropped the PAID slam")
+    elif "SlamBillCover" in settle_cs or "CoverSlam" in settle_cs:
+        fail("live bill_notice grew a fake settlement slam")
+    elif "lastBills =" in hud or "billRent =" in hud or "TonightBills =" in hud:
+        fail("live bill_notice writes bill amounts")
+    elif "TonightBills(gm.Run)" not in live_cs or "TonightBills" not in eco_cs:
+        fail("live bill_notice stopped reading TonightBills")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("live bill_notice retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("live bill_notice broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising live bill_notice / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("live bill_notice dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("live bill_notice moved Unity off 6000.5.9f1")
+    elif "Art/bill_notice" not in readme or "청구 ₩N" not in readme:
+        fail("README should mention live bill_notice reuse")
+    else:
+        ok("live 청구 chip sits on bill_notice; fill / PAID / numbers stay")
 
 
 def check_stream_overlay() -> None:
