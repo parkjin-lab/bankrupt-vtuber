@@ -630,8 +630,13 @@ namespace BankruptVtuber
             _rankBox = UiKit.Panel(root, "RankPanel", Color.white);
             UiKit.Layout(_rankBox, new Vector2(1, 0.58f), new Vector2(1, 0.58f), new Vector2(1, 0.5f), new Vector2(-16, 0), new Vector2(360, 340));
             var rankImg = _rankBox.GetComponent<Image>();
-            ArtSprites.Apply(rankImg, ArtSprites.RankingBoard, new Color(0.10f, 0.05f, 0.12f, 0.94f), Color.white);
-            rankImg.preserveAspect = false;
+            ArtSprites.ApplySliced(rankImg, ArtSprites.PanelDark, new Color(0.10f, 0.05f, 0.12f, 0.94f));
+            var rankBoard = UiKit.Image(_rankBox, "RankingBoardHud", Color.white);
+            UiKit.Layout(rankBoard.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(328f, 300f));
+            ArtSprites.Apply(rankBoard, ArtSprites.RankingBoard, Color.white, Color.white);
+            rankBoard.preserveAspect = true;
+            rankBoard.raycastTarget = false;
+            rankBoard.transform.SetAsFirstSibling();
             _rankPanel = UiKit.Label(_rankBox, "RankBody", "", 20, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
             UiKit.Stretch(_rankPanel.rectTransform, 16, 16, 14, 14);
             _rankPanel.lineSpacing = 1.2f;

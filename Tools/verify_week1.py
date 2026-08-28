@@ -1544,6 +1544,7 @@ def check_project() -> None:
     check_concert_live_stage()
     check_goods_promo_live_stand()
     check_sponsor_mention_live_card()
+    check_ranking_board_plate()
     check_morning_bgm()
     check_settlement_bgm()
     check_result_stings()
@@ -8898,6 +8899,110 @@ def check_sponsor_mention_live_card() -> None:
         fail("sponsor card moved Unity off 6000.5.9f1")
     else:
         ok("sponsor-mention live hangs sponsor_card in the HUD; a normal live does not")
+
+
+def check_ranking_board_plate() -> None:
+    """Week 5 ranking hangs ranking_board as a settlement desk plate; a non-ranking screen does not."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    w5r_cs = (ROOT / "Assets/Scripts/Economy/Week5Rules.cs").read_text(encoding="utf-8")
+    w4_asset = (ROOT / "Assets/Resources/Balance/Week4Balance.asset").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    under = live_build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
+    shelf = live_build.split('"GoodsStandHud"', 1)[-1].split('"HypeFlash"', 1)[0] if '"GoodsStandHud"' in live_build else ""
+    sponsor = live_build.split('"SponsorCardHud"', 1)[-1].split('"GoodsStandHud"', 1)[0] if '"SponsorCardHud"' in live_build else ""
+    plate = build.split('"RankingBoardHud"', 1)[-1].split('"RankBody"', 1)[0] if '"RankingBoardHud"' in build else ""
+    rank_box = build.split('"RankPanel"', 1)[-1].split("_actionRow", 1)[0]
+    render = settle_cs.split("bool rankOn = Week5Rules.RankingUnlocked", 1)[-1].split("if (run.lastClipAttempted)", 1)[0]
+    rank_fn = settle_cs.split("void FillRankPanel", 1)[-1].split("void ShowConcertCard", 1)[0]
+    slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
+
+    if 'RankingBoard = "Art/ranking_board"' not in art_cs:
+        fail("ArtSprites does not hook Art/ranking_board")
+    elif '"RankingBoardHud"' not in build or "ArtSprites.RankingBoard" not in plate:
+        fail("Settlement does not hang ranking_board as a desk plate")
+    elif "UiKit.Stretch" in plate:
+        fail("ranking_board plate is a full-screen backdrop; that is concert_stage's job")
+    elif "ArtSprites.ConcertStage" in plate or "ArtSprites.GoodsStand" in plate or "ArtSprites.SponsorCard" in plate:
+        fail("ranking plate reused concert / goods / sponsor art")
+    elif "SetActive(false)" not in rank_box:
+        fail("ranking_board plate is not hidden on a non-ranking settlement")
+    elif "SetActive(rankOn)" not in render or "RankingUnlocked" not in settle_cs:
+        fail("ranking_board plate is not gated on Week 5 RankingUnlocked")
+    elif "PlayRankingSfx();" not in render or render.count("PlayRankingSfx();") != 1:
+        fail("ranking plate dropped the once-on-appear sfx_ranking")
+    elif '"RankingBoardHud"' in live_cs or "ArtSprites.RankingBoard" in live_cs:
+        fail("ranking_board leaked onto LiveStream")
+    elif '"RankingBoardHud"' in title_cs or "ArtSprites.RankingBoard" in title_cs:
+        fail("ranking_board leaked onto Title")
+    elif '"RankingBoardHud"' in week_cs or "ArtSprites.RankingBoard" in week_cs:
+        fail("ranking_board leaked onto WeekStart")
+    elif "챌린지 랭킹" not in rank_fn or "루나벨" not in rank_fn or "하츠비" not in rank_fn or "네온토끼" not in rank_fn:
+        fail("ranking plate covered the ranking list copy")
+    elif "1위 +" not in rank_fn or "rankingDailyFirstCash" not in rank_fn:
+        fail("ranking plate dropped daily 1st pay copy")
+    elif "lastRankingScore" not in rank_fn or "lastNpcScore" not in rank_fn:
+        fail("ranking plate dropped today's scores")
+    elif "Audio/sfx_ranking" not in settle_cs or "PlayRankingSfx" not in settle_cs:
+        fail("ranking plate dropped sfx_ranking")
+    elif "day >= w5.rankingDay" not in w5r_cs or "peakViewersEver >= w5.rankingPeakViewers" not in w5r_cs:
+        fail("ranking plate changed unlock routing")
+    elif "rankingDailyFirstCash: 10000" not in w5_asset or "rankingPeakViewers: 100" not in w5_asset or "rankingDay: 22" not in w5_asset:
+        fail("ranking plate retuned ranking unlock / 1st pay")
+    elif "SetActive(_sponsorShow)" not in apply or "ArtSprites.SponsorCard" not in sponsor:
+        fail("ranking plate dropped sponsor-mention live plate")
+    elif "SetActive(_goodsShow)" not in apply or "ArtSprites.GoodsStand" not in shelf:
+        fail("ranking plate dropped goods-promo live goods_stand")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in under:
+        fail("ranking plate dropped concert live concert_stage")
+    elif "EnableSponsorLine" not in start or "EnablePromo" not in start:
+        fail("ranking plate unhooked sponsor / goods live arming")
+    elif "EnableSponsorLine" not in session_cs or "EnablePromo" not in session_cs:
+        fail("ranking plate unhooked EnableSponsorLine / EnablePromo")
+    elif "sponsorLineBonus: 3000" not in w4_asset or "goodsUnlockCash: 60000" not in w3_asset:
+        fail("ranking plate retuned sponsor / goods numbers")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset:
+        fail("ranking plate retuned concert cost / payout")
+    elif "CanBookConcert" not in w5r_cs or "ApplyConcertResult" not in settle_cs:
+        fail("ranking plate changed concert routing")
+    elif "ArtSprites.JudgePerfect" not in slam or "PlaySfx(_perfect" not in slam:
+        fail("ranking plate dropped Day-1 coach Perfect stamp")
+    elif "Audio/sfx_threat" not in live_cs or "PlayThreatSfx" not in live_cs:
+        fail("ranking plate dropped live sfx_threat")
+    elif "LastDayBanner" not in week_cs:
+        fail("ranking plate dropped morning last-day tab")
+    elif '"ContinueLastDayTab"' not in title_cs or '"SettleLastDayTab"' not in settle_cs:
+        fail("ranking plate dropped title / settlement last-day tabs")
+    elif "perfectWindow: 0.07" not in balance or "perfectWindow * " not in rules_cs:
+        fail("ranking plate retuned hit windows")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("ranking plate retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("ranking plate retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("ranking plate retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("ranking plate broke pads, 입력됨, or added timeScale")
+    elif "Week5" in title_cs or "랭킹" in title_cs or "콘서트" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising ranking plate / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("ranking plate dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("ranking plate moved Unity off 6000.5.9f1")
+    else:
+        ok("ranking hangs ranking_board as a desk plate; a non-ranking screen does not")
 
 
 def check_morning_bgm() -> None:
