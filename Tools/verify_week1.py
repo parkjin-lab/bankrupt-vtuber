@@ -10982,6 +10982,7 @@ def check_readme_playable() -> None:
     live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
     hud_stack = readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]
     card_tabs = readme.split("- **카드 / 탭**", 1)[-1].split("- **책상 종이**", 1)[0]
+    day_inv = next((ln for ln in card_tabs.splitlines() if "day_tab" in ln), "")
 
     if "6000.5.9f1" not in readme or "Title.unity" not in readme:
         fail("README does not tell a clone which Unity / scene to open")
@@ -11026,13 +11027,14 @@ def check_readme_playable() -> None:
     elif "day_tab" not in readme or "일차" not in readme:
         fail("README dropped day_tab calendar tab")
     elif (
-        "day_tab" not in card_tabs
-        or "아침" not in card_tabs
-        or "이어서 하기" not in card_tabs
-        or "정산" not in card_tabs
-        or "일차" not in card_tabs
+        "day_tab" not in day_inv
+        or "아침" not in day_inv
+        or "이어서 하기" not in day_inv
+        or "정산" not in day_inv
+        or "일차" not in day_inv
+        or "숨김" not in day_inv
     ):
-        fail("README day_tab inventory dropped morning / title continue / settlement n일차")
+        fail("README Cards / Tabs must name day_tab morning, title continue hide-no-save, and settlement n일차")
     elif "title_wordmark" not in readme or "파산 버튜버" not in readme:
         fail("README dropped title_wordmark neon logo")
     elif "chat_bubble" not in readme or "note_chip" not in readme or "superchat_chip" not in readme or "content_*" not in readme:
