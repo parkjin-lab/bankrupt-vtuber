@@ -55,7 +55,7 @@
 
 라이브 HUD 스택(책상 종이 + 배지 + 스탬프 + 피크/사고 오버레이). 자세한 목록은 아래 **라이브 HUD 스택** / **책상 종이**.
 
-- 지금 수입 · 오늘 청구 · 파산까지 — **지금 수입**은 책상·아침·타이틀과 같은 `Art/cash_slip` 영수증 칩. HUD에 **청구 ₩N**이 `Art/bill_notice` 고지서 칩으로 내내 붙어 있고, 옆에 얇은 바가 지금 수입/오늘 청구를 채운다(모자라면 빨강, 꽉 차면 골드. 슬램은 기존 한 번). 오늘 픽은 **토크 / 게임 / 노래 / 리액션** 칩(`Art/content_*` 아이콘 + 카드 액센트 색)으로 아침과 같다. 슈퍼챗이 히트 0.4초 전에 패드에 금빛 **슈퍼챗** 핍. 성공하면 ₩이 수입 칸으로 날아가며 `Audio/sfx_superchat` 골드 코인 차임. 빗나가면 크랙(+미스 쿵). 성공 노트는 지금 수입 옆에 **+₩**. 마지막 10초는 `Art/clock_plate` 방송 시계 배지가 빨강으로 뛰며 **10…9…** 초마다 `Audio/sfx_clock_tick` 틱(0은 틱 없이 **종료**, 이어 `Art/end_cut` **방송 종료** 스팅).
+- 지금 수입 · 오늘 청구 · 파산까지 — **지금 수입**은 책상·아침·타이틀과 같은 `Art/cash_slip` 영수증 칩. HUD에 **청구 ₩N**이 `Art/bill_notice` 고지서 칩으로 내내 붙어 있고, 옆에 얇은 바가 지금 수입/오늘 청구를 채운다(모자라면 빨강, 꽉 차면 골드. 슬램은 기존 한 번). 오늘 픽은 **토크 / 게임 / 노래 / 리액션** 칩(`Art/content_*` 아이콘 + 카드 액센트 색)으로 아침과 같다. 슈퍼챗이 히트 0.4초 전에 패드에 `Art/superchat_pip` 금빛 **슈퍼챗** 핍. 성공하면 ₩이 수입 칸으로 날아가며 `Audio/sfx_superchat` 골드 코인 차임. 빗나가면 크랙(+미스 쿵). 성공 노트는 지금 수입 옆에 **+₩**. 마지막 10초는 `Art/clock_plate` 방송 시계 배지가 빨강으로 뛰며 **10…9…** 초마다 `Audio/sfx_clock_tick` 틱(0은 틱 없이 **종료**, 이어 `Art/end_cut` **방송 종료** 스팅).
 - 떨어지는 채팅은 `Art/chat_bubble` 다크 채팅 필(흰 글칸)에 한국어 닉 + 대사. 왼쪽에 `Art/note_chip` 화살 젬이 패드 색으로 칠해진다(←파랑 / ↓초록 / →트롤 / ↑골드, 회전에 맞춤). 슈퍼챗은 골드 배너 + `Art/superchat_chip` 금 봉투 칩(텔레그래프·₩ 플라이·SFX·패드 그대로). 노트 아래에는 `Art/hit_rail` 다크 레인+밝은 스트라이크 포켓이 깔리고, 그 위에 기존 흰/골드 **타이밍** 스트라이크가 퍼펙트 창에서 펄스한다. 히트라인 0.15초 안(퍼펙트 구간)에 들어온 노트는 밝아진다. 민준 첫 도네는 스탬프.
 - 하이프 시작 시 `Audio/sfx_hype` 상승 치어(한 번) · 금빛 워시 · `Art/hype_frame` 골드 스페셜 오버레이 프레임 · 채팅이 기존 카탈로그/닉으로 약 2배 떨어짐(끝나면 원래 속도) · 멘탈 위험(`Art/mental_note` 같은 스티키 메모. `Audio/sfx_mental` 불안 스팅 한 번, 칩이 처음 뜰 때만)/강제 종료 워시 · 시청 ± 팝업(`Art/viewer_badge` 팔로워 배지 칩이 1.12로 0.1초 팝. 오르면 초록, 떨어지면 빨강). Perfect는 `Art/judge_perfect` 금색 스탬프 **PERFECT**(0.2초, 큼) + 웹캠 1.08 펀치/흰 플래시 0.12초 + `Audio/sfx_perfect` 밝은 틱. Good은 `Art/judge_good` 흰 스탬프 작은 **GOOD** + 작은 끄덕 + `Audio/sfx_good` 부드러운 탭. Miss는 `Art/judge_miss` 빨간 X 스탬프 **MISS** + 기존 흔들/스카 + `Audio/sfx_miss` 둔탁한 쿵. 콤보가 오르면 `Art/combo_plate` 스트림 배지 칩이 0.1초 팝(1.15, 5+면 1.22). 콤보 2 이상에서 미스면 `Art/combo_break` 빨간 스탬프 **콤보 끊김**(빨강 0.25초, `Audio/sfx_combo_break`) 뒤 COMBO 0. 첫 노트 미스는 그냥 Miss. 슈퍼챗·온에어(`Art/onair_led`) SFX는 그대로.
 - 위협 오버레이 · 이벤트 카드. 안티 웨이브 / 장비 렉은 0.5초 전에 `Art/event_warn` 경고 플레이트 **안티 온다** / **렉 온다** 가 뜬 뒤, 실제 발화 때 `Audio/sfx_anti` 야유 + `Art/anti_sting` 빨간 야유 오버레이 / `Audio/sfx_lag` 글리치 + `Art/lag_sting` 정적 오버레이. 청구를 넘기는 순간 **청구 커버** 금빛 슬램(한 판 한 번, 이후 초록 고정) + `Audio/sfx_bill_cover` 캐시 레지스터 스팅.
@@ -75,7 +75,7 @@
 - **라이브 HUD 스택** — 라이브 한 판에서 보이는 오버레이·스탬프·칩(히트창·콤보·하이프·이벤트·경제 숫자는 그대로).
   - **칩 / 배지** — `Art/combo_plate`(**COMBO**) · `Art/viewer_badge`(**시청자**, 시청 ±) · `Art/clock_plate`(**남은 시간**, 마지막 10초 · `sfx_clock_tick`) · `Art/onair_led`(**ON AIR** / **방송 시작**, `sfx_onair`)
   - **판정 스탬프** — `Art/judge_perfect`(**PERFECT**) · `Art/judge_good`(**GOOD**) · `Art/judge_miss`(**MISS**) · `Art/combo_break`(**콤보 끊김**, `sfx_combo_break`)
-  - **노트 / 컷** — `Art/superchat_chip`(슈퍼챗 금 봉투) · `Art/end_cut`(**방송 종료**, `sfx_end_cut`)
+  - **노트 / 컷** — `Art/superchat_chip`(슈퍼챗 금 봉투) · `Art/superchat_pip`(0.4초 금 핍, `sfx_superchat`) · `Art/end_cut`(**방송 종료**, `sfx_end_cut`)
   - **피크 / 사고** — `Art/hype_frame`(하이프 골드 프레임, `sfx_hype`) · `Art/event_warn`(**안티 온다** / **렉 온다**) · `Art/anti_sting`(`sfx_anti`) · `Art/lag_sting`(`sfx_lag`)
 - **패드 / 채팅 / 노트** — `Art/pad_*` · `Art/chat_bubble` · `Art/note_chip` · `Art/superchat_chip` 금 봉투 · `Art/hit_rail`
 - **얼굴 / 아이콘** — `Art/pasan_nyang` · `Art/rival_nyang` · `Art/content_*`

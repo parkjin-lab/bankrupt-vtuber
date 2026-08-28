@@ -1375,12 +1375,13 @@ namespace BankruptVtuber
             if (pad == null)
                 return;
             var bg = UiKit.Image(pad.transform, "ScPip", Palette.Gold);
-            UiKit.Layout(bg.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(0f, 6f), new Vector2(128f, 30f));
-            ArtSprites.ApplySliced(bg, ArtSprites.SuperchatBanner, Palette.Gold);
+            UiKit.Layout(bg.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(0f, 6f), new Vector2(148f, 40f));
+            ArtSprites.Apply(bg, ArtSprites.SuperchatPip, Palette.Gold, Color.white);
+            bg.preserveAspect = false;
             bg.raycastTarget = false;
             _scPipBg = bg;
             _scPip = UiKit.Label(bg.transform, "T", "슈퍼챗", 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Stretch(_scPip.rectTransform);
+            UiKit.Stretch(_scPip.rectTransform, 52f, 10f, 6f, 6f);
             bg.gameObject.SetActive(false);
         }
 
@@ -1407,6 +1408,8 @@ namespace BankruptVtuber
             _scPipBg.gameObject.SetActive(warn);
             if (!warn)
                 return;
+            ArtSprites.Apply(_scPipBg, ArtSprites.SuperchatPip, Palette.Gold, Color.white);
+            _scPipBg.preserveAspect = false;
             float pulse = 1f + 0.14f * Mathf.Abs(Mathf.Sin(Time.time * 14f));
             _scPipBg.rectTransform.localScale = Vector3.one * pulse;
             var c = Palette.Gold;

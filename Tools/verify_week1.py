@@ -241,6 +241,7 @@ def check_project() -> None:
         "chat_bubble.png": "채팅 버블",
         "note_chip.png": "노트 칩",
         "superchat_chip.png": "슈퍼챗 봉투",
+        "superchat_pip.png": "슈퍼챗 핍",
         "hit_rail.png": "히트 레일",
         "content_talk.png": "토크 아이콘",
         "content_game.png": "게임 아이콘",
@@ -1504,6 +1505,7 @@ def check_project() -> None:
     check_onair_led()
     check_judge_stamps()
     check_superchat_chip()
+    check_superchat_pip_art()
     check_end_cut_card()
     check_combo_break_stamp()
     check_hype_frame()
@@ -3385,10 +3387,13 @@ def check_superchat_pip() -> None:
     player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
     tick = live_cs.split("void TickSuperchatPip", 1)[-1].split("void Echo", 1)[0] if "void TickSuperchatPip" in live_cs else ""
 
+    build = live_cs.split("void BuildSuperchatPip", 1)[-1].split("void TickSuperchatPip", 1)[0]
     if "TickSuperchatPip" not in live_cs or "eta <= 0.4f" not in live_cs:
         fail("superchat has no 0.4s pad telegraph")
-    elif '"슈퍼챗"' not in live_cs.split("void BuildSuperchatPip", 1)[-1].split("void TickSuperchatPip", 1)[0]:
+    elif '"슈퍼챗"' not in build:
         fail("superchat pip is not labeled 슈퍼챗")
+    elif "ArtSprites.SuperchatPip" not in build and "ArtSprites.SuperchatPip" not in tick:
+        fail("superchat telegraph is not on superchat_pip art")
     elif "_lanePads[4]" not in live_cs or "BuildSuperchatPip(_lanePads[4])" not in live_cs:
         fail("슈퍼챗 pip is not on the superchat pad")
     elif "IsSuperchat" not in tick or "Palette.Gold" not in tick:
@@ -3422,7 +3427,7 @@ def check_superchat_pip() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("superchat pip moved Unity off 6000.5.9f1")
     else:
-        ok("superchat flashes a gold 슈퍼챗 pip 0.4s early; miss still cracks")
+        ok("superchat flashes Art/superchat_pip gold 슈퍼챗 0.4s early; miss still cracks")
 
 
 def check_left_cash() -> None:
@@ -8049,6 +8054,68 @@ def check_superchat_chip() -> None:
         ok("traveling superchat notes sit on a gold envelope; telegraph / fly / SFX / pad stay")
 
 
+def check_superchat_pip_art() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/superchat_pip.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    build = live_cs.split("void BuildSuperchatPip", 1)[-1].split("void TickSuperchatPip", 1)[0]
+    tick = live_cs.split("void TickSuperchatPip", 1)[-1].split("void AddOverlayChoice", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("superchat_pip.png is missing")
+    elif w < 240 or h < 120 or w <= h:
+        fail("superchat_pip.png is not a readable landscape gold pip")
+    elif color != 6:
+        fail("superchat_pip.png is not RGBA")
+    elif 'SuperchatPip = "Art/superchat_pip"' not in art_cs:
+        fail("ArtSprites does not hook Art/superchat_pip")
+    elif "ArtSprites.SuperchatPip" not in build or '"슈퍼챗"' not in build:
+        fail("BuildSuperchatPip does not hang Art/superchat_pip under 슈퍼챗")
+    elif "ArtSprites.SuperchatPip" not in tick or "eta <= 0.4f" not in tick:
+        fail("TickSuperchatPip dropped pip art or 0.4s telegraph")
+    elif "BuildSuperchatPip(_lanePads[4])" not in live_cs or "IsSuperchat" not in tick:
+        fail("superchat pip is not on the matching superchat lane")
+    elif "ArtSprites.SuperchatChip" not in live_cs:
+        fail("superchat pip dropped the envelope chip")
+    elif "BeginSuperchatFly" not in live_cs or "Audio/sfx_superchat" not in live_cs:
+        fail("superchat pip dropped ₩ fly or sfx_superchat")
+    elif "StreamRules.SuperchatAmount(HypeActive, Rng, Balance)" not in session_cs:
+        fail("superchat pip retuned amount path")
+    elif "superchatMinWon: 1000" not in balance or "superchatMaxWon: 6000" not in balance:
+        fail("superchat pip retuned amounts")
+    elif "superchatMinCount: 8" not in balance or "superchatMaxCount: 10" not in balance:
+        fail("superchat pip retuned spawn count")
+    elif "superchatMinInterval: 9" not in balance or "hypeSuperchatMultiplier" not in rules_cs:
+        fail("superchat pip retuned spawn / hype multiplier")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("superchat pip retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("superchat pip broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising superchat pip art / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("superchat pip art dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("superchat pip art moved Unity off 6000.5.9f1")
+    elif "Art/superchat_pip" not in readme or "슈퍼챗" not in readme:
+        fail("README should mention superchat_pip")
+    else:
+        ok("superchat telegraph sits on superchat_pip; 0.4s / lane / envelope / fly / SFX stay")
+
+
 def check_end_cut_card() -> None:
     import struct
 
@@ -8949,6 +9016,8 @@ def check_readme_playable() -> None:
         fail("README dropped Perfect/Good/Miss judge stamps")
     elif "superchat_chip" not in readme or "봉투" not in readme or "sfx_superchat" not in readme:
         fail("README dropped superchat_chip gold envelope")
+    elif "superchat_pip" not in readme or "0.4" not in readme:
+        fail("README dropped superchat_pip gold telegraph")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:
