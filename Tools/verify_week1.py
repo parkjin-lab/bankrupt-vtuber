@@ -1530,6 +1530,7 @@ def check_project() -> None:
     check_settlement_bgm()
     check_result_stings()
     check_ending_backdrops()
+    check_ending_desk_paper()
     check_letter_card()
     check_letter_keycaps()
     check_pad_sfx()
@@ -7972,6 +7973,92 @@ def check_ending_backdrops() -> None:
         ok("week-clear / bankrupt sit on ending_clear / ending_bankrupt; copy / stings stay")
 
 
+def check_ending_desk_paper() -> None:
+    """Clear / bankrupt final cash / debt / mental sit on the same desk paper as title and settlement."""
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    splash = settle_cs.split("void ApplyResultSplashes", 1)[-1].split("void ApplyHeadline", 1)[0]
+    clear_fn = settle_cs.split("static bool IsWeekClear", 1)[-1].split("static bool ShouldShowEnding", 1)[0]
+    broke_fn = settle_cs.split("static bool IsBankruptResult", 1)[-1].split("static bool IsBurnoutResult", 1)[0]
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    clear_build = build.split('ClearRoot"', 1)[-1].split('StampRoot"', 1)[0]
+    stamp_build = build.split('StampRoot"', 1)[-1].split('LetterRoot"', 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+
+    if 'CashSlip = "Art/cash_slip"' not in art_cs or 'BillNotice = "Art/bill_notice"' not in art_cs or 'MentalNote = "Art/mental_note"' not in art_cs:
+        fail("ArtSprites missing cash_slip / bill_notice / mental_note hooks")
+    elif "ContinueCashSlip" not in title_cs or "ContinueDebtNotice" not in title_cs or "ContinueMentalNote" not in title_cs:
+        fail("ending desk paper reuse dropped title continue papers")
+    elif '"현금 "' not in fill or '"부채 "' not in fill or '"멘탈 "' not in fill:
+        fail("ending desk paper reuse dropped title continue numbers")
+    elif "LeftCashSlip" not in settle_cs or 'recap.Find("Mental")' not in settle_cs or '"부채"' not in settle_cs:
+        fail("ending desk paper reuse dropped settlement leftover / 멘탈 / 부채")
+    elif "ArtSprites.CashSlip" not in clear_build or '"ClearCashSlip"' not in clear_build:
+        fail("week-clear cash is not on Art/cash_slip")
+    elif "ArtSprites.BillNotice" not in clear_build or '"ClearDebtNotice"' not in clear_build:
+        fail("week-clear debt is not on Art/bill_notice")
+    elif "ArtSprites.MentalNote" not in clear_build or '"ClearMentalNote"' not in clear_build:
+        fail("week-clear mental is not on Art/mental_note")
+    elif "ArtSprites.CashSlip" not in stamp_build or '"StampCashSlip"' not in stamp_build:
+        fail("bankrupt cash is not on Art/cash_slip")
+    elif "ArtSprites.BillNotice" not in stamp_build or '"StampDebtNotice"' not in stamp_build:
+        fail("bankrupt debt is not on Art/bill_notice")
+    elif "ArtSprites.MentalNote" not in stamp_build or '"StampMentalNote"' not in stamp_build:
+        fail("bankrupt mental is not on Art/mental_note")
+    elif '"현금  "' not in splash or '"부채  "' not in splash or '"멘탈  "' not in splash:
+        fail("ending desk paper dropped 현금 / 부채 / 멘탈 copy")
+    elif "FormatWon(run.cash)" not in splash or "FormatWon(run.debt)" not in splash or "run.mental" not in splash:
+        fail("ending desk paper does not read final cash / debt / mental")
+    elif "run.cash =" in splash or "run.debt =" in splash or "run.mental =" in splash:
+        fail("ending desk paper writes cash / debt / mental")
+    elif "ArtSprites.EndingClear" not in clear_build or "ArtSprites.EndingBankrupt" not in stamp_build:
+        fail("ending desk paper dropped ending_clear / ending_bankrupt")
+    elif "주차 클리어" not in settle_cs or "1주차 생존" not in splash or "다음 주차 시작" not in settle_cs:
+        fail("ending desk paper changed week-clear copy")
+    elif '"파산"' not in settle_cs or "번아웃" not in splash or "처음부터" not in stamp_build:
+        fail("ending desk paper changed bankrupt / burnout copy")
+    elif "멘탈 0   ·   " not in splash or "zeroMentalDays" not in splash:
+        fail("ending desk paper dropped burnout mental copy")
+    elif "PlaySettleSfx(_clearCue" not in splash or "PlaySettleSfx(_bankruptCue" not in splash:
+        fail("ending desk paper dropped sfx_clear / sfx_bankrupt")
+    elif "Audio/sfx_clear" not in settle_cs or "Audio/sfx_bankrupt" not in settle_cs:
+        fail("ending desk paper dropped Audio/sfx_clear|sfx_bankrupt")
+    elif "WeekOutcome.Win" not in clear_fn or "WeekOutcome.Week4Win" not in clear_fn:
+        fail("ending desk paper changed week-clear conditions")
+    elif "WeekOutcome.Bankrupt" not in broke_fn or "EndingKind.Bankrupt" not in broke_fn:
+        fail("ending desk paper changed bankrupt conditions")
+    elif "BankruptDebt" not in eco_cs or "public void NextMorning()" not in gm:
+        fail("ending desk paper changed bankrupt numbers or routing")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("ending desk paper retuned Week 1 economy / bankrupt line")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("ending desk paper retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("ending desk paper broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising ending desk paper / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("ending desk paper dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("ending desk paper moved Unity off 6000.5.9f1")
+    elif "Art/cash_slip" not in readme or "Art/bill_notice" not in readme or "Art/mental_note" not in readme:
+        fail("README should mention ending desk paper")
+    elif "클리어" not in readme or "파산" not in readme:
+        fail("README should mention clear/bankrupt desk paper")
+    elif "YesterdayLine" not in week_cs:
+        fail("ending desk paper dropped morning 어제 headline")
+    else:
+        ok("ending cash / debt / mental sit on cash_slip / bill_notice / mental_note; splash / sfx / rules stay")
+
+
 def check_letter_card() -> None:
     import struct
 
@@ -10983,6 +11070,7 @@ def check_readme_playable() -> None:
     hud_stack = readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]
     card_tabs = readme.split("- **카드 / 탭**", 1)[-1].split("- **책상 종이**", 1)[0]
     day_inv = next((ln for ln in card_tabs.splitlines() if "day_tab" in ln), "")
+    desk_paper = readme.split("- **책상 종이**", 1)[-1].split("- **돈 스탬프", 1)[0]
 
     if "6000.5.9f1" not in readme or "Title.unity" not in readme:
         fail("README does not tell a clone which Unity / scene to open")
@@ -11144,6 +11232,14 @@ def check_readme_playable() -> None:
         fail("README bill_notice inventory dropped morning / title / live / settlement 부채 / settlement 오늘 청구")
     elif "mental_note" not in readme or "멘탈 위험" not in readme or "이어서 하기" not in readme or "멘탈" not in readme:
         fail("README dropped mental_note on settlement / live danger / morning / title continue")
+    elif (
+        "cash_slip" not in desk_paper
+        or "bill_notice" not in desk_paper
+        or "mental_note" not in desk_paper
+        or "클리어" not in desk_paper
+        or "파산" not in desk_paper
+    ):
+        fail("README desk paper dropped clear/bankrupt cash_slip / bill_notice / mental_note")
     elif "combo_plate" not in readme or "COMBO" not in readme or "콤보 끊김" not in readme:
         fail("README dropped combo_plate live badge")
     elif "combo_break" not in readme or "sfx_combo_break" not in readme:
@@ -11215,7 +11311,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names ending desk paper + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:

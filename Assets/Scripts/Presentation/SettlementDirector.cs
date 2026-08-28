@@ -62,12 +62,21 @@ namespace BankruptVtuber
         StudioPortrait _stampPortrait;
         GameObject _clearRoot;
         Text _clearTitle;
+        Image _clearCashSlip;
         Text _clearCash;
+        Image _clearDebtNotice;
         Text _clearDebt;
+        Image _clearMentalNote;
+        Text _clearMental;
         GameObject _stampRoot;
         Image _stampWash;
         Text _stampMark;
+        Image _stampCashSlip;
+        Text _stampCash;
+        Image _stampDebtNotice;
         Text _stampDebt;
+        Image _stampMentalNote;
+        Text _stampMental;
         Text _stampEpitaph;
         float _mood;
         bool _cashUp;
@@ -666,13 +675,31 @@ namespace BankruptVtuber
             UiKit.Layout(_clearHeadline.rectTransform, new Vector2(0.06f, 1), new Vector2(0.94f, 1), new Vector2(0.5f, 1), new Vector2(0, -188), new Vector2(0, 48));
             UiKit.Wrap(_clearHeadline);
             _clearPortrait = new StudioPortrait(_clearRoot.transform, new Vector2(0.5f, 0.46f), new Vector2(340, 420), false);
-            var snap = UiKit.Panel(_clearRoot.transform, "ClearSnap", Color.white);
+            var snap = UiKit.Panel(_clearRoot.transform, "ClearSnap", new Color(0, 0, 0, 0));
             UiKit.Layout(snap, new Vector2(0.08f, 0), new Vector2(0.92f, 0), new Vector2(0.5f, 0), new Vector2(0, 156), new Vector2(0, 88));
-            ArtSprites.ApplySliced(snap.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 1f, 1f, 0.94f));
-            _clearCash = UiKit.Label(snap, "C", "현금 ₩0", 28, Palette.CashGreen, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UiKit.Layout(_clearCash.rectTransform, new Vector2(0, 0), new Vector2(0.5f, 1), new Vector2(0, 0.5f), new Vector2(24, 0), new Vector2(-16, 0));
-            _clearDebt = UiKit.Label(snap, "D", "부채 ₩0", 28, Palette.MoneyRed, TextAnchor.MiddleRight, FontStyle.Bold);
-            UiKit.Layout(_clearDebt.rectTransform, new Vector2(0.5f, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-24, 0), new Vector2(-16, 0));
+            var snapImg = snap.GetComponent<Image>();
+            if (snapImg != null)
+                snapImg.raycastTarget = false;
+            _clearCashSlip = UiKit.Image(snap, "ClearCashSlip", Color.white);
+            UiKit.Layout(_clearCashSlip.rectTransform, new Vector2(0f, 0f), new Vector2(0.33f, 1f), new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(-4f, 0f));
+            ArtSprites.Apply(_clearCashSlip, ArtSprites.CashSlip, new Color(0.98f, 0.94f, 0.86f, 0.98f), Color.white);
+            _clearCashSlip.preserveAspect = false;
+            _clearCashSlip.raycastTarget = false;
+            _clearCash = UiKit.Label(_clearCashSlip.transform, "C", "현금 ₩0", 22, Palette.CashGreen, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_clearCash.rectTransform, new Vector2(0.08f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
+            _clearDebtNotice = UiKit.Image(snap, "ClearDebtNotice", Color.white);
+            UiKit.Layout(_clearDebtNotice.rectTransform, new Vector2(0.33f, 0f), new Vector2(0.66f, 1f), new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(-4f, 0f));
+            ArtSprites.ApplySliced(_clearDebtNotice, ArtSprites.BillNotice, Color.white, new Vector4(28f, 16f, 28f, 16f));
+            _clearDebtNotice.raycastTarget = false;
+            _clearDebt = UiKit.Label(_clearDebtNotice.transform, "D", "부채 ₩0", 22, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_clearDebt.rectTransform, new Vector2(0.08f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
+            _clearMentalNote = UiKit.Image(snap, "ClearMentalNote", Color.white);
+            UiKit.Layout(_clearMentalNote.rectTransform, new Vector2(0.66f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(-4f, 0f));
+            ArtSprites.Apply(_clearMentalNote, ArtSprites.MentalNote, new Color(1f, 0.95f, 0.72f, 0.98f), Color.white);
+            _clearMentalNote.preserveAspect = false;
+            _clearMentalNote.raycastTarget = false;
+            _clearMental = UiKit.Label(_clearMentalNote.transform, "M", "멘탈 0", 22, Palette.Ink, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_clearMental.rectTransform, new Vector2(0.08f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
             var clearGo = UiKit.Button(_clearRoot.transform, "ClearGo", "다음 주차 시작", () => LeaveSettle(() => GameManager.Instance.NextMorning()), Palette.Gold, Palette.Ink);
             UiKit.Layout(clearGo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 48), new Vector2(420, 72));
             _clearRoot.SetActive(false);
@@ -689,8 +716,31 @@ namespace BankruptVtuber
             _stampMark = UiKit.Label(_stampRoot.transform, "StampMark", "파산", 120, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_stampMark.rectTransform, new Vector2(0.58f, 0.62f), new Vector2(0.58f, 0.62f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 160));
             _stampMark.rectTransform.localEulerAngles = new Vector3(0f, 0f, -8f);
-            _stampDebt = UiKit.Label(_stampRoot.transform, "StampDebt", "", 36, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_stampDebt.rectTransform, new Vector2(0.58f, 0.38f), new Vector2(0.58f, 0.38f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 48));
+            var stampSnap = UiKit.Panel(_stampRoot.transform, "StampSnap", new Color(0, 0, 0, 0));
+            UiKit.Layout(stampSnap, new Vector2(0.40f, 0.38f), new Vector2(0.96f, 0.38f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 72));
+            var stampSnapImg = stampSnap.GetComponent<Image>();
+            if (stampSnapImg != null)
+                stampSnapImg.raycastTarget = false;
+            _stampCashSlip = UiKit.Image(stampSnap, "StampCashSlip", Color.white);
+            UiKit.Layout(_stampCashSlip.rectTransform, new Vector2(0f, 0f), new Vector2(0.33f, 1f), new Vector2(0f, 0.5f), new Vector2(2f, 0f), new Vector2(-2f, 0f));
+            ArtSprites.Apply(_stampCashSlip, ArtSprites.CashSlip, new Color(0.98f, 0.94f, 0.86f, 0.98f), Color.white);
+            _stampCashSlip.preserveAspect = false;
+            _stampCashSlip.raycastTarget = false;
+            _stampCash = UiKit.Label(_stampCashSlip.transform, "StampCash", "현금 ₩0", 18, Palette.CashGreen, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_stampCash.rectTransform, new Vector2(0.08f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
+            _stampDebtNotice = UiKit.Image(stampSnap, "StampDebtNotice", Color.white);
+            UiKit.Layout(_stampDebtNotice.rectTransform, new Vector2(0.33f, 0f), new Vector2(0.66f, 1f), new Vector2(0f, 0.5f), new Vector2(2f, 0f), new Vector2(-2f, 0f));
+            ArtSprites.ApplySliced(_stampDebtNotice, ArtSprites.BillNotice, Color.white, new Vector4(28f, 16f, 28f, 16f));
+            _stampDebtNotice.raycastTarget = false;
+            _stampDebt = UiKit.Label(_stampDebtNotice.transform, "StampDebt", "", 18, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_stampDebt.rectTransform, new Vector2(0.08f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
+            _stampMentalNote = UiKit.Image(stampSnap, "StampMentalNote", Color.white);
+            UiKit.Layout(_stampMentalNote.rectTransform, new Vector2(0.66f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0.5f), new Vector2(2f, 0f), new Vector2(-2f, 0f));
+            ArtSprites.Apply(_stampMentalNote, ArtSprites.MentalNote, new Color(1f, 0.95f, 0.72f, 0.98f), Color.white);
+            _stampMentalNote.preserveAspect = false;
+            _stampMentalNote.raycastTarget = false;
+            _stampMental = UiKit.Label(_stampMentalNote.transform, "StampMental", "", 18, Palette.Ink, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_stampMental.rectTransform, new Vector2(0.08f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
             _stampEpitaph = UiKit.Label(_stampRoot.transform, "StampEpitaph", "", 22, Palette.Pastel, TextAnchor.MiddleCenter);
             UiKit.Layout(_stampEpitaph.rectTransform, new Vector2(0.58f, 0.28f), new Vector2(0.58f, 0.28f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760, 64));
             _stampEpitaph.horizontalOverflow = HorizontalWrapMode.Wrap;
@@ -2210,6 +2260,8 @@ namespace BankruptVtuber
                 };
                 _clearCash.text = "현금  " + EconomyRules.FormatWon(run.cash);
                 _clearDebt.text = "부채  " + EconomyRules.FormatWon(run.debt);
+                if (_clearMental != null)
+                    _clearMental.text = "멘탈  " + run.mental;
                 if (_clearHeadline != null)
                     _clearHeadline.text = DayHeadline.Build(run);
                 _clearPortrait?.PoseEnding(EndingKind.SoloLegend);
@@ -2222,9 +2274,16 @@ namespace BankruptVtuber
                     : Color.white;
                 _stampMark.text = burn ? "번아웃" : "파산";
                 _stampMark.color = burn ? Palette.PastelDim : Palette.MoneyRed;
-                _stampDebt.text = burn
-                    ? $"멘탈 0   ·   {run.zeroMentalDays}일"
-                    : "부채  " + EconomyRules.FormatWon(run.debt);
+                if (_stampCash != null)
+                    _stampCash.text = "현금  " + EconomyRules.FormatWon(run.cash);
+                _stampDebt.text = "부채  " + EconomyRules.FormatWon(run.debt);
+                if (_stampMental != null)
+                {
+                    _stampMental.text = burn
+                        ? $"멘탈 0   ·   {run.zeroMentalDays}일"
+                        : "멘탈  " + run.mental;
+                    _stampMental.color = burn ? Palette.MoneyRed : Palette.Ink;
+                }
                 int cap = EconomyRules.BankruptDebt(run, GameManager.Instance.Balance, GameManager.Instance.Week2, GameManager.Instance.Week3, GameManager.Instance.Week4, w5);
                 _stampEpitaph.text = burn
                     ? Week5Rules.EndingBody(EndingKind.Burnout)
