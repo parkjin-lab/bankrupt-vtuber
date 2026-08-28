@@ -10558,6 +10558,8 @@ def check_readme_playable() -> None:
         fail("README card/tab inventory dropped content_plate / letter keys / newgame_card / day_tab / title_wordmark")
     elif "coach_card" not in readme or "코치" not in readme:
         fail("README dropped coach_card Day-1 sticky")
+    elif "코치 카드" not in readme:
+        fail("README does not inventory coach card")
     elif "webcam_bezel" not in readme or "베젤" not in readme:
         fail("README dropped webcam_bezel live cam frame")
     elif "웹캠 베젤" not in readme:
@@ -10569,8 +10571,19 @@ def check_readme_playable() -> None:
         or "bill_bar" not in readme
         or "pasan_nyang" not in readme
         or "rival_nyang" not in readme
+        or "coach_card" not in readme
     ):
-        fail("README plate inventory dropped webcam_bezel / bill_bar / player+rival faces")
+        fail("README plate inventory dropped webcam_bezel / bill_bar / coach_card / player+rival faces")
+    elif "부족 스탬프" not in readme and ("남은 현금" not in readme or "bill_short" not in readme):
+        fail("README does not inventory leftover bill_short stamp")
+    elif (
+        "bill_short" not in readme
+        or "남은 현금" not in readme
+        or "청구보다 부족" not in readme
+        or "청구 미달" not in readme
+        or "이어서 하기" not in readme
+    ):
+        fail("README bill_short inventory dropped leftover / title / morning / settlement reuse")
     elif "rival_nyang" not in readme or "goods_stand" not in readme or "agency_card" not in readme:
         fail("README dropped rival / goods / agency art")
     elif "ranking_board" not in readme or "concert_stage" not in readme:
@@ -10665,7 +10678,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:

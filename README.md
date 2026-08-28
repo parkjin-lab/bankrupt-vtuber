@@ -64,7 +64,7 @@
 
 ## 지금 보이는 것 / 들리는 것
 
-방·책상 종이·라이브 HUD 스택·돈 스탬프·팝 슬립·스트림덱 키캡·카드/탭·채팅 네임플레이트·웹캠 베젤·청구 영수증 바·스테이지 아트, 패드, 채팅 버블, 노트, 화면별 BGM(일반 라이브 `bgm_stream` / 콘서트 라이브 `bgm_concert`), 판정·이벤트·엔딩·중반 SFX, 콘텐츠 아이콘, 라이벌 얼굴, 굿즈/에이전시/랭킹/콘서트 아트가 이미 붙어 있다. 아래는 저장소에 있는 아트만 적는다(새로 만들지 않음).
+방·책상 종이·라이브 HUD 스택·돈 스탬프·팝 슬립·스트림덱 키캡·카드/탭·코치 카드·채팅 네임플레이트·웹캠 베젤·청구 영수증 바·스테이지 아트, 패드, 채팅 버블, 노트, 화면별 BGM(일반 라이브 `bgm_stream` / 콘서트 라이브 `bgm_concert`), 판정·이벤트·엔딩·중반 SFX, 콘텐츠 아이콘, 라이벌 얼굴, 굿즈/에이전시/랭킹/콘서트 아트가 이미 붙어 있다. 아래는 저장소에 있는 아트만 적는다(새로 만들지 않음).
 
 - **방** — `Art/title_studio` · `Art/title_wordmark`(타이틀 **「파산 버튜버」** 네온 로고) · `Art/morning_room` · `Art/settlement_desk` · `Art/stream_overlay` · `Art/ending_clear` / `Art/ending_bankrupt`
 - **스트림덱 키캡** — 메뉴·아침·정산 확인 버튼이 같은 키캡 패밀리로 읽힌다(펄스·칩·SFX·라우팅은 그대로).
@@ -79,7 +79,7 @@
   - `Art/letter_reply` / `Art/letter_ignore` — 팬레터 **답장하기** / **나중에** 키캡 (`letter_card` 종이 위. `sfx_letter`는 답장만)
   - `Art/newgame_card` — 타이틀 새 방송 지우기 고지 (**진행 중인 n일차를 지울까?** / **지우고 시작** / **취소**)
   - `Art/day_tab` — 아침 **n일차** 찢긴 달력 탭 (골드·0.25초 슬램)
-  - `Art/coach_card` — 1일차 코치 책상 스티키 카드 (`pad_*` 키캡·←↓→↑ Space 바인딩. Day-1만)
+  - `Art/coach_card` — **코치 카드**(1일차 책상 스티키. `pad_*` 키캡·←↓→↑ Space 바인딩. Day-1만)
 - **책상 종이** — 같은 영수증·고지서·스티키·스크랩이 타이틀 / 아침 / 라이브 / 정산을 오간다(숫자·라우팅은 그대로).
   - **영수증 `Art/cash_slip`** — 타이틀 **이어서 하기** 현금 · 아침 **현금** · 라이브 **지금 수입** · 정산 **오늘 수입** / **남은 현금** (모자라면 경고 빨강. 세이브 없으면 로비 영수증 숨김. 카운트 그대로). 타이틀·아침 부족 줄·정산 **청구 미달**·정산 **남은 현금** 부족은 같은 `Art/bill_short` 빨간 스탬프(**청구보다 부족** / **청구 미달**. 세이브 없거나 충분하면 스탬프 숨김). 히트 **+₩** 팝은 작은 `Art/won_pop` 슬립(수입 칩·슈퍼챗 플라이·값은 그대로)
   - **고지서 `Art/bill_notice`** — 아침 **오늘 청구** · 라이브 **청구** · 정산 **부채** · 타이틀 **이어서 하기** 부채 (세이브 없으면 로비 고지서 숨김. 늘면 빨강 카운트)
@@ -91,11 +91,11 @@
   - `Art/won_pop` — 히트 **+₩** 작은 현금 슬립(지금 수입 `cash_slip` 옆)
   - `Art/superchat_fly` — 슈퍼챗 성공 ₩ 플라이 금 봉투(`superchat_chip` 노트·`superchat_pip`·`sfx_superchat` 그대로)
   - `Art/viewer_pop` — 시청 ± 작은 팔로워 칩(`viewer_badge` 1.12 팝·초록/빨강 그대로)
-  - `Art/bill_short` — 정산 **청구 미달** · 정산 **남은 현금** 부족 · 아침·타이틀 **이어서 하기** **청구보다 부족** 빨간 스탬프(같은 PNG 재사용. 세이브 없거나 충분하면 숨김)
+  - `Art/bill_short` — **부족 스탬프** 공유 재사용: 타이틀 **이어서 하기** · 아침 **현금** · 정산 **청구 미달** · 정산 **남은 현금** (**청구보다 부족** / **청구 미달**. 같은 PNG. 충분하면 숨김)
 - **라이브 HUD 스택** — 라이브 한 판에서 보이는 오버레이·스탬프·칩(히트창·콤보·하이프·이벤트·경제 숫자는 그대로).
   - **칩 / 배지** — `Art/combo_plate`(**COMBO**) · `Art/viewer_badge`(**시청자**) · `Art/viewer_pop`(시청 ± 칩) · `Art/hype_chip`(**하이프 N** 남은 초) · `Art/clock_plate`(**남은 시간**, 마지막 10초 · `sfx_clock_tick`) · `Art/onair_led`(**ON AIR** / **방송 시작**, `sfx_onair`)
   - **판정 스탬프** — `Art/judge_perfect`(**PERFECT**) · `Art/judge_good`(**GOOD**) · `Art/judge_miss`(**MISS**) · `Art/combo_break`(**콤보 끊김**, `sfx_combo_break`)
-  - **노트 / 컷** — `Art/superchat_chip`(슈퍼챗 금 봉투) · `Art/superchat_pip`(0.4초 금 핍, `sfx_superchat`) · `Art/superchat_fly`(성공 ₩ 플라이 금 봉투) · `Art/won_pop`(히트 **+₩** 현금 슬립) · `Art/bill_cover`(**청구 커버** PAID 스탬프, `sfx_bill_cover`) · `Art/bill_short`(타이틀·아침 **청구보다 부족** / 정산 **청구 미달** 빨간 스탬프) · `Art/end_cut`(**방송 종료**, `sfx_end_cut`)
+  - **노트 / 컷** — `Art/superchat_chip`(슈퍼챗 금 봉투) · `Art/superchat_pip`(0.4초 금 핍, `sfx_superchat`) · `Art/superchat_fly`(성공 ₩ 플라이 금 봉투) · `Art/won_pop`(히트 **+₩** 현금 슬립) · `Art/bill_cover`(**청구 커버** PAID 스탬프, `sfx_bill_cover`) · `Art/bill_short`(타이틀·아침·정산 **남은 현금** **청구보다 부족** / 정산 **청구 미달**) · `Art/end_cut`(**방송 종료**, `sfx_end_cut`)
   - **피크 / 사고** — `Art/hype_frame`(하이프 골드 프레임, `sfx_hype`) · `Art/hype_chip`(**하이프 N**) · `Art/event_warn`(**안티 온다** / **렉 온다**) · `Art/anti_sting`(`sfx_anti`) · `Art/lag_sting`(`sfx_lag`)
 - **패드 / 채팅 / 노트** — 라이브 키캡·버블·닉 네임플레이트가 이미 붙어 있다(스폰·카탈로그·경제 숫자는 그대로).
   - `Art/pad_*` — 라이브 키캡 (←파랑 / ↓초록 / →트롤 / ↑골드 / 슈퍼챗 골드). 위 **스트림덱 키캡**(`title_start` / `title_continue` / `golive_key` / `nextday_key`)
