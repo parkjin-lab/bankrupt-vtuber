@@ -1055,8 +1055,13 @@ namespace BankruptVtuber
             var concertCard = UiKit.Panel(_concertRoot.transform, "ConcertBookCard", Color.white);
             UiKit.Layout(concertCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
             var concertBookImg = concertCard.GetComponent<Image>();
-            ArtSprites.Apply(concertBookImg, ArtSprites.ConcertStage, new Color(1f, 0.86f, 0.94f, 0.98f), Color.white);
-            concertBookImg.preserveAspect = false;
+            ArtSprites.ApplySliced(concertBookImg, ArtSprites.PanelDark, new Color(1f, 0.86f, 0.94f, 0.98f));
+            var concertPlate = UiKit.Image(concertCard, "ConcertBookHud", Color.white);
+            UiKit.Layout(concertPlate.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(680f, 340f));
+            ArtSprites.Apply(concertPlate, ArtSprites.ConcertStage, Color.white, Color.white);
+            concertPlate.preserveAspect = true;
+            concertPlate.raycastTarget = false;
+            concertPlate.transform.SetAsFirstSibling();
             SafeFitCard.Bind(concertCard, 720f, 380f);
             var concertTitle = UiKit.Label(concertCard, "ConcertTitle", "콘서트 개최", 46, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(concertTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
