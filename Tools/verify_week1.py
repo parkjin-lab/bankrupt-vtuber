@@ -7986,6 +7986,7 @@ def check_ending_desk_paper() -> None:
     balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
     player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
     splash = settle_cs.split("void ApplyResultSplashes", 1)[-1].split("void ApplyHeadline", 1)[0]
     clear_fn = settle_cs.split("static bool IsWeekClear", 1)[-1].split("static bool ShouldShowEnding", 1)[0]
     broke_fn = settle_cs.split("static bool IsBankruptResult", 1)[-1].split("static bool IsBurnoutResult", 1)[0]
@@ -8054,6 +8055,16 @@ def check_ending_desk_paper() -> None:
         fail("README should mention ending desk paper")
     elif "클리어" not in readme or "파산" not in readme:
         fail("README should mention clear/bankrupt desk paper")
+    elif (
+        "최종" not in settle_loop
+        or "Art/cash_slip" not in settle_loop
+        or "Art/bill_notice" not in settle_loop
+        or "Art/mental_note" not in settle_loop
+        or "**현금**" not in settle_loop
+        or "**부채**" not in settle_loop
+        or "**멘탈**" not in settle_loop
+    ):
+        fail("README loop does not name ending desk paper 현금/부채/멘탈")
     elif "YesterdayLine" not in week_cs:
         fail("ending desk paper dropped morning 어제 headline")
     else:
@@ -8072,6 +8083,7 @@ def check_ending_bill_short() -> None:
     balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
     player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
     splash = settle_cs.split("void ApplyResultSplashes", 1)[-1].split("void ApplyHeadline", 1)[0]
     clear_fn = settle_cs.split("static bool IsWeekClear", 1)[-1].split("static bool ShouldShowEnding", 1)[0]
     broke_fn = settle_cs.split("static bool IsBankruptResult", 1)[-1].split("static bool IsBurnoutResult", 1)[0]
@@ -8132,6 +8144,13 @@ def check_ending_bill_short() -> None:
         fail("ending bill_short moved Unity off 6000.5.9f1")
     elif "bill_short" not in readme or "파산" not in readme or "청구 미달" not in readme:
         fail("README should mention bankrupt bill_short")
+    elif (
+        "bill_short" not in settle_loop
+        or "청구 미달" not in settle_loop
+        or "파산" not in settle_loop
+        or "클리어는 숨김" not in settle_loop
+    ):
+        fail("README loop does not name bankrupt bill_short / hide-on-clear")
     else:
         ok("bankrupt shows bill_short 청구 미달; week-clear hides it; desk paper / sfx / rules stay")
 
@@ -11148,6 +11167,7 @@ def check_readme_playable() -> None:
     card_tabs = readme.split("- **카드 / 탭**", 1)[-1].split("- **책상 종이**", 1)[0]
     day_inv = next((ln for ln in card_tabs.splitlines() if "day_tab" in ln), "")
     desk_paper = readme.split("- **책상 종이**", 1)[-1].split("- **돈 스탬프", 1)[0]
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
 
     if "6000.5.9f1" not in readme or "Title.unity" not in readme:
         fail("README does not tell a clone which Unity / scene to open")
@@ -11318,6 +11338,20 @@ def check_readme_playable() -> None:
         or "파산" not in desk_paper
     ):
         fail("README desk paper dropped clear/bankrupt cash_slip / bill_notice / mental_note")
+    elif (
+        "최종" not in settle_loop
+        or "cash_slip" not in settle_loop
+        or "bill_notice" not in settle_loop
+        or "mental_note" not in settle_loop
+        or "bill_short" not in settle_loop
+        or "**현금**" not in settle_loop
+        or "**부채**" not in settle_loop
+        or "**멘탈**" not in settle_loop
+        or "클리어는 숨김" not in settle_loop
+    ):
+        fail("README loop does not name ending desk paper or bankrupt bill_short")
+    elif "bill_short" not in desk_paper or "클리어는 숨김" not in desk_paper or "파산" not in desk_paper:
+        fail("README desk paper dropped bankrupt bill_short hide-on-clear")
     elif "combo_plate" not in readme or "COMBO" not in readme or "콤보 끊김" not in readme:
         fail("README dropped combo_plate live badge")
     elif "combo_break" not in readme or "sfx_combo_break" not in readme:
@@ -11389,7 +11423,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names ending desk paper + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names ending desk paper + bankrupt stamp + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
