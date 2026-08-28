@@ -456,7 +456,7 @@ namespace BankruptVtuber
         {
             if (_continueDay != null)
                 _continueDay.text = peek.day + "일차";
-            bool last = peek.day == WeekSchedule.LastDayOfCurrentWeek(peek);
+            bool last = WeekSchedule.LastDayOfCurrentWeek(peek) == peek.day;
             if (_continueLastDay != null)
                 _continueLastDay.gameObject.SetActive(last);
             if (last && _continueLastWeek != null)
