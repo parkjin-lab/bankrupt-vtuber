@@ -1544,6 +1544,7 @@ def check_project() -> None:
     check_readme_onair_led()
     check_readme_rival_hud()
     check_readme_morning_event_warn()
+    check_readme_event_warn()
     check_letter_card()
     check_letter_keycaps()
     check_pad_sfx()
@@ -8972,6 +8973,73 @@ def check_readme_morning_event_warn() -> None:
         ok("README names 아침 경고 (오늘의 위협 slam on event_warn = live 안티 온다 / 렉 온다)")
 
 
+def check_readme_event_warn() -> None:
+    """README names the three event_warn uses: live, morning, settlement hide-if-none."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    extra_cs = (ROOT / "Assets/Scripts/Data/ExtraThreat.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    live_loop = readme.split("위협 오버레이", 1)[-1].split("정산:", 1)[0]
+    morning = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    warn_inv = next((ln for ln in readme.splitlines() if "Art/event_warn" in ln and "피크" in ln), "")
+    spawn = week_cs.split("void SpawnIncoming", 1)[-1].split("IEnumerator Slam", 1)[0]
+    bind = settle_cs.split("void BindExtraWarn", 1)[-1].split("void ApplyHeadline", 1)[0]
+
+    missing = next(
+        (
+            f"{label} {token}"
+            for label, block in (("live overlay", live_loop), ("settlement", settle_loop), ("event_warn", warn_inv))
+            for token in (
+                "이벤트 경고",
+                "event_warn",
+                "안티 온다",
+                "렉 온다",
+                "오늘의 위협",
+                "없으면 숨김",
+            )
+            if token not in block
+        ),
+        "",
+    )
+
+    if missing:
+        fail(f"README {missing} must name the three event_warn uses")
+    elif "아침 경고" not in live_loop or "아침 경고" not in morning or "아침 경고" not in warn_inv:
+        fail("README event_warn stack dropped 아침 경고")
+    elif "정산" not in live_loop or "정산" not in warn_inv:
+        fail("README event_warn stack dropped settlement extra-threat")
+    elif "ArtSprites.EventWarn" not in live_cs or "EventWarnBox" not in live_cs:
+        fail("README event_warn lost the live 안티 온다 / 렉 온다 plate")
+    elif "ArtSprites.EventWarn" not in spawn or '"오늘의 위협"' not in spawn:
+        fail("README event_warn lost the morning 오늘의 위협 slam")
+    elif "ArtSprites.EventWarn" not in settle_cs or "BindExtraWarn" not in settle_cs:
+        fail("README event_warn lost the settlement extra-threat plate")
+    elif "SetActive(on)" not in bind or "IsNullOrWhiteSpace(extras)" not in bind:
+        fail("README event_warn dropped settlement hide-if-none")
+    elif "장비 고장" not in extra_cs or "라이벌 견제" not in extra_cs:
+        fail("README event_warn retuned extra threat names")
+    elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
+        fail("README event_warn retuned live warn copy")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("README event_warn retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README event_warn broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising event_warn / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README event_warn dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README event_warn moved Unity off 6000.5.9f1")
+    else:
+        ok("README names 이벤트 경고 (live 안티/렉 + morning 오늘의 위협 + settle hide-if-none)")
+
+
 def check_letter_card() -> None:
     import struct
 
@@ -12361,6 +12429,8 @@ def check_readme_playable() -> None:
         fail("README morning dropped 아침 경고 event_warn reuse")
     elif "event_warn" not in readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0] or "없으면 숨김" not in readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]:
         fail("README settlement dropped extra-threat event_warn")
+    elif "이벤트 경고" not in readme.split("위협 오버레이", 1)[-1].split("정산:", 1)[0]:
+        fail("README dropped 이벤트 경고 live/morning/settle stack")
     elif "anti_sting" not in readme or "lag_sting" not in readme or "sfx_lag" not in readme:
         fail("README dropped anti_sting / lag_sting overlays")
     elif "viewer_badge" not in readme or "시청자" not in readme or ("시청 +" not in readme and "시청 ±" not in readme):
