@@ -1479,6 +1479,7 @@ def check_project() -> None:
     check_last_day_banner()
     check_title_continue_preview()
     check_title_day_tab()
+    check_settle_day_tab()
     check_start_pulse()
     check_continue_pulse()
     check_show_chip()
@@ -4622,6 +4623,74 @@ def check_title_day_tab() -> None:
         fail("README should mention title continue day_tab")
     else:
         ok("Title continue n일차 sits on day_tab; hide-no-save / morning slam / wipe stay")
+
+
+def check_settle_day_tab() -> None:
+    """Settlement reuses morning day_tab so today's n일차 matches morning and title continue."""
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    render = settle_cs.split("void Render()", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+    paint = settle_cs.split("void PaintShowLine", 1)[-1].split("void ApplyEndingOverlay", 1)[0]
+    pulse = settle_cs.split("void TickNextPulse", 1)[-1].split("static bool CanAdvance", 1)[0]
+    slam = week_cs.split("_daySlam = Mathf.MoveTowards", 1)[-1].split("TickGoLivePulse", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+
+    if 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif "ArtSprites.DayTab" not in week_cs or '"DayTab"' not in week_cs:
+        fail("settlement day_tab reuse dropped morning calendar tab")
+    elif "ArtSprites.DayTab" not in title_cs or '"ContinueDayTab"' not in title_cs:
+        fail("settlement day_tab reuse dropped title continue tab")
+    elif "ArtSprites.DayTab" not in build or '"SettleDayTab"' not in build:
+        fail("Settlement does not hang Art/day_tab under n일차")
+    elif "SettleDayHead" not in build or "Palette.Gold" not in build:
+        fail("settlement day_tab dropped gold n일차 label")
+    elif "run.day" not in render or '"일차"' not in render:
+        fail("settlement day_tab does not read run.day into n일차")
+    elif "run.day =" in settle_cs or "day += " in settle_cs or "day -= " in settle_cs:
+        fail("settlement day_tab writes the day index")
+    elif "_daySlam = 0.25f" not in week_cs or "_dayTab" not in slam:
+        fail("settlement day_tab retuned the morning 0.25s slam")
+    elif "peek.day" not in fill or '"일차"' not in fill:
+        fail("settlement day_tab dropped title continue n일차")
+    elif "TickLeftCash" not in settle_cs or '"남은 현금"' not in settle_cs:
+        fail("settlement day_tab dropped leftover cash")
+    elif "ArtSprites.BillNotice" not in settle_cs or "청구" not in settle_cs:
+        fail("settlement day_tab dropped bill_notice")
+    elif "ArtSprites.ContentPlate" not in paint or '"오늘 토크"' not in paint:
+        fail("settlement day_tab dropped content_plate")
+    elif "ApplyHeadline" not in settle_cs or "DayHeadline.Build" not in settle_cs:
+        fail("settlement day_tab dropped headline")
+    elif "TickNextPulse" not in settle_cs or '"다음"' not in settle_cs or "1f + 0.03f" not in pulse:
+        fail("settlement day_tab dropped nextday key")
+    elif "NextMorning()" not in settle_cs or "public void NextMorning()" not in gm:
+        fail("settlement day_tab changed next-morning routing")
+    elif "lastStreamIncome =" in build or "PayoutIncome" in paint:
+        fail("settlement day_tab writes payout")
+    elif "TickIncomeCount" not in settle_cs or "ShowShortfall" not in settle_cs or "청구 미달" not in settle_cs:
+        fail("settlement day_tab dropped income count / 청구 미달")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("settlement day_tab retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("settlement day_tab broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising settlement day_tab / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("settlement day_tab dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("settlement day_tab moved Unity off 6000.5.9f1")
+    elif "Art/day_tab" not in readme or "정산" not in readme or "일차" not in readme:
+        fail("README should mention settlement day_tab")
+    else:
+        ok("Settlement n일차 sits on day_tab; leftover / bill_notice / content_plate / headline / nextday stay")
 
 
 def check_start_pulse() -> None:
@@ -10960,9 +11029,10 @@ def check_readme_playable() -> None:
         "day_tab" not in card_tabs
         or "아침" not in card_tabs
         or "이어서 하기" not in card_tabs
+        or "정산" not in card_tabs
         or "일차" not in card_tabs
     ):
-        fail("README day_tab inventory dropped morning / title continue n일차")
+        fail("README day_tab inventory dropped morning / title continue / settlement n일차")
     elif "title_wordmark" not in readme or "파산 버튜버" not in readme:
         fail("README dropped title_wordmark neon logo")
     elif "chat_bubble" not in readme or "note_chip" not in readme or "superchat_chip" not in readme or "content_*" not in readme:
@@ -11143,7 +11213,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names day_tab morning/title continue + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:

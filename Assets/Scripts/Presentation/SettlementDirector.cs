@@ -35,6 +35,8 @@ namespace BankruptVtuber
         Text _headlineTag;
         Text _headline;
         Image _headlineClip;
+        Image _dayTab;
+        Text _dayHead;
         Text _showLine;
         Image _showLineIcon;
         Image _showLineImg;
@@ -333,7 +335,14 @@ namespace BankruptVtuber
             _portrait = new StudioPortrait(root, new Vector2(0.90f, 0.82f), new Vector2(210, 268), false);
 
             var title = UiKit.Label(root, "Title", "정산", 48, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
-            UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(36, -16), new Vector2(400, 56));
+            UiKit.Layout(title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(36, -16), new Vector2(176, 56));
+            _dayTab = UiKit.Image(root, "SettleDayTab", Color.white);
+            UiKit.Layout(_dayTab.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(220, -12), new Vector2(188, 48));
+            ArtSprites.Apply(_dayTab, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _dayTab.preserveAspect = false;
+            _dayTab.raycastTarget = false;
+            _dayHead = UiKit.Label(_dayTab.transform, "SettleDayHead", "", 20, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_dayHead.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -2f), new Vector2(-16f, -8f));
             _headlineClip = UiKit.Image(root, "HeadlineClip", Color.white);
             UiKit.Layout(_headlineClip.rectTransform, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(36, -66), new Vector2(0, 80));
             ArtSprites.Apply(_headlineClip, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
@@ -1133,6 +1142,8 @@ namespace BankruptVtuber
         {
             var gm = GameManager.Instance;
             var run = gm.Run;
+            if (_dayHead != null)
+                _dayHead.text = run.day + "일차";
             var b = gm.Balance;
             var w2 = gm.Week2;
             var w3 = gm.Week3;
