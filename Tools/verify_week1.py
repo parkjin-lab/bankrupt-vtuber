@@ -1567,6 +1567,7 @@ def check_project() -> None:
     check_title_newgame_cash()
     check_title_newgame_mental()
     check_title_newgame_day()
+    check_title_newgame_headline()
     check_morning_day1_tab()
     check_morning_week_start_tab()
     check_settle_day1_tab()
@@ -12409,6 +12410,170 @@ def check_title_newgame_day() -> None:
         fail("new-game 1일차 tab moved Unity off 6000.5.9f1")
     else:
         ok("no-save Title hangs 1일차 day_tab beside cash; continue Title hides it")
+
+
+def check_title_newgame_headline() -> None:
+    """No-save Title hangs headline_clip as opening news paper; continue Title hides it."""
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    bill = start_hang.split("_startBill = UiKit.Image", 1)[-1] if "_startBill = UiKit.Image" in start_hang else ""
+    if "_startCash = UiKit.Image" in bill:
+        bill = bill.split("_startCash = UiKit.Image", 1)[0]
+    cash = start_hang.split("_startCash = UiKit.Image", 1)[-1] if "_startCash = UiKit.Image" in start_hang else ""
+    if "_startMental = UiKit.Image" in cash:
+        cash = cash.split("_startMental = UiKit.Image", 1)[0]
+    mental = start_hang.split("_startMental = UiKit.Image", 1)[-1] if "_startMental = UiKit.Image" in start_hang else ""
+    if "_startDay = UiKit.Image" in mental:
+        mental = mental.split("_startDay = UiKit.Image", 1)[0]
+    day = start_hang.split("_startDay = UiKit.Image", 1)[-1] if "_startDay = UiKit.Image" in start_hang else ""
+    if "_startHeadline = UiKit.Image" in day:
+        day = day.split("_startHeadline = UiKit.Image", 1)[0]
+    paper = start_hang.split("_startHeadline = UiKit.Image", 1)[-1] if "_startHeadline = UiKit.Image" in start_hang else ""
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    last_tab = build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in build else ""
+    week_start = build.split('"ContinueWeekStart"', 1)[-1].split('"ContinueMemberPin"', 1)[0] if '"ContinueWeekStart"' in build else ""
+    continue_clip = build.split('"ContinueClip"', 1)[-1].split('"ContinueGoodsPin"', 1)[0] if '"ContinueClip"' in build else ""
+    morning_clip = week_cs.split('"YesterdayClip"', 1)[-1].split('"Yesterday"', 1)[0] if '"YesterdayClip"' in week_cs else ""
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    settle_clip = settle_build.split('"HeadlineClip"', 1)[-1].split('"HeadlineTag"', 1)[0] if '"HeadlineClip"' in settle_build else ""
+    morning_day1 = week_cs.split('"MorningDay1"', 1)[-1].split('"LastDayBanner"', 1)[0] if '"MorningDay1"' in week_cs else ""
+    settle_day1 = settle_build.split('"SettleDay1"', 1)[-1].split('"Sheet"', 1)[0] if '"SettleDay1"' in settle_build else ""
+
+    if 'HeadlineClip = "Art/headline_clip"' not in art_cs:
+        fail("ArtSprites does not hook Art/headline_clip")
+    elif '"NewGameHeadline"' not in start_hang or "ArtSprites.HeadlineClip" not in paper:
+        fail("new-game Title does not hang Art/headline_clip as opening news paper")
+    elif "_start.transform" not in paper:
+        fail("new-game headline paper is not on the start / new-game card")
+    elif "preserveAspect = true" not in paper:
+        fail("new-game headline paper is not preserveAspect")
+    elif "72f, 48f" in paper:
+        fail("new-game headline paper was hung as a 72×48 pin")
+    elif "240f, 88f" not in paper or "412f, -78f" not in paper:
+        fail("new-game headline paper is not a desk scrap beside NewGameDay")
+    elif '"헤드라인"' not in paper:
+        fail("new-game headline paper is not Korean opening-news copy")
+    elif "1일차" in paper or "마지막 날" in paper or "주차 마지막" in paper:
+        fail("new-game headline paper reused calendar-tab copy")
+    elif "어제:" in paper or "오늘 헤드라인" in paper or "lastHeadline" in paper:
+        fail("new-game headline paper reused live / morning / continue headline copy")
+    elif "16f, -10f" in paper or "176f, 170f" in paper:
+        fail("new-game headline paper covers NewGameBill")
+    elif "200f, 68f" in paper or "204f, -10f" in paper:
+        fail("new-game headline paper covers NewGameCash")
+    elif "160f, 110f" in paper or "204f, -86f" in paper:
+        fail("new-game headline paper covers NewGameMental")
+    elif "180f, 56f" in paper or "412f, -10f" in paper:
+        fail("new-game headline paper covers NewGameDay")
+    elif "56f, -40f" in paper or "420f, 78f" in paper:
+        fail("new-game headline paper covers the start button")
+    elif '"시작"' in paper or "StartChip" in paper:
+        fail("new-game headline paper covers the 시작 chip")
+    elif "SetActive(false)" not in paper:
+        fail("new-game headline paper is not hidden until RefreshContinue")
+    elif "_startHeadline" not in hide or "SetActive(!_hasSave)" not in hide:
+        fail("new-game headline paper is not shown only when there is no save")
+    elif "_continue.transform" in paper or '"ContinueClip"' in paper or '"ContinueClipPin"' in paper:
+        fail("new-game headline paper sat on the continue tile")
+    elif "UiKit.Stretch" in paper:
+        fail("new-game headline paper covers the start button")
+    elif '"NewGameBill"' not in start_hang or "16f, -10f" not in bill or "176f, 170f" not in bill:
+        fail("new-game headline paper restyled NewGameBill")
+    elif '"NewGameCash"' not in start_hang or "200f, 68f" not in cash or "204f, -10f" not in cash:
+        fail("new-game headline paper restyled NewGameCash")
+    elif '"NewGameMental"' not in start_hang or "160f, 110f" not in mental or "204f, -86f" not in mental:
+        fail("new-game headline paper restyled NewGameMental")
+    elif '"NewGameDay"' not in start_hang or "412f, -10f" not in day or '"1일차"' not in day:
+        fail("new-game headline paper restyled NewGameDay")
+    elif "ArtSprites.DayTab" not in day or "180f, 56f" not in day or "preserveAspect = true" not in day:
+        fail("new-game headline paper restyled the 1일차 calendar")
+    elif '"StartChip"' not in start_hang or "ArtSprites.TitleStart" not in start_hang:
+        fail("new-game headline paper dropped the start keycap / 시작 chip")
+    elif "!_hasSave ? -324" not in hide:
+        fail("new-game headline paper covers the how-to key")
+    elif '"ContinueClip"' not in build or "ArtSprites.HeadlineClip" not in continue_clip:
+        fail("new-game headline paper dropped continue headline_clip")
+    elif "56, -286" not in continue_clip or "420, 72" not in continue_clip:
+        fail("new-game headline paper restyled continue headline scrap")
+    elif "SetActive(hasHead)" not in hide:
+        fail("continue Title headline scrap is not hidden unless a save and lastHeadline exist")
+    elif '"어제: "' not in fill or "lastHeadline" not in fill:
+        fail("new-game headline paper dropped continue 어제: + lastHeadline")
+    elif "ArtSprites.HeadlineClip" not in week_cs or '"YesterdayClip"' not in week_cs:
+        fail("new-game headline paper dropped morning 어제 scrap")
+    elif "0, -42" not in morning_clip or "0, 78" not in morning_clip:
+        fail("new-game headline paper restyled morning headline_clip")
+    elif "ArtSprites.HeadlineClip" not in settle_build or '"HeadlineClip"' not in settle_build:
+        fail("new-game headline paper dropped settlement 오늘 헤드라인")
+    elif "36, -66" not in settle_clip or "오늘 헤드라인" not in settle_cs:
+        fail("new-game headline paper restyled settlement headline_clip")
+    elif '"ClearHeadlineClip"' not in settle_cs or '"StampHeadlineClip"' not in settle_cs:
+        fail("new-game headline paper dropped ending headline scraps")
+    elif '"ContinueDayTab"' not in build or '"ContinueLastDayTab"' not in build:
+        fail("new-game headline paper dropped continue n일차 / last-day")
+    elif "166f, -6f" not in last_tab or "176f, 48f" not in last_tab or '"마지막 날"' not in last_tab:
+        fail("new-game headline paper moved the continue last-day tab")
+    elif '"ContinueWeekStart"' not in build or "576f, -8f" not in week_start or "180f, 56f" not in week_start:
+        fail("new-game headline paper restyled continue week-start")
+    elif "LastDayOfCurrentWeek" not in fill or "SetActive(last)" not in fill:
+        fail("new-game headline paper changed continue last-day logic")
+    elif '"MorningDay1"' not in week_cs or "8f, -220f" not in morning_day1 or '"1일차"' not in morning_day1:
+        fail("new-game headline paper restyled MorningDay1")
+    elif '"SettleDay1"' not in settle_build or "8f, -148f" not in settle_day1 or '"1일차"' not in settle_day1:
+        fail("new-game headline paper restyled SettleDay1")
+    elif "ArtSprites.DayTab" not in week_cs or '"DayTab"' not in week_cs or "RefreshLastDay" not in week_cs:
+        fail("new-game headline paper dropped morning n일차 / last-day")
+    elif '"SettleDayTab"' not in settle_build or '"SettleLastDayTab"' not in settle_cs:
+        fail("new-game headline paper dropped settlement day_tab")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("new-game headline paper moved last-day week gates")
+    elif '"ContinueMemberPin"' not in build or "-8f, 10f" not in build:
+        fail("new-game headline paper dropped the membership continue pin")
+    elif '"ContinueAgencyPin"' not in build or "-86f, 10f" not in build:
+        fail("new-game headline paper dropped the agency continue pin")
+    elif '"ContinueGoodsPin"' not in build or "-164f, 10f" not in build:
+        fail("new-game headline paper dropped the goods continue pin")
+    elif '"ContinueRankingPin"' not in build or "-242f, 10f" not in build:
+        fail("new-game headline paper dropped the ranking continue pin")
+    elif '"ContinueClipPin"' not in build or "-320f, 10f" not in build:
+        fail("new-game headline paper dropped the clip continue pin")
+    elif '"ContinueConcertPin"' not in build or "-398f, 10f" not in build:
+        fail("new-game headline paper dropped the concert continue pin")
+    elif '"ContinueSponsorPin"' not in build or "-476f, 10f" not in build:
+        fail("new-game headline paper dropped the sponsor continue pin")
+    elif "Audio/sfx_threat" not in title_cs or "PlayThreatSfx" not in fill or "PlayNewGameBillThreat" not in title_cs:
+        fail("new-game headline paper dropped new-game / continue sfx_threat")
+    elif "Audio/sfx_threat" in paper or "PlayThreatSfx" in paper or "sfx_" in paper.lower():
+        fail("new-game headline paper added a title sting")
+    elif "peek.day =" in title_cs or "day += " in title_cs or "day -= " in title_cs:
+        fail("new-game headline paper writes the day index")
+    elif "lastBills =" in week_cs or "billRent =" in title_cs or "TonightBills =" in title_cs:
+        fail("new-game headline paper writes bill amounts")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("new-game headline paper retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("new-game headline paper retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("new-game headline paper retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("new-game headline paper broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising new-game headline paper / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("new-game headline paper dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("new-game headline paper moved Unity off 6000.5.9f1")
+    else:
+        ok("no-save Title hangs headline_clip on the start card; continue Title hides it")
 
 
 def check_morning_day1_tab() -> None:
