@@ -1555,6 +1555,7 @@ def check_project() -> None:
     check_readme_chat_dock()
     check_readme_pad_dock()
     check_readme_note_lane()
+    check_readme_note_lane_tint()
     check_letter_card()
     check_letter_keycaps()
     check_pad_sfx()
@@ -6598,7 +6599,7 @@ def check_note_lane_tint() -> None:
         "",
     )
     missing_color = next(
-        (token for token in ("파랑", "초록", "트롤", "골드") if token not in live_loop or token not in hud_stack or token not in lane_inv),
+        (token for token in ("파랑", "초록", "빨강", "골드") if token not in live_loop or token not in hud_stack or token not in lane_inv),
         "",
     )
 
@@ -6638,8 +6639,10 @@ def check_note_lane_tint() -> None:
         fail("note_lane tint lost ArtSprites.NoteLane")
     elif missing_color:
         fail(f"README note_lane tint dropped pad color {missing_color}")
-    elif "패드 색" not in live_loop or "패드 색" not in hud_stack or "패드 색" not in lane_inv:
-        fail("README does not say note_lane beds tint to pad colors")
+    elif "패드 색" not in live_loop:
+        fail("README live loop does not say note_lane beds tint to pad colors")
+    elif "레인 틴트" not in hud_stack or "레인 틴트" not in lane_inv:
+        fail("README does not name the note_lane tints")
     elif "note_lane" not in live_loop or "hit_rail" not in live_loop:
         fail("README live loop dropped note_lane / hit_rail while tinting beds")
     else:
@@ -9490,7 +9493,7 @@ def check_readme_note_lane() -> None:
         fail(f"README {missing} must name note_lane under the four note paths")
     elif "노트 레인" not in hud_stack or "스트라이크 포켓" not in lane_hud:
         fail("README Live HUD dropped 노트 레인 / hit_rail strike pocket")
-    elif "패드 색" not in lane_hud or "파랑" not in lane_hud or "골드" not in lane_hud:
+    elif "레인 틴트" not in lane_hud or "파랑" not in lane_hud or "골드" not in lane_hud:
         fail("README Live HUD note_lane dropped kind pad colors")
     elif "note_lane" not in lane_inv or "레인" not in lane_inv:
         fail("README inventory dropped note_lane bed")
@@ -9526,6 +9529,76 @@ def check_readme_note_lane() -> None:
         fail("README note_lane moved Unity off 6000.5.9f1")
     else:
         ok("README Live HUD names note_lane under the four note paths")
+
+
+def check_readme_note_lane_tint() -> None:
+    """README names the four note_lane pad-color tints; hit_rail stay the strike pocket."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    live_loop = readme.split("떨어지는 채팅은", 1)[-1].split("하이프 시작 시", 1)[0]
+    hud_stack = readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]
+    lane_hud = next((ln for ln in hud_stack.splitlines() if "Art/note_lane" in ln), "")
+    lane_inv = next((ln for ln in readme.splitlines() if "Art/note_lane" in ln and "레인" in ln), "")
+    lane = live_cs.split('_lane = UiKit.Panel', 1)[-1].split("var bottom = UiKit.Panel", 1)[0]
+    make = live_cs.split("RectTransform MakeBubble", 1)[-1].split("static void DimNamedBubble", 1)[0]
+    sync = live_cs.split("void SyncNotes", 1)[-1].split("void RefreshPromoOverlay", 1)[0]
+    tints = ("←파랑", "↓초록", "→빨강", "↑골드")
+
+    missing = next(
+        (
+            f"{label} {token}"
+            for label, block in (("live loop", live_loop), ("live HUD", hud_stack), ("note_lane", lane_hud), ("inventory", lane_inv))
+            for token in tints
+            if token not in block
+        ),
+        "",
+    )
+
+    if missing:
+        fail(f"README {missing} must name the note_lane pad-color tint")
+    elif "레인 틴트" not in hud_stack or "레인 틴트" not in lane_inv:
+        fail("README Live HUD / inventory must name the note_lane tints")
+    elif "패드 색" not in live_loop or "note_lane" not in live_loop or "hit_rail" not in live_loop:
+        fail("README live loop dropped note_lane pad-color tints / hit_rail")
+    elif "Palette.ForKind" not in lane or "i < 4" not in lane or '"NoteLane" + i' not in lane:
+        fail("README note_lane tint lost the four kind-tinted beds")
+    elif "ChatKind.Positive" not in lane or "ChatKind.Empathy" not in lane or "ChatKind.Laugh" not in lane or "ChatKind.Thanks" not in lane:
+        fail("README note_lane tint dropped a kind pad color")
+    elif 'NoteLane = "Art/note_lane"' not in art_cs or "ArtSprites.NoteLane" not in lane:
+        fail("README note_lane tint lost the note_lane sprite")
+    elif "SetAsFirstSibling" not in lane or '"NoteLane"' not in lane:
+        fail("README note_lane tint lost the under-path hang")
+    elif "ArtSprites.HitRail" not in lane or '"HitRail"' not in lane or "SetSiblingIndex(1)" not in lane:
+        fail("README note_lane tint lost hit_rail as the strike pocket")
+    elif "ArtSprites.NoteChip" not in make or "ArtSprites.SuperchatChip" not in make:
+        fail("README note_lane tint dropped note_chip / superchat_chip")
+    elif "abs <= 0.15f" not in sync or '"Hot"' not in live_cs:
+        fail("README note_lane tint dropped Perfect window glow")
+    elif "const float LaneHit = -210f" not in live_cs or "const float LaneTop = 260f" not in live_cs:
+        fail("README note_lane tint moved the hit line or lane top")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("README note_lane tint retuned QTE windows")
+    elif "approachSeconds: 1.35" not in balance:
+        fail("README note_lane tint retuned travel speed")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("README note_lane tint retuned Judge scoring")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("README note_lane tint retuned Week 1 economy / hype")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README note_lane tint broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising note_lane tint / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README note_lane tint dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README note_lane tint moved Unity off 6000.5.9f1")
+    else:
+        ok("README names the four note_lane pad-color tints")
 
 
 def check_letter_card() -> None:
