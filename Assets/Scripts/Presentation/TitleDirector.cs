@@ -32,6 +32,7 @@ namespace BankruptVtuber
         Image _continueMentalNote;
         Text _continueMental;
         Text _wordmark;
+        RectTransform _wordmarkPlate;
         Button _how;
         Text _hint;
         Text _wipeBody;
@@ -65,7 +66,12 @@ namespace BankruptVtuber
 
         void Update()
         {
-            if (_wordmark != null)
+            if (_wordmarkPlate != null)
+            {
+                float u = 0.5f + 0.5f * Mathf.Sin(Time.time * 2.4f);
+                _wordmarkPlate.localScale = Vector3.one * (1f + 0.04f * u);
+            }
+            else if (_wordmark != null)
             {
                 float u = 0.5f + 0.5f * Mathf.Sin(Time.time * 2.4f);
                 _wordmark.rectTransform.localScale = Vector3.one * (1f + 0.04f * u);
@@ -123,13 +129,21 @@ namespace BankruptVtuber
             var titleParent = _titleRoot.transform;
             _portrait = new StudioPortrait(titleParent, new Vector2(0.78f, 0.48f), new Vector2(440, 560), true);
 
-            var lockup = UiKit.Panel(titleParent, "Lockup", Color.white);
+            var lockup = UiKit.Panel(titleParent, "Lockup", new Color(0, 0, 0, 0));
             UiKit.Layout(lockup, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(56, -48), new Vector2(760, 200));
-            ArtSprites.ApplySliced(lockup.GetComponent<Image>(), ArtSprites.PanelDark, new Color(1f, 1f, 1f, 0.92f));
-            _wordmark = UiKit.Label(lockup, "GameTitle", "「파산 버튜버」", 64, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
-            UiKit.Layout(_wordmark.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(28, -18), new Vector2(-40, 86));
+            var lockupImg = lockup.GetComponent<Image>();
+            if (lockupImg != null)
+                lockupImg.raycastTarget = false;
+            var wordmarkImg = UiKit.Image(lockup, "WordmarkPlate", Color.white);
+            _wordmarkPlate = wordmarkImg.rectTransform;
+            UiKit.Layout(_wordmarkPlate, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(0, 110));
+            ArtSprites.Apply(wordmarkImg, ArtSprites.TitleWordmark, new Color(1f, 0.55f, 0.75f, 0.98f), Color.white);
+            wordmarkImg.preserveAspect = false;
+            wordmarkImg.raycastTarget = false;
+            _wordmark = UiKit.Label(_wordmarkPlate, "GameTitle", "「파산 버튜버」", 58, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_wordmark.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), new Vector2(-36f, -20f));
             var line = UiKit.Label(lockup, "Tagline", "빚더미에서 최고의 버튜버가 되어라.", 26, Palette.Pink, TextAnchor.UpperLeft);
-            UiKit.Layout(line.rectTransform, new Vector2(0, 0), new Vector2(1, 0.48f), new Vector2(0, 0), new Vector2(28, 18), new Vector2(-40, 0));
+            UiKit.Layout(line.rectTransform, new Vector2(0, 0), new Vector2(1, 0.42f), new Vector2(0, 0), new Vector2(28, 10), new Vector2(-40, 0));
             line.horizontalOverflow = HorizontalWrapMode.Wrap;
 
             _start = UiKit.Button(titleParent, "Start", "방송 시작", OnStartBroadcast, Palette.PinkDeep, Color.white);

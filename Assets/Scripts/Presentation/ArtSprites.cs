@@ -79,6 +79,7 @@ namespace BankruptVtuber
         public const string LetterIgnore = "Art/letter_ignore";
         public const string NewGameCard = "Art/newgame_card";
         public const string DayTab = "Art/day_tab";
+        public const string TitleWordmark = "Art/title_wordmark";
 
         public static string ForContent(StreamContentType type) => type switch
         {

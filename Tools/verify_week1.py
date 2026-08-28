@@ -219,6 +219,7 @@ def check_project() -> None:
         "letter_ignore.png": "나중에 키캡",
         "newgame_card.png": "새 방송 지우기 고지",
         "day_tab.png": "n일차 달력 탭",
+        "title_wordmark.png": "타이틀 네온 워드마크",
         "headline_clip.png": "어제 헤드라인",
         "cash_slip.png": "남은 현금",
         "won_pop.png": "+₩ 슬립",
@@ -1477,6 +1478,7 @@ def check_project() -> None:
     check_bill_notice()
     check_stream_overlay()
     check_title_studio()
+    check_title_wordmark()
     check_settlement_desk()
     check_morning_room()
     check_pad_keycaps()
@@ -3383,6 +3385,8 @@ def check_title_broke_login() -> None:
         fail("파산 버튜버 wordmark does not pulse")
     elif '"「파산 버튜버」"' not in title_cs:
         fail("title wordmark text changed")
+    elif "ArtSprites.TitleWordmark" not in title_cs or 'TitleWordmark = "Art/title_wordmark"' not in (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8"):
+        fail("title wordmark is not on title_wordmark neon plate")
     elif "TonightBills" not in title_cs or "peek.cash <" not in title_cs:
         fail("continue cash is not compared to a known next bill")
     elif "ArtSprites.BillShort" not in title_cs or '"ContinueShortStamp"' not in title_cs:
@@ -4870,6 +4874,8 @@ def check_title_studio() -> None:
         fail("ArtSprites does not hook Art/title_studio")
     elif '"TitleBackdrop"' not in build or "ArtSprites.TitleStudio" not in build:
         fail("Title does not hang the studio behind the wordmark")
+    elif "ArtSprites.TitleWordmark" not in build or '"WordmarkPlate"' not in build:
+        fail("title studio dropped title_wordmark neon plate")
     elif "「파산 버튜버」" not in build or "방송 시작" not in build or "이어서 하기" not in build:
         fail("title studio covered the wordmark or menu buttons")
     elif "1f + 0.04f" not in title_cs or "TickStartPulse" not in title_cs or '"시작"' not in title_cs:
@@ -4898,6 +4904,65 @@ def check_title_studio() -> None:
         fail("title studio moved Unity off 6000.5.9f1")
     else:
         ok("Title sits on a broke-studio backdrop; pulse / continue / wipe stay")
+
+
+def check_title_wordmark() -> None:
+    import struct
+
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    build = title_cs.split("void Build()", 1)[-1].split("void BuildHowTo", 1)[0]
+    pulse = title_cs.split("void Update()", 1)[-1].split("TickStartPulse", 1)[0]
+    png = ROOT / "Assets/Resources/Art/title_wordmark.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("title_wordmark.png is missing")
+    elif w < 480 or h < 120 or w <= h:
+        fail("title_wordmark.png is not a readable landscape neon logo plate")
+    elif color != 6:
+        fail("title_wordmark.png is not RGBA")
+    elif 'TitleWordmark = "Art/title_wordmark"' not in art_cs:
+        fail("ArtSprites does not hook Art/title_wordmark")
+    elif "ArtSprites.TitleWordmark" not in build or '"WordmarkPlate"' not in build:
+        fail("Title does not hang Art/title_wordmark under the wordmark")
+    elif '"「파산 버튜버」"' not in build or "GameTitle" not in build:
+        fail("title_wordmark dropped Korean 「파산 버튜버」")
+    elif "Palette.Gold" not in build.split("GameTitle", 1)[-1].split("Tagline", 1)[0]:
+        fail("title_wordmark dropped panic gold title ink")
+    elif "_wordmarkPlate" not in pulse or "1f + 0.04f" not in pulse or "Sin(Time.time" not in pulse:
+        fail("title_wordmark dropped the 1.04 plate pulse")
+    elif "ArtSprites.TitleStudio" not in build or '"TitleBackdrop"' not in build:
+        fail("title_wordmark dropped the studio backdrop")
+    elif "ArtSprites.TitleStart" not in title_cs or "ArtSprites.TitleContinue" not in title_cs:
+        fail("title_wordmark dropped title keycaps")
+    elif "빚더미에서 최고의 버튜버가 되어라." not in build:
+        fail("title_wordmark dropped the tagline")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("title_wordmark retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("title_wordmark broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising title_wordmark / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("title_wordmark dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("title_wordmark moved Unity off 6000.5.9f1")
+    elif "Art/title_wordmark" not in readme or "파산 버튜버" not in readme:
+        fail("README should mention title_wordmark")
+    elif "ArtSprites.GoLiveKey" not in week_cs:
+        fail("title_wordmark dropped morning golive_key match")
+    else:
+        ok("Title 「파산 버튜버」 sits on neon title_wordmark; pulse / studio / keycaps stay")
 
 
 def check_settlement_desk() -> None:
@@ -9932,6 +9997,8 @@ def check_readme_playable() -> None:
         fail("README dropped newgame_card wipe notice")
     elif "day_tab" not in readme or "일차" not in readme:
         fail("README dropped day_tab calendar tab")
+    elif "title_wordmark" not in readme or "파산 버튜버" not in readme:
+        fail("README dropped title_wordmark neon logo")
     elif "chat_bubble" not in readme or "note_chip" not in readme or "superchat_chip" not in readme or "content_*" not in readme:
         fail("README dropped chat / note / superchat envelope / content icons")
     elif "content_plate" not in readme or "콘텐츠" not in readme:
