@@ -45,6 +45,7 @@ namespace BankruptVtuber
         float _billSlam;
         Image _cashImg;
         Text _cashShort;
+        Image _cashShortStamp;
         AudioSource _morningBgm;
         AudioSource _sfx;
         AudioClip _goLiveCue;
@@ -190,8 +191,14 @@ namespace BankruptVtuber
             if (cashTile != null)
             {
                 _cashImg = cashTile.GetComponent<Image>();
-                _cashShort = UiKit.Label(cashTile, "CashShort", "청구보다 부족", 15, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
-                UiKit.Layout(_cashShort.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 1f), new Vector2(0f, -2f), new Vector2(-8f, 20f));
+                _cashShortStamp = UiKit.Image(cashTile, "CashShortStamp", Color.white);
+                UiKit.Layout(_cashShortStamp.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 1f), new Vector2(0f, -2f), new Vector2(200f, 48f));
+                ArtSprites.Apply(_cashShortStamp, ArtSprites.BillShort, Palette.MoneyRed, Color.white);
+                _cashShortStamp.preserveAspect = false;
+                _cashShortStamp.raycastTarget = false;
+                _cashShortStamp.gameObject.SetActive(false);
+                _cashShort = UiKit.Label(_cashShortStamp.transform, "CashShort", "청구보다 부족", 15, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+                UiKit.Layout(_cashShort.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -1f), new Vector2(-10f, -6f));
                 _cashShort.gameObject.SetActive(false);
             }
             _debt = MoneyChip(moneyBar, "DebtChip", "부채", Palette.MoneyRed, 0.52f, 0.76f);
@@ -400,8 +407,24 @@ namespace BankruptVtuber
                 int wallet = run.cash - debtGrew + bills - run.lastFanSupport;
                 shortfall = wallet < bills;
             }
+            if (_cashShortStamp != null)
+            {
+                if (shortfall)
+                {
+                    ArtSprites.Apply(_cashShortStamp, ArtSprites.BillShort, Palette.MoneyRed, Color.white);
+                    _cashShortStamp.preserveAspect = false;
+                }
+                _cashShortStamp.gameObject.SetActive(shortfall);
+            }
             if (_cashShort != null)
+            {
+                if (shortfall)
+                {
+                    _cashShort.text = "청구보다 부족";
+                    _cashShort.color = Palette.MoneyRed;
+                }
                 _cashShort.gameObject.SetActive(shortfall);
+            }
             if (shortfall)
             {
                 if (_cash != null)

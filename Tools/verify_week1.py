@@ -3201,6 +3201,8 @@ def check_morning_cash_short() -> None:
         fail("broke morning has no 청구보다 부족 line")
     elif "ArtSprites.CashSlip" not in week_cs or '"CashChip"' not in week_cs:
         fail("morning 현금 is not on Art/cash_slip")
+    elif "ArtSprites.BillShort" not in week_cs or '"CashShortStamp"' not in week_cs:
+        fail("morning 청구보다 부족 is not on reused bill_short stamp")
     elif "run.cash <" not in week_cs or "PeekTodayBills" not in warn:
         fail("청구보다 부족 does not compare current cash to today's bill")
     elif "Palette.MoneyRed" not in warn:
@@ -5691,6 +5693,7 @@ def check_bill_short_stamp() -> None:
     import struct
 
     settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
     art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
     live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
     title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
@@ -5708,6 +5711,7 @@ def check_bill_short_stamp() -> None:
     show = settle_cs.split("void ShowShortfall", 1)[-1].split("void TickShortfall", 1)[0]
     tick = settle_cs.split("void TickShortfall", 1)[-1].split("void Render", 1)[0]
     count = settle_cs.split("void TickIncomeCount", 1)[-1].split("void ShowShortfall", 1)[0]
+    warn = week_cs.split("void RefreshCashShort", 1)[-1].split("static int PeekTodayBills", 1)[0]
 
     if not png.exists() or png.stat().st_size < 8000:
         fail("bill_short.png is missing")
@@ -5721,6 +5725,14 @@ def check_bill_short_stamp() -> None:
         fail("ShowShortfall does not hang Art/bill_short under 청구 미달")
     elif "청구 미달" not in show or "_shortFlash = 0.35f" not in show:
         fail("bill_short stamp dropped Korean copy or 0.35s red flash")
+    elif "ArtSprites.BillShort" not in warn or '"CashShortStamp"' not in week_cs:
+        fail("WeekStart does not reuse Art/bill_short under 청구보다 부족")
+    elif "청구보다 부족" not in warn or "Palette.MoneyRed" not in warn:
+        fail("morning bill_short reuse dropped Korean copy or red tint")
+    elif "ArtSprites.CashSlip" not in week_cs or '"CashChip"' not in week_cs:
+        fail("morning bill_short reuse dropped cash_slip")
+    elif "run.cash <" not in week_cs or "PeekTodayBills" not in warn:
+        fail("morning bill_short reuse dropped cash < bill compare")
     elif "_incomeTarget < _incomeBill" not in count or "ShowShortfall" not in count:
         fail("bill_short stamp does not fire after short-night count snap")
     elif "ShowShortfall" in settle_cs.split("if (!_coverCrossed && _incomeTarget >= _incomeBill", 1)[-1].split("void ShowShortfall", 1)[0]:
@@ -5729,7 +5741,7 @@ def check_bill_short_stamp() -> None:
         fail("bill_short stamp dropped leftover-cash slip")
     elif "SlamBillCover" in settle_cs or "CoverSlam" in settle_cs or "bill_cover" in settle_cs:
         fail("bill_short stamp grew a fake 청구 커버 slam")
-    elif "lastBills =" in show:
+    elif "lastBills =" in show or "lastBills =" in warn:
         fail("bill_short stamp writes bill / save numbers")
     elif "TonightBills" not in eco_cs or "billRent: 8000" not in balance:
         fail("bill_short stamp retuned bills / TonightBills")
@@ -5747,10 +5759,10 @@ def check_bill_short_stamp() -> None:
         fail("bill_short stamp dropped the Android Portrait lock")
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("bill_short stamp moved Unity off 6000.5.9f1")
-    elif "Art/bill_short" not in readme or "청구 미달" not in readme:
-        fail("README should mention bill_short / 청구 미달")
+    elif "Art/bill_short" not in readme or "청구 미달" not in readme or "청구보다 부족" not in readme:
+        fail("README should mention bill_short / 청구 미달 / 청구보다 부족")
     else:
-        ok("청구 미달 sits on bill_short stamp; red flash / cash slip / numbers / economy stay")
+        ok("청구 미달 + morning 청구보다 부족 share bill_short; red / cash_slip / numbers stay")
 
 
 def check_hype_sfx() -> None:
@@ -9299,8 +9311,8 @@ def check_readme_playable() -> None:
         fail("README dropped superchat_pip gold telegraph")
     elif "bill_cover" not in readme or "청구 커버" not in readme or "sfx_bill_cover" not in readme:
         fail("README dropped bill_cover PAID stamp")
-    elif "bill_short" not in readme or "청구 미달" not in readme:
-        fail("README dropped bill_short 청구 미달 stamp")
+    elif "bill_short" not in readme or "청구 미달" not in readme or "청구보다 부족" not in readme:
+        fail("README dropped bill_short on settle 청구 미달 / morning 청구보다 부족")
     elif "won_pop" not in readme or "+₩" not in readme:
         fail("README dropped won_pop +₩ cash slip")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
