@@ -1545,6 +1545,7 @@ def check_project() -> None:
     check_goods_promo_live_stand()
     check_sponsor_mention_live_card()
     check_ranking_board_plate()
+    check_agency_card_plate()
     check_morning_bgm()
     check_settlement_bgm()
     check_result_stings()
@@ -9004,6 +9005,119 @@ def check_ranking_board_plate() -> None:
         fail("ranking plate moved Unity off 6000.5.9f1")
     else:
         ok("ranking hangs ranking_board as a desk plate; a non-ranking screen does not")
+
+
+def check_agency_card_plate() -> None:
+    """Week 4 agency/scout settlement hangs agency_card as a desk plate; a non-agency settlement does not."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    w4_asset = (ROOT / "Assets/Resources/Balance/Week4Balance.asset").read_text(encoding="utf-8")
+    w4r_cs = (ROOT / "Assets/Scripts/Economy/Week4Rules.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    under = live_build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
+    shelf = live_build.split('"GoodsStandHud"', 1)[-1].split('"HypeFlash"', 1)[0] if '"GoodsStandHud"' in live_build else ""
+    sponsor = live_build.split('"SponsorCardHud"', 1)[-1].split('"GoodsStandHud"', 1)[0] if '"SponsorCardHud"' in live_build else ""
+    rank_plate = build.split('"RankingBoardHud"', 1)[-1].split('"RankBody"', 1)[0] if '"RankingBoardHud"' in build else ""
+    agency_build = build.split('AgencyRoot"', 1)[-1].split('AgencySplashRoot"', 1)[0]
+    junior_build = build.split('JuniorRoot"', 1)[-1].split('ConcertBookRoot"', 1)[0]
+    found_plate = agency_build.split('"AgencyCardHud"', 1)[-1].split('"AgencyTitle"', 1)[0] if '"AgencyCardHud"' in agency_build else ""
+    scout_plate = junior_build.split('"JuniorCardHud"', 1)[-1].split('"JuniorTitle"', 1)[0] if '"JuniorCardHud"' in junior_build else ""
+    found_show = settle_cs.split("void ShowAgencyCard", 1)[-1].split("void CloseAgencyCard", 1)[0]
+    junior_show = settle_cs.split("void ShowJuniorCard", 1)[-1].split("void CloseJuniorCard", 1)[0]
+    slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
+
+    if 'AgencyCard = "Art/agency_card"' not in art_cs:
+        fail("ArtSprites does not hook Art/agency_card")
+    elif '"AgencyCardHud"' not in agency_build or "ArtSprites.AgencyCard" not in found_plate:
+        fail("Settlement does not hang agency_card as a found desk plate")
+    elif '"JuniorCardHud"' not in junior_build or "ArtSprites.AgencyCard" not in scout_plate:
+        fail("Settlement does not hang agency_card as a scout desk plate")
+    elif "UiKit.Stretch" in found_plate or "UiKit.Stretch" in scout_plate:
+        fail("agency_card plate is a full-screen backdrop; that is concert_stage's job")
+    elif "ArtSprites.ConcertStage" in found_plate or "ArtSprites.RankingBoard" in found_plate:
+        fail("agency plate reused concert / ranking art")
+    elif "ArtSprites.GoodsStand" in found_plate or "ArtSprites.SponsorCard" in found_plate:
+        fail("agency plate reused goods / sponsor art")
+    elif "SetActive(false)" not in agency_build or "SetActive(false)" not in junior_build:
+        fail("agency_card plate is not hidden on a non-agency settlement")
+    elif "SetActive(true)" not in found_show or "SetActive(true)" not in junior_show:
+        fail("agency / scout plate is not shown with the existing cards")
+    elif "PlayAgencySfx();" not in found_show or "PlayAgencySfx();" not in junior_show:
+        fail("agency plate dropped sfx_agency on appear")
+    elif '"AgencyCardHud"' in live_cs or '"JuniorCardHud"' in live_cs:
+        fail("agency_card leaked onto LiveStream")
+    elif '"AgencyCardHud"' in title_cs or '"JuniorCardHud"' in title_cs:
+        fail("agency_card leaked onto Title")
+    elif "에이전시 설립" not in agency_build or "설립" not in agency_build or "나중에" not in agency_build:
+        fail("agency plate covered founding copy")
+    elif "후배 스카우트" not in junior_build or "스카우트" not in junior_build or "나중에" not in junior_build:
+        fail("agency plate covered scout copy")
+    elif "FoundAgency" not in settle_cs or "ScoutJunior" not in settle_cs:
+        fail("agency plate unhooked FoundAgency / ScoutJunior")
+    elif "CanFoundAgency" not in w4r_cs or "CanScoutJunior" not in w4r_cs:
+        fail("agency plate changed unlock routing")
+    elif "agencyFoundCost: 40000" not in w4_asset or "agencyDailyCost: 15000" not in w4_asset:
+        fail("agency plate retuned found / daily cost")
+    elif "agencyUnlockCash: 100000" not in w4_asset or "agencyUnlockDebtMax: 40000" not in w4_asset:
+        fail("agency plate retuned unlock gates")
+    elif "juniorScoutCost: 25000" not in w4_asset or "juniorDailySuccess: 4000" not in w4_asset:
+        fail("agency plate retuned junior numbers")
+    elif "Audio/sfx_agency" not in settle_cs or "PlayAgencySfx" not in settle_cs:
+        fail("agency plate dropped sfx_agency")
+    elif '"RankingBoardHud"' not in build or "ArtSprites.RankingBoard" not in rank_plate:
+        fail("agency plate dropped ranking settlement plate")
+    elif "SetActive(_sponsorShow)" not in apply or "ArtSprites.SponsorCard" not in sponsor:
+        fail("agency plate dropped sponsor-mention live plate")
+    elif "SetActive(_goodsShow)" not in apply or "ArtSprites.GoodsStand" not in shelf:
+        fail("agency plate dropped goods-promo live goods_stand")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in under:
+        fail("agency plate dropped concert live concert_stage")
+    elif "EnableSponsorLine" not in start or "EnablePromo" not in start:
+        fail("agency plate unhooked sponsor / goods live arming")
+    elif "EnableSponsorLine" not in session_cs or "EnablePromo" not in session_cs:
+        fail("agency plate unhooked EnableSponsorLine / EnablePromo")
+    elif "sponsorLineBonus: 3000" not in w4_asset or "goodsUnlockCash: 60000" not in w3_asset:
+        fail("agency plate retuned sponsor / goods numbers")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset:
+        fail("agency plate retuned concert cost / payout")
+    elif "ArtSprites.JudgePerfect" not in slam or "PlaySfx(_perfect" not in slam:
+        fail("agency plate dropped Day-1 coach Perfect stamp")
+    elif "Audio/sfx_threat" not in live_cs or "PlayThreatSfx" not in live_cs:
+        fail("agency plate dropped live sfx_threat")
+    elif "LastDayBanner" not in week_cs:
+        fail("agency plate dropped morning last-day tab")
+    elif '"ContinueLastDayTab"' not in title_cs or '"SettleLastDayTab"' not in settle_cs:
+        fail("agency plate dropped title / settlement last-day tabs")
+    elif "perfectWindow: 0.07" not in balance or "perfectWindow * " not in rules_cs:
+        fail("agency plate retuned hit windows")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("agency plate retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("agency plate retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("agency plate retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("agency plate broke pads, 입력됨, or added timeScale")
+    elif "Week4" in title_cs or "에이전시" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising agency plate / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("agency plate dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("agency plate moved Unity off 6000.5.9f1")
+    else:
+        ok("agency / scout hang agency_card as a desk plate; a non-agency settlement does not")
 
 
 def check_morning_bgm() -> None:
