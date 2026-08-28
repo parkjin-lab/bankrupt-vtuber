@@ -11,6 +11,7 @@ namespace BankruptVtuber
     {
         public const string Avatar = "Art/pasan_nyang";
         public const string RivalAvatar = "Art/rival_nyang";
+        public const string WebcamBezel = "Art/webcam_bezel";
         public const string GoodsStand = "Art/goods_stand";
         public const string AgencyCard = "Art/agency_card";
         public const string SponsorCard = "Art/sponsor_card";

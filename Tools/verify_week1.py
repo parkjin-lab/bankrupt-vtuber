@@ -196,6 +196,7 @@ def check_project() -> None:
 
     art = {
         "pasan_nyang.png": "avatar",
+        "webcam_bezel.png": "웹캠 베젤",
         "rival_nyang.png": "라이벌",
         "goods_stand.png": "아크릴",
         "agency_card.png": "에이전시",
@@ -1478,6 +1479,7 @@ def check_project() -> None:
     check_show_chip()
     check_settle_show_line()
     check_vtuber_face()
+    check_webcam_bezel()
     check_bill_notice()
     check_stream_overlay()
     check_title_studio()
@@ -4722,6 +4724,64 @@ def check_vtuber_face() -> None:
         fail("vtuber face moved Unity off 6000.5.9f1")
     else:
         ok("webcam is a ~256px 2D VTuber face; punch / nod / shake / tired stay")
+
+
+def check_webcam_bezel() -> None:
+    """Live webcam face sits inside a readable 2D cam bezel (webcam_bezel.png)."""
+    import struct
+
+    avatar_cs = (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rival_cs = (ROOT / "Assets/Scripts/Presentation/RivalDuelView.cs").read_text(encoding="utf-8") if (ROOT / "Assets/Scripts/Presentation/RivalDuelView.cs").exists() else ""
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/webcam_bezel.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 4000:
+        fail("webcam_bezel.png is missing")
+    elif w < 240 or h < 320 or w >= h:
+        fail("webcam_bezel.png is not a readable portrait cam frame")
+    elif color != 6:
+        fail("webcam_bezel.png is not RGBA")
+    elif 'WebcamBezel = "Art/webcam_bezel"' not in art_cs:
+        fail("ArtSprites does not hook Art/webcam_bezel")
+    elif "ArtSprites.WebcamBezel" not in avatar_cs or '"Bezel"' not in avatar_cs:
+        fail("live webcam does not hang Art/webcam_bezel")
+    elif "ApplySliced(_bezel, ArtSprites.WebcamBezel" not in avatar_cs and "ApplySliced(_bezel,ArtSprites.WebcamBezel" not in avatar_cs.replace(" ", ""):
+        fail("webcam bezel is not applied sliced on the Bezel image")
+    elif 'Avatar = "Art/pasan_nyang"' not in art_cs or "ArtSprites.Avatar" not in avatar_cs:
+        fail("webcam_bezel dropped pasan_nyang face")
+    elif "_punch" not in avatar_cs or "_nod" not in avatar_cs or "_shake" not in avatar_cs:
+        fail("webcam_bezel dropped Perfect punch / Good nod / Miss shake")
+    elif "SetTired" not in avatar_cs or "SetTired(tired, danger)" not in live_cs or "m <= 40" not in live_cs:
+        fail("webcam_bezel dropped mental-tired look")
+    elif "RivalAvatar" not in art_cs or ("rival_nyang" not in rival_cs and "ArtSprites.RivalAvatar" not in live_cs and "ArtSprites.RivalAvatar" not in rival_cs):
+        fail("webcam_bezel dropped rival webcam")
+    elif "perfectWindow" not in rules_cs or "greatWindow" not in rules_cs:
+        fail("webcam_bezel retuned hit windows")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("webcam_bezel retuned Week 1 economy / hype")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("webcam_bezel broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising webcam_bezel / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("webcam_bezel dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("webcam_bezel moved Unity off 6000.5.9f1")
+    elif "Art/webcam_bezel" not in readme or "베젤" not in readme:
+        fail("README should mention webcam_bezel")
+    else:
+        ok("live webcam sits in webcam_bezel; face / punch / tired / rival stay")
 
 
 def check_bill_notice() -> None:
@@ -10240,6 +10300,8 @@ def check_readme_playable() -> None:
         or "title_wordmark" not in readme
     ):
         fail("README card/tab inventory dropped content_plate / letter keys / newgame_card / day_tab / title_wordmark")
+    elif "webcam_bezel" not in readme or "베젤" not in readme:
+        fail("README dropped webcam_bezel live cam frame")
     elif "rival_nyang" not in readme or "goods_stand" not in readme or "agency_card" not in readme:
         fail("README dropped rival / goods / agency art")
     elif "ranking_board" not in readme or "concert_stage" not in readme:

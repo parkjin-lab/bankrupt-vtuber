@@ -49,7 +49,7 @@
 
 **Title** → **WeekStart**는 `Art/morning_room` 청구 아침 방 위에 `Audio/bgm_morning` 불안한 청구 루프(타이틀보다 작고 날카로움. **방송 켜기**/콘서트 시작으로 떠나면 0.2초 페이드)와 **n일차**가 `Art/day_tab` 찢긴 달력 탭 위에서 크게 0.25초 팝 → **오늘 청구**가 `Art/bill_notice` 고지서 칸에서 0.25초 슬램(**현금**은 정산·타이틀과 같은 `Art/cash_slip` 영수증. 청구보다 적으면 경고 빨강 + 정산과 같은 `Art/bill_short` 스탬프 **청구보다 부족**. 막히면 그대로. **멘탈**은 정산·라이브·타이틀과 같은 `Art/mental_note` 스티키 메모에 `N/100`) → 청구 카드 → 콘텐츠 픽(토크/게임/노래/리액션, 네 장 모두 `Art/content_plate` 스트림 카드 플레이트 + `Art/content_*` 아이콘 + 액센트 + 편하게 잡담 / 같이 깨자 / 고음 승부 / 같이 보자. 고르면 `Audio/sfx_pick` 확인이 한 번) → **방송 켜기**(콘서트면 **콘서트 방송**)가 `Art/golive_key` 스트림덱 키캡 + 빨간 LIVE 핍과 함께 1.04로 숨쉬고, 누르면 `Audio/sfx_golive` 확인 후쉬가 한 번 난 뒤 아침 베드가 0.2초 페이드 → 라이브 화면의 0.6초 **ON AIR**(`Audio/sfx_onair`)는 그대로 → **90초 라이브** → **Settlement**.
 
-웹캠 파산냥은 `Art/pasan_nyang` 256px 2D 얼굴이다. Perfect 펀치 · Good 끄덕 · Miss 흔들 · 멘탈 ≤40 지침은 그대로다.
+웹캠 파산냥은 `Art/pasan_nyang` 256px 2D 얼굴이고, 바깥은 `Art/webcam_bezel` 스트림 캠 베젤이다. Perfect 펀치 · Good 끄덕 · Miss 흔들 · 멘탈 ≤40 지침 · 라이벌 웹캠은 그대로다.
 
 라이브는 `Art/onair_led` LED 배지 **ON AIR** / **방송 시작**(0.6초, `Audio/sfx_onair` 시작 스팅)과 함께 `Audio/bgm_stream`이 타이틀보다 작게 루프한다. 5주차 콘서트 라이브만 `Audio/bgm_concert`가 스트림보다 크고 밝게 루프하고, 판정·슈퍼챗·하이프 SFX는 그대로 위에 뜬다. HUD가 이어진다. 바탕은 `Art/stream_overlay` 2D 오버레이(LIVE 핍 · 웹캠 베젤 · 채팅 테두리). 하단 키는 `Art/pad_*` 스트림덱 키캡(←파랑 / ↓초록 / →트롤 / ↑골드 / 슈퍼챗 골드). 칩 · 히트바 · FX · 0.08초 프레스 플래시는 그대로다. 1일차 코치는 그 다음. 90초가 끝나면 `Art/end_cut` 컷 카드 **방송 종료**(검정 플래시 · LIVE 점 꺼짐, 0.5초, `Audio/sfx_end_cut` 컷 스팅 · 베드 0.2초 페이드) 뒤 정산. F10 스킵은 조용히 정산으로. 정산은 `Art/settlement_desk` 방송 끝난 책상 바탕 위에 기존 카드가 그대로 올라간다.
 
@@ -102,7 +102,7 @@
   - `Art/chat_troll` — 트롤/안티 닉 빨간 네임플레이트
   - `Art/chat_super` — 슈퍼챗 닉 금 네임플레이트 (봉투·플라이·핍·`sfx_superchat` 그대로)
   - `Art/note_chip` · `Art/superchat_chip` 금 봉투 · `Art/hit_rail` · leftover HUD `Art/hype_chip`(**하이프 N**) · `Art/superchat_fly`(성공 ₩ 플라이 금 봉투)
-- **얼굴 / 아이콘** — `Art/pasan_nyang` · `Art/rival_nyang` · `Art/content_*`(토크/게임/노래/리액션 아이콘. 픽 카드는 위 **카드 / 탭** `content_plate`)
+- **얼굴 / 아이콘** — `Art/pasan_nyang` · `Art/webcam_bezel`(라이브 웹캠 베젤) · `Art/rival_nyang` · `Art/content_*`(토크/게임/노래/리액션 아이콘. 픽 카드는 위 **카드 / 탭** `content_plate`)
 - **주차 카드** — `Art/goods_stand` · `Art/agency_card` · `Art/sponsor_card` · `Art/ranking_board` · `Art/concert_stage` · `Art/letter_card`(팬레터 종이. 답장/나중이는 위 **카드 / 탭** `letter_reply` / `letter_ignore`) · `Art/membership_card` · `Art/clip_card`
 - **BGM** — Title `Audio/bgm_title` · 아침 `Audio/bgm_morning` · 라이브 `Audio/bgm_stream` · 콘서트 라이브만 `Audio/bgm_concert`(일반 라이브는 `bgm_stream` 유지) · 정산 `Audio/bgm_settlement` (각 화면에서 떠나면 0.2초 페이드)
 - **SFX** — 판정 `sfx_perfect` / `sfx_good` / `sfx_miss` · 이벤트 `sfx_anti` / `sfx_lag` · 엔딩 `sfx_clear` / `sfx_bankrupt` · 로비/아침/정산 확인 `sfx_title` / `sfx_pick` / `sfx_golive` / `sfx_nextday` · 답장하기 `sfx_letter` · 라이벌 승/패 `sfx_rival_win` / `sfx_rival_lose` · 멤버십 `sfx_membership` · 클립 `sfx_clip` · 굿즈 `sfx_goods` · 에이전시 `sfx_agency` · 스폰서 `sfx_sponsor` · 랭킹 `sfx_ranking` · 콘서트 개최 `sfx_concert_book`

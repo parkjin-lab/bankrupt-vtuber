@@ -41,13 +41,14 @@ namespace BankruptVtuber
             _root = UiKit.Panel(parent, "Avatar", new Color(0, 0, 0, 0));
             UiKit.Layout(_root, new Vector2(0.20f, 0.22f), new Vector2(0.20f, 0.22f), new Vector2(0.5f, 0f), new Vector2(8, 8), new Vector2(420, 560));
 
-            _bezel = UiKit.Image(_root, "Bezel", Palette.Ink);
+            _bezel = UiKit.Image(_root, "Bezel", Color.white);
             UiKit.Stretch(_bezel.rectTransform, 0, 0, 0, 0);
-            _bezel.color = new Color(0.08f, 0.05f, 0.1f, 0.96f);
+            ArtSprites.ApplySliced(_bezel, ArtSprites.WebcamBezel, Color.white, new Vector4(56f, 64f, 56f, 64f));
+            _bezel.raycastTarget = false;
 
             _frame = UiKit.Image(_root, "Frame", Palette.PinkDeep);
             UiKit.Stretch(_frame.rectTransform, 8, 8, 36, 10);
-            _frame.color = new Color(0.92f, 0.28f, 0.48f, 0.95f);
+            _frame.color = new Color(0.92f, 0.28f, 0.48f, 0.55f);
 
             _window = UiKit.Image(_root, "Window", Palette.Hex("1C1228"));
             UiKit.Stretch(_window.rectTransform, 16, 16, 44, 18);
@@ -92,9 +93,9 @@ namespace BankruptVtuber
 
         public void ApplyShow(ContentShowLook look)
         {
-            _frame.color = look.CamFrame;
+            _frame.color = new Color(look.CamFrame.r, look.CamFrame.g, look.CamFrame.b, 0.55f);
             _window.color = look.CamWindow;
-            _bezel.color = Color.Lerp(Palette.Ink, look.Wash, 0.55f);
+            _bezel.color = Color.Lerp(Color.white, look.Wash, 0.22f);
             _songGlow = look.GoldSparkle;
             _closeCam = look.Type == StreamContentType.Talk;
 
