@@ -8151,12 +8151,18 @@ def check_readme_playable() -> None:
         fail("README dropped rival / goods / agency art")
     elif "ranking_board" not in readme or "concert_stage" not in readme:
         fail("README dropped ranking / concert art")
+    elif "책상 종이" not in readme:
+        fail("README does not name the desk-paper stack")
     elif "headline_clip" not in readme or "오늘 헤드라인" not in readme or "어제:" not in readme or "이어서 하기" not in readme:
         fail("README dropped headline scrap on settlement / morning / title continue")
     elif "cash_slip" not in readme or "남은 현금" not in readme or "이어서 하기" not in readme or "지금 수입" not in readme or "오늘 수입" not in readme:
-        fail("README dropped cash_slip on title / morning / live / settlement")
+        fail("README dropped cash_slip on leftover / title / live / settlement income")
+    elif "아침" not in readme or "**현금**" not in readme:
+        fail("README dropped cash_slip on morning cash")
+    elif "bill_notice" not in readme or "오늘 청구" not in readme or "청구" not in readme or "부채" not in readme:
+        fail("README dropped bill_notice on morning bills / live bill / settlement+title debt")
     elif "mental_note" not in readme or "멘탈 위험" not in readme or "이어서 하기" not in readme or "멘탈" not in readme:
-        fail("README dropped mental_note on title / morning / live / settlement 멘탈")
+        fail("README dropped mental_note on settlement / live danger / morning / title continue")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:
@@ -8174,7 +8180,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README matches the playable: Unity/portrait, controls, Week 1 numbers, art/SFX")
+        ok("README names desk paper + Unity/portrait, controls, Week 1 numbers, art/SFX")
 
 
 def check_save_roundtrip() -> None:
