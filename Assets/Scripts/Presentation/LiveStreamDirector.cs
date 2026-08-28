@@ -183,6 +183,7 @@ namespace BankruptVtuber
         Image _sponsorBadge;
         Image _day1Headline;
         Image _weekHeadline;
+        Image _lastHeadline;
         float _bedVolume;
         float _bedDuck;
         bool _threatGear;
@@ -1176,6 +1177,14 @@ namespace BankruptVtuber
             UiKit.Layout(weekHeadT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _weekHeadline.gameObject.SetActive(false);
             _rivalDuel = new RivalDuelView(root as RectTransform);
+            _lastHeadline = UiKit.Image(root, "LiveLastHeadline", Color.white);
+            UiKit.Layout(_lastHeadline.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -272f), new Vector2(168f, 68f));
+            ArtSprites.Apply(_lastHeadline, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
+            _lastHeadline.preserveAspect = true;
+            _lastHeadline.raycastTarget = false;
+            var lastHeadT = UiKit.Label(_lastHeadline.transform, "T", "헤드라인", 16, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(lastHeadT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _lastHeadline.gameObject.SetActive(false);
             if (_avatar != null && _avatar.Root != null)
             {
                 _hudOnAir = UiKit.Image(_avatar.Root, "HudOnAir", Color.white);
@@ -3228,6 +3237,8 @@ namespace BankruptVtuber
                 _day1Headline.gameObject.SetActive(1 == GameManager.Instance.Run.day);
             if (_weekHeadline != null)
                 _weekHeadline.gameObject.SetActive(LiveWeekStartDay(GameManager.Instance.Run.day));
+            if (_lastHeadline != null)
+                _lastHeadline.gameObject.SetActive(LiveLastDay(GameManager.Instance.Run.day));
             UiKit.EnsureCamera(look.Wash);
             _avatar?.ApplyShow(look);
             if (_bed != null)
@@ -3284,6 +3295,9 @@ namespace BankruptVtuber
             StreamContentType.Reaction => Palette.PastelDim,
             _ => Palette.Muted
         };
+
+        static bool LiveLastDay(int day) =>
+            day == 5 || day == 10 || day == 15 || day == 20 || day == 25;
 
         void ApplyThreatShow(GameRunState run)
         {
