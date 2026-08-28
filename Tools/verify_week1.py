@@ -10675,6 +10675,16 @@ def check_readme_playable() -> None:
         or "title_wordmark" not in readme
     ):
         fail("README card/tab inventory dropped content_plate / letter keys / newgame_card / day_tab / title_wordmark")
+    elif (
+        "content_plate" not in readme
+        or "콘텐츠 픽" not in readme
+        or "오늘 픽" not in readme
+        or "오늘 토크" not in readme
+        or "오늘 게임" not in readme
+        or "오늘 노래" not in readme
+        or "오늘 리액션" not in readme
+    ):
+        fail("README content_plate inventory dropped morning picks / live 오늘 픽 / settlement 오늘 토크 line")
     elif "coach_card" not in readme or "코치" not in readme:
         fail("README dropped coach_card Day-1 sticky")
     elif "코치 카드" not in readme:
@@ -10797,7 +10807,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:

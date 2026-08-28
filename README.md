@@ -73,9 +73,9 @@
   - `Art/golive_key` — 아침 **방송 켜기** / **콘서트 방송** (`sfx_golive`, LIVE 핍)
   - `Art/nextday_key` — 정산 **다음날** (`sfx_nextday`, **다음** 칩)
   - `Art/letter_reply` / `Art/letter_ignore` — 팬레터 **답장하기** / **나중에** (`sfx_letter`는 답장만)
-- **카드 / 탭** — 타이틀·아침·정산 카드 플레이트가 이미 붙어 있다(숫자·라우팅·SFX는 그대로).
+- **카드 / 탭** — 타이틀·아침·라이브·정산 카드 플레이트가 이미 붙어 있다(숫자·라우팅·SFX는 그대로).
   - `Art/title_wordmark` — 타이틀 **「파산 버튜버」** 네온 로고 플레이트 (골드·1.04 펄스)
-  - `Art/content_plate` — 아침 콘텐츠 픽 네 장 + 라이브 오늘 픽 칩 + 정산 오늘 픽 줄 공통 스트림 카드 플레이트 (`content_*` 아이콘·액센트·`sfx_pick`)
+  - `Art/content_plate` — 같은 스트림 카드 플레이트 세 곳: 아침 콘텐츠 픽 네 장 · 라이브 **오늘 픽** 칩 · 정산 **오늘 토크 / 오늘 게임 / 오늘 노래 / 오늘 리액션** 줄 (`content_*` 아이콘·액센트·`sfx_pick`)
   - `Art/letter_reply` / `Art/letter_ignore` — 팬레터 **답장하기** / **나중에** 키캡 (`letter_card` 종이 위. `sfx_letter`는 답장만)
   - `Art/newgame_card` — 타이틀 새 방송 지우기 고지 (**진행 중인 n일차를 지울까?** / **지우고 시작** / **취소**)
   - `Art/day_tab` — 아침 **n일차** 찢긴 달력 탭 (골드·0.25초 슬램)
