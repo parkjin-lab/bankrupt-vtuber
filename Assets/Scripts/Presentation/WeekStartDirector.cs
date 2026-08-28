@@ -29,6 +29,7 @@ namespace BankruptVtuber
         RectTransform _contentRoot;
         Text _contentHud;
         Text _yesterday;
+        Image _yesterdayClip;
         RectTransform _lastDayRoot;
         Text _lastDayWeek;
         Text _lastDayNeed;
@@ -215,9 +216,15 @@ namespace BankruptVtuber
             UiKit.Label(wavePanel, "WaveTitle", "오늘의 고정비 + 위협 — 방어 웨이브", 26, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
             var wt = wavePanel.Find("WaveTitle") as RectTransform;
             UiKit.Layout(wt, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -12), new Vector2(0, 36));
-            _yesterday = UiKit.Label(wavePanel, "Yesterday", "", 22, Palette.Gold, TextAnchor.UpperLeft, FontStyle.Bold);
-            UiKit.Layout(_yesterday.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -46), new Vector2(-40, 36));
+            _yesterdayClip = UiKit.Image(wavePanel, "YesterdayClip", Color.white);
+            UiKit.Layout(_yesterdayClip.rectTransform, new Vector2(0.03f, 1), new Vector2(0.97f, 1), new Vector2(0.5f, 1), new Vector2(0, -42), new Vector2(0, 78));
+            ArtSprites.Apply(_yesterdayClip, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
+            _yesterdayClip.preserveAspect = false;
+            _yesterdayClip.raycastTarget = false;
+            _yesterday = UiKit.Label(_yesterdayClip.transform, "Yesterday", "", 22, Palette.Ink, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_yesterday.rectTransform, new Vector2(0.07f, 0.16f), new Vector2(0.93f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             UiKit.Wrap(_yesterday);
+            _yesterdayClip.gameObject.SetActive(false);
             _yesterday.gameObject.SetActive(false);
 
             _stack = UiKit.Panel(wavePanel, "Stack", new Color(0, 0, 0, 0));
@@ -413,7 +420,10 @@ namespace BankruptVtuber
                 return;
             string line = DayHeadline.YesterdayLine(run);
             _yesterday.text = line;
-            _yesterday.gameObject.SetActive(!string.IsNullOrEmpty(line));
+            bool on = !string.IsNullOrEmpty(line);
+            if (_yesterdayClip != null)
+                _yesterdayClip.gameObject.SetActive(on);
+            _yesterday.gameObject.SetActive(on);
         }
 
         void RefreshLastDay(GameRunState run)

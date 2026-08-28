@@ -29,6 +29,7 @@ namespace BankruptVtuber
         public const string EndingClear = "Art/ending_clear";
         public const string EndingBankrupt = "Art/ending_bankrupt";
         public const string LetterCard = "Art/letter_card";
+        public const string HeadlineClip = "Art/headline_clip";
         public const string MembershipCard = "Art/membership_card";
         public const string ClipCard = "Art/clip_card";
         public const string PadLeft = "Art/pad_left";

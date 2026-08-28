@@ -215,6 +215,7 @@ def check_project() -> None:
         "ending_clear.png": "주차 클리어",
         "ending_bankrupt.png": "파산",
         "letter_card.png": "팬레터",
+        "headline_clip.png": "어제 헤드라인",
         "membership_card.png": "멤버십",
         "clip_card.png": "클립",
         "pad_left.png": "← 키캡",
@@ -1478,6 +1479,7 @@ def check_project() -> None:
     check_agency_sfx()
     check_sponsor_sfx()
     check_week5_board_sfx()
+    check_headline_clip()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -7263,6 +7265,72 @@ def check_week5_board_sfx() -> None:
         fail("week5 SFX moved Unity off 6000.5.9f1")
     else:
         ok("랭킹 보드 / 콘서트 개최 play once; live bgm_concert and ranks stay")
+
+
+def check_headline_clip() -> None:
+    import struct
+
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    head_cs = (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    state_cs = (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8")
+    save_cs = (ROOT / "Assets/Scripts/Core/RunSave.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = week_cs.split("void Build()", 1)[-1].split("void RefreshYesterday", 1)[0]
+    yest = week_cs.split("void RefreshYesterday", 1)[-1].split("void RefreshLastDay", 1)[0]
+    png = ROOT / "Assets/Resources/Art/headline_clip.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("headline_clip.png is missing")
+    elif w < 360 or h < 160 or w <= h:
+        fail("headline_clip.png is not a readable landscape newspaper scrap")
+    elif color != 6:
+        fail("headline_clip.png is not RGBA")
+    elif 'HeadlineClip = "Art/headline_clip"' not in art_cs:
+        fail("ArtSprites does not hook Art/headline_clip")
+    elif "ArtSprites.HeadlineClip" not in build or '"YesterdayClip"' not in build:
+        fail("WeekStart does not hang Art/headline_clip under 어제")
+    elif '"Yesterday"' not in build or "YesterdayLine" not in yest:
+        fail("headline clip dropped the 어제 text line")
+    elif '"어제: "' not in head_cs or "day <= 1" not in head_cs:
+        fail("headline clip changed 어제 copy or day math")
+    elif "lastHeadline" not in state_cs or "data.lastHeadline ?? \"\"" not in save_cs:
+        fail("headline clip dropped lastHeadline save")
+    elif "DayHeadline.Remember" not in settle_cs:
+        fail("headline clip unhooked settlement Remember")
+    elif "DayHeadline.Remember(gm.Run)" not in debug_cs or "DayHeadline.Remember(gm.Run, false)" not in debug_cs:
+        fail("headline clip dropped F9/F10 lastHeadline write")
+    elif 'lastHeadline = ""' in debug_cs or "lastHeadline = string.Empty" in debug_cs:
+        fail("headline clip blanks lastHeadline on skip")
+    elif "lastHeadline = \"\"" not in state_cs.split("void ResetNewRun", 1)[-1].split("void ClearWeek2Progress", 1)[0]:
+        fail("headline clip left a leftover on restart")
+    elif "Audio/sfx_ranking" not in settle_cs or "Audio/sfx_concert_book" not in settle_cs:
+        fail("headline clip dropped ranking / concert-book SFX")
+    elif "오늘 헤드라인" not in settle_cs or "청구 커버" not in head_cs:
+        fail("headline clip dropped today's settlement headline")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("headline clip retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("headline clip broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising headline clip / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("headline clip dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("headline clip moved Unity off 6000.5.9f1")
+    else:
+        ok("어제 headline sits on a newspaper clipping; copy / save / day math stay")
 
 
 def check_mental_sfx() -> None:
