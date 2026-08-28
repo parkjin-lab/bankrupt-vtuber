@@ -182,6 +182,12 @@ namespace BankruptVtuber
         Text _coachPrompt;
         Image _coachPadIcon;
         RectTransform _coachLegend;
+        Image _coachStamp;
+        float _coachStampFlash;
+        float _coachStampPop;
+        float _coachStampPopMax;
+        bool _coachStampBig;
+        bool _coachWasActive;
         Image _eventSting;
         Text _eventStingLabel;
         readonly Image[] _eventStingBars = new Image[7];
@@ -570,6 +576,7 @@ namespace BankruptVtuber
             if (_rivalDuel != null)
                 _rivalDuel.Tick(dt);
             RefreshCoach();
+            TickCoachStamp(dt);
             if (!_viewerJudged)
             {
                 float idleDv = _session.Viewers - _lastViewers;
@@ -808,6 +815,7 @@ namespace BankruptVtuber
             _judge.color = Color.white;
             if (_judgeStamp != null)
                 _judgeStamp.gameObject.SetActive(false);
+            HideCoachStamp();
             _judgeFlash = 1f;
             if (_session.ForceEnded && _forceEndRoot != null)
             {
@@ -1237,6 +1245,11 @@ namespace BankruptVtuber
             _coachPrompt = UiKit.Label(_coachCard, "CoachPrompt", "", 48, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_coachPrompt.rectTransform, new Vector2(0.5f, 0.62f), new Vector2(0.5f, 0.62f), new Vector2(0.5f, 0.5f), new Vector2(40, 0), new Vector2(520, 72));
             _coachPrompt.gameObject.SetActive(false);
+            _coachStamp = UiKit.Image(root, "CoachStamp", Color.white);
+            UiKit.Layout(_coachStamp.rectTransform, new Vector2(0.5f, 0.36f), new Vector2(0.5f, 0.36f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(560, 110));
+            _coachStamp.preserveAspect = false;
+            _coachStamp.raycastTarget = false;
+            _coachStamp.gameObject.SetActive(false);
 
             _judgeStamp = UiKit.Image(root, "JudgeStamp", Color.white);
             UiKit.Layout(_judgeStamp.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(520, 96));
@@ -1672,6 +1685,9 @@ namespace BankruptVtuber
         void RefreshCoach()
         {
             bool on = _session != null && _session.CoachActive && _onAirLeft <= 0f;
+            if (_coachWasActive && !on && _session != null)
+                SlamCoachStamp(_session.CoachCleared);
+            _coachWasActive = on;
             if (_coachCard != null)
                 _coachCard.gameObject.SetActive(on);
             var held = on ? _session.CoachHeld : null;
@@ -2391,6 +2407,70 @@ namespace BankruptVtuber
                 var c = t.color;
                 t.color = new Color(c.r, c.g, c.b, 0.55f);
             }
+        }
+
+        void SlamCoachStamp(bool cleared)
+        {
+            if (_coachStamp == null)
+                return;
+
+            if (cleared)
+            {
+                ArtSprites.Apply(_coachStamp, ArtSprites.JudgePerfect, Palette.Gold, Color.white);
+                _coachStamp.preserveAspect = false;
+                _coachStamp.gameObject.SetActive(true);
+                UiKit.Layout(_coachStamp.rectTransform, new Vector2(0.5f, 0.36f), new Vector2(0.5f, 0.36f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(560, 110));
+                _coachStampFlash = 1f;
+                _coachStampBig = true;
+                _coachStampPopMax = 0.2f;
+                var s = Vector3.one * 1.72f;
+                _coachStamp.rectTransform.localScale = s;
+                _coachStampPop = _coachStampPopMax;
+                PlaySfx(_perfect, 0.42f);
+            }
+            else
+            {
+                ArtSprites.Apply(_coachStamp, ArtSprites.JudgeMiss, Palette.MoneyRed, Color.white);
+                _coachStamp.preserveAspect = false;
+                _coachStamp.gameObject.SetActive(true);
+                UiKit.Layout(_coachStamp.rectTransform, new Vector2(0.5f, 0.36f), new Vector2(0.5f, 0.36f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(480, 96));
+                _coachStampFlash = 1f;
+                _coachStampBig = true;
+                _coachStampPopMax = 0.25f;
+                var s = Vector3.one * 1.58f;
+                _coachStamp.rectTransform.localScale = s;
+                _coachStampPop = _coachStampPopMax;
+            }
+        }
+
+        void HideCoachStamp()
+        {
+            _coachStampFlash = 0f;
+            _coachStampPop = 0f;
+            if (_coachStamp != null)
+                _coachStamp.gameObject.SetActive(false);
+        }
+
+        void TickCoachStamp(float dt)
+        {
+            if (_coachStamp == null || !_coachStamp.gameObject.activeSelf)
+                return;
+
+            _coachStampFlash = Mathf.MoveTowards(_coachStampFlash, 0f, dt * 2.2f);
+            var sc = _coachStamp.color;
+            sc.a = _coachStampFlash;
+            _coachStamp.color = sc;
+            if (_coachStampPop > 0f)
+            {
+                _coachStampPop = Mathf.MoveTowards(_coachStampPop, 0f, dt);
+                float u = _coachStampPopMax <= 0.001f ? 0f : Mathf.Clamp01(_coachStampPop / _coachStampPopMax);
+                float s = _coachStampBig ? 1f + 0.58f * u : 1f + 0.18f * u;
+                _coachStamp.rectTransform.localScale = Vector3.one * s;
+            }
+            else
+                _coachStamp.rectTransform.localScale = Vector3.one;
+            if (_coachStampFlash <= 0.02f)
+                HideCoachStamp();
         }
 
         void ShowJudge(Judgement j, ChatNote note)

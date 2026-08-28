@@ -1609,6 +1609,7 @@ def check_project() -> None:
     check_coach_pad_icons()
     check_coach_card()
     check_coach_pad_dock()
+    check_coach_perfect_stamp()
     check_rival_portrait()
     check_goods_stand()
     check_week4_card_art()
@@ -13612,6 +13613,101 @@ def check_coach_pad_dock() -> None:
         fail("README coach inventory dropped pad_dock under the coach pad row")
     else:
         ok("Day-1 coach pad row sits on pad_dock tray; keycaps / bindings / Day-1 rule stay")
+
+
+def check_coach_perfect_stamp() -> None:
+    """Day-1 coach 3-hit finish slams existing judge_perfect; timeout does not fake a win."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    offer = session_cs.split("ShouldOfferFirstStreamCoach", 1)[-1].split("public void EnableFirstStreamCoach", 1)[0]
+    refresh = live_cs.split("void RefreshCoach", 1)[-1].split("StreamPadButton EventPad", 1)[0]
+    slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
+    cleared = slam.split("else", 1)[0] if "else" in slam else slam
+    timeout = slam.split("else", 1)[-1] if "else" in slam else ""
+    judge = live_cs.split("void ShowJudge", 1)[-1].split("void BeginSuperchatFly", 1)[0]
+    end_coach = session_cs.split("void EndCoach", 1)[-1].split("void FreezeNotes", 1)[0]
+    note_coach = session_cs.split("void NoteCoachResolved", 1)[-1].split("void EndCoach", 1)[0]
+    coach_tick = session_cs.split("void TickCoach", 1)[-1].split("void FreezeNotes", 1)[0]
+
+    if "void SlamCoachStamp" not in live_cs or '"CoachStamp"' not in live_cs:
+        fail("Day-1 coach completion has no Perfect stamp overlay")
+    elif "CoachCleared" not in session_cs or "CoachSuccessTarget" not in session_cs.split("CoachCleared", 1)[-1][:200]:
+        fail("coach completion cannot tell a 3-hit clear from a timeout")
+    elif "SlamCoachStamp(_session.CoachCleared)" not in refresh and "SlamCoachStamp(_session.CoachCleared)" not in live_cs:
+        fail("coach hide does not slam the completion stamp")
+    elif "CoachActive" not in refresh or "_onAirLeft <= 0f" not in refresh:
+        fail("coach Perfect stamp changed when the coach shows")
+    elif "_coachCard" not in refresh or "SetActive(on)" not in refresh:
+        fail("coach Perfect stamp changed card show/hide")
+    elif "ArtSprites.JudgePerfect" not in cleared:
+        fail("Day-1 coach success does not slam Art/judge_perfect")
+    elif "ArtSprites.JudgeMiss" in cleared:
+        fail("3-hit coach finish slams Miss instead of Perfect")
+    elif "ArtSprites.JudgePerfect" in timeout:
+        fail("coach timeout fakes a Perfect win")
+    elif "ArtSprites.JudgeMiss" not in timeout:
+        fail("coach timeout should slam existing judge_miss or stay stamp-free via CoachCleared")
+    elif "_judgePopMax = 0.2f" not in cleared and "_coachStampPopMax = 0.2f" not in cleared:
+        fail("coach Perfect dropped the live 0.2s pop")
+    elif "1.72f" not in cleared:
+        fail("coach Perfect dropped the live 1.72 pop")
+    elif "PlaySfx(_perfect" not in cleared:
+        fail("coach Perfect does not reuse sfx_perfect")
+    elif "PlaySfx" in timeout:
+        fail("coach timeout slam is not quiet")
+    elif "sfx_threat" in slam or "PlayThreatSfx" in slam:
+        fail("coach completion leaked sfx_threat")
+    elif "ArtSprites.JudgePerfect" not in judge or "ArtSprites.JudgeGood" not in judge or "ArtSprites.JudgeMiss" not in judge:
+        fail("coach Perfect stamp stole live ShowJudge stamps")
+    elif 'JudgePerfect = "Art/judge_perfect"' not in art_cs or 'JudgeMiss = "Art/judge_miss"' not in art_cs:
+        fail("ArtSprites judge hooks were dropped")
+    elif "CoachSuccessTarget = 3" not in session_cs or "CoachSeconds = 8f" not in session_cs:
+        fail("coach Perfect stamp changed dismiss (3 / 8s)")
+    elif "CoachSeconds" not in coach_tick or "CoachSuccessTarget" not in coach_tick:
+        fail("coach Perfect stamp changed TickCoach dismiss")
+    elif "judgement == Judgement.Miss" not in note_coach or "_coachSuccesses += 1" not in note_coach:
+        fail("coach Perfect stamp changed success counting")
+    elif "_coachDone = true" not in end_coach:
+        fail("coach Perfect stamp changed EndCoach")
+    elif "day != 1" not in offer and "day == 1" not in offer:
+        fail("coach Perfect stamp is not Day-1 only")
+    elif "EnableFirstStreamCoach" not in live_cs or "ShouldOfferFirstStreamCoach" not in live_cs:
+        fail("coach Perfect stamp broke Day-1 arm")
+    elif "← 긍정" not in live_cs or "↓ 공감" not in live_cs or "→ 웃음" not in live_cs or "↑ 감사" not in live_cs:
+        fail("coach Perfect stamp changed kind prompts")
+    elif "슈퍼챗 Space" not in live_cs or "눌러서 차지 후 떼기" not in live_cs:
+        fail("coach Perfect stamp changed superchat teach copy")
+    elif "색에 맞는 키 또는 아래 버튼을 눌러" not in live_cs:
+        fail("coach Perfect stamp dropped the Korean hint")
+    elif "ArtSprites.CoachCard" not in live_cs or '"CoachCard"' not in live_cs:
+        fail("coach Perfect stamp dropped coach_card")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("coach Perfect stamp retuned hit windows")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("coach Perfect stamp retuned Judge windows")
+    elif "chatSpawnStart: 1.55" not in balance or "billRent: 8000" not in balance:
+        fail("coach Perfect stamp retuned spawn / economy")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("coach Perfect stamp retuned start cash / debt / mental")
+    elif "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("coach Perfect stamp retuned stream length / bankrupt line")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("coach Perfect stamp retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("coach Perfect stamp broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising coach Perfect / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("coach Perfect stamp dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("coach Perfect stamp moved Unity off 6000.5.9f1")
+    else:
+        ok("Day-1 coach 3-hit finish slams judge_perfect; timeout slams miss, not a fake win")
 
 
 def check_rival_portrait() -> None:

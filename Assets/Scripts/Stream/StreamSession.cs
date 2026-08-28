@@ -211,6 +211,8 @@ namespace BankruptVtuber
 
         public bool CoachActive => _coachEnabled && !_coachDone;
 
+        public bool CoachCleared => _coachDone && _coachSuccesses >= CoachSuccessTarget;
+
         public ChatNote CoachHeld => _coachHeld;
 
         public int CoachSuccesses => _coachSuccesses;
