@@ -9266,6 +9266,21 @@ def check_readme_playable() -> None:
         fail("README dropped ranking / concert art")
     elif "책상 종이" not in readme:
         fail("README does not name the desk-paper stack")
+    elif "라이브 HUD 스택" not in readme:
+        fail("README does not keep the live HUD stack list")
+    elif "돈 스탬프" not in readme or "팝 슬립" not in readme:
+        fail("README does not inventory money stamps / pop slips")
+    elif (
+        "bill_cover" not in readme
+        or "won_pop" not in readme
+        or "viewer_pop" not in readme
+        or "bill_short" not in readme
+        or "청구 커버" not in readme
+        or "+₩" not in readme
+        or "청구 미달" not in readme
+        or "청구보다 부족" not in readme
+    ):
+        fail("README money-stamp inventory dropped bill_cover / won_pop / viewer_pop / bill_short")
     elif "headline_clip" not in readme or "오늘 헤드라인" not in readme or "어제:" not in readme or "이어서 하기" not in readme:
         fail("README dropped headline scrap on settlement / morning / title continue")
     elif "cash_slip" not in readme or "남은 현금" not in readme or "이어서 하기" not in readme or "지금 수입" not in readme or "오늘 수입" not in readme:
@@ -9332,7 +9347,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names desk paper + Unity/portrait, controls, Week 1 numbers, art/SFX")
+        ok("README names money stamps/slips + desk paper + HUD stack + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
