@@ -183,6 +183,7 @@ namespace BankruptVtuber
         Image _sponsorBadge;
         Image _day1Headline;
         Image _liveDay1;
+        Image _day1Bill;
         Image _liveWeekStart;
         Text _liveWeekStartLabel;
         Image _weekHeadline;
@@ -1257,6 +1258,15 @@ namespace BankruptVtuber
                 _sponsorBadge.raycastTarget = false;
                 _sponsorBadge.gameObject.SetActive(false);
             }
+
+            _day1Bill = UiKit.Image(root, "LiveDay1Bill", Color.white);
+            UiKit.Layout(_day1Bill.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(338f, -268f), new Vector2(116f, 56f));
+            ArtSprites.Apply(_day1Bill, ArtSprites.BillNotice, Color.white, Color.white);
+            _day1Bill.preserveAspect = true;
+            _day1Bill.raycastTarget = false;
+            var day1BillT = UiKit.Label(_day1Bill.transform, "T", "청구서", 16, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(day1BillT.rectTransform, new Vector2(0.12f, 0.18f), new Vector2(0.88f, 0.82f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _day1Bill.gameObject.SetActive(false);
 
             _liveLastDay = UiKit.Image(root, "LiveLastDay", Color.white);
             UiKit.Layout(_liveLastDay.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(200f, -276f), new Vector2(132f, 40f));
@@ -3266,6 +3276,8 @@ namespace BankruptVtuber
                 _day1Headline.gameObject.SetActive(1 == GameManager.Instance.Run.day);
             if (_liveDay1 != null)
                 _liveDay1.gameObject.SetActive(1 == GameManager.Instance.Run.day);
+            if (_day1Bill != null)
+                _day1Bill.gameObject.SetActive(1 == GameManager.Instance.Run.day);
             if (_weekHeadline != null)
                 _weekHeadline.gameObject.SetActive(LiveWeekStartDay(GameManager.Instance.Run.day));
             if (_liveWeekStart != null)
