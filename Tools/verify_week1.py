@@ -256,6 +256,7 @@ def check_project() -> None:
         "title_continue.png": "이어서 하기 키캡",
         "nextday_key.png": "다음날 키캡",
         "chat_bubble.png": "채팅 버블",
+        "chat_dock.png": "채팅 독",
         "chat_nick.png": "채팅 닉 네임플레이트",
         "chat_troll.png": "트롤 닉 빨간 네임플레이트",
         "chat_super.png": "슈퍼챗 닉 금 네임플레이트",
@@ -1505,6 +1506,7 @@ def check_project() -> None:
     check_chat_nick()
     check_chat_troll()
     check_chat_super()
+    check_chat_dock()
     check_note_chip()
     check_hit_rail()
     check_judge_sfx()
@@ -6286,6 +6288,77 @@ def check_chat_super() -> None:
         fail("README should mention chat_super gold nameplate")
     else:
         ok("superchat nicks sit on chat_super gold nameplates; envelope / fly / pip / sfx stay")
+
+
+def check_chat_dock() -> None:
+    """Live chat column sits on a tall overlay dock behind the bubble stack."""
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    catalog = (ROOT / "Assets/Resources/Balance/ChatCatalog.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/chat_dock.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    build = live_cs.split('UiKit.Panel(root, "Chat"', 1)[-1].split('_lane = UiKit.Panel', 1)[0]
+    make = live_cs.split("RectTransform MakeBubble", 1)[-1].split("static void DimNamedBubble", 1)[0]
+    live_loop = readme.split("떨어지는 채팅은", 1)[-1].split("하이프 시작 시", 1)[0]
+    chat_inv = next((ln for ln in readme.splitlines() if "Art/chat_dock" in ln), "")
+
+    if not png.exists() or png.stat().st_size < 4000:
+        fail("chat_dock.png is missing")
+    elif w < 200 or h < 400 or h <= w:
+        fail("chat_dock.png is not a readable tall overlay panel")
+    elif color != 6:
+        fail("chat_dock.png is not RGBA")
+    elif 'ChatDock = "Art/chat_dock"' not in art_cs:
+        fail("ArtSprites does not hook Art/chat_dock")
+    elif "ArtSprites.ChatDock" not in build or '"ChatDock"' not in build:
+        fail("live chat column does not hang chat_dock behind the stack")
+    elif "SetAsFirstSibling" not in build or "ApplySliced" not in build:
+        fail("chat_dock is not drawn under the chat stack")
+    elif '"ChatTitle"' not in build or "실시간 채팅" not in build:
+        fail("chat_dock dropped the 실시간 채팅 title")
+    elif "new Vector2(420, -220)" not in build and "new Vector2(420,-220)" not in build.replace(" ", ""):
+        fail("chat_dock resized the chat column")
+    elif "ArtSprites.ChatBubble" not in make or "ArtSprites.ChatNick" not in make:
+        fail("chat_dock dropped chat_bubble / chat_nick")
+    elif "ArtSprites.ChatTroll" not in make or "ArtSprites.ChatSuper" not in make:
+        fail("chat_dock dropped chat_troll / chat_super nameplates")
+    elif "ArtSprites.EventWarn" not in live_cs or "EventWarnBox" not in live_cs:
+        fail("chat_dock moved event_warn placements")
+    elif "interval *= 0.5f" not in session_cs or "HypeActive" not in session_cs:
+        fail("chat_dock dropped hype 2x spawn")
+    elif "chatSpawnStart: 1.55" not in balance or "chatSpawnEnd: 1.05" not in balance:
+        fail("chat_dock retuned chat spawn table")
+    elif "positive:" not in catalog or "empathy:" not in catalog or "laugh:" not in catalog or "thanks:" not in catalog:
+        fail("chat_dock dropped ChatCatalog kinds")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("chat_dock retuned QTE windows")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("chat_dock retuned Week 1 economy / hype")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("chat_dock broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising chat_dock / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("chat_dock dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("chat_dock moved Unity off 6000.5.9f1")
+    elif "chat_dock" not in live_loop or "chat_bubble" not in live_loop:
+        fail("README live loop does not name chat_dock under the bubble stack")
+    elif "chat_dock" not in chat_inv or "독" not in chat_inv:
+        fail("README chat inventory dropped chat_dock overlay dock")
+    else:
+        ok("chat column sits on chat_dock overlay panel; bubble / nicks / hype / QTE stay")
 
 
 def check_note_chip() -> None:
@@ -12339,6 +12412,8 @@ def check_readme_playable() -> None:
         fail("README dropped title_wordmark neon logo")
     elif "chat_bubble" not in readme or "note_chip" not in readme or "superchat_chip" not in readme or "content_*" not in readme:
         fail("README dropped chat / note / superchat envelope / content icons")
+    elif "chat_dock" not in readme or "독" not in readme:
+        fail("README dropped chat_dock overlay dock")
     elif "chat_nick" not in readme or "닉" not in readme:
         fail("README dropped chat_nick nameplate")
     elif "chat_troll" not in readme or "트롤" not in readme:

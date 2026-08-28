@@ -131,6 +131,7 @@ namespace BankruptVtuber
         Image _wash;
         Image _washVeil;
         Image _chatPanel;
+        Image _chatDock;
         Image _hypeChatGlow;
         Text _hypeBanner;
         Image _hypeChip;
@@ -1103,10 +1104,16 @@ namespace BankruptVtuber
                 UiKit.Stretch(_hudOnAirCopy.rectTransform, 18f, 18f, 6f, 6f);
             }
 
-            var chatPanel = UiKit.Panel(root, "Chat", new Color(0.07f, 0.05f, 0.1f, 0.40f));
+            var chatPanel = UiKit.Panel(root, "Chat", new Color(0.07f, 0.05f, 0.1f, 0.0f));
             _chatPanel = chatPanel.GetComponent<Image>();
             _chatRoot = chatPanel;
             UiKit.Layout(chatPanel, new Vector2(1, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-18, 0), new Vector2(420, -220));
+            _chatDock = UiKit.Image(chatPanel, "ChatDock", Color.white);
+            UiKit.Stretch(_chatDock.rectTransform);
+            ArtSprites.ApplySliced(_chatDock, ArtSprites.ChatDock, Color.white, new Vector4(48f, 56f, 48f, 56f));
+            _chatDock.preserveAspect = false;
+            _chatDock.raycastTarget = false;
+            _chatDock.transform.SetAsFirstSibling();
             UiKit.Label(chatPanel, "ChatTitle", "실시간 채팅", 22, Palette.Pastel, TextAnchor.UpperLeft, FontStyle.Bold);
             var ct = chatPanel.Find("ChatTitle") as RectTransform;
             UiKit.Layout(ct, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -10), new Vector2(-24, 30));
@@ -2950,8 +2957,10 @@ namespace BankruptVtuber
                 _wash.color = look.Wash;
             if (_washVeil != null)
                 _washVeil.color = look.WashVeil;
+            if (_chatDock != null)
+                _chatDock.color = Color.Lerp(Color.white, look.Lane, 0.28f);
             if (_chatPanel != null)
-                _chatPanel.color = look.Lane;
+                _chatPanel.color = Color.clear;
             if (_showTitle != null)
             {
                 _showTitle.text = look.OverlayTitle;
@@ -3123,6 +3132,8 @@ namespace BankruptVtuber
             UiKit.Stretch(_scandalVeil.rectTransform);
             _scandalVeil.raycastTarget = false;
             _scandalVeil.transform.SetSiblingIndex(_washVeil.transform.GetSiblingIndex() + 1);
+            if (_chatDock != null)
+                _chatDock.color = Color.Lerp(_chatDock.color, Palette.Troll, 0.28f);
             if (_chatPanel != null)
                 _chatPanel.color = Color.Lerp(_chatPanel.color, Palette.Troll, 0.28f);
         }
