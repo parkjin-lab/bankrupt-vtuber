@@ -12570,7 +12570,7 @@ def check_morning_week_start_tab() -> None:
         fail("morning week-start tab is not shown on days 16 / 21")
     elif "LastDayOfCurrentWeek" in week_refresh:
         fail("morning week-start tab reused last-day gate")
-    elif "run.day == 1" in week_refresh:
+    elif re.search(r"run\.day == 1\b", week_refresh):
         fail("morning week-start tab reused the day-1 gate")
     elif 'WeekNumber(run) + "주차"' not in week_refresh:
         fail("morning week-start tab does not write 2주차 / 3주차 / 4주차 / 5주차")
@@ -12578,7 +12578,7 @@ def check_morning_week_start_tab() -> None:
         fail("morning week-start refresh reused 1일차 or last-day copy")
     elif "SetActive(on)" not in week_refresh:
         fail("morning week-start tab is not hidden on mid-week mornings")
-    elif "run.day == 2" in week_refresh or "run.day == 7" in week_refresh:
+    elif re.search(r"run\.day == 2\b", week_refresh) or re.search(r"run\.day == 7\b", week_refresh):
         fail("morning week-start tab also shows on a mid-week morning")
     elif "RefreshDay1" not in hud or "run.day == 1" not in day1_refresh:
         fail("morning week-start tab dropped day-1 1일차")
