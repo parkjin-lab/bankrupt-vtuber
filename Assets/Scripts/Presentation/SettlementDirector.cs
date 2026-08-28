@@ -1321,7 +1321,7 @@ namespace BankruptVtuber
             if (_dayHead != null)
                 _dayHead.text = run.day + "일차";
             if (_day1Tab != null)
-                _day1Tab.gameObject.SetActive(run.day == 1);
+                _day1Tab.gameObject.SetActive(1 == run.day);
             bool last = WeekSchedule.LastDayOfCurrentWeek(run) == run.day;
             if (_lastDayTab != null)
                 _lastDayTab.gameObject.SetActive(last);

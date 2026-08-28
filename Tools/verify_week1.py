@@ -12559,7 +12559,7 @@ def check_settle_day1_tab() -> None:
         fail("settlement 1일차 tab covers recap papers")
     elif "SetActive(false)" not in day1:
         fail("settlement 1일차 tab is not hidden until Render")
-    elif "run.day == 1" not in render or "_day1Tab" not in render:
+    elif "1 == run.day" not in render or "_day1Tab" not in render:
         fail("settlement 1일차 tab is not shown only on day 1")
     elif render.split("if (_day1Tab", 1)[-1].split("bool last", 1)[0].count("LastDayOfCurrentWeek") != 0:
         fail("settlement 1일차 tab reused last-day gate")
