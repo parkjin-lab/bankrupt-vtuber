@@ -273,6 +273,7 @@ namespace BankruptVtuber
                 lastClipAttempted = run.lastClipAttempted,
                 lastClipSuccess = run.lastClipSuccess,
                 lastClipCash = run.lastClipCash,
+                clipUploaded = run.clipUploaded,
                 rivalMatchHappened = run.rivalMatchHappened,
                 lastRivalMatch = run.lastRivalMatch,
                 lastRivalWon = run.lastRivalWon,
@@ -401,6 +402,7 @@ namespace BankruptVtuber
             run.lastClipAttempted = data.lastClipAttempted;
             run.lastClipSuccess = data.lastClipSuccess;
             run.lastClipCash = data.lastClipCash;
+            run.clipUploaded = data.clipUploaded;
             run.rivalMatchHappened = data.rivalMatchHappened;
             run.lastRivalMatch = data.lastRivalMatch;
             run.lastRivalWon = data.lastRivalWon;
@@ -614,6 +616,7 @@ namespace BankruptVtuber
             public bool lastClipAttempted;
             public bool lastClipSuccess;
             public int lastClipCash;
+            public bool clipUploaded;
             public bool rivalMatchHappened;
             public bool lastRivalMatch;
             public bool lastRivalWon;

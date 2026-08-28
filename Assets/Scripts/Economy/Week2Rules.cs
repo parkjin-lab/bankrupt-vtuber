@@ -104,6 +104,7 @@ namespace BankruptVtuber
             run.lastClipCash = w2.clipCash;
             run.cash += w2.clipCash;
             run.viewerBonus += w2.clipViewerBonus;
+            run.clipUploaded = true;
             EconomyRules.ConvertNegativeCashToDebt(run);
             return true;
         }

@@ -53,8 +53,9 @@ namespace BankruptVtuber
         public bool week2EntryApplied;
         public bool clipAttemptedThisDay;
         public bool lastClipAttempted;
-        public bool lastClipSuccess;
-        public int lastClipCash;
+            public bool lastClipSuccess;
+            public int lastClipCash;
+            public bool clipUploaded;
 
         public bool rivalMatchHappened;
         public bool lastRivalMatch;
@@ -195,6 +196,7 @@ namespace BankruptVtuber
             lastClipAttempted = false;
             lastClipSuccess = false;
             lastClipCash = 0;
+            clipUploaded = false;
         }
 
         void ClearWeek3Progress()
