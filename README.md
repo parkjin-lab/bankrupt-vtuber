@@ -51,7 +51,7 @@
 
 웹캠 파산냥은 `Art/pasan_nyang` 256px 2D 얼굴이고, 바깥은 `Art/webcam_bezel` 스트림 캠 베젤이다. 3주차 라이벌 캠(`Art/rival_nyang`)의 **라이벌 HUD**는 같은 `Art/webcam_bezel` · 듀얼 중 플레이어 HUD와 같은 `Art/onair_led`(켜졌다가 승패가 나면 꺼짐) · 시청 카운트 `Art/viewer_badge` · ± 팝 `Art/viewer_pop`. 승은 라이브와 같은 `Art/judge_perfect` 스탬프, 패는 `Art/judge_miss` 스탬프. Perfect 펀치 · Good 끄덕 · Miss 흔들 · 멘탈 ≤40 지침 · 시청 틱·승/패 SFX는 그대로다.
 
-라이브는 `Art/onair_led` LED 배지 **ON AIR** / **방송 시작**(0.6초, `Audio/sfx_onair` 시작 스팅)과 함께 `Audio/bgm_stream`이 타이틀보다 작게 루프한다. 웹캠 코너의 작은 `Art/onair_led` **ON AIR**는 90초 내내 켜져 있고, 마지막 10초는 시계와 같이 깜빡이다가 **방송 종료**에 꺼진다. **온에어 LED**는 그 HUD 스팅·90초 점등·깜빡·종료 꺼짐 + **방송 켜기** / **콘서트 방송** LIVE 핍 + 3주차 라이벌 캠(승패 나면 꺼짐). 5주차 콘서트 라이브만 `Audio/bgm_concert`가 스트림보다 크고 밝게 루프하고, 판정·슈퍼챗·하이프 SFX는 그대로 위에 뜬다. HUD가 이어진다. 바탕은 `Art/stream_overlay` 2D 오버레이(LIVE 핍 · 웹캠 베젤 · 채팅 테두리). 하단 키는 `Art/pad_dock` 스트림덱 트레이 위에 `Art/pad_*` 키캡(←파랑 / ↓초록 / →트롤 / ↑골드 / 슈퍼챗 골드). 칩 · 히트바 · FX · 0.08초 프레스 플래시는 그대로다. 1일차 코치는 `Art/coach_card` 스티키 카드 + 라이브 패드 행과 같은 **코치 트레이**(`Art/pad_dock`) 위 `Art/pad_*` 레전드로 그 다음. 성공 3회면 코치 카드에 라이브와 같은 `Art/judge_perfect` 슬램. 8초면 `Art/judge_miss` 한 번(조용). 90초가 끝나면 `Art/end_cut` 컷 카드 **방송 종료**(검정 플래시 · LIVE 점 꺼짐, 0.5초, `Audio/sfx_end_cut` 컷 스팅 · 베드 0.2초 페이드) 뒤 정산. F10 스킵은 조용히 정산으로. 정산은 `Art/settlement_desk` 방송 끝난 책상 바탕 위에 기존 카드가 그대로 올라간다.
+라이브는 `Art/onair_led` LED 배지 **ON AIR** / **방송 시작**(0.6초, `Audio/sfx_onair` 시작 스팅)과 함께 `Audio/bgm_stream`이 타이틀보다 작게 루프한다. 웹캠 코너의 작은 `Art/onair_led` **ON AIR**는 90초 내내 켜져 있고, 마지막 10초는 시계와 같이 깜빡이다가 **방송 종료**에 꺼진다. **온에어 LED**는 그 HUD 스팅·90초 점등·깜빡·종료 꺼짐 + **방송 켜기** / **콘서트 방송** LIVE 핍 + 3주차 라이벌 캠(승패 나면 꺼짐). 5주차 콘서트 라이브만 `Audio/bgm_concert`가 스트림보다 크고 밝게 루프하고, **콘서트 바탕**은 `Art/concert_stage`가 `Art/stream_overlay`·웹캠·채팅·패드 아래에 깔린다(일반 라이브는 스튜디오 워시. 스테이지 숨김). 판정·슈퍼챗·하이프 SFX는 그대로 위에 뜬다. HUD가 이어진다. 바탕은 `Art/stream_overlay` 2D 오버레이(LIVE 핍 · 웹캠 베젤 · 채팅 테두리). 하단 키는 `Art/pad_dock` 스트림덱 트레이 위에 `Art/pad_*` 키캡(←파랑 / ↓초록 / →트롤 / ↑골드 / 슈퍼챗 골드). 칩 · 히트바 · FX · 0.08초 프레스 플래시는 그대로다. 1일차 코치는 `Art/coach_card` 스티키 카드 + 라이브 패드 행과 같은 **코치 트레이**(`Art/pad_dock`) 위 `Art/pad_*` 레전드로 그 다음. 성공 3회면 코치 카드에 라이브와 같은 `Art/judge_perfect` 슬램. 8초면 `Art/judge_miss` 한 번(조용). 90초가 끝나면 `Art/end_cut` 컷 카드 **방송 종료**(검정 플래시 · LIVE 점 꺼짐, 0.5초, `Audio/sfx_end_cut` 컷 스팅 · 베드 0.2초 페이드) 뒤 정산. F10 스킵은 조용히 정산으로. 정산은 `Art/settlement_desk` 방송 끝난 책상 바탕 위에 기존 카드가 그대로 올라간다.
 
 라이브 HUD 스택(책상 종이 + 배지 + 스탬프 + 피크/사고 오버레이 + 채팅 독 + 패드 트레이 + 노트 레인). 자세한 목록은 아래 **라이브 HUD 스택** / **책상 종이** / **돈 스탬프 · 팝 슬립**.
 
@@ -117,8 +117,9 @@
   - `Art/webcam_bezel` — **웹캠 베젤**(플레이어 라이브 캠 + 3주차 **라이벌 HUD** 공유)
   - `Art/rival_nyang` — 3주차 **라이벌 HUD**. `Art/webcam_bezel` · 듀얼 중 `Art/onair_led`(승패 나면 꺼짐) · 카운트 `Art/viewer_badge` · ± 팝 `Art/viewer_pop` · 승 `Art/judge_perfect` / 패 `Art/judge_miss`
   - `Art/content_*` — 토크/게임/노래/리액션 아이콘 (픽 카드는 위 **카드 / 탭** `content_plate`)
-- **주차 카드** — `Art/goods_stand` · `Art/agency_card` · `Art/sponsor_card` · `Art/ranking_board` · `Art/concert_stage` · `Art/letter_card`(팬레터 종이. 답장/나중이는 위 **카드 / 탭** `letter_reply` / `letter_ignore`) · `Art/membership_card` · `Art/clip_card`
-- **BGM** — Title `Audio/bgm_title` · 아침 `Audio/bgm_morning` · 라이브 `Audio/bgm_stream` · 콘서트 라이브만 `Audio/bgm_concert`(일반 라이브는 `bgm_stream` 유지) · 정산 `Audio/bgm_settlement` (각 화면에서 떠나면 0.2초 페이드)
+- **주차 카드** — `Art/goods_stand` · `Art/agency_card` · `Art/sponsor_card` · `Art/ranking_board` · `Art/concert_stage`(**콘서트 바탕**: 5주차 **콘서트 방송**만 `stream_overlay` 아래. 일반 라이브는 스튜디오 워시) · `Art/letter_card`(팬레터 종이. 답장/나중이는 위 **카드 / 탭** `letter_reply` / `letter_ignore`) · `Art/membership_card` · `Art/clip_card`
+- **콘서트 바탕** — 5주차 **콘서트 방송**만 `Art/concert_stage`가 `Art/stream_overlay`·웹캠·채팅·패드 아래. 일반 라이브는 스튜디오 워시(스테이지 숨김). `bgm_concert`와 같은 게이트. 개최 카드·`sfx_concert_book`·순위는 그대로
+- **BGM** — Title `Audio/bgm_title` · 아침 `Audio/bgm_morning` · 라이브 `Audio/bgm_stream` · 콘서트 라이브만 `Audio/bgm_concert`(일반 라이브는 `bgm_stream` 유지. 같은 쇼에 **콘서트 바탕** `Art/concert_stage`) · 정산 `Audio/bgm_settlement` (각 화면에서 떠나면 0.2초 페이드)
 - **SFX** — 판정 `sfx_perfect` / `sfx_good` / `sfx_miss` · 이벤트 `sfx_anti` / `sfx_lag` · 아침 **오늘의 위협** 슬램 `sfx_threat` 한 번 · 정산 추가 위협 `sfx_threat` 한 번 · **이어서 하기** 추가 위협 `sfx_threat` 한 번 · 라이브 **방송 켜기** 추가 위협 `sfx_threat` 한 번 · 엔딩 `sfx_clear` / `sfx_bankrupt` · 로비/아침/정산 확인 `sfx_title` / `sfx_pick` / `sfx_golive` / `sfx_nextday` · 답장하기 `sfx_letter` · 라이벌 승/패 `sfx_rival_win` / `sfx_rival_lose` · 멤버십 `sfx_membership` · 클립 `sfx_clip` · 굿즈 `sfx_goods` · 에이전시 `sfx_agency` · 스폰서 `sfx_sponsor` · 랭킹 `sfx_ranking` · 콘서트 개최 `sfx_concert_book`
 
 ## 2~5주차 (있는 그대로)
@@ -128,7 +129,7 @@
 - **2주차** — 멤버십 스플래시(`Art/membership_card` 뱃지. 해금 카드가 뜨면 `Audio/sfx_membership` 한 번. 해금 숫자·카피·라우팅은 그대로) · 클립 카드(`Art/clip_card` 폰/썸네일. 카드가 뜨면 `Audio/sfx_clip` 셔터 한 번. 업로드 숫자·카피·라우팅은 그대로).
 - **3주차** — 라이벌 듀얼(`Art/rival_nyang` + **라이벌 HUD**: `Art/webcam_bezel` · 듀얼 중 `Art/onair_led`(승패 나면 꺼짐) · 카운트 `Art/viewer_badge` · ± 팝 `Art/viewer_pop` + 기존 시청 틱·승/패. 결과는 `Art/judge_perfect` **라이벌 승** / `Art/judge_miss` **라이벌 패** + `Audio/sfx_rival_win` 스틸/치어 / `Audio/sfx_rival_lose` 디플레이트. 플레이어는 `Art/pasan_nyang` 그대로) · 아크릴 해금/`굿즈 홍보`(`Art/goods_stand` 스탠드 제품 그림. 해금 카드·라이브 홍보 카드가 뜨면 `Audio/sfx_goods` 한 번. 해금·홍보 숫자·확인은 그대로) · 홍보 카드.
 - **4주차** — 에이전시/후배(`Art/agency_card` 사무실 레터헤드. 설립·스카우트 카드가 뜨면 `Audio/sfx_agency` 한 번. 설립 숫자·카피·확인은 그대로) · 스폰서 멘트(`Art/sponsor_card` 브랜드 계약 타일. 라이브 카드가 뜨면 `Audio/sfx_sponsor` 한 번. 카피·해금·숫자는 그대로).
-- **5주차** — 랭킹(`Art/ranking_board` 리더보드 패널. 보드가 뜨면 `Audio/sfx_ranking` 한 번. 순위·숫자는 그대로) · 콘서트(`Art/concert_stage` 나이트 스테이지. 개최 카드가 뜨면 `Audio/sfx_concert_book` 한 번. 라이브만 `Audio/bgm_concert`. 순위·숫자·라우팅은 그대로) · 엔딩 루트(`EndingRoot`).
+- **5주차** — 랭킹(`Art/ranking_board` 리더보드 패널. 보드가 뜨면 `Audio/sfx_ranking` 한 번. 순위·숫자는 그대로) · 콘서트(`Art/concert_stage` 나이트 스테이지. 개최 카드가 뜨면 `Audio/sfx_concert_book` 한 번. **콘서트 방송** 라이브는 **콘서트 바탕** + `Audio/bgm_concert`. 일반 라이브는 스튜디오 워시. 순위·숫자·라우팅은 그대로) · 엔딩 루트(`EndingRoot`).
 
 이름 팬은 **민준** / **하은**. 일반 채팅 닉은 `밤샌사람` 같은 풀. 콘텐츠 네 장(토크/게임/노래/리액션)은 청구 슬램 뒤 고른다.
 

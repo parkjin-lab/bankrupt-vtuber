@@ -1563,6 +1563,7 @@ def check_project() -> None:
     check_readme_note_lane_tint()
     check_readme_coach_pad_dock()
     check_readme_coach_perfect_stamp()
+    check_readme_concert_live_stage()
     check_readme_threat_slam_sfx()
     check_readme_both_threat_sfx()
     check_readme_title_threat_sfx()
@@ -10159,6 +10160,90 @@ def check_readme_coach_perfect_stamp() -> None:
         ok("README names Day-1 coach success Perfect / timeout Miss; tray / four sfx_threat stay")
 
 
+def check_readme_concert_live_stage() -> None:
+    """README names Week 5 concert live concert_stage backdrop vs regular studio wash."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    w5r_cs = (ROOT / "Assets/Scripts/Economy/Week5Rules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    live_loop = readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]
+    week_cards = next((ln for ln in readme.splitlines() if "주차 카드" in ln and "concert_stage" in ln), "")
+    stage_inv = next((ln for ln in readme.splitlines() if "콘서트 바탕" in ln and "sfx_concert_book" in ln and "스테이지 숨김" in ln), "")
+    bgm_inv = next((ln for ln in readme.splitlines() if "**BGM**" in ln and "bgm_concert" in ln), "")
+    week5 = readme.split("**5주차**", 1)[-1].split("이름 팬", 1)[0]
+    coach_stamp = next((ln for ln in readme.splitlines() if "코치 스탬프" in ln and "judge_perfect" in ln), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    under = build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
+
+    missing = next(
+        (
+            f"{label} {token}"
+            for label, block in (
+                ("live loop", live_loop),
+                ("week-card inventory", week_cards),
+                ("concert backdrop inventory", stage_inv),
+                ("Week 5", week5),
+            )
+            for token in ("concert_stage", "스튜디오 워시")
+            if token not in block
+        ),
+        "",
+    )
+
+    if missing:
+        fail(f"README {missing} must name concert live stage vs regular studio wash")
+    elif "stream_overlay" not in live_loop or "stream_overlay" not in stage_inv:
+        fail("README concert backdrop must sit under stream_overlay")
+    elif "bgm_concert" not in live_loop or "concert_stage" not in bgm_inv or "콘서트 바탕" not in bgm_inv:
+        fail("README BGM / live loop dropped concert_stage next to bgm_concert")
+    elif "스테이지 숨김" not in live_loop or "스테이지 숨김" not in stage_inv:
+        fail("README must say a regular live hides the concert stage")
+    elif "sfx_concert_book" not in stage_inv or "sfx_concert_book" not in week5:
+        fail("README concert backdrop dropped booking-card sfx_concert_book")
+    elif "코치 스탬프" not in coach_stamp or "judge_miss" not in coach_stamp:
+        fail("README concert backdrop dropped Day-1 coach stamps")
+    elif sfx_inv.count("sfx_threat") < 4:
+        fail("README SFX inventory dropped the four sfx_threat uses")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in under:
+        fail("README concert backdrop lost the live concert_stage hang")
+    elif "ArtSprites.StreamOverlay" not in build or '"StreamOverlay"' not in build:
+        fail("README concert backdrop dropped regular stream_overlay")
+    elif "_concertShow ? \"Audio/bgm_concert\" : \"Audio/bgm_stream\"" not in apply:
+        fail("README concert backdrop retuned bgm_concert routing")
+    elif 'ConcertStage = "Art/concert_stage"' not in art_cs:
+        fail("ArtSprites does not hook Art/concert_stage")
+    elif "ArtSprites.ConcertStage" not in settle_cs or "Audio/sfx_concert_book" not in settle_cs:
+        fail("README concert backdrop dropped booking-card art / sfx")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README concert backdrop retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README concert backdrop retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README concert backdrop retuned week-clear gates")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset:
+        fail("README concert backdrop retuned concert cost / payout")
+    elif "CanBookConcert" not in w5r_cs or "perfectWindow * " not in rules_cs:
+        fail("README concert backdrop changed concert routing / Judge windows")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README concert backdrop broke pads, 입력됨, or added timeScale")
+    elif "Week5" in title_cs or "콘서트" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising concert backdrop / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README concert backdrop dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README concert backdrop moved Unity off 6000.5.9f1")
+    else:
+        ok("README names concert live concert_stage backdrop vs regular studio wash")
+
+
 def check_readme_threat_slam_sfx() -> None:
     """README: 오늘의 위협 slam plays sfx_threat once; silent if no extra."""
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -14328,7 +14413,9 @@ def check_readme_playable() -> None:
     elif "webcam_bezel" not in readme.split("**3주차**", 1)[-1].split("**4주차**", 1)[0]:
         fail("README Week 3 dropped rival webcam_bezel")
     elif "ranking_board" not in readme or "concert_stage" not in readme:
-        fail("README dropped ranking / concert art")
+        fail("README dropped ranking_board / concert_stage week-5 art")
+    elif "콘서트 바탕" not in readme or "스튜디오 워시" not in readme:
+        fail("README does not inventory concert live stage vs studio wash")
     elif "책상 종이" not in readme:
         fail("README does not name the desk-paper stack")
     elif "라이브 HUD 스택" not in readme:
@@ -14498,7 +14585,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + 코치 스탬프 + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + 코치 스탬프 + 콘서트 바탕 + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
