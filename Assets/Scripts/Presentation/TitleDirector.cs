@@ -20,6 +20,7 @@ namespace BankruptVtuber
         Button _continue;
         RectTransform _continueRt;
         RectTransform _continueChip;
+        Image _continueDayTab;
         Text _continueDay;
         Text _continueMoney;
         Text _continueDebt;
@@ -174,15 +175,26 @@ namespace BankruptVtuber
                 ArtSprites.ApplySliced(continueImg, ArtSprites.TitleContinue, Color.white, new Vector4(48f, 36f, 48f, 36f));
                 continueImg.raycastTarget = true;
             }
-            _continueDay = _continue.transform.Find("Caption") != null
-                ? _continue.transform.Find("Caption").GetComponent<Text>()
-                : null;
-            if (_continueDay != null)
+            var continueCap = _continue.transform.Find("Caption") as RectTransform;
+            if (continueCap != null)
             {
-                _continueDay.alignment = TextAnchor.UpperLeft;
-                _continueDay.fontSize = 26;
-                UiKit.Layout(_continueDay.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(72, -10), new Vector2(-28, 34));
+                var continueCapT = continueCap.GetComponent<Text>();
+                if (continueCapT != null)
+                {
+                    continueCapT.alignment = TextAnchor.UpperLeft;
+                    continueCapT.fontSize = 26;
+                    continueCapT.text = "이어서 하기";
+                }
+                UiKit.Layout(continueCap, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(72, -10), new Vector2(-176, 34));
             }
+            _continueDayTab = UiKit.Image(_continue.transform, "ContinueDayTab", Color.white);
+            UiKit.Layout(_continueDayTab.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-10f, -6f), new Vector2(168f, 40f));
+            ArtSprites.Apply(_continueDayTab, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _continueDayTab.preserveAspect = false;
+            _continueDayTab.raycastTarget = false;
+            _continueDayTab.gameObject.SetActive(false);
+            _continueDay = UiKit.Label(_continueDayTab.transform, "ContinueDayHead", "", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_continueDay.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -2f), new Vector2(-16f, -8f));
             _continueChip = UiKit.Panel(_continue.transform, "ContinueChip", Palette.PinkDeep);
             UiKit.Layout(_continueChip, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(36f, -22f), new Vector2(52f, 26f));
             var contChipImg = _continueChip.GetComponent<Image>();
@@ -396,6 +408,8 @@ namespace BankruptVtuber
                 _continueDebtNotice.gameObject.SetActive(_hasSave);
             if (_continueMentalNote != null)
                 _continueMentalNote.gameObject.SetActive(_hasSave);
+            if (_continueDayTab != null)
+                _continueDayTab.gameObject.SetActive(_hasSave);
             if (_continueClip != null)
                 _continueClip.gameObject.SetActive(hasHead);
             var caption = _start.transform.Find("Caption") != null
@@ -412,7 +426,7 @@ namespace BankruptVtuber
         void FillContinue(GameRunState peek)
         {
             if (_continueDay != null)
-                _continueDay.text = "이어하기 " + peek.day + "일차";
+                _continueDay.text = peek.day + "일차";
             int bills = EconomyRules.TonightBills(peek);
             bool shortfall = bills > 0 && peek.cash < bills;
             if (_continueMoney != null)

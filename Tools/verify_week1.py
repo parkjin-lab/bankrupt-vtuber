@@ -1478,6 +1478,7 @@ def check_project() -> None:
     check_yesterday_headline()
     check_last_day_banner()
     check_title_continue_preview()
+    check_title_day_tab()
     check_start_pulse()
     check_continue_pulse()
     check_show_chip()
@@ -3419,8 +3420,8 @@ def check_title_broke_login() -> None:
         fail("continue cash/debt are not panic red/gold")
     elif '"현금 "' not in title_cs or '"부채 "' not in title_cs or "FormatWon" not in title_cs:
         fail("continue row dropped saved cash/debt")
-    elif "이어하기 " not in title_cs or "TryLoad" not in title_cs:
-        fail("broke login dropped 이어하기 peek")
+    elif "ContinueDayTab" not in title_cs or "일차" not in title_cs or "TryLoad" not in title_cs:
+        fail("broke login dropped n일차 peek")
     elif "진행 중인 " not in title_cs or "지울까?" not in title_cs or "ConfirmWipe" not in title_cs:
         fail("broke login changed the new-game wipe confirm")
     elif "OpenWipe" not in title_cs or "BeginNewRun" not in title_cs or "StartNewRun" not in title_cs:
@@ -4526,8 +4527,8 @@ def check_title_continue_preview() -> None:
     live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
     week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
 
-    if "이어하기 " not in title_cs or "일차" not in title_cs:
-        fail("Title continue does not show 이어하기 n일차")
+    if "ContinueDayTab" not in title_cs or "일차" not in title_cs or "peek.day" not in title_cs:
+        fail("Title continue does not show n일차 on day_tab")
     elif "현금 " not in title_cs or "부채 " not in title_cs or "FormatWon" not in title_cs:
         fail("Title continue does not show saved cash/debt")
     elif '"멘탈 "' not in title_cs or "peek.mental" not in title_cs or "ContinueMentalNote" not in title_cs:
@@ -4553,7 +4554,74 @@ def check_title_continue_preview() -> None:
     elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
         fail("Title started advertising later weeks / fandom")
     else:
-        ok("Title with a save shows 이어하기 n일차 + 현금/부채/멘탈")
+        ok("Title with a save shows n일차 on day_tab + 현금/부채/멘탈")
+
+
+def check_title_day_tab() -> None:
+    """Title continue reuses morning day_tab so the save's n일차 matches the morning calendar tab."""
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    save_cs = (ROOT / "Assets/Scripts/Core/RunSave.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    wipe = title_cs.split("void BuildWipe", 1)[-1].split("void BuildPrologue", 1)[0]
+    slam = week_cs.split("_daySlam = Mathf.MoveTowards", 1)[-1].split("TickGoLivePulse", 1)[0]
+
+    if 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif "ArtSprites.DayTab" not in week_cs or '"DayTab"' not in week_cs:
+        fail("title day_tab reuse dropped morning calendar tab")
+    elif "ArtSprites.DayTab" not in build or '"ContinueDayTab"' not in build:
+        fail("Title continue does not hang Art/day_tab under n일차")
+    elif "ContinueDayHead" not in build or "Palette.Gold" not in build:
+        fail("title day_tab dropped gold n일차 label")
+    elif "peek.day" not in fill or '"일차"' not in fill:
+        fail("title day_tab does not read peek.day into n일차")
+    elif "peek.day =" in title_cs or "day += " in title_cs or "day -= " in title_cs:
+        fail("title day_tab writes the day index")
+    elif "ContinueDayTab" not in hide or "SetActive(_hasSave)" not in hide:
+        fail("title day_tab is not hidden without a save")
+    elif "_daySlam = 0.25f" not in week_cs or "_dayTab" not in slam:
+        fail("title day_tab retuned the morning 0.25s slam")
+    elif "진행 중인 " not in wipe or "지울까?" not in wipe or "지우고 시작" not in wipe or "취소" not in wipe:
+        fail("title day_tab changed the new-game wipe confirm")
+    elif "OpenWipe" not in title_cs or "ConfirmWipe" not in title_cs or "BeginNewRun" not in title_cs:
+        fail("title day_tab unhooked wipe confirm")
+    elif "ContinueRun()" not in title_cs or "public bool ContinueRun()" not in gm:
+        fail("title day_tab changed continue load")
+    elif "HasValidSave" not in title_cs or "TryLoad" not in title_cs:
+        fail("title day_tab does not peek the existing save")
+    elif '"현금 "' not in fill or '"부채 "' not in fill or '"멘탈 "' not in fill:
+        fail("title day_tab dropped continue cash/debt/mental")
+    elif "ContinueShortStamp" not in title_cs or "청구보다 부족" not in title_cs:
+        fail("title day_tab dropped continue bill_short")
+    elif "lastHeadline" not in fill or '"어제: "' not in fill:
+        fail("title day_tab dropped continue headline")
+    elif "JsonUtility" in title_cs or "version =" in title_cs:
+        fail("title day_tab changed the save format")
+    elif "data.day" not in save_cs or "HasValidSave" not in save_cs:
+        fail("title day_tab unhooked RunSave day peek")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("title day_tab retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("title day_tab broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising day_tab / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("title day_tab dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("title day_tab moved Unity off 6000.5.9f1")
+    elif "Art/day_tab" not in readme or "이어서 하기" not in readme or "일차" not in readme:
+        fail("README should mention title continue day_tab")
+    else:
+        ok("Title continue n일차 sits on day_tab; hide-no-save / morning slam / wipe stay")
 
 
 def check_start_pulse() -> None:
@@ -4586,7 +4654,7 @@ def check_start_pulse() -> None:
         fail("save-wipe confirm is not on newgame_card")
     elif "ConfirmWipe" not in title_cs or "CloseWipe" not in title_cs:
         fail("wipe confirm wiring changed")
-    elif "MoneyPlate" not in title_cs or "이어하기 " not in title_cs or '"현금 "' not in cont or '"부채 "' not in cont:
+    elif "MoneyPlate" not in title_cs or "ContinueDayTab" not in title_cs or '"현금 "' not in cont or '"부채 "' not in cont:
         fail("continue row is no longer as painted")
     elif "peek.cash <" not in cont or "Palette.MoneyRed" not in cont or "Palette.Gold" not in cont:
         fail("continue cash/debt panic colors changed")
@@ -4647,6 +4715,8 @@ def check_continue_pulse() -> None:
         fail("continue pulse does not hang debt on Art/bill_notice")
     elif "ContinueMentalNote" not in click or "ArtSprites.MentalNote" not in click:
         fail("continue pulse does not hang mental on Art/mental_note")
+    elif "ContinueDayTab" not in click or "ArtSprites.DayTab" not in click:
+        fail("continue pulse does not hang n일차 on Art/day_tab")
     elif "activeInHierarchy" not in pulse or "_hasSave" not in hide or "SetActive(_hasSave)" not in hide:
         fail("continue pulse is not hidden when there is no save")
     elif "SetActive(hasHead)" not in hide:
@@ -4657,7 +4727,7 @@ def check_continue_pulse() -> None:
         fail("continue pulse changed the save-wipe confirm")
     elif "ConfirmWipe" not in title_cs or "OpenWipe" not in title_cs:
         fail("continue pulse unhooked wipe confirm")
-    elif "MoneyPlate" not in title_cs or "이어하기 " not in title_cs or '"현금 "' not in cont or '"부채 "' not in cont:
+    elif "MoneyPlate" not in title_cs or "ContinueDayTab" not in title_cs or '"현금 "' not in cont or '"부채 "' not in cont:
         fail("continue pulse dropped day + cash/debt")
     elif '"멘탈 "' not in cont or "peek.mental" not in cont:
         fail("continue pulse dropped mental memo")
@@ -5366,7 +5436,7 @@ def check_title_studio() -> None:
         fail("title studio dropped wordmark / 새 방송 시작 pulse")
     elif "1f + 0.03f" not in pulse or "TickContinuePulse" not in title_cs or '"이어"' not in title_cs:
         fail("title studio dropped start / continue pulse chips")
-    elif "MoneyPlate" not in title_cs or "이어하기 " not in title_cs or '"현금 "' not in cont or '"부채 "' not in cont:
+    elif "MoneyPlate" not in title_cs or "ContinueDayTab" not in title_cs or '"현금 "' not in cont or '"부채 "' not in cont:
         fail("title studio dropped the continue row")
     elif "새 방송 시작" not in title_cs or "진행 중인 " not in wipe or "지울까?" not in wipe or "지우고 시작" not in wipe or "취소" not in wipe:
         fail("title studio dropped 새 방송 시작 / wipe confirm")
@@ -10842,6 +10912,7 @@ def check_readme_playable() -> None:
     title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
     live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
     hud_stack = readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]
+    card_tabs = readme.split("- **카드 / 탭**", 1)[-1].split("- **책상 종이**", 1)[0]
 
     if "6000.5.9f1" not in readme or "Title.unity" not in readme:
         fail("README does not tell a clone which Unity / scene to open")
@@ -10885,6 +10956,13 @@ def check_readme_playable() -> None:
         fail("README dropped newgame_card wipe notice")
     elif "day_tab" not in readme or "일차" not in readme:
         fail("README dropped day_tab calendar tab")
+    elif (
+        "day_tab" not in card_tabs
+        or "아침" not in card_tabs
+        or "이어서 하기" not in card_tabs
+        or "일차" not in card_tabs
+    ):
+        fail("README day_tab inventory dropped morning / title continue n일차")
     elif "title_wordmark" not in readme or "파산 버튜버" not in readme:
         fail("README dropped title_wordmark neon logo")
     elif "chat_bubble" not in readme or "note_chip" not in readme or "superchat_chip" not in readme or "content_*" not in readme:
@@ -11065,7 +11143,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names day_tab morning/title continue + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
