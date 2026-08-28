@@ -1551,6 +1551,7 @@ def check_project() -> None:
     check_readme_ending_clip_tab()
     check_readme_onair_led()
     check_readme_rival_hud()
+    check_readme_rival_result_stamps()
     check_readme_morning_event_warn()
     check_readme_event_warn()
     check_readme_chat_dock()
@@ -9284,6 +9285,78 @@ def check_readme_rival_hud() -> None:
         fail("README rival HUD moved Unity off 6000.5.9f1")
     else:
         ok("README names 라이벌 HUD (webcam_bezel + onair_led + viewer_badge + viewer_pop)")
+
+
+def check_readme_rival_result_stamps() -> None:
+    """README inventory names Week 3 승/패 on live judge_perfect / judge_miss."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    duel_cs = (ROOT / "Assets/Scripts/Presentation/RivalDuelView.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    hud_stack = readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]
+    stamp_inv = next(
+        (ln for ln in hud_stack.splitlines() if "라이벌 승패" in ln and "judge_perfect" in ln),
+        "",
+    )
+    week3 = readme.split("**3주차**", 1)[-1].split("**4주차**", 1)[0]
+    face = readme.split("웹캠 파산냥", 1)[-1].split("라이브는", 1)[0]
+    show = duel_cs.split("void ShowResult", 1)[-1].split("void RefreshBars", 1)[0]
+    won = show.split("if (won)", 1)[-1].split("else", 1)[0]
+    lose = show.split("else", 1)[-1]
+
+    missing = next(
+        (
+            f"{label} {token}"
+            for label, block in (
+                ("HUD inventory", stamp_inv),
+                ("Week 3", week3),
+            )
+            for token in ("라이벌 승", "judge_perfect", "judge_miss")
+            if token not in block
+        ),
+        "",
+    )
+
+    if missing:
+        fail(f"README {missing} must name rival 승/패 stamp reuse")
+    elif "judge_perfect" not in face or "judge_miss" not in face:
+        fail("README face loop does not name rival judge stamp reuse")
+    elif "라이벌 패" not in stamp_inv or "라이벌 패" not in week3:
+        fail("README inventory / Week 3 dropped 라이벌 패 on judge_miss")
+    elif "sfx_rival_win" not in stamp_inv or "sfx_rival_lose" not in stamp_inv:
+        fail("README rival stamp inventory dropped win/lose SFX")
+    elif "viewer_badge" not in stamp_inv or "ON AIR" not in stamp_inv:
+        fail("README rival stamp inventory dropped LED / viewer badge")
+    elif "이어서 하기" not in stamp_inv:
+        fail("README rival stamp inventory must say Title continue stays stamp-free")
+    elif "ArtSprites.JudgePerfect" not in won or "ArtSprites.JudgeMiss" not in lose:
+        fail("README rival stamps lost the live Perfect / Miss reuse")
+    elif "라이벌 승" not in won or "라이벌 패" not in lose:
+        fail("README rival stamps dropped 승/패 copy")
+    elif "Audio/sfx_rival_win" not in live_cs or "Audio/sfx_rival_lose" not in live_cs:
+        fail("README rival stamps dropped win/lose SFX")
+    elif "Audio/sfx_threat" in title_cs:
+        fail("sfx_threat leaked onto Title continue")
+    elif "rivalWinCash: 20000" not in w3_asset or "rivalLoseMental: 12" not in w3_asset:
+        fail("README rival stamps retuned Week3 rival numbers")
+    elif "playerViewers > rivalViewers" not in w3r_cs or "ApplyRivalResult" not in w3r_cs:
+        fail("README rival stamps changed win/lose routing")
+    elif "startingCash: 45000" not in balance or "billRent: 8000" not in balance:
+        fail("README rival stamps retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README rival stamps broke pads, 입력됨, or added timeScale")
+    elif "Week3" in title_cs or "라이벌" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising rival stamps / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README rival stamps dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README rival stamps moved Unity off 6000.5.9f1")
+    else:
+        ok("README names rival 승/패 stamp reuse (judge_perfect / judge_miss); ticks / LED / SFX stay")
 
 
 def check_readme_morning_event_warn() -> None:

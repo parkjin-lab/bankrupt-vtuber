@@ -95,6 +95,7 @@
 - **라이브 HUD 스택** — 라이브 한 판에서 보이는 오버레이·스탬프·칩(히트창·콤보·하이프·이벤트·경제 숫자는 그대로).
   - **칩 / 배지** — `Art/combo_plate`(**COMBO**) · `Art/viewer_badge`(**시청자** · 3주차 라이벌 캠 카운트) · `Art/viewer_pop`(시청 ± 칩 · 3주차 라이벌 캠 스틸 ±) · `Art/hype_chip`(**하이프 N** 남은 초) · `Art/clock_plate`(**남은 시간**, 마지막 10초 · `sfx_clock_tick`) · `Art/onair_led` — **온에어 LED** **ON AIR** 세 곳: 시작 0.6초 스팅(`sfx_onair` · **방송 시작**) · 웹캠 코너 90초 점등 · 마지막 10초 시계와 같이 깜빡임 · **방송 종료**에 꺼짐 · **방송 켜기** / **콘서트 방송** LIVE 핍 · 3주차 라이벌 캠 듀얼(승패 나면 꺼짐)
   - **판정 스탬프** — `Art/judge_perfect`(**PERFECT** · 3주차 **라이벌 승**) · `Art/judge_good`(**GOOD**) · `Art/judge_miss`(**MISS** · 3주차 **라이벌 패**) · `Art/combo_break`(**콤보 끊김**, `sfx_combo_break`)
+  - **라이벌 승패** — `Art/judge_perfect` **라이벌 승** / `Art/judge_miss` **라이벌 패** (라이브 노트 Perfect/Miss와 같음. 시청 틱 · ON AIR LED · `viewer_badge` · `sfx_rival_win` / `sfx_rival_lose` · 숫자는 그대로. 타이틀 **이어서 하기**에는 없음)
   - **노트 / 컷** — `Art/superchat_chip`(슈퍼챗 금 봉투) · `Art/superchat_pip`(0.4초 금 핍, `sfx_superchat`) · `Art/superchat_fly`(성공 ₩ 플라이 금 봉투) · `Art/won_pop`(히트 **+₩** 현금 슬립) · `Art/bill_cover`(라이브·클리어 **청구 커버** PAID 스탬프, `sfx_bill_cover`. 파산은 숨김) · `Art/bill_short`(타이틀·아침·정산 **남은 현금** **청구보다 부족** / 정산·파산 **청구 미달**. 클리어는 숨김) · `Art/end_cut`(**방송 종료**, `sfx_end_cut`)
   - **채팅 독** — `Art/chat_dock` — 채팅 칼럼 오버레이 독(`Art/chat_bubble` · `Art/chat_nick` / `Art/chat_troll` / `Art/chat_super` 스택 뒤)
   - **패드 트레이** — `Art/pad_dock` — 종류·슈퍼챗 패드 행 스트림덱 트레이(`Art/pad_*` 키캡 뒤) · 1일차 **코치 트레이** 같은 트레이
