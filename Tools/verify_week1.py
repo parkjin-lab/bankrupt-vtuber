@@ -217,6 +217,7 @@ def check_project() -> None:
         "letter_card.png": "팬레터",
         "headline_clip.png": "어제 헤드라인",
         "cash_slip.png": "남은 현금",
+        "won_pop.png": "+₩ 슬립",
         "bill_cover.png": "청구 커버",
         "mental_note.png": "멘탈 메모",
         "combo_plate.png": "콤보 배지",
@@ -1474,6 +1475,7 @@ def check_project() -> None:
     check_superchat_sfx()
     check_bill_cover_sfx()
     check_bill_cover_stamp()
+    check_won_pop_slip()
     check_hype_sfx()
     check_event_sfx()
     check_content_icons()
@@ -2677,6 +2679,8 @@ def check_income_pop() -> None:
         fail("successful notes have no +₩ popup on 지금 수입")
     elif "ArtSprites.CashSlip" not in live_cs or '"TonightIncome"' not in live_cs:
         fail("+₩ popup chip is not on Art/cash_slip")
+    elif "ArtSprites.WonPop" not in live_cs or '"IncomePopSlip"' not in live_cs:
+        fail("+₩ popup is not on won_pop slip")
     elif '"+" + EconomyRules.FormatWon' not in live_cs and 'text = "+" + EconomyRules.FormatWon' not in live_cs:
         fail("+₩ popup does not use FormatWon")
     elif "ShowIncomeDelta(_session.LiveIncome - _incomeMarked)" not in live_cs:
@@ -5539,6 +5543,71 @@ def check_bill_cover_stamp() -> None:
         fail("README should mention bill_cover / 청구 커버")
     else:
         ok("청구 커버 sits on bill_cover PAID stamp; one-shot / SFX / sticky / no settle slam stay")
+
+
+def check_won_pop_slip() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/won_pop.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    show = live_cs.split("void ShowIncomeDelta", 1)[-1].split("void ShowViewerDelta", 1)[0]
+    hit = live_cs.split("if (j == Judgement.Miss)", 1)[-1].split("SyncNotes();", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("won_pop.png is missing")
+    elif w < 300 or h < 100 or w <= h:
+        fail("won_pop.png is not a readable landscape cash slip")
+    elif color != 6:
+        fail("won_pop.png is not RGBA")
+    elif 'WonPop = "Art/won_pop"' not in art_cs:
+        fail("ArtSprites does not hook Art/won_pop")
+    elif "ArtSprites.WonPop" not in show or '"IncomePopSlip"' not in live_cs:
+        fail("ShowIncomeDelta does not hang Art/won_pop under +₩")
+    elif "IncomePop" not in live_cs or '"+" + EconomyRules.FormatWon' not in live_cs and 'text = "+" + EconomyRules.FormatWon' not in live_cs:
+        fail("won_pop slip dropped FormatWon +₩ text")
+    elif "ShowIncomeDelta(_session.LiveIncome - _incomeMarked)" not in live_cs:
+        fail("won_pop slip is not the actual LiveIncome delta")
+    elif "if (!note.IsSuperchat)" not in hit or "ShowIncomeDelta" not in hit:
+        fail("won_pop slip duplicated superchat fly as +₩")
+    elif "BeginSuperchatFly" not in live_cs:
+        fail("won_pop slip dropped superchat fly-to-HUD")
+    elif "ArtSprites.CashSlip" not in live_cs or '"TonightIncome"' not in live_cs:
+        fail("won_pop slip dropped cash_slip 지금 수입 chip")
+    elif "ShowIncomeDelta" in live_cs.split("if (j == Judgement.Miss)", 1)[1].split("else if (note.IsSuperchat)", 1)[0]:
+        fail("Miss shows a won_pop +₩ slip")
+    elif "incomePerViewerPerSec" not in rules_cs or "TickIncome += gained" not in session_cs:
+        fail("won_pop slip retuned tick income math")
+    elif "incomePerViewerPerSec: 3" not in balance:
+        fail("won_pop slip retuned ₩ per viewer")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "superchatMinWon: 1000" not in balance:
+        fail("won_pop slip retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("won_pop slip broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising won_pop / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("won_pop slip dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("won_pop slip moved Unity off 6000.5.9f1")
+    elif "Art/won_pop" not in readme or "+₩" not in readme:
+        fail("README should mention won_pop / +₩")
+    elif "Art/cash_slip" not in readme or "지금 수입" not in readme:
+        fail("README dropped cash_slip 지금 수입 next to won_pop")
+    else:
+        ok("+₩ sits on won_pop cash slip; fly / cash_slip chip / values / economy stay")
 
 
 def check_hype_sfx() -> None:
@@ -9085,6 +9154,8 @@ def check_readme_playable() -> None:
         fail("README dropped superchat_pip gold telegraph")
     elif "bill_cover" not in readme or "청구 커버" not in readme or "sfx_bill_cover" not in readme:
         fail("README dropped bill_cover PAID stamp")
+    elif "won_pop" not in readme or "+₩" not in readme:
+        fail("README dropped won_pop +₩ cash slip")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:

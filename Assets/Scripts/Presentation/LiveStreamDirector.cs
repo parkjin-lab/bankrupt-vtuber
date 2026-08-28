@@ -205,6 +205,7 @@ namespace BankruptVtuber
         Text _viewerPop;
         float _viewerPopFlash;
         Text _incomePop;
+        Image _incomePopSlip;
         float _incomePopFlash;
         int _incomeMarked;
         float _incomeMarkedAt;
@@ -628,13 +629,24 @@ namespace BankruptVtuber
                 _viewerPop.rectTransform.anchoredPosition = new Vector2(8f, 6f + 22f * (1f - _viewerPopFlash));
                 _viewerPop.rectTransform.localScale = Vector3.one * (1f + 0.16f * _viewerPopFlash);
             }
+            if (_incomePopSlip != null)
+            {
+                bool show = _incomePopFlash > 0.02f;
+                _incomePopSlip.gameObject.SetActive(show);
+                if (show)
+                {
+                    var sc = _incomePopSlip.color;
+                    sc.a = _incomePopFlash;
+                    _incomePopSlip.color = sc;
+                    _incomePopSlip.rectTransform.anchoredPosition = new Vector2(8f, 6f + 22f * (1f - _incomePopFlash));
+                    _incomePopSlip.rectTransform.localScale = Vector3.one * (1f + 0.16f * _incomePopFlash);
+                }
+            }
             if (_incomePop != null)
             {
                 var ic = _incomePop.color;
                 ic.a = _incomePopFlash;
                 _incomePop.color = ic;
-                _incomePop.rectTransform.anchoredPosition = new Vector2(8f, 6f + 22f * (1f - _incomePopFlash));
-                _incomePop.rectTransform.localScale = Vector3.one * (1f + 0.16f * _incomePopFlash);
             }
             if (_sting != null)
             {
@@ -989,8 +1001,14 @@ namespace BankruptVtuber
                         incomeCapT.color = Palette.Ink;
                 }
             }
-            _incomePop = UiKit.Label(_incomeNow.transform.parent, "IncomePop", "", 20, Palette.CashGreen, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UiKit.Layout(_incomePop.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(8f, 6f), new Vector2(160f, 28f));
+            _incomePopSlip = UiKit.Image(_incomeNow.transform.parent, "IncomePopSlip", Color.white);
+            UiKit.Layout(_incomePopSlip.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(8f, 6f), new Vector2(168f, 36f));
+            ArtSprites.Apply(_incomePopSlip, ArtSprites.WonPop, new Color(0.98f, 0.96f, 0.88f, 0.98f), Color.white);
+            _incomePopSlip.preserveAspect = false;
+            _incomePopSlip.raycastTarget = false;
+            _incomePopSlip.gameObject.SetActive(false);
+            _incomePop = UiKit.Label(_incomePopSlip.transform, "IncomePop", "", 20, Palette.CashGreen, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_incomePop.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(10f, -1f), new Vector2(-18f, -6f));
             _remain = Chip(top, "Remain", "남은 금액", 0.50f, 0.78f, -124f);
             _bankruptLeft = Chip(top, "ToBankrupt", "파산까지", 0.78f, 1f, -124f);
             _bankruptRow = _bankruptLeft.transform.parent as RectTransform;
@@ -2542,6 +2560,17 @@ namespace BankruptVtuber
             }
             if (won <= 0)
                 return;
+            if (_incomePopSlip != null)
+            {
+                ArtSprites.Apply(_incomePopSlip, ArtSprites.WonPop, new Color(0.98f, 0.96f, 0.88f, 0.98f), Color.white);
+                _incomePopSlip.preserveAspect = false;
+                _incomePopSlip.gameObject.SetActive(true);
+                var sc = _incomePopSlip.color;
+                sc.a = 1f;
+                _incomePopSlip.color = sc;
+                _incomePopSlip.rectTransform.anchoredPosition = new Vector2(8f, 6f);
+                _incomePopSlip.rectTransform.localScale = Vector3.one * 1.16f;
+            }
             _incomePop.text = "+" + EconomyRules.FormatWon(won);
             var c = Palette.CashGreen;
             c.a = 1f;
