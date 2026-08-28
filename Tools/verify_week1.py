@@ -221,6 +221,7 @@ def check_project() -> None:
         "combo_plate.png": "콤보 배지",
         "combo_break.png": "콤보 끊김 스탬프",
         "hype_frame.png": "하이프 프레임",
+        "event_warn.png": "이벤트 경고",
         "viewer_badge.png": "시청 배지",
         "clock_plate.png": "시계 배지",
         "onair_led.png": "ON AIR LED",
@@ -1504,6 +1505,7 @@ def check_project() -> None:
     check_end_cut_card()
     check_combo_break_stamp()
     check_hype_frame()
+    check_event_warn_plate()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -3727,6 +3729,8 @@ def check_event_warn() -> None:
         fail("warning is not 안티 온다 / 렉 온다 at 0.5s")
     elif "WarnCopy" not in tick or "EventWarnBox" not in live_cs:
         fail("warning chip is not shown on the live HUD")
+    elif "ArtSprites.EventWarn" not in live_cs and "ArtSprites.EventWarn" not in tick:
+        fail("warning chip is not on event_warn plate")
     elif "BeginEventAccident" not in live_cs or "0.2f" not in live_cs.split("void BeginEventAccident", 1)[-1][:500]:
         fail("event warn dropped the existing sting")
     elif "ApplyEventScar" not in live_cs or "EventCrack" not in live_cs or "SetPulse" not in live_cs:
@@ -3762,7 +3766,7 @@ def check_event_warn() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("event warn moved Unity off 6000.5.9f1")
     else:
-        ok("events flash 안티 온다 / 렉 온다 0.5s early; sting / keys / scars stay")
+        ok("events flash 안티 온다 / 렉 온다 on event_warn plate 0.5s early; sting / keys / scars stay")
 
 
 def check_day_slam() -> None:
@@ -8231,6 +8235,64 @@ def check_hype_frame() -> None:
         ok("hype sits on hype_frame gold overlay; wash / chat 2x / SFX / combo-9 stay")
 
 
+def check_event_warn_plate() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/event_warn.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    peek = session_cs.split("public bool TryPeekEventWarn", 1)[-1].split("public bool PromoActive", 1)[0]
+    tick = live_cs.split("void TickEventWarn", 1)[-1].split("void TickStrike", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("event_warn.png is missing")
+    elif w < 360 or h < 160 or w <= h:
+        fail("event_warn.png is not a readable landscape warning plate")
+    elif color != 6:
+        fail("event_warn.png is not RGBA")
+    elif 'EventWarn = "Art/event_warn"' not in art_cs:
+        fail("ArtSprites does not hook Art/event_warn")
+    elif "ArtSprites.EventWarn" not in live_cs or "EventWarnBox" not in live_cs:
+        fail("LiveStream does not hang Art/event_warn under the warning chip")
+    elif "ArtSprites.EventWarn" not in tick or "WarnCopy" not in tick:
+        fail("TickEventWarn does not show the warning plate")
+    elif "eta > 0.5f" not in peek or "안티 온다" not in event_cs or "렉 온다" not in event_cs:
+        fail("event warn plate retuned 0.5s / Korean copy")
+    elif "Audio/sfx_anti" not in live_cs or "Audio/sfx_lag" not in live_cs:
+        fail("event warn plate dropped anti / lag SFX")
+    elif "BeginEventAccident" not in live_cs or "ApplyEventScar" not in live_cs:
+        fail("event warn plate dropped stings / scars")
+    elif "eventEarliestSeconds: 35" not in balance or "eventWindowSeconds: 1.15" not in balance:
+        fail("event warn plate retuned event timing")
+    elif "eventAntiFailMental: 8" not in balance or "eventLagFailFreezeSeconds: 3" not in balance:
+        fail("event warn plate retuned fail penalties")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("event warn plate retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("event warn plate broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising event warn plate / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("event warn plate dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("event warn plate moved Unity off 6000.5.9f1")
+    elif "Art/event_warn" not in readme or "안티 온다" not in readme or "렉 온다" not in readme:
+        fail("README should mention event_warn / 안티 온다 / 렉 온다")
+    else:
+        ok("안티 온다 / 렉 온다 sit on event_warn plate; 0.5s / SFX / stings / rules stay")
+
+
 def check_mental_sfx() -> None:
     import wave
 
@@ -8790,6 +8852,8 @@ def check_readme_playable() -> None:
         fail("README dropped combo_break stamp")
     elif "hype_frame" not in readme or "sfx_hype" not in readme or "하이프" not in readme:
         fail("README dropped hype_frame gold overlay")
+    elif "event_warn" not in readme or "안티 온다" not in readme or "렉 온다" not in readme or "sfx_anti" not in readme:
+        fail("README dropped event_warn warning plate")
     elif "viewer_badge" not in readme or "시청자" not in readme or ("시청 +" not in readme and "시청 ±" not in readme):
         fail("README dropped viewer_badge live follower badge")
     elif "clock_plate" not in readme or "남은 시간" not in readme or "sfx_clock_tick" not in readme:

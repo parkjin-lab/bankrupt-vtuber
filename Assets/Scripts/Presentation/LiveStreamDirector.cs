@@ -884,9 +884,16 @@ namespace BankruptVtuber
             UiKit.Stretch(_mentalWarn.rectTransform, 10f, 10f, 6f, 6f);
             warn.gameObject.SetActive(false);
             _eventWarnBox = UiKit.Panel(root, "EventWarnBox", new Color(0.58f, 0.08f, 0.16f, 0.94f));
-            UiKit.Layout(_eventWarnBox, new Vector2(0.18f, 0.62f), new Vector2(0.52f, 0.62f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 44));
+            UiKit.Layout(_eventWarnBox, new Vector2(0.18f, 0.62f), new Vector2(0.52f, 0.62f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 72));
+            var eventWarnImg = _eventWarnBox.GetComponent<Image>();
+            if (eventWarnImg != null)
+            {
+                ArtSprites.Apply(eventWarnImg, ArtSprites.EventWarn, new Color(0.58f, 0.08f, 0.16f, 0.94f), Color.white);
+                eventWarnImg.preserveAspect = false;
+                eventWarnImg.raycastTarget = false;
+            }
             _eventWarn = UiKit.Label(_eventWarnBox, "EventWarn", "안티 온다", 28, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Stretch(_eventWarn.rectTransform);
+            UiKit.Stretch(_eventWarn.rectTransform, 96f, 48f, 18f, 12f);
             _eventWarnBox.gameObject.SetActive(false);
 
             var top = UiKit.Panel(root, "Top", new Color(0.08f, 0.04f, 0.1f, 0.36f));
@@ -1770,9 +1777,13 @@ namespace BankruptVtuber
             bool anti = kind == StreamEventKind.AntiWave;
             float u = 0.5f + 0.5f * Mathf.Abs(Mathf.Sin(Time.time * 10f));
             if (img != null)
+            {
+                ArtSprites.Apply(img, ArtSprites.EventWarn, new Color(0.58f, 0.08f, 0.16f, 0.94f), Color.white);
+                img.preserveAspect = false;
                 img.color = anti
                     ? new Color(0.72f, 0.08f, 0.16f, 0.88f + 0.10f * u)
                     : new Color(0.22f, 0.30f, 0.38f, 0.88f + 0.10f * u);
+            }
             _eventWarnBox.localScale = Vector3.one * (1f + 0.06f * u);
         }
 
