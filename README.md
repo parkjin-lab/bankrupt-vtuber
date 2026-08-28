@@ -71,7 +71,7 @@
 - **얼굴 / 아이콘** — `Art/pasan_nyang` · `Art/rival_nyang` · `Art/content_*`
 - **주차 카드** — `Art/goods_stand` · `Art/agency_card` · `Art/sponsor_card` · `Art/ranking_board` · `Art/concert_stage` · `Art/letter_card` · `Art/membership_card` · `Art/clip_card`
 - **BGM** — Title `Audio/bgm_title` · 아침 `Audio/bgm_morning` · 라이브 `Audio/bgm_stream` · 콘서트 라이브 `Audio/bgm_concert` · 정산 `Audio/bgm_settlement` (각 화면에서 떠나면 0.2초 페이드)
-- **SFX** — 판정 `sfx_perfect` / `sfx_good` / `sfx_miss` · 이벤트 `sfx_anti` / `sfx_lag` · 엔딩 `sfx_clear` / `sfx_bankrupt` · 로비/아침/정산 확인 `sfx_title` / `sfx_pick` / `sfx_golive` / `sfx_nextday` · 팬레터 `sfx_letter` · 라이벌 `sfx_rival_win` / `sfx_rival_lose` · 멤버십 `sfx_membership` · 클립 `sfx_clip` · 굿즈 `sfx_goods` · 에이전시 `sfx_agency`
+- **SFX** — 판정 `sfx_perfect` / `sfx_good` / `sfx_miss` · 이벤트 `sfx_anti` / `sfx_lag` · 엔딩 `sfx_clear` / `sfx_bankrupt` · 로비/아침/정산 확인 `sfx_title` / `sfx_pick` / `sfx_golive` / `sfx_nextday` · 팬레터 `sfx_letter` · 라이벌 `sfx_rival_win` / `sfx_rival_lose` · 멤버십 `sfx_membership` · 클립 `sfx_clip` · 굿즈 `sfx_goods` · 에이전시 `sfx_agency` · 스폰서 `sfx_sponsor`
 
 ## 2~5주차 (있는 그대로)
 
@@ -79,7 +79,7 @@
 
 - **2주차** — 멤버십 스플래시(`Art/membership_card` 뱃지. 해금 카드가 뜨면 `Audio/sfx_membership` 한 번. 해금 숫자·카피·라우팅은 그대로) · 클립 카드(`Art/clip_card` 폰/썸네일. 카드가 뜨면 `Audio/sfx_clip` 셔터 한 번. 업로드 숫자·카피·라우팅은 그대로).
 - **3주차** — 라이벌 듀얼(`Art/rival_nyang` 웹캠 얼굴 + 기존 시청 틱·승/패. 결과는 `Audio/sfx_rival_win` 스틸/치어 / `Audio/sfx_rival_lose` 디플레이트. 플레이어는 `Art/pasan_nyang` 그대로) · 아크릴 해금/`굿즈 홍보`(`Art/goods_stand` 스탠드 제품 그림. 해금 카드·라이브 홍보 카드가 뜨면 `Audio/sfx_goods` 한 번. 해금·홍보 숫자·확인은 그대로) · 홍보 카드.
-- **4주차** — 에이전시/후배(`Art/agency_card` 사무실 레터헤드. 설립·스카우트 카드가 뜨면 `Audio/sfx_agency` 한 번. 설립 숫자·카피·확인은 그대로) · 스폰서 멘트(`Art/sponsor_card` 브랜드 계약 타일. 카피·해금·숫자는 그대로. 이번엔 무음).
+- **4주차** — 에이전시/후배(`Art/agency_card` 사무실 레터헤드. 설립·스카우트 카드가 뜨면 `Audio/sfx_agency` 한 번. 설립 숫자·카피·확인은 그대로) · 스폰서 멘트(`Art/sponsor_card` 브랜드 계약 타일. 라이브 카드가 뜨면 `Audio/sfx_sponsor` 한 번. 카피·해금·숫자는 그대로).
 - **5주차** — 랭킹(`Art/ranking_board` 리더보드 패널) · 콘서트(`Art/concert_stage` 나이트 스테이지. 개최·라이브·결과. 라이브만 `Audio/bgm_concert`. 순위·숫자·라우팅은 그대로) · 엔딩 루트(`EndingRoot`).
 
 이름 팬은 **민준** / **하은**. 일반 채팅 닉은 `밤샌사람` 같은 풀. 콘텐츠 네 장(토크/게임/노래/리액션)은 청구 슬램 뒤 고른다.

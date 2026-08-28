@@ -1476,6 +1476,7 @@ def check_project() -> None:
     check_clip_sfx()
     check_goods_sfx()
     check_agency_sfx()
+    check_sponsor_sfx()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -7056,7 +7057,98 @@ def check_agency_sfx() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("agency SFX moved Unity off 6000.5.9f1")
     else:
-        ok("에이전시 설립 / 후배 스카우트 play sfx_agency once; sponsor line silent")
+        ok("에이전시 설립 / 후배 스카우트 play sfx_agency once; sponsor confirm stays off the stamp")
+
+
+def check_sponsor_sfx() -> None:
+    import wave
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    w4_asset = (ROOT / "Assets/Resources/Balance/Week4Balance.asset").read_text(encoding="utf-8")
+    w4r_cs = (ROOT / "Assets/Scripts/Economy/Week4Rules.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    update = live_cs.split("void Update()", 1)[-1].split("IEnumerator EndRoutine", 1)[0]
+    line = live_cs.split("else if (_session.LineActive)", 1)[-1].split("else if (_session.ConcertActive)", 1)[0]
+    overlay = live_cs.split("void RefreshLineOverlay", 1)[-1].split("void FlashLineResult", 1)[0]
+    flash = live_cs.split("void FlashLineResult", 1)[-1].split("void RefreshConcertOverlay", 1)[0]
+    sign = settle_cs.split("void OnSignSponsor", 1)[-1].split("void ", 1)[0]
+    agency = settle_cs.split("void ShowAgencyCard", 1)[-1].split("void CloseAgencyCard", 1)[0]
+    goods = settle_cs.split("void ShowGoodsSplash", 1)[-1].split("void OnGoodsAck", 1)[0]
+    promo = live_cs.split("else if (_session.PromoActive)", 1)[-1].split("else if (_session.LineActive)", 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_sponsor.wav"
+
+    if not path.exists() or path.stat().st_size < 2000:
+        fail("sfx_sponsor.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("sfx_sponsor.wav is not a readable PCM brand/contract sting")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.16 or dur > 0.42:
+            fail(f"sfx_sponsor.wav duration {dur:.3f}s is not a short brand chime")
+            return
+
+    if "Audio/sfx_sponsor" not in live_cs or "PlaySfx(_sponsorCue" not in update:
+        fail("LiveStream does not play Audio/sfx_sponsor when the line card appears")
+    elif "!_lineWasActive && _session.LineActive" not in update:
+        fail("sponsor chime is not edge-triggered on card appear")
+    elif "PlaySfx" in line or "sfx_sponsor" in line:
+        fail("sponsor chime plays on 멘트 넣기 / 놓치기")
+    elif "PlaySfx" in overlay or "sfx_sponsor" in overlay:
+        fail("sponsor chime plays every line overlay refresh")
+    elif "PlaySfx" in flash or "sfx_sponsor" in flash:
+        fail("sponsor chime plays on 계약 유지 / 파기 slam")
+    elif "PlaySfx" in sign or "sfx_sponsor" in sign:
+        fail("sponsor chime plays on settlement 스폰서 계약")
+    elif "TryLine(true)" not in line or "TryLine(false)" not in line:
+        fail("sponsor SFX unhooked accept / skip")
+    elif "ApplySponsorLine" not in live_cs or "EnableSponsorLine" not in live_cs:
+        fail("sponsor SFX changed line routing")
+    elif 'SponsorCard = "Art/sponsor_card"' not in art_cs or "ArtSprites.SponsorCard" not in live_cs:
+        fail("sponsor SFX dropped sponsor_card art")
+    elif "스폰서 멘트" not in live_cs or "계약 유지" not in live_cs or "계약 파기" not in live_cs:
+        fail("sponsor SFX covered line copy")
+    elif "멘트 넣기" not in live_cs or "놓치기" not in live_cs:
+        fail("sponsor SFX dropped accept / skip copy")
+    elif "sponsorLineBonus: 3000" not in w4_asset or "sponsorFailCash: 15000" not in w4_asset or "sponsorFailMental: 12" not in w4_asset:
+        fail("sponsor SFX retuned line payout / fail")
+    elif "sponsorPeakViewers: 70" not in w4_asset or "sponsorDaily: 10000" not in w4_asset:
+        fail("sponsor SFX retuned sponsor deal numbers")
+    elif "w4.sponsorLineBonus" not in w4r_cs or "w4.sponsorFailCash" not in w4r_cs:
+        fail("sponsor SFX changed ApplySponsorLine payout")
+    elif "Audio/sfx_agency" not in settle_cs or "PlayAgencySfx();" not in agency:
+        fail("sponsor SFX dropped agency office stamp")
+    elif "Audio/sfx_goods" not in settle_cs or "PlayGoodsSfx();" not in goods:
+        fail("sponsor SFX dropped goods stand chime")
+    elif "PlaySfx(_goodsCue" not in update:
+        fail("sponsor SFX dropped live goods promo chime")
+    elif "PlaySfx" in promo or "sfx_sponsor" in promo:
+        fail("sponsor chime leaked onto goods promo confirm")
+    elif "Audio/sfx_sponsor" in settle_cs or "Audio/sfx_sponsor" in title_cs or "Audio/sfx_sponsor" in week_cs:
+        fail("sponsor SFX leaked onto Settlement / Title / WeekStart")
+    elif "sfx_sponsor" in debug_cs or "FlashLineResult" in debug_cs:
+        fail("F10 skip is no longer mute-safe")
+    elif "agencyFoundCost: 40000" not in w4_asset or "agencyDailyCost: 15000" not in w4_asset:
+        fail("sponsor SFX retuned agency numbers")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("sponsor SFX retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("sponsor SFX broke pads, 입력됨, or added timeScale")
+    elif "Week4" in title_cs or "스폰서" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising sponsor SFX / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("sponsor SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("sponsor SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("스폰서 멘트 plays sfx_sponsor once on appear; accept / skip / agency stay")
 
 
 def check_mental_sfx() -> None:
