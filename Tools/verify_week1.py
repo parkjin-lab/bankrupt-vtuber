@@ -1459,6 +1459,7 @@ def check_project() -> None:
     check_title_broke_login()
     check_superchat_pip()
     check_left_cash()
+    check_left_cash_short_stamp()
     check_go_live_pulse()
     check_note_pad_color()
     check_strike_marker()
@@ -3515,6 +3516,12 @@ def check_left_cash() -> None:
         fail("남은 현금 cannot compare to tomorrow's typical bill")
     elif "Palette.MoneyRed" not in left:
         fail("short leftover 남은 현금 is not warning-red")
+    elif "ArtSprites.BillShort" not in left or '"LeftCashShortStamp"' not in settle_cs:
+        fail("short leftover 남은 현금 has no bill_short stamp")
+    elif "청구보다 부족" not in left:
+        fail("leftover bill_short stamp dropped Korean copy")
+    elif "SetActive(shortfall)" not in left:
+        fail("leftover bill_short stamp does not hide when cash is enough")
     elif "run.cash =" in left or "lastBills =" in left or "cash +=" in left:
         fail("남은 현금 writes cash / bill math")
     elif "ApplyDailyBills" in left or "ConvertNegativeCashToDebt" in settle_cs:
@@ -3539,6 +3546,57 @@ def check_left_cash() -> None:
         fail("남은 현금 moved Unity off 6000.5.9f1")
     else:
         ok("settlement snaps 남은 현금 after counts; short vs tomorrow tints red")
+
+
+def check_left_cash_short_stamp() -> None:
+    """Settlement leftover cash reuses bill_short when short of tomorrow's typical bill."""
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    left = settle_cs.split("void ApplyLeftCash", 1)[-1].split("static int PeekTomorrowTypical", 1)[0]
+    build = settle_cs.split('"LeftCashSlip"', 1)[-1].split("var panel = UiKit.Panel", 1)[0]
+
+    if 'BillShort = "Art/bill_short"' not in art_cs:
+        fail("ArtSprites does not hook Art/bill_short")
+    elif "ArtSprites.BillShort" not in build or '"LeftCashShortStamp"' not in build:
+        fail("leftover cash does not hang Art/bill_short under the slip")
+    elif "청구보다 부족" not in build and "청구보다 부족" not in left:
+        fail("leftover bill_short dropped Korean 청구보다 부족")
+    elif "ArtSprites.BillShort" not in left or "SetActive(shortfall)" not in left:
+        fail("ApplyLeftCash does not toggle bill_short on shortfall")
+    elif "Palette.MoneyRed" not in left:
+        fail("leftover bill_short dropped red tint")
+    elif "LeftCashSlip" not in settle_cs or "ArtSprites.CashSlip" not in settle_cs:
+        fail("leftover bill_short dropped cash_slip")
+    elif "TotalFixedBills" not in settle_cs or "cash < typical" not in left:
+        fail("leftover bill_short dropped tomorrow typical compare")
+    elif "ArtSprites.BillShort" not in week_cs or '"CashShortStamp"' not in week_cs:
+        fail("leftover bill_short reuse dropped morning 청구보다 부족")
+    elif "ArtSprites.BillShort" not in title_cs or '"ContinueShortStamp"' not in title_cs:
+        fail("leftover bill_short reuse dropped title 청구보다 부족")
+    elif '"ShortStamp"' not in settle_cs or "청구 미달" not in settle_cs:
+        fail("leftover bill_short reuse dropped settlement 청구 미달 stamp")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("leftover bill_short retuned Week 1 economy")
+    elif "₩22,000" not in readme:
+        fail("README dropped typical daily bill ₩22,000")
+    elif "남은 현금" not in readme or "bill_short" not in readme or "청구보다 부족" not in readme:
+        fail("README should mention leftover bill_short reuse")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("leftover bill_short broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising leftover bill_short / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("leftover bill_short dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("leftover bill_short moved Unity off 6000.5.9f1")
+    else:
+        ok("leftover shortfall reuses bill_short; slip / red tint / hide-when-enough stay")
 
 
 def check_go_live_pulse() -> None:
@@ -6310,6 +6368,8 @@ def check_bill_short_stamp() -> None:
         fail("covered nights also stamp 청구 미달")
     elif "LeftCashSlip" not in settle_cs or "ArtSprites.CashSlip" not in settle_cs:
         fail("bill_short stamp dropped leftover-cash slip")
+    elif "ArtSprites.BillShort" not in settle_cs or '"LeftCashShortStamp"' not in settle_cs:
+        fail("bill_short stamp dropped leftover 남은 현금 short stamp")
     elif "SlamBillCover" in settle_cs or "CoverSlam" in settle_cs or "bill_cover" in settle_cs:
         fail("bill_short stamp grew a fake 청구 커버 slam")
     elif "lastBills =" in show or "lastBills =" in warn:

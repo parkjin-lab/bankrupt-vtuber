@@ -51,6 +51,8 @@ namespace BankruptVtuber
         RectTransform _cashTile;
         RectTransform _debtTile;
         Image _leftCashSlip;
+        Image _leftCashShortStamp;
+        Text _leftCashShort;
         StudioPortrait _portrait;
         StudioPortrait _endingPortrait;
         StudioPortrait _clearPortrait;
@@ -434,6 +436,15 @@ namespace BankruptVtuber
             _leftCashSlip.raycastTarget = false;
             _leftCash = UiKit.Label(_leftCashSlip.transform, "LeftCash", "남은 현금", 24, Palette.Pastel, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(_leftCash.rectTransform, new Vector2(0.08f, 0.14f), new Vector2(0.90f, 0.86f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _leftCashShortStamp = UiKit.Image(_leftCashSlip.transform, "LeftCashShortStamp", Color.white);
+            UiKit.Layout(_leftCashShortStamp.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 1f), new Vector2(0f, -2f), new Vector2(220f, 48f));
+            ArtSprites.Apply(_leftCashShortStamp, ArtSprites.BillShort, Palette.MoneyRed, Color.white);
+            _leftCashShortStamp.preserveAspect = false;
+            _leftCashShortStamp.raycastTarget = false;
+            _leftCashShortStamp.gameObject.SetActive(false);
+            _leftCashShort = UiKit.Label(_leftCashShortStamp.transform, "LeftCashShort", "청구보다 부족", 15, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_leftCashShort.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -1f), new Vector2(-10f, -6f));
+            _leftCashShort.gameObject.SetActive(false);
             _leftCashSlip.gameObject.SetActive(false);
 
             var panel = UiKit.Panel(root, "Sheet", Color.white);
@@ -1002,6 +1013,24 @@ namespace BankruptVtuber
             int typical = PeekTomorrowTypical(gm);
             bool shortfall = typical > 0 && cash < typical;
             _leftCash.color = shortfall ? Palette.MoneyRed : Palette.Pastel;
+            if (_leftCashShortStamp != null)
+            {
+                if (shortfall)
+                {
+                    ArtSprites.Apply(_leftCashShortStamp, ArtSprites.BillShort, Palette.MoneyRed, Color.white);
+                    _leftCashShortStamp.preserveAspect = false;
+                }
+                _leftCashShortStamp.gameObject.SetActive(shortfall);
+            }
+            if (_leftCashShort != null)
+            {
+                if (shortfall)
+                {
+                    _leftCashShort.text = "청구보다 부족";
+                    _leftCashShort.color = Palette.MoneyRed;
+                }
+                _leftCashShort.gameObject.SetActive(shortfall);
+            }
         }
 
         static int PeekTomorrowTypical(GameManager gm)
