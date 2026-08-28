@@ -187,6 +187,7 @@ namespace BankruptVtuber
         Text _liveWeekStartLabel;
         Image _weekHeadline;
         Image _lastHeadline;
+        Image _liveLastDay;
         float _bedVolume;
         float _bedDuck;
         bool _threatGear;
@@ -1256,6 +1257,15 @@ namespace BankruptVtuber
                 _sponsorBadge.raycastTarget = false;
                 _sponsorBadge.gameObject.SetActive(false);
             }
+
+            _liveLastDay = UiKit.Image(root, "LiveLastDay", Color.white);
+            UiKit.Layout(_liveLastDay.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(200f, -276f), new Vector2(132f, 40f));
+            ArtSprites.Apply(_liveLastDay, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _liveLastDay.preserveAspect = true;
+            _liveLastDay.raycastTarget = false;
+            var liveLastDayT = UiKit.Label(_liveLastDay.transform, "T", "마지막 날", 16, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(liveLastDayT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _liveLastDay.gameObject.SetActive(false);
 
             var chatPanel = UiKit.Panel(root, "Chat", new Color(0.07f, 0.05f, 0.1f, 0.0f));
             _chatPanel = chatPanel.GetComponent<Image>();
@@ -3267,6 +3277,8 @@ namespace BankruptVtuber
             }
             if (_lastHeadline != null)
                 _lastHeadline.gameObject.SetActive(LiveLastDay(GameManager.Instance.Run.day));
+            if (_liveLastDay != null)
+                _liveLastDay.gameObject.SetActive(LiveLastDay(GameManager.Instance.Run.day));
             UiKit.EnsureCamera(look.Wash);
             _avatar?.ApplyShow(look);
             if (_bed != null)
