@@ -165,6 +165,8 @@ namespace BankruptVtuber
         Image _concertStage;
         bool _goodsShow;
         Image _goodsStand;
+        bool _sponsorShow;
+        Image _sponsorCard;
         float _bedVolume;
         float _bedDuck;
         bool _threatGear;
@@ -348,7 +350,10 @@ namespace BankruptVtuber
                 _goodsShow = true;
             }
             if (gm.Run.sponsorActive && !WeekSchedule.InWeek5(gm.Run))
+            {
                 _session.EnableSponsorLine(gm.Week4);
+                _sponsorShow = true;
+            }
             if (Week5Rules.ConcertStreamReady(gm.Run))
             {
                 Week5Rules.MarkConcertStarted(gm.Run);
@@ -916,6 +921,13 @@ namespace BankruptVtuber
             var safe = StreamSafeArea.Attach(canvasRoot);
             var root = safe;
             _fxRoot = root as RectTransform;
+
+            _sponsorCard = UiKit.Image(root, "SponsorCardHud", Color.white);
+            UiKit.Layout(_sponsorCard.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(16f, 392f), new Vector2(220f, 128f));
+            ArtSprites.Apply(_sponsorCard, ArtSprites.SponsorCard, Color.white, Color.white);
+            _sponsorCard.preserveAspect = true;
+            _sponsorCard.raycastTarget = false;
+            _sponsorCard.gameObject.SetActive(false);
 
             _goodsStand = UiKit.Image(root, "GoodsStandHud", Color.white);
             UiKit.Layout(_goodsStand.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(16f, 208f), new Vector2(168f, 168f));
@@ -3113,6 +3125,8 @@ namespace BankruptVtuber
                 _concertStage.gameObject.SetActive(_concertShow);
             if (_goodsStand != null)
                 _goodsStand.gameObject.SetActive(_goodsShow);
+            if (_sponsorCard != null)
+                _sponsorCard.gameObject.SetActive(_sponsorShow);
             UiKit.EnsureCamera(look.Wash);
             _avatar?.ApplyShow(look);
             if (_bed != null)

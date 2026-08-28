@@ -1543,6 +1543,7 @@ def check_project() -> None:
     check_concert_bgm()
     check_concert_live_stage()
     check_goods_promo_live_stand()
+    check_sponsor_mention_live_card()
     check_morning_bgm()
     check_settlement_bgm()
     check_result_stings()
@@ -8787,6 +8788,115 @@ def check_goods_promo_live_stand() -> None:
         fail("goods stand moved Unity off 6000.5.9f1")
     else:
         ok("goods-promo live hangs goods_stand in the HUD; a normal live does not")
+
+
+def check_sponsor_mention_live_card() -> None:
+    """Week 4 sponsor-mention live hangs sponsor_card as a HUD plate; a normal live does not."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    w4_asset = (ROOT / "Assets/Resources/Balance/Week4Balance.asset").read_text(encoding="utf-8")
+    w4r_cs = (ROOT / "Assets/Scripts/Economy/Week4Rules.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    update = live_cs.split("void Update()", 1)[-1].split("IEnumerator EndRoutine", 1)[0]
+    under = build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
+    overlay = build.split('"StreamOverlay"', 1)[-1].split("_washVeil", 1)[0]
+    plate = build.split('"SponsorCardHud"', 1)[-1].split('"GoodsStandHud"', 1)[0] if '"SponsorCardHud"' in build else ""
+    shelf = build.split('"GoodsStandHud"', 1)[-1].split('"HypeFlash"', 1)[0] if '"GoodsStandHud"' in build else ""
+    line_build = live_cs.split('"LineCard"', 1)[-1].split('"ConcertCard"', 1)[0]
+    slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
+
+    if 'SponsorCard = "Art/sponsor_card"' not in art_cs:
+        fail("ArtSprites does not hook Art/sponsor_card")
+    elif '"SponsorCardHud"' not in build or "ArtSprites.SponsorCard" not in plate:
+        fail("LiveStream does not hang sponsor_card as a HUD plate")
+    elif "UiKit.Stretch" in plate:
+        fail("sponsor_card HUD is a full-screen backdrop; that is concert_stage's job")
+    elif "168f, 168f" in plate or "16f, 208f" in plate:
+        fail("sponsor_card stole the goods_stand shelf slot")
+    elif "ArtSprites.SponsorCard" in under or "SponsorCardHud" in under:
+        fail("sponsor_card stole the concert_stage backdrop slot")
+    elif "ArtSprites.GoodsStand" in plate or "GoodsStandHud" in plate:
+        fail("sponsor plate reused the goods_stand HUD")
+    elif "SetActive(false)" not in plate:
+        fail("sponsor_card HUD is not hidden on a normal live")
+    elif "SetActive(_sponsorShow)" not in apply:
+        fail("sponsor_card HUD is not gated on the Week 4 sponsor-mention live")
+    elif "LineActive" in apply:
+        fail("sponsor card is gated on the mention QTE, not the whole show")
+    elif "EnableSponsorLine" not in start or "_sponsorShow = true" not in start:
+        fail("sponsor card is not armed for the Week 4 sponsor-mention live")
+    elif "sponsorActive" not in start or "InWeek5" not in start:
+        fail("sponsor card changed when the mention live is armed")
+    elif "SetActive(_goodsShow)" not in apply or '"GoodsStandHud"' not in build:
+        fail("sponsor card dropped goods-promo live goods_stand")
+    elif "UiKit.Stretch" in shelf or "ArtSprites.GoodsStand" not in shelf:
+        fail("sponsor card retuned the goods_stand HUD shelf")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in under:
+        fail("sponsor card dropped concert live concert_stage")
+    elif "ArtSprites.StreamOverlay" not in overlay or "ArtSprites.ConcertStage" in overlay:
+        fail("sponsor card stole stream_overlay / concert_stage chrome")
+    elif "ArtSprites.SponsorCard" not in line_build or '"LineCard"' not in live_cs:
+        fail("sponsor card dropped the mention-card art")
+    elif "스폰서 멘트 타이밍" not in line_build or "스폰서 멘트" not in live_cs:
+        fail("sponsor card covered mention copy")
+    elif "멘트 넣기" not in line_build or "놓치기" not in line_build:
+        fail("sponsor card dropped mention confirm / skip")
+    elif "계약 유지" not in live_cs or "계약 파기" not in live_cs:
+        fail("sponsor card covered keep / break copy")
+    elif "PlaySfx(_sponsorCue" not in update or "Audio/sfx_sponsor" not in live_cs:
+        fail("sponsor card dropped sfx_sponsor on appear")
+    elif "EnableSponsorLine" not in session_cs or "public void EnableSponsorLine" not in session_cs:
+        fail("sponsor card unhooked EnableSponsorLine")
+    elif "ApplySponsorLine" not in w4r_cs or "w4.sponsorLineBonus" not in w4r_cs:
+        fail("sponsor card changed ApplySponsorLine payout")
+    elif "sponsorLineBonus: 3000" not in w4_asset or "sponsorFailCash: 15000" not in w4_asset or "sponsorFailMental: 12" not in w4_asset:
+        fail("sponsor card retuned line payout / fail")
+    elif "sponsorPeakViewers: 70" not in w4_asset or "sponsorDaily: 10000" not in w4_asset or "sponsorDays: 5" not in w4_asset:
+        fail("sponsor card retuned sponsor deal numbers")
+    elif "lineWindowSeconds: 1.2" not in w4_asset:
+        fail("sponsor card retuned mention window")
+    elif "goodsUnlockCash: 60000" not in w3_asset or "goodsPromoMultiplier: 1.5" not in w3_asset:
+        fail("sponsor card retuned goods unlock / promo")
+    elif "EnablePromo" not in start or "_goodsShow = true" not in start:
+        fail("sponsor card unhooked goods-promo live arming")
+    elif "ArtSprites.JudgePerfect" not in slam or "PlaySfx(_perfect" not in slam:
+        fail("sponsor card dropped Day-1 coach Perfect stamp")
+    elif "Audio/sfx_threat" not in live_cs or "PlayThreatSfx" not in live_cs:
+        fail("sponsor card dropped live sfx_threat")
+    elif "LastDayBanner" not in (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8"):
+        fail("sponsor card dropped morning last-day tab")
+    elif '"ContinueLastDayTab"' not in title_cs or '"SettleLastDayTab"' not in settle_cs:
+        fail("sponsor card dropped title / settlement last-day tabs")
+    elif "perfectWindow: 0.07" not in balance or "perfectWindow * " not in rules_cs:
+        fail("sponsor card retuned hit windows")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("sponsor card retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("sponsor card retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("sponsor card retuned week-clear gates")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset:
+        fail("sponsor card retuned concert cost / payout")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("sponsor card broke pads, 입력됨, or added timeScale")
+    elif "Week4" in title_cs or "스폰서" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising sponsor card / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("sponsor card dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("sponsor card moved Unity off 6000.5.9f1")
+    else:
+        ok("sponsor-mention live hangs sponsor_card in the HUD; a normal live does not")
 
 
 def check_morning_bgm() -> None:
