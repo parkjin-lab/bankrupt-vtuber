@@ -46,6 +46,7 @@ namespace BankruptVtuber
         RectTransform _onAirRoot;
         Image _onAirWash;
         Image _onAirLed;
+        Image _hudOnAir;
         Image _onAirPip;
         Text _onAirLive;
         Text _onAirCopy;
@@ -750,6 +751,8 @@ namespace BankruptVtuber
         System.Collections.IEnumerator EndRoutine()
         {
             _ending = true;
+            if (_hudOnAir != null)
+                _hudOnAir.gameObject.SetActive(false);
             var gm = GameManager.Instance;
             var paid = EconomyRules.ApplyStreamPayout(
                 gm.Run,
@@ -819,6 +822,8 @@ namespace BankruptVtuber
 
         void ShowEndCut()
         {
+            if (_hudOnAir != null)
+                _hudOnAir.gameObject.SetActive(false);
             if (_liveDot != null)
                 _liveDot.color = new Color(0.2f, 0.02f, 0.04f, 0.2f);
             StartCoroutine(FadeStreamBed());
@@ -1086,6 +1091,16 @@ namespace BankruptVtuber
 
             _avatar = new AvatarView(root as RectTransform);
             _rivalDuel = new RivalDuelView(root as RectTransform);
+            if (_avatar != null && _avatar.Root != null)
+            {
+                _hudOnAir = UiKit.Image(_avatar.Root, "HudOnAir", Color.white);
+                UiKit.Layout(_hudOnAir.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(10f, 10f), new Vector2(152f, 38f));
+                ArtSprites.Apply(_hudOnAir, ArtSprites.OnAirLed, Color.white, Color.white);
+                _hudOnAir.preserveAspect = false;
+                _hudOnAir.raycastTarget = false;
+                var hudOnAirT = UiKit.Label(_hudOnAir.transform, "T", "ON AIR", 16, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+                UiKit.Stretch(hudOnAirT.rectTransform, 18f, 18f, 6f, 6f);
+            }
 
             var chatPanel = UiKit.Panel(root, "Chat", new Color(0.07f, 0.05f, 0.1f, 0.40f));
             _chatPanel = chatPanel.GetComponent<Image>();

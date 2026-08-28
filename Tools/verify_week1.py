@@ -1550,6 +1550,7 @@ def check_project() -> None:
     check_viewer_badge()
     check_clock_plate()
     check_onair_led()
+    check_hud_onair_led()
     check_judge_stamps()
     check_superchat_chip()
     check_superchat_pip_art()
@@ -9605,6 +9606,65 @@ def check_onair_led() -> None:
         fail("README should mention Art/onair_led")
     else:
         ok("ON AIR sits on onair_led LED badge; 0.6s sting / SFX / pip-off stay")
+
+
+def check_hud_onair_led() -> None:
+    """Small persistent onair_led stays lit on the live HUD for the 90s, then goes off at 방송 종료."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    sting = live_cs.split("void TickOnAir", 1)[-1].split("void RefreshCoach", 1)[0]
+    end = live_cs.split("EndRoutine", 1)[-1].split("void ShowEndCut", 1)[0]
+    show = live_cs.split("void ShowEndCut", 1)[-1].split("void ", 1)[0]
+    hud = live_cs.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in live_cs else ""
+
+    if 'OnAirLed = "Art/onair_led"' not in art_cs:
+        fail("ArtSprites does not hook Art/onair_led")
+    elif '"HudOnAir"' not in live_cs or "ArtSprites.OnAirLed" not in hud:
+        fail("live HUD has no persistent onair_led")
+    elif '"ON AIR"' not in hud:
+        fail("HUD onair LED dropped ON AIR copy")
+    elif "_hudOnAir" not in end or "SetActive(false)" not in end:
+        fail("HUD onair LED does not go off when the stream ends")
+    elif "_hudOnAir" not in show or "SetActive(false)" not in show:
+        fail("HUD onair LED does not go off at 방송 종료")
+    elif "_onAirLeft = 0.6f" not in live_cs or "_onAirLeft / 0.6f" not in sting:
+        fail("HUD onair LED retuned the 0.6s start sting")
+    elif "PlaySfx(_onAirCue" not in live_cs or "Audio/sfx_onair" not in live_cs:
+        fail("HUD onair LED dropped sfx_onair")
+    elif "1f + 0.18f * u" not in sting or "방송 시작" not in live_cs:
+        fail("HUD onair LED dropped sting pulse / 방송 시작")
+    elif "_liveDot" not in show or "0.2f, 0.02f, 0.04f, 0.2f" not in show:
+        fail("HUD onair LED dropped end-cut LIVE pip-off")
+    elif "RefreshClockChip" not in live_cs or "sfx_clock_tick" not in live_cs:
+        fail("HUD onair LED dropped clock pulse")
+    elif "WaitForSeconds(0.5f)" not in live_cs.split("EndRoutine", 1)[-1]:
+        fail("HUD onair LED retuned 방송 종료 cut timing")
+    elif "streamSeconds: 90" not in balance or "TimeLeft = balance.streamSeconds" not in session_cs:
+        fail("HUD onair LED retuned the 90s stream")
+    elif "안티 웨이브" not in event_cs or "장비 렉" not in event_cs:
+        fail("HUD onair LED retuned QTE events")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("HUD onair LED retuned Week 1 economy")
+    elif "EnableFirstStreamCoach" not in live_cs or "_onAirLeft <= 0f" not in live_cs:
+        fail("HUD onair LED broke Day-1 coach wait")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("HUD onair LED broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising HUD onair LED / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("HUD onair LED dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("HUD onair LED moved Unity off 6000.5.9f1")
+    elif "Art/onair_led" not in readme or "90초" not in readme or "방송 종료" not in readme:
+        fail("README should mention persistent onair_led")
+    else:
+        ok("HUD ON AIR stays lit on onair_led; sting / end-cut off / clock stay")
 
 
 def check_judge_stamps() -> None:
