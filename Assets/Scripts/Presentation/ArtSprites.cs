@@ -63,6 +63,7 @@ namespace BankruptVtuber
         public const string NoteChip = "Art/note_chip";
         public const string SuperchatChip = "Art/superchat_chip";
         public const string SuperchatPip = "Art/superchat_pip";
+        public const string SuperchatFly = "Art/superchat_fly";
         public const string HitRail = "Art/hit_rail";
         public const string ContentTalk = "Art/content_talk";
         public const string ContentGame = "Art/content_game";

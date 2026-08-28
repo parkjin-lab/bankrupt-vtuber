@@ -2389,15 +2389,20 @@ namespace BankruptVtuber
             }
 
             string wonLine = EconomyRules.FormatWon(note.SuperchatWon);
-            var fly = UiKit.Label(_fxRoot, "WonFly", firstMinjun ? wonLine + "\n민준 첫 도네" : wonLine, 34, Palette.CashGreen, TextAnchor.MiddleCenter, FontStyle.Bold);
+            var flyImg = UiKit.Image(_fxRoot, "WonFly", Color.white);
+            UiKit.Layout(flyImg.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(280, 120));
+            ArtSprites.Apply(flyImg, ArtSprites.SuperchatFly, Palette.Gold, Color.white);
+            flyImg.preserveAspect = false;
+            flyImg.raycastTarget = false;
+            var fly = UiKit.Label(flyImg.transform, "WonFlyText", firstMinjun ? wonLine + "\n민준 첫 도네" : wonLine, 28, Palette.CashGreen, TextAnchor.MiddleCenter, FontStyle.Bold);
             fly.horizontalOverflow = HorizontalWrapMode.Overflow;
             fly.verticalOverflow = VerticalWrapMode.Overflow;
-            UiKit.Layout(fly.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(280, 64));
+            UiKit.Layout(fly.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -2f), new Vector2(-16f, -20f));
             var start = fromRt != null ? LocalIn(_fxRoot, fromRt) : new Vector2(180f, -40f);
             var dest = _incomeNow != null ? LocalIn(_fxRoot, _incomeNow.rectTransform) : new Vector2(-80f, 280f);
-            fly.rectTransform.anchoredPosition = start;
-            fly.rectTransform.localScale = Vector3.one * 1.35f;
-            _wonFlies.Add(new WonFly { Rt = fly.rectTransform, From = start, To = dest, T = 0f });
+            flyImg.rectTransform.anchoredPosition = start;
+            flyImg.rectTransform.localScale = Vector3.one * 1.35f;
+            _wonFlies.Add(new WonFly { Rt = flyImg.rectTransform, Img = flyImg, Label = fly, From = start, To = dest, T = 0f });
         }
 
         void BeginSuperchatCrack(ChatNote note)
@@ -2435,11 +2440,18 @@ namespace BankruptVtuber
                     p.y += Mathf.Sin(u * Mathf.PI) * 36f;
                     fly.Rt.anchoredPosition = p;
                     fly.Rt.localScale = Vector3.one * Mathf.Lerp(1.35f, 0.72f, ease);
-                    var text = fly.Rt.GetComponent<Text>();
+                    float a = u < 0.82f ? 1f : 1f - (u - 0.82f) / 0.18f;
+                    if (fly.Img != null)
+                    {
+                        var ic = fly.Img.color;
+                        ic.a = a;
+                        fly.Img.color = ic;
+                    }
+                    var text = fly.Label != null ? fly.Label : fly.Rt.GetComponent<Text>();
                     if (text != null)
                     {
                         var c = text.color;
-                        c.a = u < 0.82f ? 1f : 1f - (u - 0.82f) / 0.18f;
+                        c.a = a;
                         text.color = c;
                     }
                 }
@@ -2525,6 +2537,8 @@ namespace BankruptVtuber
         struct WonFly
         {
             public RectTransform Rt;
+            public Image Img;
+            public Text Label;
             public Vector2 From;
             public Vector2 To;
             public float T;

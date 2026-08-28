@@ -246,6 +246,7 @@ def check_project() -> None:
         "note_chip.png": "노트 칩",
         "superchat_chip.png": "슈퍼챗 봉투",
         "superchat_pip.png": "슈퍼챗 핍",
+        "superchat_fly.png": "슈퍼챗 플라이 봉투",
         "hit_rail.png": "히트 레일",
         "content_talk.png": "토크 아이콘",
         "content_game.png": "게임 아이콘",
@@ -1480,6 +1481,7 @@ def check_project() -> None:
     check_won_pop_slip()
     check_viewer_pop_chip()
     check_bill_short_stamp()
+    check_superchat_fly_envelope()
     check_hype_sfx()
     check_event_sfx()
     check_content_icons()
@@ -4002,6 +4004,8 @@ def check_superchat_fly() -> None:
 
     if "BeginSuperchatFly" not in live_cs or "WonFly" not in live_cs:
         fail("successful superchat has no ₩ fly to the money HUD")
+    elif "ArtSprites.SuperchatFly" not in live_cs or '"WonFly"' not in live_cs:
+        fail("₩ fly is not on superchat_fly envelope")
     elif "_incomeNow" not in live_cs or '"지금 수입"' not in live_cs:
         fail("₩ fly has no 지금 수입 target")
     elif "BeginSuperchatCrack" not in live_cs or "_scCracks" not in live_cs:
@@ -5779,6 +5783,76 @@ def check_bill_short_stamp() -> None:
         fail("README / title dropped continue bill_short stamp")
     else:
         ok("청구 미달 + morning/title 청구보다 부족 share bill_short; red / cash_slip / numbers stay")
+
+
+def check_superchat_fly_envelope() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/superchat_fly.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    fly = live_cs.split("void BeginSuperchatFly", 1)[-1].split("void BeginSuperchatCrack", 1)[0]
+    tick = live_cs.split("void TickSuperchatFx", 1)[-1].split("void LocalIn", 1)[0]
+    judge = live_cs.split("if (_session.LastJudgement.HasValue", 1)[-1].split("SyncNotes();", 1)[0]
+    success = judge.split("else if (note.IsSuperchat)", 1)[-1].split("else if (j == Judgement.Perfect)", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("superchat_fly.png is missing")
+    elif w < 240 or h < 120 or w <= h:
+        fail("superchat_fly.png is not a readable landscape gold envelope")
+    elif color != 6:
+        fail("superchat_fly.png is not RGBA")
+    elif 'SuperchatFly = "Art/superchat_fly"' not in art_cs:
+        fail("ArtSprites does not hook Art/superchat_fly")
+    elif "ArtSprites.SuperchatFly" not in fly or '"WonFly"' not in fly:
+        fail("BeginSuperchatFly does not hang Art/superchat_fly under ₩")
+    elif "FormatWon(note.SuperchatWon)" not in fly or "_incomeNow" not in fly:
+        fail("superchat_fly dropped FormatWon or 지금 수입 target")
+    elif "dt / 0.48f" not in tick or "Sin(u * Mathf.PI) * 36f" not in tick:
+        fail("superchat_fly dropped fly path / arc")
+    elif "BeginSuperchatFly" not in success or "PlaySfx(_sc" not in success:
+        fail("superchat_fly dropped success fly or sfx_superchat")
+    elif "Audio/sfx_superchat" not in live_cs:
+        fail("superchat_fly dropped Audio/sfx_superchat")
+    elif "ArtSprites.SuperchatChip" not in live_cs or "ArtSprites.SuperchatPip" not in live_cs:
+        fail("superchat_fly dropped envelope note or telegraph pip")
+    elif "eta <= 0.4f" not in live_cs or "BuildSuperchatPip" not in live_cs:
+        fail("superchat_fly dropped 0.4s telegraph")
+    elif '"지금 수입"' not in live_cs or "ArtSprites.CashSlip" not in live_cs:
+        fail("superchat_fly dropped income chip")
+    elif "SuperchatIncome += note.SuperchatWon" not in session_cs:
+        fail("superchat_fly retuned session won income")
+    elif "StreamRules.SuperchatAmount(HypeActive, Rng, Balance)" not in session_cs:
+        fail("superchat_fly retuned amount path")
+    elif "superchatMinWon: 1000" not in balance or "superchatMaxWon: 6000" not in balance:
+        fail("superchat_fly retuned amounts")
+    elif "superchatMinCount: 8" not in balance or "superchatMaxCount: 10" not in balance:
+        fail("superchat_fly retuned spawn count")
+    elif "hypeSuperchatMultiplier" not in rules_cs or "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("superchat_fly retuned Week 1 economy / hype")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("superchat_fly broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising superchat_fly / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("superchat_fly dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("superchat_fly moved Unity off 6000.5.9f1")
+    elif "Art/superchat_fly" not in readme or "봉투" not in readme:
+        fail("README should mention superchat_fly envelope")
+    else:
+        ok("flying ₩ sits on superchat_fly envelope; path / pip / chip / sfx / values stay")
 
 
 def check_hype_sfx() -> None:
@@ -9340,6 +9414,8 @@ def check_readme_playable() -> None:
         fail("README dropped superchat_chip gold envelope")
     elif "superchat_pip" not in readme or "0.4" not in readme:
         fail("README dropped superchat_pip gold telegraph")
+    elif "superchat_fly" not in readme or "봉투" not in readme:
+        fail("README dropped superchat_fly ₩ envelope")
     elif "bill_cover" not in readme or "청구 커버" not in readme or "sfx_bill_cover" not in readme:
         fail("README dropped bill_cover PAID stamp")
     elif "bill_short" not in readme or "청구 미달" not in readme or "청구보다 부족" not in readme:
