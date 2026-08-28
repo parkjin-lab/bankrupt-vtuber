@@ -37,6 +37,8 @@ namespace BankruptVtuber
         Image _headlineClip;
         Image _dayTab;
         Text _dayHead;
+        Image _lastDayTab;
+        Text _lastDayWeek;
         Text _showLine;
         Image _showLineIcon;
         Image _showLineImg;
@@ -401,6 +403,17 @@ namespace BankruptVtuber
             UiKit.Layout(_extraWarnLine.rectTransform, new Vector2(0.06f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             UiKit.Wrap(_extraWarnLine);
             _extraWarn.gameObject.SetActive(false);
+
+            _lastDayTab = UiKit.Image(root, "SettleLastDayTab", Color.white);
+            UiKit.Layout(_lastDayTab.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(416, -12), new Vector2(176, 48));
+            ArtSprites.Apply(_lastDayTab, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _lastDayTab.preserveAspect = false;
+            _lastDayTab.raycastTarget = false;
+            _lastDayTab.gameObject.SetActive(false);
+            var lastTitle = UiKit.Label(_lastDayTab.transform, "SettleLastDayTitle", "마지막 날", 14, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(lastTitle.rectTransform, new Vector2(0f, 0.48f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -2f), new Vector2(-12f, 0f));
+            _lastDayWeek = UiKit.Label(_lastDayTab.transform, "SettleLastDayWeek", "1주차 마지막", 12, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_lastDayWeek.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0.52f), new Vector2(0.5f, 0f), new Vector2(0f, 2f), new Vector2(-12f, 0f));
 
             var recap = UiKit.Panel(root, "Recap", new Color(0, 0, 0, 0));
             UiKit.Layout(recap, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(20, -148), new Vector2(0, 190));
@@ -1260,6 +1273,11 @@ namespace BankruptVtuber
             var run = gm.Run;
             if (_dayHead != null)
                 _dayHead.text = run.day + "일차";
+            bool last = WeekSchedule.LastDayOfCurrentWeek(run) == run.day;
+            if (_lastDayTab != null)
+                _lastDayTab.gameObject.SetActive(last);
+            if (last && _lastDayWeek != null)
+                _lastDayWeek.text = WeekSchedule.WeekNumber(run) + "주차 마지막";
             var b = gm.Balance;
             var w2 = gm.Week2;
             var w3 = gm.Week3;

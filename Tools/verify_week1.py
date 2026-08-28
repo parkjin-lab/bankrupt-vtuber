@@ -1485,6 +1485,7 @@ def check_project() -> None:
     check_title_day_tab()
     check_title_last_day_tab()
     check_settle_day_tab()
+    check_settle_last_day_tab()
     check_start_pulse()
     check_continue_pulse()
     check_show_chip()
@@ -4923,6 +4924,117 @@ def check_settle_day_tab() -> None:
         fail("README should mention settlement day_tab")
     else:
         ok("Settlement n일차 sits on day_tab; leftover / bill_notice / content_plate / headline / nextday stay")
+
+
+def check_settle_last_day_tab() -> None:
+    """Settlement last-day / week-last sits on a second day_tab; other settlements stay tab-free."""
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    render = settle_cs.split("void Render()", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+    paint = settle_cs.split("void PaintShowLine", 1)[-1].split("void ApplyEndingOverlay", 1)[0]
+    pulse = settle_cs.split("void TickNextPulse", 1)[-1].split("static bool CanAdvance", 1)[0]
+    splash = settle_cs.split("void ApplyResultSplashes", 1)[-1].split("void ApplyHeadline", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    morning = week_cs.split('"LastDayBanner"', 1)[-1].split('"WavePanel"', 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
+    last_tab = build.split('"SettleLastDayTab"', 1)[-1].split('"Recap"', 1)[0] if '"SettleLastDayTab"' in build else ""
+
+    if 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif "ArtSprites.DayTab" not in week_cs or '"LastDayBanner"' not in week_cs:
+        fail("settlement last-day tab dropped morning last-day day_tab")
+    elif "ArtSprites.DayTab" not in morning or "ArtSprites.ThreatBanner" in morning:
+        fail("settlement last-day tab is not the same morning day_tab paper")
+    elif '"ContinueLastDayTab"' not in title_cs or "LastDayOfCurrentWeek" not in fill:
+        fail("settlement last-day tab dropped title continue last-day")
+    elif "ArtSprites.DayTab" not in last_tab or '"SettleLastDayTab"' not in build:
+        fail("Settlement last-day does not sit on Art/day_tab")
+    elif "ArtSprites.ThreatBanner" in last_tab:
+        fail("Settlement last-day is a ThreatBanner, not day_tab paper")
+    elif '"마지막 날"' not in last_tab or "주차 마지막" not in last_tab:
+        fail("Settlement last-day changed Korean copy")
+    elif "Palette.Gold" not in last_tab:
+        fail("Settlement last-day dropped the gold calendar read")
+    elif "SetActive(false)" not in last_tab:
+        fail("Settlement last-day is not hidden on a normal settlement")
+    elif "LastDayOfCurrentWeek" not in render or "SetActive(last)" not in render:
+        fail("Settlement last-day is not keyed off WeekSchedule last days")
+    elif "WeekNumber" not in render or "주차 마지막" not in render:
+        fail("Settlement last-day dropped n주차 마지막")
+    elif "Week1LastDay = 5" not in sched_cs or "Week2LastDay = 10" not in sched_cs:
+        fail("settlement last-day tab moved off days 5 / 10")
+    elif "Week3LastDay = 15" not in sched_cs or "Week4LastDay = 20" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("settlement last-day tab moved off days 15 / 20 / 25")
+    elif "ArtSprites.DayTab" not in build or '"SettleDayTab"' not in build:
+        fail("settlement last-day tab stole settlement n일차 day_tab")
+    elif "SettleDayHead" not in build or "run.day" not in render or '"일차"' not in render:
+        fail("settlement last-day tab dropped settlement n일차")
+    elif "run.day =" in settle_cs or "day += " in settle_cs or "day -= " in settle_cs:
+        fail("settlement last-day tab writes the day index")
+    elif "ApplyHeadline" not in settle_cs or "DayHeadline.Build" not in settle_cs:
+        fail("settlement last-day tab dropped headline")
+    elif "TickIncomeCount" not in settle_cs or "ShowShortfall" not in settle_cs or "청구 미달" not in settle_cs:
+        fail("settlement last-day tab dropped income count / 청구 미달")
+    elif "ArtSprites.BillNotice" not in settle_cs or "청구" not in settle_cs:
+        fail("settlement last-day tab dropped bill_notice")
+    elif "TickLeftCash" not in settle_cs or '"남은 현금"' not in settle_cs:
+        fail("settlement last-day tab dropped leftover cash")
+    elif "ArtSprites.MentalNote" not in settle_cs or "멘탈" not in settle_cs:
+        fail("settlement last-day tab dropped mental")
+    elif "ArtSprites.LetterCard" not in settle_cs or "답장하기" not in settle_cs:
+        fail("settlement last-day tab dropped fan letters")
+    elif "TickNextPulse" not in settle_cs or '"다음"' not in settle_cs or "1f + 0.03f" not in pulse:
+        fail("settlement last-day tab dropped nextday key")
+    elif "NextMorning()" not in settle_cs or "public void NextMorning()" not in gm:
+        fail("settlement last-day tab changed next-morning routing")
+    elif "ArtSprites.ContentPlate" not in paint or '"오늘 토크"' not in paint:
+        fail("settlement last-day tab dropped content_plate")
+    elif "PlaySettleSfx(_clearCue" not in splash or "PlaySettleSfx(_bankruptCue" not in splash:
+        fail("settlement last-day tab dropped clear / bankrupt stings")
+    elif "ArtSprites.EndingClear" not in settle_cs or "ArtSprites.EndingBankrupt" not in settle_cs:
+        fail("settlement last-day tab dropped clear / bankrupt splashes")
+    elif '"ClearDayTab"' not in settle_cs or '"StampDayTab"' not in settle_cs:
+        fail("settlement last-day tab dropped ending day_tab")
+    elif "LastDayOfCurrentWeek" not in week_cs or "RefreshLastDay" not in week_cs:
+        fail("settlement last-day tab dropped morning last-day refresh")
+    elif "_daySlam = 0.25f" not in week_cs or "TickGoLivePulse" not in week_cs:
+        fail("settlement last-day tab changed n일차 slam or GO LIVE pulse")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in live_cs:
+        fail("settlement last-day tab dropped concert live concert_stage")
+    elif "ArtSprites.JudgePerfect" not in slam:
+        fail("settlement last-day tab dropped Day-1 coach Perfect stamp")
+    elif "Audio/sfx_threat" not in live_cs or "PlayThreatSfx" not in live_cs:
+        fail("settlement last-day tab dropped live sfx_threat")
+    elif "lastStreamIncome =" in build or "PayoutIncome" in paint:
+        fail("settlement last-day tab writes payout")
+    elif "perfectWindow: 0.07" not in balance or "perfectWindow * " not in rules_cs:
+        fail("settlement last-day tab retuned hit windows")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("settlement last-day tab retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("settlement last-day tab retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("settlement last-day tab retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("settlement last-day tab broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising settlement last-day / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("settlement last-day tab dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("settlement last-day tab moved Unity off 6000.5.9f1")
+    else:
+        ok("settlement last-day sits on day_tab; other settlements stay quiet; copy / days stay")
 
 
 def check_start_pulse() -> None:
