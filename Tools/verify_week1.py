@@ -1556,6 +1556,7 @@ def check_project() -> None:
     check_readme_pad_dock()
     check_readme_note_lane()
     check_readme_note_lane_tint()
+    check_readme_coach_pad_dock()
     check_letter_card()
     check_letter_keycaps()
     check_pad_sfx()
@@ -9600,6 +9601,83 @@ def check_readme_note_lane_tint() -> None:
         fail("README note_lane tint moved Unity off 6000.5.9f1")
     else:
         ok("README names the four note_lane pad-color tints")
+
+
+def check_readme_coach_pad_dock() -> None:
+    """README names the Day-1 coach tray on the same pad_dock as the live pad row."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    live_loop = readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]
+    hud_stack = readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]
+    coach_loop = next((ln for ln in readme.splitlines() if "1일차 코치" in ln and "coach_card" in ln), "")
+    coach_inv = next((ln for ln in readme.splitlines() if "Art/coach_card" in ln and "스티키" in ln), "")
+    pad_inv = next((ln for ln in readme.splitlines() if "Art/pad_dock" in ln and "코치 트레이" in ln and "슈퍼챗" in ln), "")
+    legend = live_cs.split("RectTransform BuildCoachLegend", 1)[-1].split("void BuildSuperchatPip", 1)[0]
+    if "void BuildSuperchatPip" not in live_cs.split("RectTransform BuildCoachLegend", 1)[-1]:
+        legend = live_cs.split("RectTransform BuildCoachLegend", 1)[-1].split("static string CoachPrompt", 1)[0]
+    row = live_cs.split('UiKit.Panel(bottom, "PadRow"', 1)[-1].split("BuildSuperchatPip", 1)[0]
+    offer = session_cs.split("ShouldOfferFirstStreamCoach", 1)[-1].split("public void EnableFirstStreamCoach", 1)[0]
+
+    missing = next(
+        (
+            f"{label} {token}"
+            for label, block in (("live loop", live_loop), ("coach loop", coach_loop), ("coach inventory", coach_inv), ("live HUD", hud_stack))
+            for token in ("코치 트레이", "pad_dock")
+            if token not in block
+        ),
+        "",
+    )
+
+    if missing:
+        fail(f"README {missing} must name the Day-1 coach tray")
+    elif "라이브 패드 행" not in live_loop or "라이브 패드 행" not in coach_loop or "라이브 패드 행" not in coach_inv:
+        fail("README must say the coach tray matches the live pad row")
+    elif "pad_*" not in live_loop or "pad_*" not in coach_loop:
+        fail("README coach tray dropped pad_* keycaps")
+    elif "pad_dock" not in pad_inv or "코치 트레이" not in pad_inv:
+        fail("README pad inventory dropped the coach tray")
+    elif "ArtSprites.PadDock" not in legend or '"PadDock"' not in legend or "SetAsFirstSibling" not in legend:
+        fail("README coach tray lost the under-legend pad_dock hang")
+    elif "ArtSprites.PadDock" not in row or '"PadDock"' not in row:
+        fail("README coach tray dropped the live pad_dock tray")
+    elif "ArtSprites.PadLeft" not in legend or "ArtSprites.PadSuperchat" not in legend:
+        fail("README coach tray dropped pad_* legend art")
+    elif '"←"' not in legend or '"Space"' not in legend:
+        fail("README coach tray dropped arrow / Space bindings")
+    elif "ArtSprites.CoachCard" not in live_cs or '"CoachCard"' not in live_cs:
+        fail("README coach tray dropped coach_card")
+    elif "색에 맞는 키 또는 아래 버튼을 눌러" not in live_cs:
+        fail("README coach tray dropped the Korean hint")
+    elif "← 긍정" not in live_cs or "슈퍼챗 Space" not in live_cs:
+        fail("README coach tray changed kind / superchat teach copy")
+    elif "CoachSuccessTarget = 3" not in session_cs or "CoachSeconds = 8f" not in session_cs:
+        fail("README coach tray changed dismiss (3 / 8s)")
+    elif "day != 1" not in offer and "day == 1" not in offer:
+        fail("README coach tray is not Day-1 only")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("README coach tray retuned QTE windows")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("README coach tray retuned Judge scoring")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("README coach tray retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README coach tray broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising coach tray / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README coach tray dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README coach tray moved Unity off 6000.5.9f1")
+    elif 'PadDock = "Art/pad_dock"' not in art_cs:
+        fail("README coach tray lost ArtSprites.PadDock")
+    else:
+        ok("README names the Day-1 coach tray on the live pad_dock")
 
 
 def check_letter_card() -> None:
