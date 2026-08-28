@@ -64,7 +64,7 @@
 
 ## 지금 보이는 것 / 들리는 것
 
-방·책상 종이·라이브 HUD 스택·돈 스탬프·팝 슬립·스트림덱 키캡·카드/탭·스테이지 아트, 패드, 채팅 버블, 노트, 화면별 BGM(일반 라이브 `bgm_stream` / 콘서트 라이브 `bgm_concert`), 판정·이벤트·엔딩·중반 SFX, 콘텐츠 아이콘, 라이벌 얼굴, 굿즈/에이전시/랭킹/콘서트 아트가 이미 붙어 있다. 아래는 저장소에 있는 아트만 적는다(새로 만들지 않음).
+방·책상 종이·라이브 HUD 스택·돈 스탬프·팝 슬립·스트림덱 키캡·카드/탭·채팅 네임플레이트·스테이지 아트, 패드, 채팅 버블, 노트, 화면별 BGM(일반 라이브 `bgm_stream` / 콘서트 라이브 `bgm_concert`), 판정·이벤트·엔딩·중반 SFX, 콘텐츠 아이콘, 라이벌 얼굴, 굿즈/에이전시/랭킹/콘서트 아트가 이미 붙어 있다. 아래는 저장소에 있는 아트만 적는다(새로 만들지 않음).
 
 - **방** — `Art/title_studio` · `Art/title_wordmark`(타이틀 **「파산 버튜버」** 네온 로고) · `Art/morning_room` · `Art/settlement_desk` · `Art/stream_overlay` · `Art/ending_clear` / `Art/ending_bankrupt`
 - **스트림덱 키캡** — 메뉴·아침·정산 확인 버튼이 같은 키캡 패밀리로 읽힌다(펄스·칩·SFX·라우팅은 그대로).
@@ -95,7 +95,13 @@
   - **판정 스탬프** — `Art/judge_perfect`(**PERFECT**) · `Art/judge_good`(**GOOD**) · `Art/judge_miss`(**MISS**) · `Art/combo_break`(**콤보 끊김**, `sfx_combo_break`)
   - **노트 / 컷** — `Art/superchat_chip`(슈퍼챗 금 봉투) · `Art/superchat_pip`(0.4초 금 핍, `sfx_superchat`) · `Art/superchat_fly`(성공 ₩ 플라이 금 봉투) · `Art/won_pop`(히트 **+₩** 현금 슬립) · `Art/bill_cover`(**청구 커버** PAID 스탬프, `sfx_bill_cover`) · `Art/bill_short`(타이틀·아침 **청구보다 부족** / 정산 **청구 미달** 빨간 스탬프) · `Art/end_cut`(**방송 종료**, `sfx_end_cut`)
   - **피크 / 사고** — `Art/hype_frame`(하이프 골드 프레임, `sfx_hype`) · `Art/hype_chip`(**하이프 N**) · `Art/event_warn`(**안티 온다** / **렉 온다**) · `Art/anti_sting`(`sfx_anti`) · `Art/lag_sting`(`sfx_lag`)
-- **패드 / 채팅 / 노트** — `Art/pad_*`(라이브 키캡) · 위 **스트림덱 키캡**(`title_start` / `title_continue` / `golive_key` / `nextday_key`) · `Art/chat_bubble` · `Art/chat_nick`(일반 채팅 닉 네임플레이트) · `Art/chat_troll`(트롤 닉 빨간 네임플레이트) · `Art/chat_super`(슈퍼챗 닉 금 네임플레이트) · `Art/note_chip` · `Art/superchat_chip` 금 봉투 · `Art/hit_rail` · leftover HUD `Art/hype_chip`(**하이프 N**) · `Art/superchat_fly`(성공 ₩ 플라이 금 봉투)
+- **패드 / 채팅 / 노트** — 라이브 키캡·버블·닉 네임플레이트가 이미 붙어 있다(스폰·카탈로그·경제 숫자는 그대로).
+  - `Art/pad_*` — 라이브 키캡 (←파랑 / ↓초록 / →트롤 / ↑골드 / 슈퍼챗 골드). 위 **스트림덱 키캡**(`title_start` / `title_continue` / `golive_key` / `nextday_key`)
+  - `Art/chat_bubble` — 일반 채팅 다크 필(흰 글칸)
+  - `Art/chat_nick` — 일반 채팅 닉 분홍 네임플레이트
+  - `Art/chat_troll` — 트롤/안티 닉 빨간 네임플레이트
+  - `Art/chat_super` — 슈퍼챗 닉 금 네임플레이트 (봉투·플라이·핍·`sfx_superchat` 그대로)
+  - `Art/note_chip` · `Art/superchat_chip` 금 봉투 · `Art/hit_rail` · leftover HUD `Art/hype_chip`(**하이프 N**) · `Art/superchat_fly`(성공 ₩ 플라이 금 봉투)
 - **얼굴 / 아이콘** — `Art/pasan_nyang` · `Art/rival_nyang` · `Art/content_*`(토크/게임/노래/리액션 아이콘. 픽 카드는 위 **카드 / 탭** `content_plate`)
 - **주차 카드** — `Art/goods_stand` · `Art/agency_card` · `Art/sponsor_card` · `Art/ranking_board` · `Art/concert_stage` · `Art/letter_card`(팬레터 종이. 답장/나중이는 위 **카드 / 탭** `letter_reply` / `letter_ignore`) · `Art/membership_card` · `Art/clip_card`
 - **BGM** — Title `Audio/bgm_title` · 아침 `Audio/bgm_morning` · 라이브 `Audio/bgm_stream` · 콘서트 라이브만 `Audio/bgm_concert`(일반 라이브는 `bgm_stream` 유지) · 정산 `Audio/bgm_settlement` (각 화면에서 떠나면 0.2초 페이드)

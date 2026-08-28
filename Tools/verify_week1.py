@@ -10220,6 +10220,15 @@ def check_readme_playable() -> None:
         fail("README dropped chat_troll red nameplate")
     elif "chat_super" not in readme or "슈퍼챗" not in readme:
         fail("README dropped chat_super gold nameplate")
+    elif "채팅 네임플레이트" not in readme:
+        fail("README does not inventory chat nameplates")
+    elif (
+        "chat_nick" not in readme
+        or "chat_troll" not in readme
+        or "chat_super" not in readme
+        or "title_wordmark" not in readme
+    ):
+        fail("README plate inventory dropped chat_nick / chat_troll / chat_super / title_wordmark")
     elif "content_plate" not in readme or "콘텐츠" not in readme:
         fail("README dropped content_plate stream card plate")
     elif (
@@ -10228,8 +10237,9 @@ def check_readme_playable() -> None:
         or "letter_ignore" not in readme
         or "newgame_card" not in readme
         or "day_tab" not in readme
+        or "title_wordmark" not in readme
     ):
-        fail("README card/tab inventory dropped content_plate / letter keys / newgame_card / day_tab")
+        fail("README card/tab inventory dropped content_plate / letter keys / newgame_card / day_tab / title_wordmark")
     elif "rival_nyang" not in readme or "goods_stand" not in readme or "agency_card" not in readme:
         fail("README dropped rival / goods / agency art")
     elif "ranking_board" not in readme or "concert_stage" not in readme:
@@ -10323,7 +10333,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
