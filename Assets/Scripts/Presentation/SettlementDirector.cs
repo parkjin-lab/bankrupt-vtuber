@@ -43,6 +43,7 @@ namespace BankruptVtuber
         Image _weekStartTab;
         Text _weekStartLabel;
         Image _weekStartHeadline;
+        Image _lastDayHeadline;
         Text _lastDayWeek;
         Text _showLine;
         Image _showLineIcon;
@@ -549,6 +550,14 @@ namespace BankruptVtuber
             var day1HeadT = UiKit.Label(_day1Headline.transform, "T", "헤드라인", 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(day1HeadT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _day1Headline.gameObject.SetActive(false);
+            _lastDayHeadline = UiKit.Image(root, "SettleLastHeadline", Color.white);
+            UiKit.Layout(_lastDayHeadline.rectTransform, new Vector2(0.80f, 1f), new Vector2(0.80f, 1f), new Vector2(0f, 1f), new Vector2(8f, -212f), new Vector2(228f, 92f));
+            ArtSprites.Apply(_lastDayHeadline, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
+            _lastDayHeadline.preserveAspect = true;
+            _lastDayHeadline.raycastTarget = false;
+            var lastHeadT = UiKit.Label(_lastDayHeadline.transform, "T", "헤드라인", 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(lastHeadT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _lastDayHeadline.gameObject.SetActive(false);
 
             var panel = UiKit.Panel(root, "Sheet", Color.white);
             UiKit.Layout(panel, new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(980, 200));
@@ -1365,6 +1374,8 @@ namespace BankruptVtuber
             bool last = WeekSchedule.LastDayOfCurrentWeek(run) == run.day;
             if (_lastDayTab != null)
                 _lastDayTab.gameObject.SetActive(last);
+            if (_lastDayHeadline != null)
+                _lastDayHeadline.gameObject.SetActive(last);
             if (last && _lastDayWeek != null)
                 _lastDayWeek.text = WeekSchedule.WeekNumber(run) + "주차 마지막";
             var b = gm.Balance;
