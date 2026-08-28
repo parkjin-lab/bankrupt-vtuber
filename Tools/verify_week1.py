@@ -1626,6 +1626,7 @@ def check_project() -> None:
     check_readme_both_threat_sfx()
     check_readme_title_threat_sfx()
     check_readme_live_threat_sfx()
+    check_readme_title_newgame_threat_sfx()
     check_letter_card()
     check_letter_keycaps()
     check_pad_sfx()
@@ -19734,6 +19735,106 @@ def check_readme_live_threat_sfx() -> None:
         fail("README live sfx_threat moved Unity off 6000.5.9f1")
     else:
         ok("README names all four sfx_threat uses (morning / settlement / title continue / live GO LIVE)")
+
+
+def check_readme_title_newgame_threat_sfx() -> None:
+    """README names all five sfx_threat uses, including the no-save NewGameBill slam."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    extra_cs = (ROOT / "Assets/Scripts/Data/ExtraThreat.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    title_loop = readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]
+    morning = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    live_loop = readme.split("위협 오버레이", 1)[-1].split("정산:", 1)[0]
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    hud = next((ln for ln in readme.splitlines() if "피크 / 사고" in ln and "event_warn" in ln), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 청구서**")), "")
+    cash_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 현금**")), "")
+    mental_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 멘탈**")), "")
+    awake = title_cs.split("void Awake()", 1)[-1].split("void OnDestroy()", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    shot = title_cs.split("void PlayNewGameBillThreat", 1)[-1].split("void PlayThreatSfx", 1)[0]
+    spawn = week_cs.split("void SpawnIncoming", 1)[-1].split("IEnumerator Slam", 1)[0]
+    bind = settle_cs.split("void BindExtraWarn", 1)[-1].split("void ApplyHeadline", 1)[0]
+    apply = live_cs.split("void ApplyThreatShow", 1)[-1].split("void AddThreatBadge", 1)[0]
+
+    if "새 게임 청구서" not in title_loop or "NewGameBill" not in title_loop or "sfx_threat" not in title_loop:
+        fail("README title loop must name 새 게임 청구서 sfx_threat")
+    elif "한 번" not in title_loop or "겹치지 않음" not in title_loop:
+        fail("README title loop must name the new-game bill sting once vs continue")
+    elif "스팅 없음" not in title_loop or "이어서 하기" not in title_loop:
+        fail("README title loop dropped continue-threat hide / 스팅 없음")
+    elif "새 게임 멘탈" not in title_loop or "NewGameMental" not in title_loop:
+        fail("README title loop dropped 새 게임 멘탈")
+    elif "새 게임 현금" not in title_loop or "NewGameCash" not in title_loop:
+        fail("README title loop dropped 새 게임 현금")
+    elif "새 게임 청구서" not in bill_inv or "sfx_threat" not in bill_inv or "한 번" not in bill_inv:
+        fail("README must inventory 새 게임 청구서 sfx_threat once")
+    elif "겹치지 않음" not in bill_inv or "ContinueDebtNotice" not in bill_inv:
+        fail("README 새 게임 청구서 line must stay distinct from continue threat")
+    elif sfx_inv.count("sfx_threat") < 5:
+        fail("README SFX inventory must name all five sfx_threat uses")
+    elif (
+        "오늘의 위협" not in sfx_inv
+        or "정산 추가 위협" not in sfx_inv
+        or "이어서 하기" not in sfx_inv
+        or "방송 켜기" not in sfx_inv
+        or "새 게임 청구서" not in sfx_inv
+    ):
+        fail("README SFX inventory must name morning / settlement / title continue / live GO LIVE / new-game bill")
+    elif "오늘의 위협" not in morning or "sfx_threat" not in morning or "한 번" not in morning:
+        fail("README new-game bill sting dropped morning 오늘의 위협")
+    elif "새 게임 청구서" in morning or "NewGameBill" in morning:
+        fail("README hung new-game bill sting on the morning slam")
+    elif "sfx_threat" not in settle_loop or "한 번" not in settle_loop:
+        fail("README new-game bill sting dropped settlement threat")
+    elif "새 게임 청구서" in settle_loop or "NewGameBill" in settle_loop:
+        fail("README hung new-game bill sting on the settlement plate")
+    elif "방송 켜기" not in live_loop or "sfx_threat" not in live_loop:
+        fail("README new-game bill sting dropped live GO LIVE threat")
+    elif "새 게임 청구서" in live_loop or "NewGameBill" in hud:
+        fail("README hung new-game bill sting on the event_warn plate")
+    elif "오늘의 위협" not in hud or "이어서 하기" not in hud or "방송 켜기" not in hud:
+        fail("README new-game bill sting rewrote the four event_warn sfx_threat uses")
+    elif "NewGameCash" not in cash_inv or "ContinueCashSlip" not in cash_inv or "새 게임 청구서" not in cash_inv:
+        fail("README new-game bill sting rewrote the 새 게임 현금 line")
+    elif "NewGameMental" not in mental_inv or "ContinueMentalNote" not in mental_inv or "엔딩 멘탈" not in mental_inv:
+        fail("README new-game bill sting rewrote the 새 게임 멘탈 line")
+    elif "PlayNewGameBillThreat();" not in awake or awake.find("RefreshContinue();") > awake.find("PlayNewGameBillThreat();"):
+        fail("README new-game bill sting lost the Title open slam")
+    elif "if (_hasSave" not in shot or "PlayThreatSfx();" not in shot or shot.count("PlayThreatSfx();") != 1:
+        fail("README new-game bill sting is not a single shot with NewGameBill")
+    elif "PlayThreatSfx" in hide or "PlayNewGameBillThreat" in hide:
+        fail("README new-game bill sting double-fires from continue RefreshContinue")
+    elif "PlayThreatSfx();" not in fill or "if (extraOn)" not in fill:
+        fail("README new-game bill sting dropped the continue extra-threat shot")
+    elif "PlayThreatSfx();" not in spawn or "PlayThreatSfx();" not in bind or "PlayThreatSfx();" not in apply:
+        fail("README new-game bill sting dropped morning / settlement / live shots")
+    elif "장비 고장" not in extra_cs or "라이벌 견제" not in extra_cs:
+        fail("README new-game bill sting retuned extra threat names")
+    elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
+        fail("README new-game bill sting retuned live 안티 온다 / 렉 온다")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README new-game bill sting retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README new-game bill sting retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README new-game bill sting retuned week-clear gates")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising README new-game bill sting / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README new-game bill sting dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README new-game bill sting moved Unity off 6000.5.9f1")
+    else:
+        ok("README names all five sfx_threat uses (morning / settlement / title continue / live GO LIVE / new-game bill)")
 
 
 def check_letter_card() -> None:
