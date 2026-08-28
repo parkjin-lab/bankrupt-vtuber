@@ -1550,6 +1550,7 @@ def check_project() -> None:
     check_readme_morning_event_warn()
     check_readme_event_warn()
     check_readme_chat_dock()
+    check_readme_pad_dock()
     check_letter_card()
     check_letter_keycaps()
     check_pad_sfx()
@@ -9257,6 +9258,65 @@ def check_readme_chat_dock() -> None:
         ok("README Live HUD names chat_dock behind bubbles and nick plates")
 
 
+def check_readme_pad_dock() -> None:
+    """README Live HUD names pad_dock under kind + superchat pads."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    pad_cs = (ROOT / "Assets/Scripts/Input/StreamPadButton.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    live_loop = readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]
+    hud_stack = readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]
+    dock_inv = next((ln for ln in hud_stack.splitlines() if "Art/pad_dock" in ln), "")
+    pad_inv = next((ln for ln in readme.splitlines() if "Art/pad_dock" in ln and "트레이" in ln and "슈퍼챗" in ln), "")
+    row = live_cs.split('UiKit.Panel(bottom, "PadRow"', 1)[-1].split("BuildSuperchatPip", 1)[0]
+
+    missing = next(
+        (
+            f"{label} {token}"
+            for label, block in (("live loop", live_loop), ("live HUD", hud_stack), ("pad_dock", dock_inv))
+            for token in ("pad_dock", "pad_*")
+            if token not in block
+        ),
+        "",
+    )
+
+    if missing:
+        fail(f"README {missing} must name pad_dock under the pad row")
+    elif "패드 트레이" not in hud_stack or "키캡 뒤" not in dock_inv:
+        fail("README Live HUD dropped 패드 트레이 behind keycaps")
+    elif "슈퍼챗" not in dock_inv and "슈퍼챗" not in hud_stack:
+        fail("README Live HUD pad_dock dropped superchat pads")
+    elif "pad_dock" not in pad_inv or "트레이" not in pad_inv:
+        fail("README pad inventory dropped pad_dock stream-deck tray")
+    elif "채팅 독" not in hud_stack or "chat_dock" not in hud_stack:
+        fail("README Live HUD dropped chat_dock while naming pad_dock")
+    elif 'PadDock = "Art/pad_dock"' not in art_cs or "ArtSprites.PadDock" not in row:
+        fail("README pad_dock lost the live PadDock plate")
+    elif "SetAsFirstSibling" not in row or '"PadDock"' not in row:
+        fail("README pad_dock lost the behind-row hang")
+    elif "ArtSprites.PadLeft" not in live_cs or "ArtSprites.PadSuperchat" not in live_cs:
+        fail("README pad_dock lost pad_* keycaps")
+    elif "_flash = 0.08f" not in pad_cs or "Audio/sfx_pad" not in live_cs:
+        fail("README pad_dock dropped press flash / sfx_pad")
+    elif "CoachCard" not in live_cs or "ArtSprites.CoachCard" not in live_cs:
+        fail("README pad_dock dropped Day-1 coach")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("README pad_dock retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README pad_dock broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising pad_dock / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README pad_dock dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README pad_dock moved Unity off 6000.5.9f1")
+    else:
+        ok("README Live HUD names pad_dock under kind + superchat pads")
+
+
 def check_letter_card() -> None:
     import struct
 
@@ -12632,6 +12692,8 @@ def check_readme_playable() -> None:
         fail("README does not keep the live HUD stack list")
     elif "chat_dock" not in readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]:
         fail("README Live HUD stack dropped chat_dock")
+    elif "pad_dock" not in readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]:
+        fail("README Live HUD stack dropped pad_dock")
     elif "돈 스탬프" not in readme or "팝 슬립" not in readme:
         fail("README does not inventory money stamps / pop slips")
     elif (
