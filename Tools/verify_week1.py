@@ -8975,7 +8975,7 @@ def check_readme_morning_event_warn() -> None:
 
 
 def check_readme_event_warn() -> None:
-    """README names the three event_warn uses: live, morning, settlement hide-if-none."""
+    """README names the four event_warn uses: live, morning, settlement, title continue."""
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
     live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
@@ -8988,9 +8988,11 @@ def check_readme_event_warn() -> None:
     live_loop = readme.split("위협 오버레이", 1)[-1].split("정산:", 1)[0]
     morning = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
     settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    title_loop = readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]
     warn_inv = next((ln for ln in readme.splitlines() if "Art/event_warn" in ln and "피크" in ln), "")
     spawn = week_cs.split("void SpawnIncoming", 1)[-1].split("IEnumerator Slam", 1)[0]
     bind = settle_cs.split("void BindExtraWarn", 1)[-1].split("void ApplyHeadline", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
 
     missing = next(
         (
@@ -9010,11 +9012,15 @@ def check_readme_event_warn() -> None:
     )
 
     if missing:
-        fail(f"README {missing} must name the three event_warn uses")
+        fail(f"README {missing} must name the four event_warn uses")
     elif "아침 경고" not in live_loop or "아침 경고" not in morning or "아침 경고" not in warn_inv:
         fail("README event_warn stack dropped 아침 경고")
     elif "정산" not in live_loop or "정산" not in warn_inv:
         fail("README event_warn stack dropped settlement extra-threat")
+    elif "이어서 하기" not in live_loop or "이어서 하기" not in warn_inv or "이어서 하기" not in title_loop:
+        fail("README event_warn stack dropped title continue extra-threat")
+    elif "이벤트 경고" not in title_loop or "event_warn" not in title_loop or "없으면 숨김" not in title_loop:
+        fail("README title loop dropped 이벤트 경고 continue plate hide")
     elif "ArtSprites.EventWarn" not in live_cs or "EventWarnBox" not in live_cs:
         fail("README event_warn lost the live 안티 온다 / 렉 온다 plate")
     elif "ArtSprites.EventWarn" not in spawn or '"오늘의 위협"' not in spawn:
@@ -9023,6 +9029,10 @@ def check_readme_event_warn() -> None:
         fail("README event_warn lost the settlement extra-threat plate")
     elif "SetActive(on)" not in bind or "IsNullOrWhiteSpace(extras)" not in bind:
         fail("README event_warn dropped settlement hide-if-none")
+    elif "ArtSprites.EventWarn" not in title_cs or '"ContinueWarn"' not in title_cs:
+        fail("README event_warn lost the title continue extra-threat plate")
+    elif "extraRolls" not in fill or "SetActive(extraOn)" not in fill:
+        fail("README event_warn dropped title continue hide-if-none")
     elif "장비 고장" not in extra_cs or "라이벌 견제" not in extra_cs:
         fail("README event_warn retuned extra threat names")
     elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
@@ -9033,12 +9043,14 @@ def check_readme_event_warn() -> None:
         fail("README event_warn broke pads, 입력됨, or added timeScale")
     elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
         fail("Title started advertising event_warn / later weeks")
+    elif "Week3" in title_cs or "라이벌" in title_cs:
+        fail("Title started advertising Week3 / 라이벌")
     elif "defaultScreenOrientation: 0" not in player:
         fail("README event_warn dropped the Android Portrait lock")
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README event_warn moved Unity off 6000.5.9f1")
     else:
-        ok("README names 이벤트 경고 (live 안티/렉 + morning 오늘의 위협 + settle hide-if-none)")
+        ok("README names 이벤트 경고 (live 안티/렉 + morning 오늘의 위협 + settle hide-if-none + title continue)")
 
 
 def check_letter_card() -> None:
@@ -12500,8 +12512,10 @@ def check_readme_playable() -> None:
         fail("README morning dropped 아침 경고 event_warn reuse")
     elif "event_warn" not in readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0] or "없으면 숨김" not in readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]:
         fail("README settlement dropped extra-threat event_warn")
-    elif "이벤트 경고" not in readme.split("위협 오버레이", 1)[-1].split("정산:", 1)[0]:
-        fail("README dropped 이벤트 경고 live/morning/settle stack")
+    elif "이벤트 경고" not in readme.split("위협 오버레이", 1)[-1].split("정산:", 1)[0] or "이어서 하기" not in readme.split("위협 오버레이", 1)[-1].split("정산:", 1)[0]:
+        fail("README dropped 이벤트 경고 live/morning/settle/continue stack")
+    elif "이벤트 경고" not in readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]:
+        fail("README title loop dropped 이벤트 경고 continue plate")
     elif "anti_sting" not in readme or "lag_sting" not in readme or "sfx_lag" not in readme:
         fail("README dropped anti_sting / lag_sting overlays")
     elif "viewer_badge" not in readme or "시청자" not in readme or ("시청 +" not in readme and "시청 ±" not in readme):
