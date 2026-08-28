@@ -1536,6 +1536,7 @@ def check_project() -> None:
     check_readme_ending_stamps()
     check_ending_headline_clip()
     check_ending_day_tab()
+    check_readme_ending_clip_tab()
     check_letter_card()
     check_letter_keycaps()
     check_pad_sfx()
@@ -8461,6 +8462,53 @@ def check_ending_day_tab() -> None:
         ok("clear / bankrupt n일차 sit on day_tab; desk paper / stamps / clip / sfx / rules stay")
 
 
+def check_readme_ending_clip_tab() -> None:
+    """README names lastHeadline on headline_clip and n일차 on day_tab as the ending pair."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    desk_paper = readme.split("- **책상 종이**", 1)[-1].split("- **돈 스탬프", 1)[0]
+    card_tabs = readme.split("- **카드 / 탭**", 1)[-1].split("- **책상 종이**", 1)[0]
+    day_line = next((ln for ln in card_tabs.splitlines() if "Art/day_tab" in ln), "")
+    clip_line = next((ln for ln in desk_paper.splitlines() if "Art/headline_clip" in ln), "")
+    splash = settle_cs.split("void ApplyResultSplashes", 1)[-1].split("void ApplyHeadline", 1)[0]
+
+    if "엔딩 클립·탭" not in settle_loop:
+        fail("README loop does not name the ending clip / day-tab pair")
+    elif "headline_clip" not in settle_loop or "lastHeadline" not in settle_loop or "없으면 숨김" not in settle_loop:
+        fail("README loop does not name ending lastHeadline on headline_clip (hide if empty)")
+    elif "day_tab" not in settle_loop or "일차" not in settle_loop:
+        fail("README loop does not name ending n일차 on day_tab")
+    elif "엔딩 스탬프" not in settle_loop or "cash_slip" not in settle_loop:
+        fail("README ending clip / tab dropped desk paper or ending stamps")
+    elif "엔딩 탭" not in day_line or "일차" not in day_line:
+        fail("README day_tab inventory must name 엔딩 탭 n일차")
+    elif "엔딩 클립" not in clip_line or "lastHeadline" not in clip_line:
+        fail("README headline_clip inventory must name 엔딩 클립 lastHeadline")
+    elif "ApplyEndingHeadline" not in settle_cs or "ApplyEndingDay" not in settle_cs:
+        fail("README ending clip / tab lost ApplyEndingHeadline / ApplyEndingDay")
+    elif "PlaySettleSfx(_clearCue" not in splash or "PlaySettleSfx(_bankruptCue" not in splash:
+        fail("README ending clip / tab dropped sfx_clear / sfx_bankrupt")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README ending clip / tab retuned Week 1 economy / bankrupt line")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README ending clip / tab retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README ending clip / tab broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising ending clip / tab / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README ending clip / tab dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README ending clip / tab moved Unity off 6000.5.9f1")
+    else:
+        ok("README names ending lastHeadline clip and n일차 day tab; stamps / desk paper / numbers stay")
+
+
 def check_letter_card() -> None:
     import struct
 
@@ -11530,7 +11578,7 @@ def check_readme_playable() -> None:
         or "숨김" not in day_inv
     ):
         fail("README Cards / Tabs must name day_tab morning, title continue hide-no-save, and settlement n일차")
-    elif "클리어" not in day_inv or "파산" not in day_inv:
+    elif "클리어" not in day_inv or "파산" not in day_inv or "엔딩 탭" not in day_inv:
         fail("README Cards / Tabs dropped ending day_tab n일차")
     elif "title_wordmark" not in readme or "파산 버튜버" not in readme:
         fail("README dropped title_wordmark neon logo")
@@ -11625,7 +11673,13 @@ def check_readme_playable() -> None:
         fail("README money-stamp inventory dropped bill_cover / bill_bar / won_pop / viewer_pop / bill_short")
     elif "headline_clip" not in readme or "오늘 헤드라인" not in readme or "어제:" not in readme or "이어서 하기" not in readme:
         fail("README dropped headline scrap on settlement / morning / title continue")
-    elif "headline_clip" not in readme or "lastHeadline" not in readme or "클리어" not in readme or "파산" not in readme:
+    elif (
+        "headline_clip" not in readme
+        or "lastHeadline" not in readme
+        or "클리어" not in readme
+        or "파산" not in readme
+        or "엔딩 클립" not in readme
+    ):
         fail("README dropped ending headline_clip on clear / bankrupt lastHeadline")
     elif "cash_slip" not in readme or "남은 현금" not in readme or "이어서 하기" not in readme or "지금 수입" not in readme or "오늘 수입" not in readme:
         fail("README dropped cash_slip on leftover / title / live / settlement income")
@@ -11667,8 +11721,12 @@ def check_readme_playable() -> None:
         or "파산은 숨김" not in settle_loop
         or "엔딩 스탬프" not in settle_loop
         or "PAID" not in settle_loop
+        or "엔딩 클립·탭" not in settle_loop
+        or "headline_clip" not in settle_loop
+        or "day_tab" not in settle_loop
+        or "lastHeadline" not in settle_loop
     ):
-        fail("README loop does not name ending desk paper or both ending stamps")
+        fail("README loop does not name ending desk paper, stamps, clip, or day tab")
     elif "bill_short" not in desk_paper or "클리어는 숨김" not in desk_paper or "파산" not in desk_paper:
         fail("README desk paper dropped bankrupt bill_short hide-on-clear")
     elif "bill_cover" not in desk_paper or "PAID" not in desk_paper or "파산은 숨김" not in desk_paper:
@@ -11744,7 +11802,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names ending desk paper + ending stamps + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names ending desk paper + stamps + clip + day tab + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
