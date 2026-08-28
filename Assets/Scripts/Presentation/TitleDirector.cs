@@ -32,6 +32,8 @@ namespace BankruptVtuber
         Image _continueDebtNotice;
         Image _continueMentalNote;
         Text _continueMental;
+        Image _continueWarn;
+        Text _continueWarnLine;
         Text _wordmark;
         RectTransform _wordmarkPlate;
         Button _how;
@@ -245,6 +247,15 @@ namespace BankruptVtuber
             UiKit.Layout(_continueHead.rectTransform, new Vector2(0.07f, 0.14f), new Vector2(0.93f, 0.86f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             UiKit.Wrap(_continueHead);
             _continueClip.gameObject.SetActive(false);
+            _continueWarn = UiKit.Image(titleParent, "ContinueWarn", Color.white);
+            UiKit.Layout(_continueWarn.rectTransform, new Vector2(0, 0.52f), new Vector2(0, 0.52f), new Vector2(0, 0.5f), new Vector2(488, -286), new Vector2(380, 52));
+            ArtSprites.Apply(_continueWarn, ArtSprites.EventWarn, new Color(0.58f, 0.08f, 0.16f, 0.94f), Color.white);
+            _continueWarn.preserveAspect = false;
+            _continueWarn.raycastTarget = false;
+            _continueWarnLine = UiKit.Label(_continueWarn.transform, "ContinueWarnLine", "", 15, Color.white, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_continueWarnLine.rectTransform, new Vector2(0.06f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            UiKit.Wrap(_continueWarnLine);
+            _continueWarn.gameObject.SetActive(false);
             _continue.gameObject.SetActive(false);
             _how = UiKit.Button(titleParent, "HowTo", "조작 설명", OpenHowTo, Palette.StudioHi, Palette.Pastel);
             StyleMenuButton(_how, new Vector2(56, -224), new Vector2(420, 70), Palette.StudioHi);
@@ -412,6 +423,8 @@ namespace BankruptVtuber
                 _continueDayTab.gameObject.SetActive(_hasSave);
             if (_continueClip != null)
                 _continueClip.gameObject.SetActive(hasHead);
+            if (!_hasSave && _continueWarn != null)
+                _continueWarn.gameObject.SetActive(false);
             var caption = _start.transform.Find("Caption") != null
                 ? _start.transform.Find("Caption").GetComponent<Text>()
                 : null;
@@ -468,6 +481,19 @@ namespace BankruptVtuber
                 _continueHead.text = hasHead ? "어제: " + peek.lastHeadline : "";
                 _continueHead.gameObject.SetActive(hasHead);
             }
+            string extras = "";
+            if (peek.extraRolls != null && peek.extraRolls.Count > 0)
+            {
+                for (int i = 0; i < peek.extraRolls.Count; i++)
+                    extras += $"위협 {peek.extraRolls[i].DisplayName,-10} -{EconomyRules.FormatWon(peek.extraRolls[i].Amount)}\n";
+            }
+            else if (peek.extraThreatAmount > 0)
+                extras = $"위협 {peek.extraThreatName,-10} -{EconomyRules.FormatWon(peek.extraThreatAmount)}\n";
+            bool extraOn = !string.IsNullOrWhiteSpace(extras);
+            if (_continueWarnLine != null)
+                _continueWarnLine.text = extraOn ? extras.Trim() : "";
+            if (_continueWarn != null)
+                _continueWarn.gameObject.SetActive(extraOn);
         }
 
         void OpenWipe()

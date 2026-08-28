@@ -1578,6 +1578,7 @@ def check_project() -> None:
     check_event_warn_plate()
     check_morning_event_warn()
     check_settle_event_warn()
+    check_title_event_warn()
     check_event_sting_overlays()
     check_mental_sfx()
     check_week2_card_art()
@@ -11536,6 +11537,76 @@ def check_settle_event_warn() -> None:
         fail("README dropped morning event_warn reuse while naming settlement")
     else:
         ok("settlement extra-threat line sits on event_warn; hide-if-none / morning / live / numbers stay")
+
+
+def check_title_event_warn() -> None:
+    """Title continue shows event_warn only when the save has today's extra threat."""
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    save_cs = (ROOT / "Assets/Scripts/Core/RunSave.cs").read_text(encoding="utf-8")
+    extra_cs = (ROOT / "Assets/Scripts/Data/ExtraThreat.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    title_loop = readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]
+    warn_inv = next((ln for ln in readme.splitlines() if "Art/event_warn" in ln and "피크" in ln), "")
+    spawn = week_cs.split("void SpawnIncoming", 1)[-1].split("IEnumerator Slam", 1)[0]
+
+    if 'EventWarn = "Art/event_warn"' not in art_cs:
+        fail("ArtSprites does not hook Art/event_warn")
+    elif "ArtSprites.EventWarn" not in live_cs or "EventWarnBox" not in live_cs:
+        fail("title event_warn reuse dropped the live warning plate")
+    elif "ArtSprites.EventWarn" not in spawn:
+        fail("title event_warn reuse dropped the morning extra-threat slam")
+    elif "ArtSprites.EventWarn" not in settle_cs or "BindExtraWarn" not in settle_cs:
+        fail("title event_warn reuse dropped the settlement extra-threat plate")
+    elif "ArtSprites.EventWarn" not in build or '"ContinueWarn"' not in build or '"ContinueWarnLine"' not in build:
+        fail("Title continue does not hang event_warn for a saved extra threat")
+    elif "extraRolls" not in fill or "extraThreatAmount" not in fill or "extraThreatName" not in fill:
+        fail("Title continue event_warn does not read the saved extra threat")
+    elif 'extras += $"위협 ' not in fill or "FormatWon" not in fill:
+        fail("Title continue event_warn dropped 위협 name / amount copy")
+    elif "SetActive(extraOn)" not in fill or "IsNullOrWhiteSpace(extras)" not in fill:
+        fail("Title continue event_warn does not hide when the save has no extra threat")
+    elif "_continueWarn" not in hide or "SetActive(false)" not in hide:
+        fail("Title continue event_warn does not hide without a save")
+    elif "extraThreatRolled =" in title_cs or "extraThreatAmount =" in title_cs:
+        fail("Title continue event_warn writes extra-threat save fields")
+    elif "public bool extraThreatRolled" not in save_cs or "extraThreatName" not in save_cs:
+        fail("title event_warn changed the save extra-threat format")
+    elif "ContinueDayTab" not in title_cs or "ContinueCashSlip" not in title_cs or "ContinueShortStamp" not in title_cs:
+        fail("title event_warn dropped day_tab / cash / bill_short")
+    elif "ContinueDebtNotice" not in title_cs or "ContinueMentalNote" not in title_cs or "ContinueClip" not in title_cs:
+        fail("title event_warn dropped debt / mental / headline")
+    elif "장비 고장" not in extra_cs or "id = \"gear_break\"" not in extra_cs or "minWon = 7000" not in extra_cs:
+        fail("title event_warn retuned extra threat names / table")
+    elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
+        fail("title event_warn retuned live 안티 온다 / 렉 온다")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("title event_warn retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("title event_warn broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising title event_warn / later weeks")
+    elif "Week3" in title_cs or "라이벌" in title_cs:
+        fail("Title started advertising Week3 / 라이벌")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("title event_warn dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("title event_warn moved Unity off 6000.5.9f1")
+    elif "event_warn" not in title_loop or "이어서 하기" not in title_loop or "숨김" not in title_loop:
+        fail("README title loop does not name continue event_warn hide")
+    elif "이어서 하기" not in warn_inv or "event_warn" not in warn_inv:
+        fail("README event_warn inventory dropped 이어서 하기 extra threat")
+    else:
+        ok("title continue shows event_warn only for a saved extra threat; cash / desk / numbers stay")
 
 
 def check_event_sting_overlays() -> None:
