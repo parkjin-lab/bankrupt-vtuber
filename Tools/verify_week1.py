@@ -1551,6 +1551,7 @@ def check_project() -> None:
     check_concert_book_plate()
     check_goods_card_plate()
     check_concert_result_plate()
+    check_membership_live_badge()
     check_morning_bgm()
     check_settlement_bgm()
     check_result_stings()
@@ -8793,6 +8794,8 @@ def check_goods_promo_live_stand() -> None:
         fail("goods stand retuned week-clear gates")
     elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset:
         fail("goods stand retuned concert cost / payout")
+    elif "SetActive(_memberShow)" not in apply or '"MemberBadgeHud"' not in live_cs:
+        fail("goods stand dropped the post-unlock membership live badge")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
         fail("goods stand broke pads, 입력됨, or added timeScale")
     elif "Week3" in title_cs or "아크릴" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
@@ -8902,6 +8905,8 @@ def check_sponsor_mention_live_card() -> None:
         fail("sponsor card retuned week-clear gates")
     elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset:
         fail("sponsor card retuned concert cost / payout")
+    elif "SetActive(_memberShow)" not in apply or '"MemberBadgeHud"' not in live_cs:
+        fail("sponsor card dropped the post-unlock membership live badge")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
         fail("sponsor card broke pads, 입력됨, or added timeScale")
     elif "Week4" in title_cs or "스폰서" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
@@ -9244,6 +9249,8 @@ def check_membership_card_plate() -> None:
         fail("membership plate retuned bills / stream / bankrupt")
     elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
         fail("membership plate retuned week-clear gates")
+    elif "SetActive(_memberShow)" not in apply or '"MemberBadgeHud"' not in live_cs:
+        fail("membership plate dropped the post-unlock membership live badge")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
         fail("membership plate broke pads, 입력됨, or added timeScale")
     elif "Week2" in title_cs or "멤버십" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
@@ -9805,6 +9812,8 @@ def check_concert_result_plate() -> None:
         fail("concert result plate retuned bills / stream / bankrupt")
     elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
         fail("concert result plate retuned week-clear gates")
+    elif "SetActive(_memberShow)" not in apply or '"MemberBadgeHud"' not in live_cs:
+        fail("concert result plate dropped the post-unlock membership live badge")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
         fail("concert result plate broke pads, 입력됨, or added timeScale")
     elif "Week5" in title_cs or "콘서트" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
@@ -9815,6 +9824,159 @@ def check_concert_result_plate() -> None:
         fail("concert result plate moved Unity off 6000.5.9f1")
     else:
         ok("concert result hangs concert_stage as preserveAspect desk paper; a non-result settlement does not")
+
+
+def check_membership_live_badge() -> None:
+    """Post-unlock live hangs a tiny membership_card HUD badge; Week 1 / pre-unlock hides it."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    w2_asset = (ROOT / "Assets/Resources/Balance/Week2Balance.asset").read_text(encoding="utf-8")
+    w2r_cs = (ROOT / "Assets/Scripts/Economy/Week2Rules.cs").read_text(encoding="utf-8")
+    w4_asset = (ROOT / "Assets/Resources/Balance/Week4Balance.asset").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    under = build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
+    overlay = build.split('"StreamOverlay"', 1)[-1].split("_washVeil", 1)[0]
+    shelf = build.split('"GoodsStandHud"', 1)[-1].split('"HypeFlash"', 1)[0] if '"GoodsStandHud"' in build else ""
+    sponsor = build.split('"SponsorCardHud"', 1)[-1].split('"GoodsStandHud"', 1)[0] if '"SponsorCardHud"' in build else ""
+    hud = build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in build else ""
+    badge = build.split('"MemberBadgeHud"', 1)[-1].split("var chatPanel", 1)[0] if '"MemberBadgeHud"' in build else ""
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    member_build = settle_build.split('MemberRoot"', 1)[-1].split('ClipRoot"', 1)[0]
+    member_plate = member_build.split('"MemberCardHud"', 1)[-1].split('"MemberTitle"', 1)[0] if '"MemberCardHud"' in member_build else ""
+    member_show = settle_cs.split("void ShowMemberSplash", 1)[-1].split("void OnMemberAck", 1)[0]
+    clip_build = settle_build.split('ClipRoot"', 1)[-1].split('GoodsRoot"', 1)[0]
+    goods_build = settle_build.split('GoodsRoot"', 1)[-1].split('AgencyRoot"', 1)[0]
+    agency_build = settle_build.split('AgencyRoot"', 1)[-1].split('AgencySplashRoot"', 1)[0]
+    junior_build = settle_build.split('JuniorRoot"', 1)[-1].split('ConcertBookRoot"', 1)[0]
+    rank_plate = settle_build.split('"RankingBoardHud"', 1)[-1].split('"RankBody"', 1)[0] if '"RankingBoardHud"' in settle_build else ""
+    book_build = settle_build.split('ConcertBookRoot"', 1)[-1].split('ConcertResultRoot"', 1)[0]
+    result_build = settle_build.split('ConcertResultRoot"', 1)[-1]
+    slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
+
+    if 'MembershipCard = "Art/membership_card"' not in art_cs:
+        fail("ArtSprites does not hook Art/membership_card")
+    elif '"MemberBadgeHud"' not in hud or "ArtSprites.MembershipCard" not in badge:
+        fail("LiveStream does not hang membership_card as a small HUD badge")
+    elif "_avatar.Root" not in hud:
+        fail("membership badge is not on the webcam HUD")
+    elif "UiKit.Stretch" in badge:
+        fail("membership badge is a full-screen plate; that is the settlement unlock job")
+    elif "680f, 340f" in badge or "720, 380" in badge or "PanelDark" in badge:
+        fail("membership live badge reused the settlement unlock plate")
+    elif "168f, 168f" in badge or "220f, 128f" in badge:
+        fail("membership badge stole the goods / sponsor live plate slot")
+    elif "72f, 48f" not in badge or "preserveAspect = true" not in badge:
+        fail("membership badge is not a tiny preserveAspect HUD pin")
+    elif "ArtSprites.MembershipCard" in under or "MemberBadgeHud" in under:
+        fail("membership badge stole the concert_stage backdrop slot")
+    elif "ArtSprites.OnAirLed" not in hud or '"ON AIR"' not in hud:
+        fail("membership badge dropped the webcam onair_led")
+    elif "SetActive(false)" not in badge:
+        fail("membership badge is not hidden on a Week 1 / pre-unlock live")
+    elif "SetActive(_memberShow)" not in apply:
+        fail("membership badge is not gated on membershipUnlocked")
+    elif "membershipUnlocked" not in start or "_memberShow" not in start:
+        fail("membership badge is not armed from the existing unlock flag")
+    elif "InWeek2" in start.split("_memberShow", 1)[-1][:80]:
+        fail("membership badge is gated on week number, not the unlock flag")
+    elif "PromoActive" in apply or "LineActive" in apply or "ConcertActive" in apply:
+        fail("membership badge is gated on a live QTE, not the unlock flag")
+    elif '"MemberCardHud"' in live_cs or '"MemberCardHud"' in title_cs:
+        fail("settlement membership plate leaked onto LiveStream / Title")
+    elif '"MemberBadgeHud"' in settle_cs:
+        fail("live membership badge leaked onto Settlement")
+    elif "Audio/sfx_membership" in live_cs or "PlayMemberSfx" in live_cs:
+        fail("membership badge stole sfx_membership off the settlement plate")
+    elif '"MemberCardHud"' not in member_build or "ArtSprites.MembershipCard" not in member_plate:
+        fail("membership badge dropped the settlement unlock desk plate")
+    elif "UiKit.Stretch" in member_plate:
+        fail("membership badge stretched the settlement unlock plate")
+    elif "PlayMemberSfx();" not in member_show or "멤버십 해금" not in member_build:
+        fail("membership badge restyled the settlement unlock plate")
+    elif "SetActive(_goodsShow)" not in apply or "ArtSprites.GoodsStand" not in shelf:
+        fail("membership badge dropped goods-promo live goods_stand")
+    elif "UiKit.Stretch" in shelf:
+        fail("membership badge restyled the goods_stand HUD shelf")
+    elif "SetActive(_sponsorShow)" not in apply or "ArtSprites.SponsorCard" not in sponsor:
+        fail("membership badge dropped sponsor-mention live plate")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in under:
+        fail("membership badge dropped concert live concert_stage")
+    elif "ArtSprites.StreamOverlay" not in overlay or "ArtSprites.ConcertStage" in overlay:
+        fail("membership badge stole stream_overlay / concert_stage chrome")
+    elif "ArtSprites.ViewerBadge" not in live_cs or '"시청자"' not in live_cs:
+        fail("membership badge dropped viewer_badge")
+    elif '"ClipCardHud"' not in clip_build or "ArtSprites.ClipCard" not in clip_build:
+        fail("membership badge dropped clip upload desk plate")
+    elif '"GoodsCardHud"' not in goods_build or "ArtSprites.GoodsStand" not in goods_build:
+        fail("membership badge dropped goods unlock desk plate")
+    elif '"AgencyCardHud"' not in agency_build or "ArtSprites.AgencyCard" not in agency_build:
+        fail("membership badge dropped agency found desk plate")
+    elif '"JuniorCardHud"' not in junior_build or "ArtSprites.AgencyCard" not in junior_build:
+        fail("membership badge dropped agency scout desk plate")
+    elif '"RankingBoardHud"' not in settle_build or "ArtSprites.RankingBoard" not in rank_plate:
+        fail("membership badge dropped ranking settlement plate")
+    elif '"ConcertBookHud"' not in book_build or "ArtSprites.ConcertStage" not in book_build:
+        fail("membership badge dropped concert booking desk plate")
+    elif '"ConcertResultHud"' not in result_build or "ArtSprites.ConcertStage" not in result_build:
+        fail("membership badge dropped concert result desk plate")
+    elif "startingMembers: 8" not in w2_asset or "membershipPassivePerMember: 150" not in w2_asset:
+        fail("membership badge retuned membership numbers")
+    elif "unlockPeakViewers: 40" not in w2_asset or "unlockSuccessfulStreams: 4" not in w2_asset:
+        fail("membership badge retuned unlock gates")
+    elif "peakViewersEver >= w2.unlockPeakViewers" not in sched_cs or "successfulStreams >= w2.unlockSuccessfulStreams" not in sched_cs:
+        fail("membership badge changed unlock routing")
+    elif "ApplyMembershipPassive" not in w2r_cs or "membershipPassivePerMember" not in w2r_cs:
+        fail("membership badge changed membership payout")
+    elif "clipCash: 30000" not in w2_asset or "clipChance: 30" not in w2_asset or "clipPerfectsRequired: 25" not in w2_asset:
+        fail("membership badge retuned clip numbers")
+    elif "CanOfferClip" not in w2r_cs or "AttemptClip" not in w2r_cs:
+        fail("membership badge changed clip routing")
+    elif "sponsorLineBonus: 3000" not in w4_asset or "goodsUnlockCash: 60000" not in w3_asset:
+        fail("membership badge retuned sponsor / goods numbers")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset:
+        fail("membership badge retuned concert cost / payout")
+    elif "EnableSponsorLine" not in start or "EnablePromo" not in start:
+        fail("membership badge unhooked sponsor / goods live arming")
+    elif "EnableSponsorLine" not in session_cs or "EnablePromo" not in session_cs:
+        fail("membership badge unhooked EnableSponsorLine / EnablePromo")
+    elif "ArtSprites.JudgePerfect" not in slam or "PlaySfx(_perfect" not in slam:
+        fail("membership badge dropped Day-1 coach Perfect stamp")
+    elif live_cs.count("Audio/sfx_threat") < 1 or "PlayThreatSfx" not in live_cs:
+        fail("membership badge dropped live sfx_threat")
+    elif "LastDayBanner" not in week_cs:
+        fail("membership badge dropped morning last-day tab")
+    elif '"ContinueLastDayTab"' not in title_cs or '"SettleLastDayTab"' not in settle_cs:
+        fail("membership badge dropped title / settlement last-day tabs")
+    elif "perfectWindow: 0.07" not in balance or "perfectWindow * " not in rules_cs:
+        fail("membership badge retuned hit windows")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("membership badge retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("membership badge retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("membership badge retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("membership badge broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "멤버십" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising membership badge / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("membership badge dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("membership badge moved Unity off 6000.5.9f1")
+    else:
+        ok("post-unlock live hangs a tiny membership_card badge; Week 1 / pre-unlock hides it")
 
 
 def check_morning_bgm() -> None:

@@ -167,6 +167,8 @@ namespace BankruptVtuber
         Image _goodsStand;
         bool _sponsorShow;
         Image _sponsorCard;
+        bool _memberShow;
+        Image _memberBadge;
         float _bedVolume;
         float _bedDuck;
         bool _threatGear;
@@ -360,6 +362,7 @@ namespace BankruptVtuber
                 _session.EnableConcert(gm.Week5);
                 _concertShow = true;
             }
+            _memberShow = gm.Run.membershipUnlocked;
             _shownViewers = _session.Viewers;
             _incomeMarked = _session.LiveIncome;
             _incomeMarkedAt = _session.Elapsed;
@@ -1144,6 +1147,12 @@ namespace BankruptVtuber
                 _hudOnAir.raycastTarget = false;
                 _hudOnAirCopy = UiKit.Label(_hudOnAir.transform, "T", "ON AIR", 16, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
                 UiKit.Stretch(_hudOnAirCopy.rectTransform, 18f, 18f, 6f, 6f);
+                _memberBadge = UiKit.Image(_avatar.Root, "MemberBadgeHud", Color.white);
+                UiKit.Layout(_memberBadge.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-10f, -10f), new Vector2(72f, 48f));
+                ArtSprites.Apply(_memberBadge, ArtSprites.MembershipCard, Color.white, Color.white);
+                _memberBadge.preserveAspect = true;
+                _memberBadge.raycastTarget = false;
+                _memberBadge.gameObject.SetActive(false);
             }
 
             var chatPanel = UiKit.Panel(root, "Chat", new Color(0.07f, 0.05f, 0.1f, 0.0f));
@@ -3127,6 +3136,8 @@ namespace BankruptVtuber
                 _goodsStand.gameObject.SetActive(_goodsShow);
             if (_sponsorCard != null)
                 _sponsorCard.gameObject.SetActive(_sponsorShow);
+            if (_memberBadge != null)
+                _memberBadge.gameObject.SetActive(_memberShow);
             UiKit.EnsureCamera(look.Wash);
             _avatar?.ApplyShow(look);
             if (_bed != null)
