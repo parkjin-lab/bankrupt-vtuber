@@ -22,6 +22,8 @@ namespace BankruptVtuber
         RectTransform _continueChip;
         Image _continueDayTab;
         Text _continueDay;
+        Image _continueLastDay;
+        Text _continueLastWeek;
         Text _continueMoney;
         Text _continueDebt;
         Text _continueHead;
@@ -199,6 +201,16 @@ namespace BankruptVtuber
             _continueDayTab.gameObject.SetActive(false);
             _continueDay = UiKit.Label(_continueDayTab.transform, "ContinueDayHead", "", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_continueDay.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -2f), new Vector2(-16f, -8f));
+            _continueLastDay = UiKit.Image(_continue.transform, "ContinueLastDayTab", Color.white);
+            UiKit.Layout(_continueLastDay.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(166f, -6f), new Vector2(176f, 48f));
+            ArtSprites.Apply(_continueLastDay, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _continueLastDay.preserveAspect = false;
+            _continueLastDay.raycastTarget = false;
+            _continueLastDay.gameObject.SetActive(false);
+            var continueLastTitle = UiKit.Label(_continueLastDay.transform, "ContinueLastDayTitle", "마지막 날", 14, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(continueLastTitle.rectTransform, new Vector2(0f, 0.48f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -2f), new Vector2(-12f, 0f));
+            _continueLastWeek = UiKit.Label(_continueLastDay.transform, "ContinueLastDayWeek", "1주차 마지막", 12, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_continueLastWeek.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0.52f), new Vector2(0.5f, 0f), new Vector2(0f, 2f), new Vector2(-12f, 0f));
             _continueChip = UiKit.Panel(_continue.transform, "ContinueChip", Palette.PinkDeep);
             UiKit.Layout(_continueChip, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(36f, -22f), new Vector2(52f, 26f));
             var contChipImg = _continueChip.GetComponent<Image>();
@@ -423,6 +435,8 @@ namespace BankruptVtuber
                 _continueMentalNote.gameObject.SetActive(_hasSave);
             if (_continueDayTab != null)
                 _continueDayTab.gameObject.SetActive(_hasSave);
+            if (_continueLastDay != null && !_hasSave)
+                _continueLastDay.gameObject.SetActive(false);
             if (_continueClip != null)
                 _continueClip.gameObject.SetActive(hasHead);
             if (!_hasSave && _continueWarn != null)
@@ -442,6 +456,11 @@ namespace BankruptVtuber
         {
             if (_continueDay != null)
                 _continueDay.text = peek.day + "일차";
+            bool last = peek.day == WeekSchedule.LastDayOfCurrentWeek(peek);
+            if (_continueLastDay != null)
+                _continueLastDay.gameObject.SetActive(last);
+            if (last && _continueLastWeek != null)
+                _continueLastWeek.text = WeekSchedule.WeekNumber(peek) + "주차 마지막";
             int bills = EconomyRules.TonightBills(peek);
             bool shortfall = bills > 0 && peek.cash < bills;
             if (_continueMoney != null)

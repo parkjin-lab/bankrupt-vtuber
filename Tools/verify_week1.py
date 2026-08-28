@@ -1483,6 +1483,7 @@ def check_project() -> None:
     check_last_day_tab()
     check_title_continue_preview()
     check_title_day_tab()
+    check_title_last_day_tab()
     check_settle_day_tab()
     check_start_pulse()
     check_continue_pulse()
@@ -4750,6 +4751,109 @@ def check_title_day_tab() -> None:
         fail("README should mention title continue day_tab")
     else:
         ok("Title continue n일차 sits on day_tab; hide-no-save / morning slam / wipe stay")
+
+
+def check_title_last_day_tab() -> None:
+    """Title continue last-day / week-last sits on a second day_tab; other continues stay tab-free."""
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    wipe = title_cs.split("void BuildWipe", 1)[-1].split("void BuildPrologue", 1)[0]
+    morning = week_cs.split('"LastDayBanner"', 1)[-1].split('"WavePanel"', 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
+    last_tab = build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in build else ""
+
+    if 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif "ArtSprites.DayTab" not in week_cs or '"LastDayBanner"' not in week_cs:
+        fail("title last-day tab dropped morning last-day day_tab")
+    elif "ArtSprites.DayTab" not in morning or "ArtSprites.ThreatBanner" in morning:
+        fail("title last-day tab is not the same morning day_tab paper")
+    elif "ArtSprites.DayTab" not in last_tab or '"ContinueLastDayTab"' not in build:
+        fail("Title continue last-day does not sit on Art/day_tab")
+    elif "ArtSprites.ThreatBanner" in last_tab:
+        fail("Title continue last-day is a ThreatBanner, not day_tab paper")
+    elif '"마지막 날"' not in last_tab or "주차 마지막" not in last_tab:
+        fail("Title continue last-day changed Korean copy")
+    elif "Palette.Gold" not in last_tab:
+        fail("Title continue last-day dropped the gold calendar read")
+    elif "SetActive(false)" not in last_tab:
+        fail("Title continue last-day is not hidden on a normal continue")
+    elif "LastDayOfCurrentWeek" not in fill or "SetActive(last)" not in fill:
+        fail("Title continue last-day is not keyed off WeekSchedule last days")
+    elif "WeekNumber" not in fill or "주차 마지막" not in fill:
+        fail("Title continue last-day dropped n주차 마지막")
+    elif "Week1LastDay = 5" not in sched_cs or "Week2LastDay = 10" not in sched_cs:
+        fail("title last-day tab moved off days 5 / 10")
+    elif "Week3LastDay = 15" not in sched_cs or "Week4LastDay = 20" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("title last-day tab moved off days 15 / 20 / 25")
+    elif "_continueLastDay" not in hide or "SetActive(false)" not in hide:
+        fail("Title continue last-day is not hidden without a save")
+    elif "ArtSprites.DayTab" not in build or '"ContinueDayTab"' not in build:
+        fail("title last-day tab stole continue n일차 day_tab")
+    elif "ContinueDayHead" not in build or "peek.day" not in fill or '"일차"' not in fill:
+        fail("title last-day tab dropped continue n일차")
+    elif "_continueDayTab" not in hide or "SetActive(_hasSave)" not in hide:
+        fail("title last-day tab hid continue n일차 without a save")
+    elif '"현금 "' not in fill or '"부채 "' not in fill or '"멘탈 "' not in fill:
+        fail("title last-day tab dropped continue cash/debt/mental")
+    elif "ContinueShortStamp" not in title_cs or "청구보다 부족" not in title_cs:
+        fail("title last-day tab dropped continue bill_short")
+    elif "lastHeadline" not in fill or '"어제: "' not in fill:
+        fail("title last-day tab dropped continue headline")
+    elif "ContinueWarn" not in title_cs or "PlayThreatSfx" not in fill:
+        fail("title last-day tab dropped continue threat plate")
+    elif "진행 중인 " not in wipe or "지울까?" not in wipe or "지우고 시작" not in wipe or "취소" not in wipe:
+        fail("title last-day tab changed the new-game wipe confirm")
+    elif "OpenWipe" not in title_cs or "ConfirmWipe" not in title_cs or "BeginNewRun" not in title_cs:
+        fail("title last-day tab unhooked wipe confirm")
+    elif "ContinueRun()" not in title_cs or "public bool ContinueRun()" not in gm:
+        fail("title last-day tab changed continue load")
+    elif "HasValidSave" not in title_cs or "TryLoad" not in title_cs:
+        fail("title last-day tab does not peek the existing save")
+    elif "peek.day =" in title_cs or "day += " in title_cs or "day -= " in title_cs:
+        fail("title last-day tab writes the day index")
+    elif "LastDayOfCurrentWeek" not in week_cs or "RefreshLastDay" not in week_cs:
+        fail("title last-day tab dropped morning last-day refresh")
+    elif "_daySlam = 0.25f" not in week_cs or "TickGoLivePulse" not in week_cs:
+        fail("title last-day tab changed n일차 slam or GO LIVE pulse")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in live_cs:
+        fail("title last-day tab dropped concert live concert_stage")
+    elif "ArtSprites.JudgePerfect" not in slam:
+        fail("title last-day tab dropped Day-1 coach Perfect stamp")
+    elif "Audio/sfx_threat" not in live_cs or "PlayThreatSfx" not in live_cs:
+        fail("title last-day tab dropped live sfx_threat")
+    elif '"SettleDayTab"' not in settle_cs:
+        fail("title last-day tab dropped settlement day_tab")
+    elif "perfectWindow: 0.07" not in balance or "perfectWindow * " not in rules_cs:
+        fail("title last-day tab retuned hit windows")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("title last-day tab retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("title last-day tab retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("title last-day tab retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("title last-day tab broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising last-day tab / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("title last-day tab dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("title last-day tab moved Unity off 6000.5.9f1")
+    else:
+        ok("title continue last-day sits on day_tab; other continues stay quiet; copy / days stay")
 
 
 def check_settle_day_tab() -> None:
