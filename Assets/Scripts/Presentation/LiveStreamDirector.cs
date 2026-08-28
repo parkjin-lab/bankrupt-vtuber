@@ -184,6 +184,7 @@ namespace BankruptVtuber
         Image _day1Headline;
         Image _liveDay1;
         Image _day1Bill;
+        Image _day1Cash;
         Image _liveWeekStart;
         Text _liveWeekStartLabel;
         Image _weekHeadline;
@@ -1269,6 +1270,15 @@ namespace BankruptVtuber
             var day1BillT = UiKit.Label(_day1Bill.transform, "T", "청구서", 16, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(day1BillT.rectTransform, new Vector2(0.12f, 0.18f), new Vector2(0.88f, 0.82f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _day1Bill.gameObject.SetActive(false);
+
+            _day1Cash = UiKit.Image(root, "LiveDay1Cash", Color.white);
+            UiKit.Layout(_day1Cash.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(456f, -268f), new Vector2(110f, 48f));
+            ArtSprites.Apply(_day1Cash, ArtSprites.CashSlip, new Color(0.98f, 0.94f, 0.86f, 0.98f), Color.white);
+            _day1Cash.preserveAspect = true;
+            _day1Cash.raycastTarget = false;
+            var day1CashT = UiKit.Label(_day1Cash.transform, "T", "현금", 16, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(day1CashT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _day1Cash.gameObject.SetActive(false);
 
             _lastBill = UiKit.Image(root, "LiveLastBill", Color.white);
             UiKit.Layout(_lastBill.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(338f, -268f), new Vector2(116f, 56f));
@@ -3298,6 +3308,8 @@ namespace BankruptVtuber
                 _liveDay1.gameObject.SetActive(1 == GameManager.Instance.Run.day);
             if (_day1Bill != null)
                 _day1Bill.gameObject.SetActive(1 == GameManager.Instance.Run.day);
+            if (_day1Cash != null)
+                _day1Cash.gameObject.SetActive(1 == GameManager.Instance.Run.day);
             if (_weekHeadline != null)
                 _weekHeadline.gameObject.SetActive(LiveWeekStartDay(GameManager.Instance.Run.day));
             if (_liveWeekStart != null)
