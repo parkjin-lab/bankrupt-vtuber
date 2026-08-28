@@ -135,6 +135,12 @@ namespace BankruptVtuber
             _start = UiKit.Button(titleParent, "Start", "방송 시작", OnStartBroadcast, Palette.PinkDeep, Color.white);
             StyleMenuButton(_start, new Vector2(56, -40), new Vector2(420, 78), Palette.PinkDeep);
             _startRt = _start.GetComponent<RectTransform>();
+            var startImg = _start.GetComponent<Image>();
+            if (startImg != null)
+            {
+                ArtSprites.ApplySliced(startImg, ArtSprites.TitleStart, Color.white, new Vector4(48f, 36f, 48f, 36f));
+                startImg.raycastTarget = true;
+            }
             _startChip = UiKit.Panel(_start.transform, "StartChip", Palette.Gold);
             UiKit.Layout(_startChip, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(28f, 0f), new Vector2(52f, 26f));
             var startChipImg = _startChip.GetComponent<Image>();
@@ -148,6 +154,12 @@ namespace BankruptVtuber
             _continue = UiKit.Button(titleParent, "Continue", "이어서 하기", OnContinue, Palette.Gold, Palette.Ink);
             StyleMenuButton(_continue, new Vector2(56, -154), new Vector2(560, 128), Palette.Gold);
             _continueRt = _continue.GetComponent<RectTransform>();
+            var continueImg = _continue.GetComponent<Image>();
+            if (continueImg != null)
+            {
+                ArtSprites.ApplySliced(continueImg, ArtSprites.TitleContinue, Color.white, new Vector4(48f, 36f, 48f, 36f));
+                continueImg.raycastTarget = true;
+            }
             _continueDay = _continue.transform.Find("Caption") != null
                 ? _continue.transform.Find("Caption").GetComponent<Text>()
                 : null;

@@ -244,6 +244,8 @@ def check_project() -> None:
         "pad_up.png": "↑ 키캡",
         "pad_superchat.png": "슈퍼챗 키캡",
         "golive_key.png": "방송 켜기 키캡",
+        "title_start.png": "새 방송 시작 키캡",
+        "title_continue.png": "이어서 하기 키캡",
         "chat_bubble.png": "채팅 버블",
         "note_chip.png": "노트 칩",
         "superchat_chip.png": "슈퍼챗 봉투",
@@ -1486,6 +1488,7 @@ def check_project() -> None:
     check_superchat_fly_envelope()
     check_hype_chip()
     check_golive_keycap()
+    check_title_keycaps()
     check_hype_sfx()
     check_event_sfx()
     check_content_icons()
@@ -4346,6 +4349,8 @@ def check_start_pulse() -> None:
         fail("새 방송 시작 has no pulse / 시작 chip")
     elif "1f + 0.03f" not in pulse or "Sin(Time.time" not in pulse:
         fail("새 방송 시작 does not soft-pulse at 1.03")
+    elif "ArtSprites.TitleStart" not in click or '"Start"' not in title_cs:
+        fail("새 방송 시작 is not on title_start keycap")
     elif "OnStartBroadcast" not in click or "StartChip" not in click:
         fail("시작 chip is not on the new-game button")
     elif "OpenWipe" not in start or "BeginNewRun" not in start:
@@ -4403,6 +4408,8 @@ def check_continue_pulse() -> None:
         fail("이어서 하기 has no pulse / 이어 chip")
     elif "1f + 0.03f" not in pulse or "Sin(Time.time" not in pulse:
         fail("이어서 하기 does not soft-pulse at 1.03")
+    elif "ArtSprites.TitleContinue" not in click or '"Continue"' not in title_cs:
+        fail("이어서 하기 is not on title_continue keycap")
     elif "OnContinue" not in click or "ContinueChip" not in click:
         fail("이어 chip is not on the continue button")
     elif "ContinueClip" not in click or "ArtSprites.HeadlineClip" not in click:
@@ -5981,6 +5988,77 @@ def check_golive_keycap() -> None:
         fail("README should mention golive_key / 방송 켜기")
     else:
         ok("방송 켜기 sits on golive_key; pulse / LIVE pip / sfx / concert reuse stay")
+
+
+def check_title_keycaps() -> None:
+    import struct
+
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    start_click = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    cont_click = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    wipe = title_cs.split("void BuildWipe", 1)[-1].split("void BuildPrologue", 1)[0]
+    start_fn = title_cs.split("void OnStartBroadcast", 1)[-1].split("void BeginNewRun", 1)[0]
+    leave = title_cs.split("void LeaveTitle", 1)[-1].split("IEnumerator FadeTitleBgmThen", 1)[0] if "void LeaveTitle" in title_cs else title_cs
+
+    for name, label in (("title_start.png", "새 방송 시작"), ("title_continue.png", "이어서 하기")):
+        png = ROOT / "Assets/Resources/Art" / name
+        data = png.read_bytes() if png.exists() else b""
+        w = h = color = 0
+        if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+            w, h = struct.unpack(">II", data[16:24])
+            color = data[25]
+        if not png.exists() or png.stat().st_size < 8000:
+            fail(f"{label} keycap PNG is missing")
+            return
+        if w < 360 or h < 140 or w <= h:
+            fail(f"{label} keycap PNG is not a readable landscape stream-deck key")
+            return
+        if color != 6:
+            fail(f"{label} keycap PNG is not RGBA")
+            return
+
+    if 'TitleStart = "Art/title_start"' not in art_cs or 'TitleContinue = "Art/title_continue"' not in art_cs:
+        fail("ArtSprites does not hook title_start / title_continue")
+    elif "ArtSprites.TitleStart" not in start_click or "StartChip" not in start_click or '"시작"' not in title_cs:
+        fail("새 방송 시작 does not hang title_start + 시작 chip")
+    elif "ArtSprites.TitleContinue" not in cont_click or "ContinueChip" not in cont_click or '"이어"' not in title_cs:
+        fail("이어서 하기 does not hang title_continue + 이어 chip")
+    elif "TickStartPulse" not in title_cs or "1f + 0.03f" not in title_cs or "TickContinuePulse" not in title_cs:
+        fail("title keycaps dropped 1.03 pulses")
+    elif "_hasSave" not in hide or "SetActive(_hasSave)" not in hide:
+        fail("title continue keycap is not hidden without save")
+    elif "OpenWipe" not in start_fn or "BeginNewRun" not in start_fn:
+        fail("title keycaps changed new-game confirm / start")
+    elif "진행 중인 " not in wipe or "지울까?" not in wipe or "지우고 시작" not in wipe or "취소" not in wipe:
+        fail("title keycaps changed wipe confirm copy")
+    elif "Audio/sfx_title" not in title_cs and "PlayTitleSfx" not in title_cs and "sfx_title" not in title_cs:
+        fail("title keycaps dropped sfx_title")
+    elif "ArtSprites.GoLiveKey" not in week_cs:
+        fail("title keycaps dropped morning golive_key match")
+    elif "ContinueRun" not in title_cs or "public bool ContinueRun()" not in gm:
+        fail("title keycaps changed continue load")
+    elif "RunSave.Delete" not in gm or "startingCash: 45000" not in balance or "billRent: 8000" not in balance:
+        fail("title keycaps retuned wipe / Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("title keycaps broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising title keycaps / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("title keycaps dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("title keycaps moved Unity off 6000.5.9f1")
+    elif "Art/title_start" not in readme or "Art/title_continue" not in readme:
+        fail("README should mention title_start / title_continue")
+    else:
+        ok("Title start/continue sit on keycaps; pulse / chips / confirm / sfx / hide-no-save stay")
 
 
 def check_hype_sfx() -> None:
