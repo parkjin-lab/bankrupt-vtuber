@@ -318,10 +318,17 @@ namespace BankruptVtuber
             bool cash = name.Contains("Cash");
             bool debt = name.Contains("Debt");
             bool bill = name.Contains("Bill");
+            bool mental = name.Contains("Mental");
             var img = panel.GetComponent<Image>();
             if (cash)
             {
                 ArtSprites.Apply(img, ArtSprites.CashSlip, new Color(0.98f, 0.94f, 0.86f, 0.98f), Color.white);
+                img.preserveAspect = false;
+                img.raycastTarget = false;
+            }
+            else if (mental)
+            {
+                ArtSprites.Apply(img, ArtSprites.MentalNote, new Color(1f, 0.95f, 0.72f, 0.98f), Color.white);
                 img.preserveAspect = false;
                 img.raycastTarget = false;
             }
@@ -332,7 +339,7 @@ namespace BankruptVtuber
                     debt ? ArtSprites.ThreatBanner : bill ? ArtSprites.BillNotice : ArtSprites.PanelDark,
                     debt ? Palette.MoneyRed : bill ? Color.white : new Color(0.92f, 0.45f, 0.62f, 1f));
             }
-            Color caption = cash ? Palette.Ink : Color.white;
+            Color caption = cash || mental ? Palette.Ink : Color.white;
             UiKit.Label(panel, "L", label, 16, caption, TextAnchor.UpperLeft, FontStyle.Bold);
             var l = panel.Find("L") as RectTransform;
             UiKit.Layout(l, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(16, -6), new Vector2(-20, 20));
