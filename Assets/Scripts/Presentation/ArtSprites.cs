@@ -60,6 +60,7 @@ namespace BankruptVtuber
         public const string GoLiveKey = "Art/golive_key";
         public const string TitleStart = "Art/title_start";
         public const string TitleContinue = "Art/title_continue";
+        public const string NextDayKey = "Art/nextday_key";
         public const string Superchat = "Art/badge_superchat";
         public const string Troll = "Art/badge_troll";
         public const string BubblePill = "Art/bubble_pill";

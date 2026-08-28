@@ -246,6 +246,7 @@ def check_project() -> None:
         "golive_key.png": "방송 켜기 키캡",
         "title_start.png": "새 방송 시작 키캡",
         "title_continue.png": "이어서 하기 키캡",
+        "nextday_key.png": "다음날 키캡",
         "chat_bubble.png": "채팅 버블",
         "note_chip.png": "노트 칩",
         "superchat_chip.png": "슈퍼챗 봉투",
@@ -1489,6 +1490,7 @@ def check_project() -> None:
     check_hype_chip()
     check_golive_keycap()
     check_title_keycaps()
+    check_nextday_keycap()
     check_hype_sfx()
     check_event_sfx()
     check_content_icons()
@@ -3712,6 +3714,8 @@ def check_next_pulse() -> None:
         fail("다음날 button has no pulse / 다음 chip")
     elif "1f + 0.03f" not in pulse or "Sin(Time.time" not in pulse:
         fail("다음날 does not soft-pulse at 1.03")
+    elif "ArtSprites.NextDayKey" not in click or '"Next"' not in settle_cs:
+        fail("다음날 is not on nextday_key keycap")
     elif "() => GameManager.Instance.NextMorning()" not in click:
         fail("다음날 click no longer goes to next morning")
     elif "CanAdvance(gm.Run)" not in confirm or "StreamBindings.Confirm" not in confirm:
@@ -6061,6 +6065,71 @@ def check_title_keycaps() -> None:
         ok("Title start/continue sit on keycaps; pulse / chips / confirm / sfx / hide-no-save stay")
 
 
+def check_nextday_keycap() -> None:
+    import struct
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/nextday_key.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    click = settle_cs.split("_next = UiKit.Button", 1)[-1].split("_restart = UiKit.Button", 1)[0]
+    pulse = settle_cs.split("void TickNextPulse", 1)[-1].split("static bool CanAdvance", 1)[0]
+    confirm = settle_cs.split("void Update()", 1)[-1].split("void TickNextPulse", 1)[0]
+    advance = settle_cs.split("static bool CanAdvance", 1)[-1].split("void Build()", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("nextday_key.png is missing")
+    elif w < 360 or h < 140 or w <= h:
+        fail("nextday_key.png is not a readable landscape stream-deck keycap")
+    elif color != 6:
+        fail("nextday_key.png is not RGBA")
+    elif 'NextDayKey = "Art/nextday_key"' not in art_cs:
+        fail("ArtSprites does not hook Art/nextday_key")
+    elif "ArtSprites.NextDayKey" not in click or '"Next"' not in settle_cs:
+        fail("다음날 button does not hang Art/nextday_key")
+    elif "NextChip" not in click or '"다음"' not in settle_cs:
+        fail("nextday_key dropped 다음 chip")
+    elif "TickNextPulse" not in settle_cs or "1f + 0.03f" not in pulse:
+        fail("nextday_key dropped 1.03 pulse")
+    elif "Audio/sfx_nextday" not in settle_cs or "PlayNextDaySfx" not in settle_cs:
+        fail("nextday_key dropped sfx_nextday")
+    elif "PlayNextDaySfx();" not in click or "() => GameManager.Instance.NextMorning()" not in click:
+        fail("nextday_key click no longer plays sfx then NextMorning")
+    elif "CanAdvance(gm.Run)" not in confirm or "StreamBindings.Confirm" not in confirm:
+        fail("nextday_key Space confirm no longer advances")
+    elif "MustResolveConflict" not in advance or "WeekOutcome.Continue" not in advance:
+        fail("nextday_key changed CanAdvance gates")
+    elif "ArtSprites.GoLiveKey" not in week_cs or "ArtSprites.TitleStart" not in title_cs:
+        fail("nextday_key dropped morning/title keycap match")
+    elif "public void NextMorning()" not in gm:
+        fail("nextday_key changed GameManager.NextMorning routing")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("nextday_key retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("nextday_key broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising nextday_key / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("nextday_key dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("nextday_key moved Unity off 6000.5.9f1")
+    elif "Art/nextday_key" not in readme or "다음날" not in readme:
+        fail("README should mention nextday_key / 다음날")
+    else:
+        ok("다음날 sits on nextday_key; pulse / 다음 chip / sfx / routing stay")
+
+
 def check_hype_sfx() -> None:
     import wave
 
@@ -7030,6 +7099,8 @@ def check_nextday_sfx() -> None:
         fail("Space 다음날 does not play sfx_nextday then NextMorning")
     elif "PlayNextDaySfx();" not in click or "() => GameManager.Instance.NextMorning()" not in click:
         fail("다음날 click does not play sfx_nextday then NextMorning")
+    elif "ArtSprites.NextDayKey" not in click or '"Next"' not in settle_cs:
+        fail("다음날 SFX dropped nextday_key keycap")
     elif play.count("PlayOneShot") != 1:
         fail("다음날 confirm can fire more than one shot")
     elif "PlayNextDaySfx" in leave or "PlayNextDaySfx" in pulse:
@@ -9558,6 +9629,8 @@ def check_readme_playable() -> None:
         fail("README dropped room / pad art")
     elif "golive_key" not in readme or "방송 켜기" not in readme or "sfx_golive" not in readme:
         fail("README dropped golive_key morning keycap")
+    elif "nextday_key" not in readme or "다음날" not in readme or "sfx_nextday" not in readme:
+        fail("README dropped nextday_key settlement keycap")
     elif "chat_bubble" not in readme or "note_chip" not in readme or "superchat_chip" not in readme or "content_*" not in readme:
         fail("README dropped chat / note / superchat envelope / content icons")
     elif "rival_nyang" not in readme or "goods_stand" not in readme or "agency_card" not in readme:

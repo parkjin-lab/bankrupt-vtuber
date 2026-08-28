@@ -571,6 +571,12 @@ namespace BankruptVtuber
             _next = UiKit.Button(_actionRow, "Next", "다음날  (Space)", () => { PlayNextDaySfx(); LeaveSettle(() => GameManager.Instance.NextMorning()); }, Palette.PinkDeep, Color.white);
             _nextRt = _next.GetComponent<RectTransform>();
             UiKit.Layout(_nextRt, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(210, 0), new Vector2(360, 60));
+            var nextImg = _next.GetComponent<Image>();
+            if (nextImg != null)
+            {
+                ArtSprites.ApplySliced(nextImg, ArtSprites.NextDayKey, Color.white, new Vector4(48f, 36f, 48f, 36f));
+                nextImg.raycastTarget = true;
+            }
             _nextChip = UiKit.Panel(_next.transform, "NextChip", Palette.Gold);
             UiKit.Layout(_nextChip, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(28f, 0f), new Vector2(52f, 26f));
             var chipImg = _nextChip.GetComponent<Image>();
