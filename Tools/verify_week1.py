@@ -219,6 +219,7 @@ def check_project() -> None:
         "cash_slip.png": "남은 현금",
         "mental_note.png": "멘탈 메모",
         "combo_plate.png": "콤보 배지",
+        "viewer_badge.png": "시청 배지",
         "membership_card.png": "멤버십",
         "clip_card.png": "클립",
         "pad_left.png": "← 키캡",
@@ -1486,6 +1487,7 @@ def check_project() -> None:
     check_cash_slip()
     check_mental_note()
     check_combo_plate()
+    check_viewer_badge()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -4032,6 +4034,8 @@ def check_viewer_chip_pop() -> None:
         fail("viewer chip pop is not 0.1s")
     elif "1f + 0.12f" not in paint or "_viewerChip.localScale" not in paint:
         fail("viewer chip pop is not 1.12 scale on the chip")
+    elif "ArtSprites.ViewerBadge" not in live_cs or '"Viewers"' not in live_cs:
+        fail("viewer chip is not on Art/viewer_badge")
     elif "Palette.CashGreen" not in paint or "Palette.MoneyRed" not in paint:
         fail("viewer chip is not green on gain / red on drop")
     elif "_viewerChipUp" not in show or "_viewerChipUp" not in paint:
@@ -7674,6 +7678,67 @@ def check_combo_plate() -> None:
         ok("live COMBO sits on combo_plate badge; 1.15/1.22 pop / break sting stay")
 
 
+def check_viewer_badge() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    show = live_cs.split("void ShowViewerDelta", 1)[-1].split("void TickViewerChipPop", 1)[0]
+    paint = live_cs.split("void PaintViewerChip", 1)[-1].split("void ShowMissSting", 1)[0]
+    png = ROOT / "Assets/Resources/Art/viewer_badge.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("viewer_badge.png is missing")
+    elif w < 360 or h < 160 or w <= h:
+        fail("viewer_badge.png is not a readable landscape follower badge")
+    elif color != 6:
+        fail("viewer_badge.png is not RGBA")
+    elif 'ViewerBadge = "Art/viewer_badge"' not in art_cs:
+        fail("ArtSprites does not hook Art/viewer_badge")
+    elif "ArtSprites.ViewerBadge" not in live_cs or '"Viewers"' not in live_cs or '"시청자"' not in live_cs:
+        fail("LiveStream does not hang Art/viewer_badge under 시청자")
+    elif "_viewerChipPop = 0.1f" not in show or "1f + 0.12f" not in paint:
+        fail("viewer badge dropped 1.12 / 0.1s pop")
+    elif "Palette.CashGreen" not in paint or "Palette.MoneyRed" not in paint:
+        fail("viewer badge dropped green gain / red drop tint")
+    elif "시청 +" not in show or "시청 −" not in show or "ViewerPop" not in live_cs:
+        fail("viewer badge dropped +/- popups")
+    elif "ArtSprites.CashSlip" not in live_cs or "BillChip" not in live_cs or "ArtSprites.BillNotice" not in live_cs:
+        fail("viewer badge dropped bill / income chips")
+    elif "Viewers =" in show or "Viewers =" in paint:
+        fail("viewer badge writes viewer math")
+    elif "ClampViewers" not in rules_cs or "ViewerDeltaFor" not in rules_cs:
+        fail("viewer badge retuned ClampViewers / deltas")
+    elif "perfectViewerDelta: 0.5" not in balance or "missViewerDelta: -1.2" not in balance:
+        fail("viewer badge retuned Perfect / Miss viewer deltas")
+    elif "hypeViewersPerSec: 1" not in balance or "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("viewer badge retuned Week 1 economy")
+    elif "Tuning.PerfectViewerMul" not in session_cs or "ApplyRivalSteal" not in session_cs:
+        fail("viewer badge dropped content / rival viewer modifiers")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("viewer badge broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising viewer badge / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("viewer badge dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("viewer badge moved Unity off 6000.5.9f1")
+    elif "Art/viewer_badge" not in (ROOT / "README.md").read_text(encoding="utf-8"):
+        fail("README should mention Art/viewer_badge")
+    else:
+        ok("live 시청자 sits on viewer_badge; 1.12 pop / tint / +/- stay")
+
+
 def check_mental_sfx() -> None:
     import wave
 
@@ -8229,6 +8294,8 @@ def check_readme_playable() -> None:
         fail("README dropped mental_note on settlement / live danger / morning / title continue")
     elif "combo_plate" not in readme or "COMBO" not in readme or "콤보 끊김" not in readme:
         fail("README dropped combo_plate live badge")
+    elif "viewer_badge" not in readme or "시청자" not in readme or ("시청 +" not in readme and "시청 ±" not in readme):
+        fail("README dropped viewer_badge live follower badge")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:

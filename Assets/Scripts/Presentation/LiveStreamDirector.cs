@@ -866,6 +866,22 @@ namespace BankruptVtuber
             _viewers = Chip(top, "Viewers", "시청자", 0.16f, 0.40f, -6f);
             _viewerChip = _viewers.transform.parent as RectTransform;
             _viewerChipImg = _viewerChip != null ? _viewerChip.GetComponent<Image>() : null;
+            if (_viewerChipImg != null)
+            {
+                ArtSprites.Apply(_viewerChipImg, ArtSprites.ViewerBadge, new Color(0.16f, 0.22f, 0.38f, 0.96f), Color.white);
+                _viewerChipImg.preserveAspect = false;
+                _viewerChipImg.raycastTarget = false;
+            }
+            if (_viewerChip != null)
+            {
+                var viewerCap = _viewerChip.Find("L");
+                if (viewerCap != null)
+                {
+                    var viewerCapT = viewerCap.GetComponent<Text>();
+                    if (viewerCapT != null)
+                        viewerCapT.color = Palette.PastelDim;
+                }
+            }
             _viewerPop = UiKit.Label(_viewers.transform.parent, "ViewerPop", "", 20, Palette.CashGreen, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(_viewerPop.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(8f, 6f), new Vector2(150f, 28f));
             _rival = Chip(top, "Rival", "라이벌", 0.40f, 0.64f, -6f);
@@ -2409,10 +2425,9 @@ namespace BankruptVtuber
             }
             if (_viewerChipImg != null)
             {
-                var bg = new Color(1f, 1f, 1f, 0.06f);
+                var bg = Color.white;
                 var wash = _viewerChipUp ? Palette.CashGreen : Palette.MoneyRed;
-                wash.a = 0.28f;
-                _viewerChipImg.color = Color.Lerp(bg, wash, u);
+                _viewerChipImg.color = Color.Lerp(bg, wash, u * 0.55f);
             }
         }
 
