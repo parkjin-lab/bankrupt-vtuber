@@ -1568,6 +1568,7 @@ def check_project() -> None:
     check_title_newgame_mental()
     check_title_newgame_day()
     check_morning_day1_tab()
+    check_settle_day1_tab()
     check_concert_live_badge()
     check_sponsor_live_badge()
     check_morning_bgm()
@@ -12505,6 +12506,105 @@ def check_morning_day1_tab() -> None:
         fail("morning 1일차 tab moved Unity off 6000.5.9f1")
     else:
         ok("day-1 morning hangs 1일차 day_tab; other mornings hide it; last-day and NewGameDay stay")
+
+
+def check_settle_day1_tab() -> None:
+    """Day-1 Settlement hangs day_tab as a 1일차 calendar; other settlements hide it; last-day, NewGameDay, and MorningDay1 stay."""
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    day1 = build.split('"SettleDay1"', 1)[-1].split('"Sheet"', 1)[0] if '"SettleDay1"' in build else ""
+    last_tab = build.split('"SettleLastDayTab"', 1)[-1].split('"Recap"', 1)[0] if '"SettleLastDayTab"' in build else ""
+    n일차 = build.split('"SettleDayTab"', 1)[-1].split('"HeadlineClip"', 1)[0] if '"SettleDayTab"' in build else ""
+    recap = build.split('"Recap"', 1)[-1].split('"SettleDay1"', 1)[0] if '"SettleDay1"' in build else build.split('"Recap"', 1)[-1].split('"Sheet"', 1)[0]
+    render = settle_cs.split("void Render()", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+    morning_build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
+    morning_day1 = morning_build.split('"MorningDay1"', 1)[-1].split('"LastDayBanner"', 1)[0] if '"MorningDay1"' in morning_build else ""
+    morning_refresh = week_cs.split("void RefreshDay1", 1)[-1].split("void RefreshLastDay", 1)[0] if "void RefreshDay1" in week_cs else ""
+    last_refresh = week_cs.split("void RefreshLastDay", 1)[-1].split("static string LastDayClearReminder", 1)[0]
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_day = start_hang.split("_startDay = UiKit.Image", 1)[-1] if "_startDay = UiKit.Image" in start_hang else ""
+    title_build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    continue_last = title_build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in title_build else ""
+
+    if 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif '"SettleDay1"' not in build or "ArtSprites.DayTab" not in day1:
+        fail("day-1 settlement does not hang Art/day_tab as a 1일차 calendar")
+    elif "preserveAspect = true" not in day1:
+        fail("settlement 1일차 tab is not preserveAspect")
+    elif "72f, 48f" in day1:
+        fail("settlement 1일차 tab was hung as a 72×48 pin")
+    elif "180f, 56f" not in day1 or "0.80f, 1f" not in day1 or "8f, -148f" not in day1:
+        fail("settlement 1일차 tab is not a desk calendar beside the recap papers")
+    elif '"1일차"' not in day1:
+        fail("settlement 1일차 tab is not Korean day-1 copy")
+    elif "마지막 날" in day1 or "주차 마지막" in day1:
+        fail("settlement 1일차 tab reused last-day copy")
+    elif "220, -12" in day1 or "188, 48" in day1:
+        fail("settlement 1일차 tab covers n일차 SettleDayTab")
+    elif "416, -12" in day1 or "176, 48" in day1:
+        fail("settlement 1일차 tab covers the last-day tab")
+    elif "360, 60" in day1 or '"Next"' in day1:
+        fail("settlement 1일차 tab covers the next button")
+    elif "0, 168" in day1 or '"Result"' in day1:
+        fail("settlement 1일차 tab covers the result line")
+    elif "20, -148" in day1 or '"Income"' in day1 or '"Bills"' in day1:
+        fail("settlement 1일차 tab covers recap papers")
+    elif "SetActive(false)" not in day1:
+        fail("settlement 1일차 tab is not hidden until Render")
+    elif "run.day == 1" not in render or "_day1Tab" not in render:
+        fail("settlement 1일차 tab is not shown only on day 1")
+    elif render.split("if (_day1Tab", 1)[-1].split("bool last", 1)[0].count("LastDayOfCurrentWeek") != 0:
+        fail("settlement 1일차 tab reused last-day gate")
+    elif "LastDayOfCurrentWeek" not in render or "SetActive(last)" not in render:
+        fail("settlement 1일차 tab changed last-day tab logic")
+    elif "ArtSprites.DayTab" not in last_tab or '"마지막 날"' not in last_tab:
+        fail("settlement 1일차 tab dropped the last-day tab")
+    elif "416, -12" not in last_tab or "176, 48" not in last_tab:
+        fail("settlement 1일차 tab moved the last-day tab")
+    elif "ArtSprites.DayTab" not in n일차 or "SettleDayHead" not in n일차 or "220, -12" not in n일차:
+        fail("settlement 1일차 tab rewrote n일차 SettleDayTab")
+    elif "ArtSprites.CashSlip" not in recap or "ArtSprites.BillNotice" not in recap or "ArtSprites.MentalNote" not in recap:
+        fail("settlement 1일차 tab dropped recap papers")
+    elif '"Next"' not in build or "360, 60" not in build:
+        fail("settlement 1일차 tab dropped the next button")
+    elif '"NewGameDay"' not in start_hang or "412f, -10f" not in title_day or '"1일차"' not in title_day:
+        fail("settlement 1일차 tab restyled Title NewGameDay")
+    elif "preserveAspect = true" not in title_day or "SetActive(!_hasSave)" not in title_cs:
+        fail("settlement 1일차 tab changed Title NewGameDay hide")
+    elif '"MorningDay1"' not in morning_build or "8f, -220f" not in morning_day1 or '"1일차"' not in morning_day1:
+        fail("settlement 1일차 tab restyled MorningDay1")
+    elif "run.day == 1" not in morning_refresh or "LastDayOfCurrentWeek" in morning_refresh:
+        fail("settlement 1일차 tab changed MorningDay1 gate")
+    elif "LastDayOfCurrentWeek" not in last_refresh or "SetActive(last)" not in last_refresh:
+        fail("settlement 1일차 tab changed morning last-day logic")
+    elif '"ContinueLastDayTab"' not in title_build or "166f, -6f" not in continue_last:
+        fail("settlement 1일차 tab moved the continue last-day tab")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("settlement 1일차 tab moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("settlement 1일차 tab retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("settlement 1일차 tab retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("settlement 1일차 tab retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("settlement 1일차 tab broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising settlement 1일차 tab / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("settlement 1일차 tab dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("settlement 1일차 tab moved Unity off 6000.5.9f1")
+    else:
+        ok("day-1 settlement hangs 1일차 day_tab; other settlements hide it; last-day, NewGameDay, and MorningDay1 stay")
 
 
 def check_concert_live_badge() -> None:

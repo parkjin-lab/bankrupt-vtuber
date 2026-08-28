@@ -38,6 +38,7 @@ namespace BankruptVtuber
         Image _dayTab;
         Text _dayHead;
         Image _lastDayTab;
+        Image _day1Tab;
         Text _lastDayWeek;
         Text _showLine;
         Image _showLineIcon;
@@ -510,6 +511,15 @@ namespace BankruptVtuber
             UiKit.Layout(_leftCashShort.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -1f), new Vector2(-10f, -6f));
             _leftCashShort.gameObject.SetActive(false);
             _leftCashSlip.gameObject.SetActive(false);
+
+            _day1Tab = UiKit.Image(root, "SettleDay1", Color.white);
+            UiKit.Layout(_day1Tab.rectTransform, new Vector2(0.80f, 1f), new Vector2(0.80f, 1f), new Vector2(0f, 1f), new Vector2(8f, -148f), new Vector2(180f, 56f));
+            ArtSprites.Apply(_day1Tab, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _day1Tab.preserveAspect = true;
+            _day1Tab.raycastTarget = false;
+            var day1T = UiKit.Label(_day1Tab.transform, "T", "1일차", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(day1T.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _day1Tab.gameObject.SetActive(false);
 
             var panel = UiKit.Panel(root, "Sheet", Color.white);
             UiKit.Layout(panel, new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(980, 200));
@@ -1310,6 +1320,8 @@ namespace BankruptVtuber
             var run = gm.Run;
             if (_dayHead != null)
                 _dayHead.text = run.day + "일차";
+            if (_day1Tab != null)
+                _day1Tab.gameObject.SetActive(run.day == 1);
             bool last = WeekSchedule.LastDayOfCurrentWeek(run) == run.day;
             if (_lastDayTab != null)
                 _lastDayTab.gameObject.SetActive(last);
