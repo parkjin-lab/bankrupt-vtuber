@@ -25,6 +25,7 @@ namespace BankruptVtuber
         Image _continueLastDay;
         Text _continueLastWeek;
         Image _continueMemberPin;
+        Image _continueAgencyPin;
         Text _continueMoney;
         Text _continueDebt;
         Text _continueHead;
@@ -259,6 +260,12 @@ namespace BankruptVtuber
             _continueCashSlip.gameObject.SetActive(false);
             _continueDebtNotice.gameObject.SetActive(false);
             _continueMentalNote.gameObject.SetActive(false);
+            _continueAgencyPin = UiKit.Image(_continue.transform, "ContinueAgencyPin", Color.white);
+            UiKit.Layout(_continueAgencyPin.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-86f, 10f), new Vector2(72f, 48f));
+            ArtSprites.Apply(_continueAgencyPin, ArtSprites.AgencyCard, Color.white, Color.white);
+            _continueAgencyPin.preserveAspect = true;
+            _continueAgencyPin.raycastTarget = false;
+            _continueAgencyPin.gameObject.SetActive(false);
             _continueClip = UiKit.Image(titleParent, "ContinueClip", Color.white);
             UiKit.Layout(_continueClip.rectTransform, new Vector2(0, 0.52f), new Vector2(0, 0.52f), new Vector2(0, 0.5f), new Vector2(56, -286), new Vector2(420, 72));
             ArtSprites.Apply(_continueClip, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
@@ -446,6 +453,8 @@ namespace BankruptVtuber
                 _continueLastDay.gameObject.SetActive(false);
             if (_continueMemberPin != null && !_hasSave)
                 _continueMemberPin.gameObject.SetActive(false);
+            if (_continueAgencyPin != null && !_hasSave)
+                _continueAgencyPin.gameObject.SetActive(false);
             if (_continueClip != null)
                 _continueClip.gameObject.SetActive(hasHead);
             if (!_hasSave && _continueWarn != null)
@@ -472,6 +481,8 @@ namespace BankruptVtuber
                 _continueLastWeek.text = WeekSchedule.WeekNumber(peek) + "주차 마지막";
             if (_continueMemberPin != null)
                 _continueMemberPin.gameObject.SetActive(peek.membershipUnlocked);
+            if (_continueAgencyPin != null)
+                _continueAgencyPin.gameObject.SetActive(peek.agencyFounded);
             int bills = EconomyRules.TonightBills(peek);
             bool shortfall = bills > 0 && peek.cash < bills;
             if (_continueMoney != null)

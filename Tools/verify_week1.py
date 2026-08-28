@@ -1554,6 +1554,7 @@ def check_project() -> None:
     check_membership_live_badge()
     check_title_membership_pin()
     check_agency_live_badge()
+    check_title_agency_pin()
     check_goods_live_badge()
     check_ranking_live_badge()
     check_clip_live_badge()
@@ -10341,6 +10342,131 @@ def check_agency_live_badge() -> None:
         fail("agency pin moved Unity off 6000.5.9f1")
     else:
         ok("post-found live hangs a tiny agency_card pin; Weeks 1–3 / pre-found hide it")
+
+
+def check_title_agency_pin() -> None:
+    """Title continue hangs a tiny agency_card pin after found; Weeks 1–3 / pre-found hide it."""
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    w4_asset = (ROOT / "Assets/Resources/Balance/Week4Balance.asset").read_text(encoding="utf-8")
+    w4r_cs = (ROOT / "Assets/Scripts/Economy/Week4Rules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    last_tab = build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in build else ""
+    member_pin = build.split("_continueMemberPin = UiKit.Image", 1)[-1].split('"MoneyPlate"', 1)[0] if "_continueMemberPin = UiKit.Image" in build else ""
+    pin = build.split("_continueAgencyPin = UiKit.Image", 1)[-1].split('"ContinueClip"', 1)[0] if "_continueAgencyPin = UiKit.Image" in build else ""
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    hud = live_build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in live_build else ""
+    member = live_build.split('"MemberBadgeHud"', 1)[-1].split('"AgencyBadgeHud"', 1)[0] if '"AgencyBadgeHud"' in live_build else ""
+    live_pin = live_build.split('"AgencyBadgeHud"', 1)[-1]
+    if '"GoodsBadgeHud"' in live_pin:
+        live_pin = live_pin.split('"GoodsBadgeHud"', 1)[0]
+    else:
+        live_pin = live_pin.split("var chatPanel", 1)[0] if '"AgencyBadgeHud"' in live_build else ""
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    agency_build = settle_build.split('AgencyRoot"', 1)[-1].split('AgencySplashRoot"', 1)[0]
+    junior_build = settle_build.split('JuniorRoot"', 1)[-1].split('ConcertBookRoot"', 1)[0]
+    found_plate = agency_build.split('"AgencyCardHud"', 1)[-1].split('"AgencyTitle"', 1)[0] if '"AgencyCardHud"' in agency_build else ""
+    scout_plate = junior_build.split('"JuniorCardHud"', 1)[-1].split('"JuniorTitle"', 1)[0] if '"JuniorCardHud"' in junior_build else ""
+    found_show = settle_cs.split("void ShowAgencyCard", 1)[-1].split("void CloseAgencyCard", 1)[0]
+    junior_show = settle_cs.split("void ShowJuniorCard", 1)[-1].split("void CloseJuniorCard", 1)[0]
+
+    if 'AgencyCard = "Art/agency_card"' not in art_cs:
+        fail("ArtSprites does not hook Art/agency_card")
+    elif '"ContinueAgencyPin"' not in build or "ArtSprites.AgencyCard" not in pin:
+        fail("Title continue does not hang agency_card as a tiny pin")
+    elif "_continue.transform" not in pin:
+        fail("Title agency pin is not on the continue HUD")
+    elif "72f, 48f" not in pin or "preserveAspect = true" not in pin:
+        fail("Title agency pin is not a tiny preserveAspect card")
+    elif "-86f, 10f" not in pin:
+        fail("Title agency pin is not stacked next to the membership continue pin")
+    elif "SetActive(false)" not in pin:
+        fail("Title agency pin is not hidden on a new-game / pre-found title")
+    elif "SetActive(peek.agencyFounded)" not in fill:
+        fail("Title agency pin is not gated on the same found flag as the live pin")
+    elif "_continueAgencyPin" not in hide or "SetActive(false)" not in hide:
+        fail("Title agency pin is not hidden without a save")
+    elif "agencyFounded =" in title_cs:
+        fail("Title agency pin writes agency state")
+    elif '"AgencyBadgeHud"' in title_cs or '"AgencyCardHud"' in title_cs or '"JuniorCardHud"' in title_cs:
+        fail("Title agency pin copied the live pin or settlement plate name")
+    elif "_avatar.Root" in pin or "AgencyBadgeHud" in pin:
+        fail("Title agency pin is a live webcam cluster copy")
+    elif "UiKit.Stretch" in pin or "680f, 360f" in pin or "PanelDark" in pin:
+        fail("Title agency pin reused the settlement found plate")
+    elif "168f, 168f" in pin or "220f, 128f" in pin:
+        fail("Title agency pin stole a live plate slot")
+    elif "166f, -6f" in pin or "-10f, -6f" in pin:
+        fail("Title agency pin covers the last-day / n일차 day_tab")
+    elif "-8f, 10f" in pin or "-10f, -62f" in pin or "-10f, -10f" in pin:
+        fail("Title agency pin covers the membership continue pin or live webcam stack")
+    elif "ArtSprites.AgencyCard" in last_tab or '"ContinueAgencyPin"' in last_tab:
+        fail("Title agency pin sat between last-day tab and ContinueChip")
+    elif "ArtSprites.AgencyCard" in member_pin or '"ContinueAgencyPin"' in member_pin:
+        fail("Title agency pin sat on top of the membership continue pin hang")
+    elif '"ContinueMemberPin"' not in build or "ArtSprites.MembershipCard" not in member_pin:
+        fail("Title agency pin dropped the membership continue pin")
+    elif "-8f, 10f" not in member_pin or "72f, 48f" not in member_pin:
+        fail("Title agency pin restyled the membership continue pin")
+    elif "SetActive(peek.membershipUnlocked)" not in fill:
+        fail("Title agency pin unhooked membership continue pin gating")
+    elif '"ContinueLastDayTab"' not in build or "ArtSprites.DayTab" not in last_tab:
+        fail("Title agency pin dropped the last-day day_tab")
+    elif "LastDayOfCurrentWeek" not in fill or "SetActive(last)" not in fill:
+        fail("Title agency pin dropped last-day gating")
+    elif "Audio/sfx_agency" in title_cs or "PlayAgencySfx" in title_cs:
+        fail("Title agency pin stole sfx_agency off the settlement plate")
+    elif '"AgencyBadgeHud"' not in hud or "ArtSprites.AgencyCard" not in live_pin:
+        fail("Title agency pin dropped the live webcam pin")
+    elif "-10f, -62f" not in live_pin or "72f, 48f" not in live_pin:
+        fail("Title agency pin moved the live webcam pin")
+    elif "SetActive(_agencyShow)" not in apply or "agencyFounded" not in start:
+        fail("Title agency pin unhooked live pin found gating")
+    elif '"MemberBadgeHud"' not in hud or "-10f, -10f" not in member:
+        fail("Title agency pin covered the live membership badge")
+    elif '"AgencyCardHud"' not in agency_build or "ArtSprites.AgencyCard" not in found_plate:
+        fail("Title agency pin dropped the settlement found plate")
+    elif '"JuniorCardHud"' not in junior_build or "ArtSprites.AgencyCard" not in scout_plate:
+        fail("Title agency pin dropped the settlement scout plate")
+    elif "PlayAgencySfx();" not in found_show or "에이전시 설립" not in agency_build:
+        fail("Title agency pin restyled the settlement found plate")
+    elif "PlayAgencySfx();" not in junior_show or "후배 스카우트" not in junior_build:
+        fail("Title agency pin restyled the settlement scout plate")
+    elif "CanFoundAgency" not in w4r_cs or "CanScoutJunior" not in w4r_cs:
+        fail("Title agency pin changed found / scout routing")
+    elif "agencyFoundCost: 40000" not in w4_asset or "agencyDailyCost: 15000" not in w4_asset:
+        fail("Title agency pin retuned found / daily cost")
+    elif "agencyUnlockCash: 100000" not in w4_asset or "agencyUnlockDebtMax: 40000" not in w4_asset:
+        fail("Title agency pin retuned unlock gates")
+    elif "juniorScoutCost: 25000" not in w4_asset or "juniorDailySuccess: 4000" not in w4_asset:
+        fail("Title agency pin retuned junior numbers")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("Title agency pin retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("Title agency pin retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("Title agency pin retuned week-clear gates")
+    elif "perfectWindow: 0.07" not in balance or "perfectWindow * " not in rules_cs:
+        fail("Title agency pin retuned hit windows")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("Title agency pin broke pads, 입력됨, or added timeScale")
+    elif "Week4" in title_cs or "에이전시" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising agency pin / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("Title agency pin dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("Title agency pin moved Unity off 6000.5.9f1")
+    else:
+        ok("title continue hangs a tiny agency_card pin after found; Weeks 1–3 / pre-found hide it")
 
 
 def check_goods_live_badge() -> None:
