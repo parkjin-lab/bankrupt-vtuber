@@ -1594,6 +1594,7 @@ def check_project() -> None:
     check_readme_ranking_live_badge()
     check_readme_clip_live_badge()
     check_readme_concert_live_badge()
+    check_readme_sponsor_live_badge()
     check_readme_clip_card_plate()
     check_readme_concert_book_plate()
     check_readme_goods_card_plate()
@@ -13303,6 +13304,10 @@ def check_readme_sponsor_mention_live_card() -> None:
         fail("README sponsor-plate inventory dropped keep / fail / mental numbers")
     elif "sfx_sponsor" not in plate_inv:
         fail("README sponsor-plate inventory dropped sfx_sponsor")
+    elif "스폰서 핀" not in plate_inv or "라이브 HUD" not in plate_inv:
+        fail("README sponsor plate must stay distinct from the live pin")
+    elif "스폰서 핀" not in live_loop or "스폰서 핀" not in week4:
+        fail("README sponsor plate dropped the live webcam pin")
     elif "코치 스탬프" not in coach_stamp or "judge_miss" not in coach_stamp:
         fail("README sponsor plate dropped Day-1 coach stamps")
     elif sfx_inv.count("sfx_threat") < 4:
@@ -13350,7 +13355,7 @@ def check_readme_sponsor_mention_live_card() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README sponsor plate moved Unity off 6000.5.9f1")
     else:
-        ok("README names sponsor-mention live sponsor_card plate vs hidden on regular lives")
+        ok("README names sponsor-mention live sponsor_card plate vs live pin vs hidden on regular lives")
 
 
 def check_readme_ranking_board_plate() -> None:
@@ -14947,6 +14952,8 @@ def check_readme_concert_live_badge() -> None:
         fail("README concert pin dropped the goods live webcam pin")
     elif "에이전시 핀" not in week_cards or "에이전시 핀" not in week4 or "에이전시 핀" not in live_loop:
         fail("README concert pin dropped the agency live webcam pin")
+    elif "스폰서 핀" not in live_loop or "스폰서 핀" not in week_cards or "스폰서 핀" not in week4:
+        fail("README concert pin dropped the sponsor live webcam pin")
     elif "멤버십 배지" not in week_cards or "멤버십 배지" not in week2 or "멤버십 배지" not in live_loop:
         fail("README concert pin dropped the membership live webcam badge")
     elif "concert_stage" not in live_loop or "콘서트 바탕" not in live_loop:
@@ -15059,6 +15066,233 @@ def check_readme_concert_live_badge() -> None:
         fail("README concert pin moved Unity off 6000.5.9f1")
     else:
         ok("README names the post-book webcam concert pin vs backdrop vs both settlement plates")
+
+
+def check_readme_sponsor_live_badge() -> None:
+    """README names the post-mention webcam sponsor_card pin vs mention-day plate."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    run_cs = (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8")
+    w4_asset = (ROOT / "Assets/Resources/Balance/Week4Balance.asset").read_text(encoding="utf-8")
+    w4r_cs = (ROOT / "Assets/Scripts/Economy/Week4Rules.cs").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w2_asset = (ROOT / "Assets/Resources/Balance/Week2Balance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    live_loop = readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]
+    hud_stack = readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]
+    week_cards = next((ln for ln in readme.splitlines() if "주차 카드" in ln and "concert_stage" in ln), "")
+    pin_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **스폰서 핀**")), "")
+    plate_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **스폰서 플레이트**")), "")
+    concert_pin = next((ln for ln in readme.splitlines() if ln.startswith("- **콘서트 핀**")), "")
+    clip_pin = next((ln for ln in readme.splitlines() if ln.startswith("- **클립 핀**")), "")
+    rank_pin = next((ln for ln in readme.splitlines() if ln.startswith("- **랭킹 핀**")), "")
+    goods_pin = next((ln for ln in readme.splitlines() if ln.startswith("- **굿즈 핀**")), "")
+    agency_pin = next((ln for ln in readme.splitlines() if ln.startswith("- **에이전시 핀**")), "")
+    badge_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **멤버십 배지**")), "")
+    shelf_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **굿즈 선반**")), "")
+    week2 = readme.split("**2주차**", 1)[-1].split("**3주차**", 1)[0]
+    week3 = readme.split("**3주차**", 1)[-1].split("**4주차**", 1)[0]
+    week4 = readme.split("**4주차**", 1)[-1].split("**5주차**", 1)[0]
+    week5 = readme.split("**5주차**", 1)[-1].split("이름 팬", 1)[0]
+    stage_inv = next((ln for ln in readme.splitlines() if "콘서트 바탕" in ln and "sfx_concert_book" in ln and "스테이지 숨김" in ln), "")
+    coach_stamp = next((ln for ln in readme.splitlines() if "코치 스탬프" in ln and "judge_perfect" in ln), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    pin_arm = start.split("_sponsorPinShow", 1)[-1][:120] if "_sponsorPinShow" in start else ""
+    begin_next = run_cs.split("void BeginNextDay", 1)[-1]
+    hud = live_build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in live_build else ""
+    member = live_build.split('"MemberBadgeHud"', 1)[-1].split('"AgencyBadgeHud"', 1)[0] if '"AgencyBadgeHud"' in live_build else ""
+    agency = live_build.split('"AgencyBadgeHud"', 1)[-1].split('"GoodsBadgeHud"', 1)[0] if '"GoodsBadgeHud"' in live_build else ""
+    goods = live_build.split('"GoodsBadgeHud"', 1)[-1].split('"RankingBadgeHud"', 1)[0] if '"RankingBadgeHud"' in live_build else ""
+    rank = live_build.split('"RankingBadgeHud"', 1)[-1].split('"ClipBadgeHud"', 1)[0] if '"ClipBadgeHud"' in live_build else ""
+    clip = live_build.split('"ClipBadgeHud"', 1)[-1].split('"ConcertBadgeHud"', 1)[0] if '"ConcertBadgeHud"' in live_build else ""
+    concert = live_build.split('"ConcertBadgeHud"', 1)[-1].split('"SponsorBadgeHud"', 1)[0] if '"SponsorBadgeHud"' in live_build else ""
+    pin = live_build.split('"SponsorBadgeHud"', 1)[-1].split("var chatPanel", 1)[0] if '"SponsorBadgeHud"' in live_build else ""
+    plate = live_build.split('"SponsorCardHud"', 1)[-1].split('"GoodsStandHud"', 1)[0] if '"SponsorCardHud"' in live_build else ""
+    under = live_build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
+    shelf = live_build.split('"GoodsStandHud"', 1)[-1].split('"HypeFlash"', 1)[0] if '"GoodsStandHud"' in live_build else ""
+
+    missing = next(
+        (
+            f"{label} {token}"
+            for label, block in (
+                ("live loop", live_loop),
+                ("week-card inventory", week_cards),
+                ("sponsor-pin inventory", pin_inv),
+                ("Week 4", week4),
+            )
+            for token in ("sponsor_card", "스폰서 핀")
+            if token not in block
+        ),
+        "",
+    )
+
+    if missing:
+        fail(f"README {missing} must name the post-mention sponsor_card webcam pin")
+    elif "웹캠" not in live_loop or "숨김" not in live_loop or "콘서트 핀" not in live_loop:
+        fail("README live loop must name the webcam sponsor pin under the concert pin")
+    elif "스폰서 플레이트" in live_loop:
+        fail("README hung the mention-day sponsor plate as the live-loop pin")
+    elif "웹캠" not in pin_inv or "숨김" not in pin_inv or "콘서트 핀" not in pin_inv:
+        fail("README sponsor-pin inventory must name the webcam pin vs hidden")
+    elif "스폰서 플레이트" not in pin_inv:
+        fail("README sponsor-pin inventory must stay distinct from the mention-day plate")
+    elif "스폰서 핀" not in plate_inv or "라이브 HUD" not in plate_inv:
+        fail("README sponsor plate must stay distinct from the live pin")
+    elif pin_inv == plate_inv:
+        fail("README must keep sponsor pin / plate on two lines")
+    elif "스폰서 핀" not in hud_stack or "sponsor_card" not in hud_stack:
+        fail("README live HUD stack dropped the sponsor webcam pin")
+    elif "콘서트 핀" not in hud_stack or "concert_stage" not in hud_stack:
+        fail("README sponsor pin dropped the concert webcam pin")
+    elif "클립 핀" not in hud_stack or "clip_card" not in hud_stack:
+        fail("README sponsor pin dropped the clip webcam pin")
+    elif "랭킹 핀" not in hud_stack or "ranking_board" not in hud_stack:
+        fail("README sponsor pin dropped the ranking webcam pin")
+    elif "굿즈 핀" not in hud_stack or "goods_stand" not in hud_stack:
+        fail("README sponsor pin dropped the goods webcam pin")
+    elif "에이전시 핀" not in hud_stack or "agency_card" not in hud_stack:
+        fail("README sponsor pin dropped the agency webcam pin")
+    elif "멤버십 배지" not in hud_stack or "membership_card" not in hud_stack:
+        fail("README sponsor pin dropped the membership webcam badge")
+    elif "웹캠" not in concert_pin or "숨김" not in concert_pin:
+        fail("README sponsor pin dropped concert-pin inventory")
+    elif "웹캠" not in clip_pin or "숨김" not in clip_pin:
+        fail("README sponsor pin dropped clip-pin inventory")
+    elif "웹캠" not in rank_pin or "숨김" not in rank_pin:
+        fail("README sponsor pin dropped ranking-pin inventory")
+    elif "웹캠" not in goods_pin or "숨김" not in goods_pin:
+        fail("README sponsor pin dropped goods-pin inventory")
+    elif "웹캠" not in agency_pin or "숨김" not in agency_pin:
+        fail("README sponsor pin dropped agency-pin inventory")
+    elif "웹캠" not in badge_inv or "숨김" not in badge_inv:
+        fail("README sponsor pin dropped membership-badge inventory")
+    elif "스폰서 핀" not in week4 or "숨김" not in week4 or "sfx_sponsor" not in week4:
+        fail("README Week 4 must name the live webcam pin vs hidden before mention")
+    elif "스폰서 플레이트" not in week_cards or "스폰서 멘트" not in week4 or "플레이트" not in week4:
+        fail("README week-card / Week 4 dropped the mention-day sponsor plate")
+    elif "콘서트 핀" not in week_cards or "콘서트 핀" not in week5 or "콘서트 핀" not in live_loop:
+        fail("README sponsor pin dropped the concert live webcam pin")
+    elif "클립 핀" not in week_cards or "클립 핀" not in week2 or "클립 핀" not in live_loop:
+        fail("README sponsor pin dropped the clip live webcam pin")
+    elif "랭킹 핀" not in week_cards or "랭킹 핀" not in week5 or "랭킹 핀" not in live_loop:
+        fail("README sponsor pin dropped the ranking live webcam pin")
+    elif "굿즈 핀" not in week_cards or "굿즈 핀" not in week3 or "굿즈 핀" not in live_loop:
+        fail("README sponsor pin dropped the goods live webcam pin")
+    elif "에이전시 핀" not in week_cards or "에이전시 핀" not in week4 or "에이전시 핀" not in live_loop:
+        fail("README sponsor pin dropped the agency live webcam pin")
+    elif "멤버십 배지" not in week_cards or "멤버십 배지" not in week2 or "멤버십 배지" not in live_loop:
+        fail("README sponsor pin dropped the membership live webcam badge")
+    elif "concert_stage" not in live_loop or "콘서트 바탕" not in live_loop:
+        fail("README must keep concert_stage as the live backdrop, not the sponsor pin")
+    elif "goods_stand" not in live_loop or "선반" not in live_loop or "굿즈 홍보" not in live_loop:
+        fail("README must keep goods_stand as the live shelf, not the sponsor pin")
+    elif "sponsor_card" not in live_loop or "스폰서 멘트" not in live_loop:
+        fail("README must keep sponsor_card as the mention-day plate, not only the pin")
+    elif "콘서트 바탕" not in stage_inv or "스테이지 숨김" not in stage_inv:
+        fail("README sponsor pin dropped concert backdrop")
+    elif "선반" not in shelf_inv or "goods_stand" not in shelf_inv:
+        fail("README sponsor pin dropped goods-stand inventory")
+    elif "3,000" not in plate_inv or "15,000" not in plate_inv or "sfx_sponsor" not in plate_inv:
+        fail("README sponsor pin dropped mention-day plate numbers / sfx_sponsor")
+    elif "코치 스탬프" not in coach_stamp or "judge_miss" not in coach_stamp:
+        fail("README sponsor pin dropped Day-1 coach stamps")
+    elif sfx_inv.count("sfx_threat") < 4:
+        fail("README SFX inventory dropped the four sfx_threat uses")
+    elif '"SponsorBadgeHud"' not in hud or "ArtSprites.SponsorCard" not in pin:
+        fail("README sponsor pin lost the live HUD hang")
+    elif "UiKit.Stretch" in pin or "72f, 48f" not in pin or "-10f, -322f" not in pin:
+        fail("README sponsor pin restyled the tiny webcam pin")
+    elif "preserveAspect = true" not in pin:
+        fail("README sponsor pin dropped preserveAspect")
+    elif "-10f, -10f" not in member or "72f, 48f" not in member:
+        fail("README sponsor pin covered the membership webcam badge")
+    elif "-10f, -62f" not in agency or "72f, 48f" not in agency:
+        fail("README sponsor pin covered the agency webcam pin")
+    elif "-10f, -114f" not in goods or "72f, 48f" not in goods:
+        fail("README sponsor pin covered the goods webcam pin")
+    elif "-10f, -166f" not in rank or "72f, 48f" not in rank:
+        fail("README sponsor pin covered the ranking webcam pin")
+    elif "-10f, -218f" not in clip or "72f, 48f" not in clip:
+        fail("README sponsor pin covered the clip webcam pin")
+    elif "-10f, -270f" not in concert or "72f, 48f" not in concert:
+        fail("README sponsor pin covered the concert webcam pin")
+    elif "220f, 128f" in pin or "16f, 392f" in pin:
+        fail("README sponsor pin stole the mention-day plate slot")
+    elif "SetActive(_sponsorPinShow)" not in apply or "sponsorMentioned" not in start:
+        fail("README sponsor pin lost sponsorMentioned gating")
+    elif "LineActive" in pin_arm or "_sponsorShow" in pin_arm or "InWeek4" in pin_arm:
+        fail("README sponsor pin is gated on the mention live, not sponsorMentioned")
+    elif "sponsorMentioned = false" in begin_next:
+        fail("README sponsor pin unlock is cleared every morning")
+    elif '"SponsorCardHud"' not in live_build or "ArtSprites.SponsorCard" not in plate:
+        fail("README sponsor pin dropped the mention-day live plate")
+    elif "220f, 128f" not in plate or "16f, 392f" not in plate:
+        fail("README sponsor pin restyled the mention-day live plate")
+    elif "SetActive(_sponsorShow)" not in apply or "EnableSponsorLine" not in start:
+        fail("README sponsor pin dropped mention-day plate gating")
+    elif "PlaySfx(_sponsorCue" not in live_cs or "Audio/sfx_sponsor" not in live_cs:
+        fail("README sponsor pin stole sfx_sponsor off the mention-day plate")
+    elif "SetActive(_concertPinShow)" not in apply or '"ConcertBadgeHud"' not in live_cs:
+        fail("README sponsor pin dropped the concert live pin")
+    elif "SetActive(_clipPinShow)" not in apply or '"ClipBadgeHud"' not in live_cs:
+        fail("README sponsor pin dropped the clip live pin")
+    elif "SetActive(_rankPinShow)" not in apply or '"RankingBadgeHud"' not in live_cs:
+        fail("README sponsor pin dropped the ranking live pin")
+    elif "SetActive(_goodsPinShow)" not in apply or '"GoodsBadgeHud"' not in live_cs:
+        fail("README sponsor pin dropped the goods live pin")
+    elif "SetActive(_memberShow)" not in apply or '"MemberBadgeHud"' not in live_cs:
+        fail("README sponsor pin dropped the membership live badge")
+    elif "SetActive(_agencyShow)" not in apply or '"AgencyBadgeHud"' not in live_cs:
+        fail("README sponsor pin dropped the agency live pin")
+    elif "SetActive(_goodsShow)" not in apply or "ArtSprites.GoodsStand" not in shelf:
+        fail("README sponsor pin dropped goods-promo live goods_stand")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in under:
+        fail("README sponsor pin dropped concert live concert_stage")
+    elif 'SponsorCard = "Art/sponsor_card"' not in art_cs:
+        fail("ArtSprites does not hook Art/sponsor_card")
+    elif "EnableSponsorLine" not in session_cs or "EnablePromo" not in session_cs:
+        fail("README sponsor pin unhooked EnableSponsorLine / EnablePromo")
+    elif "sponsorLineBonus: 3000" not in w4_asset or "sponsorFailCash: 15000" not in w4_asset:
+        fail("README sponsor pin retuned line payout / fail")
+    elif "sponsorMentioned = true" not in w4r_cs:
+        fail("README sponsor pin is not armed when the mention succeeds")
+    elif "concertCost: 80000" not in w5_asset or "goodsUnlockCash: 60000" not in w3_asset:
+        fail("README sponsor pin retuned concert / goods numbers")
+    elif "clipCash: 30000" not in w2_asset or "startingMembers: 8" not in w2_asset:
+        fail("README sponsor pin retuned clip / membership numbers")
+    elif "LastDayBanner" not in week_cs:
+        fail("README sponsor pin dropped morning last-day tab")
+    elif '"ContinueLastDayTab"' not in title_cs or '"SettleLastDayTab"' not in settle_cs:
+        fail("README sponsor pin dropped title / settlement last-day tabs")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README sponsor pin retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README sponsor pin retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README sponsor pin retuned week-clear gates")
+    elif "perfectWindow * " not in rules_cs:
+        fail("README sponsor pin retuned Judge windows")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README sponsor pin broke pads, 입력됨, or added timeScale")
+    elif "Week4" in title_cs or "스폰서" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising sponsor pin / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README sponsor pin dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README sponsor pin moved Unity off 6000.5.9f1")
+    else:
+        ok("README names the post-mention webcam sponsor pin vs mention-day plate")
 
 
 def check_readme_clip_card_plate() -> None:
@@ -20489,6 +20723,10 @@ def check_readme_playable() -> None:
         fail("README does not inventory the post-book concert live webcam pin")
     elif "콘서트 핀" not in readme.split("**5주차**", 1)[-1].split("이름 팬", 1)[0]:
         fail("README Week 5 dropped the live concert webcam pin")
+    elif "스폰서 핀" not in readme or "스폰서 핀" not in readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]:
+        fail("README does not inventory the post-mention sponsor live webcam pin")
+    elif "스폰서 핀" not in readme.split("**4주차**", 1)[-1].split("**5주차**", 1)[0]:
+        fail("README Week 4 dropped the live sponsor webcam pin")
     elif "콘서트 개최 플레이트" not in readme or "콘서트 개최" not in readme.split("**5주차**", 1)[-1].split("이름 팬", 1)[0]:
         fail("README does not inventory concert-booking settlement concert_stage plate")
     elif "굿즈 해금 플레이트" not in readme or "아크릴 스탠드 해금" not in readme.split("**3주차**", 1)[-1].split("**4주차**", 1)[0]:
@@ -20664,7 +20902,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + 코치 스탬프 + 콘서트 바탕 + 콘서트 핀 + 콘서트 개최 플레이트 + 콘서트 결과 플레이트 + 굿즈 선반 + 굿즈 핀 + 굿즈 해금 플레이트 + 스폰서 플레이트 + 랭킹 플레이트 + 랭킹 핀 + 에이전시 핀 + 에이전시 플레이트 + 멤버십 배지 + 멤버십 플레이트 + 클립 핀 + 클립 플레이트 + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + 코치 스탬프 + 콘서트 바탕 + 콘서트 핀 + 콘서트 개최 플레이트 + 콘서트 결과 플레이트 + 굿즈 선반 + 굿즈 핀 + 굿즈 해금 플레이트 + 스폰서 플레이트 + 스폰서 핀 + 랭킹 플레이트 + 랭킹 핀 + 에이전시 핀 + 에이전시 플레이트 + 멤버십 배지 + 멤버십 플레이트 + 클립 핀 + 클립 플레이트 + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
