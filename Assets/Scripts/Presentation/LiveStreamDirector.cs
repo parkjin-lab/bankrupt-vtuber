@@ -1052,16 +1052,19 @@ namespace BankruptVtuber
 
             _showTitle = UiKit.Label(root, "ShowTitle", "", 34, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(_showTitle.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(164, -212), new Vector2(280, 44));
-            var showChip = UiKit.Panel(root, "ShowChip", Palette.Pink);
-            UiKit.Layout(showChip, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -214), new Vector2(148, 36));
+            var showChip = UiKit.Panel(root, "ShowChip", Color.white);
+            UiKit.Layout(showChip, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -214), new Vector2(168, 44));
             _showChipImg = showChip.GetComponent<Image>();
             if (_showChipImg != null)
+            {
+                ArtSprites.ApplySliced(_showChipImg, ArtSprites.ContentPlate, Palette.Pink, new Vector4(40f, 48f, 40f, 48f));
                 _showChipImg.raycastTarget = false;
+            }
             _showChipIcon = UiKit.Image(showChip, "Icon", Color.white);
-            UiKit.Layout(_showChipIcon.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(18f, 0f), new Vector2(26f, 26f));
+            UiKit.Layout(_showChipIcon.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(22f, 0f), new Vector2(28f, 28f));
             _showChipIcon.raycastTarget = false;
             _showChip = UiKit.Label(showChip, "T", "", 20, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_showChip.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(28f, 0f), new Vector2(-8f, 0f));
+            UiKit.Layout(_showChip.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(36f, 0f), new Vector2(-10f, 0f));
             var billChip = UiKit.Panel(root, "BillChip", new Color(0.55f, 0.08f, 0.16f, 0.94f));
             UiKit.Layout(billChip, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(460, -214), new Vector2(240, 40));
             _billChipImg = billChip.GetComponent<Image>();
@@ -2945,7 +2948,7 @@ namespace BankruptVtuber
             if (_showChip != null)
                 _showChip.text = name;
             if (_showChipImg != null)
-                _showChipImg.color = ShowChipAccent(type);
+                ArtSprites.ApplySliced(_showChipImg, ArtSprites.ContentPlate, ShowChipAccent(type), new Vector4(40f, 48f, 40f, 48f));
             if (_showChipIcon != null)
             {
                 string icon = ArtSprites.ForContent(type);

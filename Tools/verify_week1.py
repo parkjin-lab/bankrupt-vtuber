@@ -1481,6 +1481,7 @@ def check_project() -> None:
     check_start_pulse()
     check_continue_pulse()
     check_show_chip()
+    check_live_content_plate()
     check_settle_show_line()
     check_vtuber_face()
     check_webcam_bezel()
@@ -4702,6 +4703,8 @@ def check_show_chip() -> None:
         fail("show chip drifted from WeekStart card accents")
     elif "ArtSprites.ForContent" not in paint or '"Icon"' not in live_cs or "_showChipIcon" not in live_cs:
         fail("show chip does not reuse morning content icons")
+    elif "ArtSprites.ContentPlate" not in paint or "ApplySliced" not in paint:
+        fail("show chip does not reuse morning content_plate")
     elif "PaintShowChip(look.Type)" not in apply:
         fail("show chip is not keyed off tonight's pick")
     elif "look.OverlayTitle" not in apply or "look.Wash" not in apply or "look.BedVolume" not in apply:
@@ -4734,6 +4737,58 @@ def check_show_chip() -> None:
         fail("show chip moved Unity off 6000.5.9f1")
     else:
         ok("live show chip names 토크/게임/노래/리액션 with morning icons; skins stay")
+
+
+def check_live_content_plate() -> None:
+    """Live HUD content chip reuses content_plate so it matches morning pick cards."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    content_asset = (ROOT / "Assets/Resources/Balance/ContentBalance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    paint = live_cs.split("void PaintShowChip", 1)[-1].split("void ApplyThreatShow", 1)[0]
+    pick = week_cs.split("void AddContentButton", 1)[-1].split("void OnPickContent", 1)[0]
+    build = live_cs.split('"ShowChip"', 1)[-1].split("var billChip", 1)[0]
+    line = settle_cs.split("void PaintShowLine", 1)[-1].split("static string ShowLineName", 1)[0] if "void PaintShowLine" in settle_cs else ""
+
+    if 'ContentPlate = "Art/content_plate"' not in art_cs:
+        fail("ArtSprites does not hook Art/content_plate")
+    elif "ArtSprites.ContentPlate" not in pick or "ApplySliced" not in pick:
+        fail("live content_plate reuse dropped morning pick cards")
+    elif "ArtSprites.ContentPlate" not in build or "ApplySliced" not in build:
+        fail("ShowChip does not hang Art/content_plate at build")
+    elif "ArtSprites.ContentPlate" not in paint or "ApplySliced" not in paint:
+        fail("PaintShowChip does not recolor content_plate by accent")
+    elif '"토크"' not in paint or '"게임"' not in paint or '"노래"' not in paint or '"리액션"' not in paint:
+        fail("live content_plate dropped Korean show names")
+    elif "ArtSprites.ForContent" not in paint or "_showChipIcon" not in live_cs:
+        fail("live content_plate dropped content icons")
+    elif "Palette.Pink" not in paint or "Palette.Gold" not in paint:
+        fail("live content_plate dropped accent colors")
+    elif "오늘 토크" not in settle_cs or "PaintShowLine" not in settle_cs:
+        fail("live content_plate dropped settlement one-liner")
+    elif "ArtSprites.ForContent" not in line and "ArtSprites.ForContent" not in settle_cs:
+        fail("settlement show line dropped content icons")
+    elif "talkIncomeMultiplier: 1" not in content_asset or "songMentalCost: 8" not in content_asset:
+        fail("live content_plate retuned ContentBalance")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("live content_plate retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("live content_plate broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising live content_plate / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("live content_plate dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("live content_plate moved Unity off 6000.5.9f1")
+    elif "Art/content_plate" not in readme or "오늘 픽" not in readme:
+        fail("README should mention live content_plate reuse")
+    else:
+        ok("live show chip sits on content_plate; icon / name / settlement line stay")
 
 
 def check_settle_show_line() -> None:
@@ -7011,6 +7066,8 @@ def check_content_plate() -> None:
         fail("content pick buttons do not hang Art/content_plate")
     elif pick.count("ArtSprites.ContentPlate") < 1:
         fail("content_plate is not reused on the four pick cards")
+    elif "ArtSprites.ContentPlate" not in live_cs or "PaintShowChip" not in live_cs:
+        fail("content_plate is not reused on the live show chip")
     elif "ArtSprites.ForContent" not in week_cs or '"Icon"' not in pick:
         fail("content_plate dropped show icons")
     elif "ContentPickAccent" not in week_cs or "Palette.Pink" not in week_cs or "Palette.Gold" not in week_cs:
