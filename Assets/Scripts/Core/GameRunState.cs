@@ -87,6 +87,7 @@ namespace BankruptVtuber
         public int lastSponsorLineBonus;
         public bool lastSponsorLineSuccess;
         public bool lastSponsorBroke;
+        public bool sponsorMentioned;
 
         public int playerRankingScore;
         public int[] npcRankingScore = new int[3];
@@ -234,6 +235,7 @@ namespace BankruptVtuber
             lastSponsorLineBonus = 0;
             lastSponsorLineSuccess = false;
             lastSponsorBroke = false;
+            sponsorMentioned = false;
         }
 
         void ClearWeek5Progress()

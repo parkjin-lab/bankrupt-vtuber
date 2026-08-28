@@ -179,6 +179,8 @@ namespace BankruptVtuber
         Image _clipBadge;
         bool _concertPinShow;
         Image _concertBadge;
+        bool _sponsorPinShow;
+        Image _sponsorBadge;
         float _bedVolume;
         float _bedDuck;
         bool _threatGear;
@@ -365,6 +367,7 @@ namespace BankruptVtuber
             {
                 _session.EnableSponsorLine(gm.Week4);
                 _sponsorShow = true;
+                gm.Run.sponsorMentioned = true;
             }
             if (Week5Rules.ConcertStreamReady(gm.Run))
             {
@@ -378,6 +381,7 @@ namespace BankruptVtuber
             _rankPinShow = Week5Rules.RankingUnlocked(gm.Run, gm.Week5);
             _clipPinShow = gm.Run.clipUploaded;
             _concertPinShow = gm.Run.concertBooked;
+            _sponsorPinShow = gm.Run.sponsorMentioned;
             _shownViewers = _session.Viewers;
             _incomeMarked = _session.LiveIncome;
             _incomeMarkedAt = _session.Elapsed;
@@ -1198,6 +1202,12 @@ namespace BankruptVtuber
                 _concertBadge.preserveAspect = true;
                 _concertBadge.raycastTarget = false;
                 _concertBadge.gameObject.SetActive(false);
+                _sponsorBadge = UiKit.Image(_avatar.Root, "SponsorBadgeHud", Color.white);
+                UiKit.Layout(_sponsorBadge.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-10f, -322f), new Vector2(72f, 48f));
+                ArtSprites.Apply(_sponsorBadge, ArtSprites.SponsorCard, Color.white, Color.white);
+                _sponsorBadge.preserveAspect = true;
+                _sponsorBadge.raycastTarget = false;
+                _sponsorBadge.gameObject.SetActive(false);
             }
 
             var chatPanel = UiKit.Panel(root, "Chat", new Color(0.07f, 0.05f, 0.1f, 0.0f));
@@ -3193,6 +3203,8 @@ namespace BankruptVtuber
                 _clipBadge.gameObject.SetActive(_clipPinShow);
             if (_concertBadge != null)
                 _concertBadge.gameObject.SetActive(_concertPinShow);
+            if (_sponsorBadge != null)
+                _sponsorBadge.gameObject.SetActive(_sponsorPinShow);
             UiKit.EnsureCamera(look.Wash);
             _avatar?.ApplyShow(look);
             if (_bed != null)

@@ -303,6 +303,7 @@ namespace BankruptVtuber
                 lastSponsorLineBonus = run.lastSponsorLineBonus,
                 lastSponsorLineSuccess = run.lastSponsorLineSuccess,
                 lastSponsorBroke = run.lastSponsorBroke,
+                sponsorMentioned = run.sponsorMentioned,
                 playerRankingScore = run.playerRankingScore,
                 npcRankingScore = Copy3(run.npcRankingScore),
                 lastNpcScore = Copy3(run.lastNpcScore),
@@ -432,6 +433,7 @@ namespace BankruptVtuber
             run.lastSponsorLineBonus = data.lastSponsorLineBonus;
             run.lastSponsorLineSuccess = data.lastSponsorLineSuccess;
             run.lastSponsorBroke = data.lastSponsorBroke;
+            run.sponsorMentioned = data.sponsorMentioned;
             run.playerRankingScore = data.playerRankingScore;
             run.npcRankingScore = Copy3(data.npcRankingScore);
             run.lastNpcScore = Copy3(data.lastNpcScore);
@@ -646,6 +648,7 @@ namespace BankruptVtuber
             public int lastSponsorLineBonus;
             public bool lastSponsorLineSuccess;
             public bool lastSponsorBroke;
+            public bool sponsorMentioned;
             public int playerRankingScore;
             public int[] npcRankingScore;
             public int[] lastNpcScore;

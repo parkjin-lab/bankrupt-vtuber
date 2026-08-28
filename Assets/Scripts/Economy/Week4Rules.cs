@@ -131,6 +131,7 @@ namespace BankruptVtuber
             {
                 run.lastSponsorLineBonus = w4.sponsorLineBonus;
                 run.cash += w4.sponsorLineBonus;
+                run.sponsorMentioned = true;
                 EconomyRules.ConvertNegativeCashToDebt(run);
                 return;
             }
