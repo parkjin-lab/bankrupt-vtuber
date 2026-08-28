@@ -1548,6 +1548,7 @@ def check_project() -> None:
     check_readme_ending_stamps()
     check_ending_headline_clip()
     check_ending_day_tab()
+    check_ending_mental_note()
     check_readme_ending_clip_tab()
     check_readme_onair_led()
     check_readme_rival_hud()
@@ -9102,6 +9103,110 @@ def check_ending_day_tab() -> None:
         ok("clear / bankrupt n일차 sit on day_tab; desk paper / stamps / clip / sfx / rules stay")
 
 
+def check_ending_mental_note() -> None:
+    """Clear / bankrupt mental sit on the same mental_note sticky as morning, title, live, and settlement."""
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    splash = settle_cs.split("void ApplyResultSplashes", 1)[-1].split("void ApplyHeadline", 1)[0]
+    clear_fn = settle_cs.split("static bool IsWeekClear", 1)[-1].split("static bool ShouldShowEnding", 1)[0]
+    broke_fn = settle_cs.split("static bool IsBankruptResult", 1)[-1].split("static bool IsBurnoutResult", 1)[0]
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    clear_build = build.split('ClearRoot"', 1)[-1].split('StampRoot"', 1)[0]
+    stamp_build = build.split('StampRoot"', 1)[-1].split('LetterRoot"', 1)[0]
+    clear_splash = splash.split("if (clear &&", 1)[-1].split("if ((bankrupt", 1)[0]
+    broke_splash = splash.split("if ((bankrupt", 1)[-1].split("if (!_resultStingPlayed", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    warn = live_cs.split('var warn = UiKit.Panel', 1)[-1].split("_eventWarnBox", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+    hud = week_cs.split("void RefreshHud", 1)[-1].split("void RefreshCashShort", 1)[0]
+
+    if 'MentalNote = "Art/mental_note"' not in art_cs:
+        fail("ArtSprites does not hook Art/mental_note")
+    elif "ArtSprites.MentalNote" not in money or '"MentalChip"' not in week_cs or '"멘탈"' not in week_cs:
+        fail("ending mental_note reuse dropped morning 멘탈")
+    elif "run.mental" not in hud or "/100" not in hud:
+        fail("ending mental_note reuse dropped morning mental read")
+    elif "ContinueMentalNote" not in title_cs or "ArtSprites.MentalNote" not in title_cs or '"멘탈 "' not in fill:
+        fail("ending mental_note reuse dropped title continue 멘탈")
+    elif "peek.mental" not in fill:
+        fail("ending mental_note reuse dropped title continue mental read")
+    elif "ArtSprites.MentalNote" not in warn or "멘탈 위험" not in warn:
+        fail("ending mental_note reuse dropped live 멘탈 위험")
+    elif "ArtSprites.MentalNote" not in build or 'recap.Find("Mental")' not in build or '"멘탈"' not in build:
+        fail("ending mental_note reuse dropped settlement 멘탈")
+    elif "ArtSprites.MentalNote" not in clear_build or '"ClearMentalNote"' not in clear_build:
+        fail("week-clear splash does not hang Art/mental_note")
+    elif "UiKit.Label(_clearMentalNote.transform" not in clear_build or '"멘탈 0"' not in clear_build:
+        fail("week-clear mental is not a Korean label on the sticky")
+    elif clear_build.count('"ClearMentalNote"') != 1 or splash.count("_clearMental") < 1:
+        fail("week-clear grew a second mental readout")
+    elif "ArtSprites.MentalNote" not in stamp_build or '"StampMentalNote"' not in stamp_build:
+        fail("bankrupt splash does not hang Art/mental_note")
+    elif "UiKit.Label(_stampMentalNote.transform" not in stamp_build or '"StampMental"' not in stamp_build:
+        fail("bankrupt mental is not a Korean label on the sticky")
+    elif stamp_build.count('"StampMentalNote"') != 1:
+        fail("bankrupt grew a second mental sticky")
+    elif '"멘탈  "' not in clear_splash or "run.mental" not in clear_splash:
+        fail("week-clear sticky does not read the current mental value")
+    elif '"멘탈  "' not in broke_splash or "run.mental" not in broke_splash:
+        fail("bankrupt sticky does not read the current mental value")
+    elif "멘탈 0   ·   " not in broke_splash or "zeroMentalDays" not in broke_splash:
+        fail("ending mental_note dropped burnout mental copy")
+    elif "run.mental =" in splash or "run.mental =" in settle_cs or "mental +=" in settle_cs or "mental -=" in settle_cs:
+        fail("ending mental_note writes mental")
+    elif "ArtSprites.CashSlip" not in clear_build or "ArtSprites.BillNotice" not in stamp_build:
+        fail("ending mental_note dropped desk-paper slips")
+    elif "ArtSprites.BillCover" not in clear_build or "ArtSprites.BillShort" not in stamp_build:
+        fail("ending mental_note dropped PAID / 미달 stamps")
+    elif "ArtSprites.HeadlineClip" not in clear_build or "ArtSprites.DayTab" not in stamp_build:
+        fail("ending mental_note dropped headline_clip / day_tab")
+    elif "ArtSprites.EndingClear" not in clear_build or "ArtSprites.EndingBankrupt" not in stamp_build:
+        fail("ending mental_note dropped ending_clear / ending_bankrupt")
+    elif "주차 클리어" not in settle_cs or "1주차 생존" not in splash or "다음 주차 시작" not in settle_cs:
+        fail("ending mental_note changed week-clear copy")
+    elif '"파산"' not in settle_cs or "번아웃" not in splash or "처음부터" not in stamp_build:
+        fail("ending mental_note changed bankrupt / burnout copy")
+    elif "PlaySettleSfx(_clearCue" not in splash or "PlaySettleSfx(_bankruptCue" not in splash:
+        fail("ending mental_note dropped sfx_clear / sfx_bankrupt")
+    elif "Audio/sfx_clear" not in settle_cs or "Audio/sfx_bankrupt" not in settle_cs:
+        fail("ending mental_note dropped Audio/sfx_clear|sfx_bankrupt")
+    elif "WeekOutcome.Win" not in clear_fn or "WeekOutcome.Week4Win" not in clear_fn:
+        fail("ending mental_note changed week-clear conditions")
+    elif "WeekOutcome.Bankrupt" not in broke_fn or "EndingKind.Bankrupt" not in broke_fn:
+        fail("ending mental_note changed bankrupt conditions")
+    elif "BankruptDebt" not in eco_cs or "public void NextMorning()" not in gm:
+        fail("ending mental_note changed bankrupt numbers or routing")
+    elif "missStreakMentalPenalty" not in rules_cs or "totalMissMentalPenalty" not in rules_cs:
+        fail("ending mental_note retuned miss mental penalties")
+    elif "Mental <= 0" not in session_cs or "ForceEnded = true" not in session_cs:
+        fail("ending mental_note changed the force-end rule")
+    elif "missStreakMental: 3" not in balance or "startingMental: 100" not in balance:
+        fail("ending mental_note retuned mental numbers")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("ending mental_note retuned Week 1 economy / bankrupt line")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("ending mental_note retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("ending mental_note broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising ending mental_note / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("ending mental_note dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("ending mental_note moved Unity off 6000.5.9f1")
+    else:
+        ok("clear / bankrupt mental sit on mental_note; desk paper / stamps / clip / sfx / rules stay")
+
+
 def check_readme_ending_clip_tab() -> None:
     """README names lastHeadline on headline_clip and n일차 on day_tab as the ending pair."""
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -11517,6 +11622,9 @@ def check_mental_note() -> None:
     balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
     player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
     build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    clear_build = build.split('ClearRoot"', 1)[-1].split('StampRoot"', 1)[0]
+    stamp_build = build.split('StampRoot"', 1)[-1].split('LetterRoot"', 1)[0]
+    splash = settle_cs.split("void ApplyResultSplashes", 1)[-1].split("void ApplyHeadline", 1)[0]
     tint = settle_cs.split("_mentalCounting", 1)[-1].split("_incomeCoverFlash", 1)[0]
     warn = live_cs.split('var warn = UiKit.Panel', 1)[-1].split("_eventWarnBox", 1)[0]
     mental = live_cs.split("void RefreshMentalShow", 1)[-1].split("static Sprite GrainSprite", 1)[0]
@@ -11546,6 +11654,12 @@ def check_mental_note() -> None:
         fail("WeekStart 멘탈 is not on the same Art/mental_note")
     elif "ContinueMentalNote" not in title_cs or "ArtSprites.MentalNote" not in title_cs or '"멘탈 "' not in title_cs:
         fail("Title continue mental is not on the same Art/mental_note")
+    elif "ArtSprites.MentalNote" not in clear_build or '"ClearMentalNote"' not in clear_build:
+        fail("week-clear mental is not on the same Art/mental_note")
+    elif "ArtSprites.MentalNote" not in stamp_build or '"StampMentalNote"' not in stamp_build:
+        fail("bankrupt mental is not on the same Art/mental_note")
+    elif '"멘탈  "' not in splash or "run.mental" not in splash:
+        fail("ending mental_note does not read the current mental value")
     elif "SetActive(_hasSave)" not in title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]:
         fail("Title mental note is not hidden without a save")
     elif "peek.mental" not in title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]:
@@ -11605,7 +11719,7 @@ def check_mental_note() -> None:
     elif "Art/mental_note" not in (ROOT / "README.md").read_text(encoding="utf-8"):
         fail("README should mention Art/mental_note")
     else:
-        ok("title continue / morning / live danger / settlement share mental_note; pulse stays")
+        ok("title continue / morning / live danger / settlement / clear / bankrupt share mental_note; pulse stays")
 
 
 def check_combo_plate() -> None:
