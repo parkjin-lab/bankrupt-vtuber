@@ -99,7 +99,7 @@
   - **채팅 독** — `Art/chat_dock` — 채팅 칼럼 오버레이 독(`Art/chat_bubble` · `Art/chat_nick` / `Art/chat_troll` / `Art/chat_super` 스택 뒤)
   - **패드 트레이** — `Art/pad_dock` — 종류·슈퍼챗 패드 행 스트림덱 트레이(`Art/pad_*` 키캡 뒤) · 1일차 **코치 트레이** 같은 트레이
   - **노트 레인** — `Art/note_lane` — 네 갈래 노트 경로 레인 베드(레인 틴트 ←파랑 / ↓초록 / →빨강 / ↑골드. `Art/hit_rail` 스트라이크 포켓은 그대로)
-  - **피크 / 사고** — `Art/hype_frame`(하이프 골드 프레임, `sfx_hype`) · `Art/hype_chip`(**하이프 N**) · `Art/event_warn` — **이벤트 경고**(**안티 온다** / **렉 온다** · **아침 경고** **오늘의 위협** 슬램 + `sfx_threat` 한 번 · 정산 **위협** 줄 + `sfx_threat` 한 번 · **이어서 하기** 추가 위협, 세이브·위협 없으면 숨김) · `Art/anti_sting`(`sfx_anti`) · `Art/lag_sting`(`sfx_lag`)
+  - **피크 / 사고** — `Art/hype_frame`(하이프 골드 프레임, `sfx_hype`) · `Art/hype_chip`(**하이프 N**) · `Art/event_warn` — **이벤트 경고**(**안티 온다** / **렉 온다** · **아침 경고** **오늘의 위협** 슬램 + `sfx_threat` 한 번 · 정산 추가 위협 + `sfx_threat` 한 번 · **이어서 하기** 추가 위협, 세이브·위협 없으면 숨김) · `Art/anti_sting`(`sfx_anti`) · `Art/lag_sting`(`sfx_lag`)
 - **패드 / 채팅 / 노트** — 라이브 키캡·버블·닉 네임플레이트가 이미 붙어 있다(스폰·카탈로그·경제 숫자는 그대로).
   - `Art/pad_dock` — 라이브 패드 행 + 1일차 **코치 트레이** 스트림덱 트레이(`pad_*` 키캡·슈퍼챗 패드 뒤)
   - `Art/pad_*` — 라이브 키캡 (←파랑 / ↓초록 / →트롤 / ↑골드 / 슈퍼챗 골드). 위 **스트림덱 키캡**(`title_start` / `title_continue` / `golive_key` / `nextday_key`)
@@ -117,7 +117,7 @@
   - `Art/content_*` — 토크/게임/노래/리액션 아이콘 (픽 카드는 위 **카드 / 탭** `content_plate`)
 - **주차 카드** — `Art/goods_stand` · `Art/agency_card` · `Art/sponsor_card` · `Art/ranking_board` · `Art/concert_stage` · `Art/letter_card`(팬레터 종이. 답장/나중이는 위 **카드 / 탭** `letter_reply` / `letter_ignore`) · `Art/membership_card` · `Art/clip_card`
 - **BGM** — Title `Audio/bgm_title` · 아침 `Audio/bgm_morning` · 라이브 `Audio/bgm_stream` · 콘서트 라이브만 `Audio/bgm_concert`(일반 라이브는 `bgm_stream` 유지) · 정산 `Audio/bgm_settlement` (각 화면에서 떠나면 0.2초 페이드)
-- **SFX** — 판정 `sfx_perfect` / `sfx_good` / `sfx_miss` · 이벤트 `sfx_anti` / `sfx_lag` · 아침 **오늘의 위협** 슬램 · 정산 추가 위협 `sfx_threat` 한 번 · 엔딩 `sfx_clear` / `sfx_bankrupt` · 로비/아침/정산 확인 `sfx_title` / `sfx_pick` / `sfx_golive` / `sfx_nextday` · 답장하기 `sfx_letter` · 라이벌 승/패 `sfx_rival_win` / `sfx_rival_lose` · 멤버십 `sfx_membership` · 클립 `sfx_clip` · 굿즈 `sfx_goods` · 에이전시 `sfx_agency` · 스폰서 `sfx_sponsor` · 랭킹 `sfx_ranking` · 콘서트 개최 `sfx_concert_book`
+- **SFX** — 판정 `sfx_perfect` / `sfx_good` / `sfx_miss` · 이벤트 `sfx_anti` / `sfx_lag` · 아침 **오늘의 위협** 슬램 `sfx_threat` 한 번 · 정산 추가 위협 `sfx_threat` 한 번 · 엔딩 `sfx_clear` / `sfx_bankrupt` · 로비/아침/정산 확인 `sfx_title` / `sfx_pick` / `sfx_golive` / `sfx_nextday` · 답장하기 `sfx_letter` · 라이벌 승/패 `sfx_rival_win` / `sfx_rival_lose` · 멤버십 `sfx_membership` · 클립 `sfx_clip` · 굿즈 `sfx_goods` · 에이전시 `sfx_agency` · 스폰서 `sfx_sponsor` · 랭킹 `sfx_ranking` · 콘서트 개최 `sfx_concert_book`
 
 ## 2~5주차 (있는 그대로)
 
