@@ -31,6 +31,7 @@ namespace BankruptVtuber
         Text _continueLastWeek;
         Image _continueWeekStart;
         Text _continueWeekStartLabel;
+        Image _continueWeekHeadline;
         Image _continueMemberPin;
         Image _continueAgencyPin;
         Image _continueGoodsPin;
@@ -281,6 +282,14 @@ namespace BankruptVtuber
             _continueWeekStartLabel = UiKit.Label(_continueWeekStart.transform, "T", "2주차", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_continueWeekStartLabel.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _continueWeekStart.gameObject.SetActive(false);
+            _continueWeekHeadline = UiKit.Image(_continue.transform, "ContinueWeekHeadline", Color.white);
+            UiKit.Layout(_continueWeekHeadline.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(576f, -76f), new Vector2(228f, 92f));
+            ArtSprites.Apply(_continueWeekHeadline, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
+            _continueWeekHeadline.preserveAspect = true;
+            _continueWeekHeadline.raycastTarget = false;
+            var weekHeadT = UiKit.Label(_continueWeekHeadline.transform, "T", "헤드라인", 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(weekHeadT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _continueWeekHeadline.gameObject.SetActive(false);
             _continueMemberPin = UiKit.Image(_continue.transform, "ContinueMemberPin", Color.white);
             UiKit.Layout(_continueMemberPin.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-8f, 10f), new Vector2(72f, 48f));
             ArtSprites.Apply(_continueMemberPin, ArtSprites.MembershipCard, Color.white, Color.white);
@@ -544,6 +553,8 @@ namespace BankruptVtuber
                 _continueLastDay.gameObject.SetActive(false);
             if (_continueWeekStart != null && !_hasSave)
                 _continueWeekStart.gameObject.SetActive(false);
+            if (_continueWeekHeadline != null && !_hasSave)
+                _continueWeekHeadline.gameObject.SetActive(false);
             if (_continueMemberPin != null && !_hasSave)
                 _continueMemberPin.gameObject.SetActive(false);
             if (_continueAgencyPin != null && !_hasSave)
@@ -591,6 +602,8 @@ namespace BankruptVtuber
             {
                 bool weekStart = 6 == peek.day || 11 == peek.day || 16 == peek.day || 21 == peek.day;
                 _continueWeekStart.gameObject.SetActive(weekStart);
+                if (_continueWeekHeadline != null)
+                    _continueWeekHeadline.gameObject.SetActive(weekStart);
                 if (weekStart && _continueWeekStartLabel != null)
                     _continueWeekStartLabel.text = WeekSchedule.WeekNumber(peek) + "주차";
             }
