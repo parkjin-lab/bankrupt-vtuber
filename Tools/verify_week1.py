@@ -220,6 +220,7 @@ def check_project() -> None:
         "mental_note.png": "멘탈 메모",
         "combo_plate.png": "콤보 배지",
         "viewer_badge.png": "시청 배지",
+        "clock_plate.png": "시계 배지",
         "membership_card.png": "멤버십",
         "clip_card.png": "클립",
         "pad_left.png": "← 키캡",
@@ -1488,6 +1489,7 @@ def check_project() -> None:
     check_mental_note()
     check_combo_plate()
     check_viewer_badge()
+    check_clock_plate()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -2516,6 +2518,8 @@ def check_clock_urgency() -> None:
         fail("last 10s clock does not go urgent")
     elif '"종료"' not in live_cs or "TimeLeft <= 0f" not in live_cs:
         fail("clock 0 does not snap to 종료")
+    elif "ArtSprites.ClockPlate" not in live_cs or '"Timer"' not in live_cs:
+        fail("clock is not on Art/clock_plate")
     elif "Audio/sfx_clock_tick" not in live_cs or "PlaySfx(_clockTick" not in clock:
         fail("last 10s has no per-second Resource tick")
     elif "shown != _lastClockSec" not in clock or "shown >= 1" not in clock:
@@ -7739,6 +7743,63 @@ def check_viewer_badge() -> None:
         ok("live 시청자 sits on viewer_badge; 1.12 pop / tint / +/- stay")
 
 
+def check_clock_plate() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    clock = live_cs.split("void RefreshClockChip", 1)[-1].split("void RefreshHud", 1)[0]
+    png = ROOT / "Assets/Resources/Art/clock_plate.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("clock_plate.png is missing")
+    elif w < 360 or h < 160 or w <= h:
+        fail("clock_plate.png is not a readable landscape broadcast clock plate")
+    elif color != 6:
+        fail("clock_plate.png is not RGBA")
+    elif 'ClockPlate = "Art/clock_plate"' not in art_cs:
+        fail("ArtSprites does not hook Art/clock_plate")
+    elif "ArtSprites.ClockPlate" not in live_cs or '"Timer"' not in live_cs or '"남은 시간"' not in live_cs:
+        fail("LiveStream does not hang Art/clock_plate under 남은 시간")
+    elif "TimeLeft <= 10f" not in clock or "1f + 0.10f * pulse" not in clock or "Sin(Time.time * 9f)" not in clock:
+        fail("clock plate dropped last-10 pulse")
+    elif "Audio/sfx_clock_tick" not in live_cs or "PlaySfx(_clockTick" not in clock:
+        fail("clock plate dropped tick SFX")
+    elif "shown != _lastClockSec" not in clock or "shown >= 1" not in clock:
+        fail("clock plate tick is not once per second on 10…1")
+    elif '"종료"' not in clock or "TimeLeft <= 0f" not in clock:
+        fail("clock plate dropped 종료 snap")
+    elif '"ON AIR"' not in live_cs or "Audio/sfx_onair" not in live_cs or "_onAirLeft = 0.6f" not in live_cs:
+        fail("clock plate dropped ON AIR")
+    elif "방송 종료" not in live_cs or "Audio/sfx_end_cut" not in live_cs:
+        fail("clock plate dropped end-cut")
+    elif "streamSeconds: 90" not in balance or "TimeLeft = balance.streamSeconds" not in session_cs:
+        fail("clock plate retuned stream length")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("clock plate retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("clock plate broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising clock plate / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("clock plate dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("clock plate moved Unity off 6000.5.9f1")
+    elif "Art/clock_plate" not in (ROOT / "README.md").read_text(encoding="utf-8"):
+        fail("README should mention Art/clock_plate")
+    else:
+        ok("live 남은 시간 sits on clock_plate; last-10 pulse / tick / ON AIR stay")
+
+
 def check_mental_sfx() -> None:
     import wave
 
@@ -8296,6 +8357,8 @@ def check_readme_playable() -> None:
         fail("README dropped combo_plate live badge")
     elif "viewer_badge" not in readme or "시청자" not in readme or ("시청 +" not in readme and "시청 ±" not in readme):
         fail("README dropped viewer_badge live follower badge")
+    elif "clock_plate" not in readme or "남은 시간" not in readme or "sfx_clock_tick" not in readme:
+        fail("README dropped clock_plate live broadcast clock")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:

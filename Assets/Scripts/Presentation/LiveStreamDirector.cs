@@ -888,6 +888,22 @@ namespace BankruptVtuber
             _timer = Chip(top, "Timer", "남은 시간", 0.64f, 1f, -6f);
             _timerChip = _timer.transform.parent as RectTransform;
             _timerChipImg = _timerChip != null ? _timerChip.GetComponent<Image>() : null;
+            if (_timerChipImg != null)
+            {
+                ArtSprites.Apply(_timerChipImg, ArtSprites.ClockPlate, new Color(0.22f, 0.12f, 0.20f, 0.96f), Color.white);
+                _timerChipImg.preserveAspect = false;
+                _timerChipImg.raycastTarget = false;
+            }
+            if (_timerChip != null)
+            {
+                var timerCap = _timerChip.Find("L");
+                if (timerCap != null)
+                {
+                    var timerCapT = timerCap.GetComponent<Text>();
+                    if (timerCapT != null)
+                        timerCapT.color = Palette.PastelDim;
+                }
+            }
             _cash = Chip(top, "Cash", "현금", 0f, 0.25f, -64f);
             _debt = Chip(top, "Debt", "부채", 0.25f, 0.50f, -64f);
             _income = Chip(top, "Income", "실시간 수익", 0.50f, 0.75f, -64f);
@@ -1527,7 +1543,7 @@ namespace BankruptVtuber
                 if (_timerChip != null)
                     _timerChip.localScale = Vector3.one;
                 if (_timerChipImg != null)
-                    _timerChipImg.color = new Color(0.52f, 0.08f, 0.16f, 0.94f);
+                    _timerChipImg.color = Color.Lerp(Color.white, Palette.MoneyRed, 0.72f);
             }
             else if (lastTen)
             {
@@ -1537,7 +1553,7 @@ namespace BankruptVtuber
                 if (_timerChip != null)
                     _timerChip.localScale = Vector3.one * (1f + 0.10f * pulse);
                 if (_timerChipImg != null)
-                    _timerChipImg.color = Color.Lerp(new Color(0.42f, 0.05f, 0.12f, 0.94f), Palette.MoneyRed, pulse * 0.55f);
+                    _timerChipImg.color = Color.Lerp(Color.white, Palette.MoneyRed, 0.35f + pulse * 0.55f);
                 if (shown != _lastClockSec && shown >= 1)
                     PlaySfx(_clockTick, 0.38f);
             }
@@ -1548,7 +1564,7 @@ namespace BankruptVtuber
                 if (_timerChip != null)
                     _timerChip.localScale = Vector3.one;
                 if (_timerChipImg != null)
-                    _timerChipImg.color = new Color(1f, 1f, 1f, 0.06f);
+                    _timerChipImg.color = Color.white;
             }
             _lastClockSec = shown;
         }
