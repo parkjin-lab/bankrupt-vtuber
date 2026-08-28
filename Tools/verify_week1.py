@@ -1550,6 +1550,7 @@ def check_project() -> None:
     check_clip_card_plate()
     check_concert_book_plate()
     check_goods_card_plate()
+    check_concert_result_plate()
     check_morning_bgm()
     check_settlement_bgm()
     check_result_stings()
@@ -9413,6 +9414,7 @@ def check_concert_book_plate() -> None:
     book_build = build.split('ConcertBookRoot"', 1)[-1].split('ConcertResultRoot"', 1)[0]
     book_plate = book_build.split('"ConcertBookHud"', 1)[-1].split('"ConcertTitle"', 1)[0] if '"ConcertBookHud"' in book_build else ""
     result_build = build.split('ConcertResultRoot"', 1)[-1]
+    result_plate = result_build.split('"ConcertResultHud"', 1)[-1].split('"ConcertResultTitle"', 1)[0] if '"ConcertResultHud"' in result_build else ""
     book_show = settle_cs.split("void ShowConcertCard", 1)[-1].split("void CloseConcertCard", 1)[0]
     slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
 
@@ -9454,8 +9456,10 @@ def check_concert_book_plate() -> None:
         fail("concert booking plate retuned bgm_concert routing")
     elif "ConcertStreamReady" not in start or "EnableConcert" not in start:
         fail("concert booking plate unhooked concert live arming")
-    elif "preserveAspect = false" not in result_build or "ArtSprites.ConcertStage" not in result_build:
-        fail("concert booking plate restyled the concert result splash")
+    elif '"ConcertResultHud"' not in result_build or "ArtSprites.ConcertStage" not in result_plate:
+        fail("concert booking plate dropped concert result desk plate")
+    elif "UiKit.Stretch" in result_plate or "preserveAspect = false" in result_plate:
+        fail("concert booking plate stretched the concert result splash")
     elif '"ClipCardHud"' not in clip_build or "ArtSprites.ClipCard" not in clip_plate:
         fail("concert booking plate dropped clip upload desk plate")
     elif '"GoodsCardHud"' not in goods_build or "ArtSprites.GoodsStand" not in goods_plate:
@@ -9547,6 +9551,7 @@ def check_goods_card_plate() -> None:
     book_build = build.split('ConcertBookRoot"', 1)[-1].split('ConcertResultRoot"', 1)[0]
     book_plate = book_build.split('"ConcertBookHud"', 1)[-1].split('"ConcertTitle"', 1)[0] if '"ConcertBookHud"' in book_build else ""
     result_build = build.split('ConcertResultRoot"', 1)[-1]
+    result_plate = result_build.split('"ConcertResultHud"', 1)[-1].split('"ConcertResultTitle"', 1)[0] if '"ConcertResultHud"' in result_build else ""
     goods_show = settle_cs.split("void ShowGoodsSplash", 1)[-1].split("void OnGoodsAck", 1)[0]
     promo_build = live_cs.split('"PromoCard"', 1)[-1].split('"LineCard"', 1)[0]
     slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
@@ -9611,8 +9616,10 @@ def check_goods_card_plate() -> None:
         fail("goods unlock plate unhooked EnablePromo / EnableSponsorLine")
     elif '"ConcertBookHud"' not in book_build or "ArtSprites.ConcertStage" not in book_plate:
         fail("goods unlock plate dropped concert booking desk plate")
-    elif "preserveAspect = false" not in result_build or "ArtSprites.ConcertStage" not in result_build:
-        fail("goods unlock plate restyled the concert result splash")
+    elif '"ConcertResultHud"' not in result_build or "ArtSprites.ConcertStage" not in result_plate:
+        fail("goods unlock plate dropped concert result desk plate")
+    elif "UiKit.Stretch" in result_plate or "preserveAspect = false" in result_plate:
+        fail("goods unlock plate stretched the concert result splash")
     elif '"ClipCardHud"' not in clip_build or "ArtSprites.ClipCard" not in clip_plate:
         fail("goods unlock plate dropped clip upload desk plate")
     elif '"MemberCardHud"' not in member_build or "ArtSprites.MembershipCard" not in member_plate:
@@ -9659,6 +9666,154 @@ def check_goods_card_plate() -> None:
         fail("goods unlock plate moved Unity off 6000.5.9f1")
     else:
         ok("goods unlock/produce hangs goods_stand as a desk plate; a non-goods settlement does not")
+
+
+def check_concert_result_plate() -> None:
+    """Week 5 concert result hangs concert_stage as preserveAspect desk paper; hidden otherwise."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    w5r_cs = (ROOT / "Assets/Scripts/Economy/Week5Rules.cs").read_text(encoding="utf-8")
+    w4_asset = (ROOT / "Assets/Resources/Balance/Week4Balance.asset").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w2_asset = (ROOT / "Assets/Resources/Balance/Week2Balance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    under = live_build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
+    overlay = live_build.split('"StreamOverlay"', 1)[-1].split("_washVeil", 1)[0]
+    live_stage = live_build.split('"ConcertStage"', 1)[-1].split('"StreamOverlay"', 1)[0] if '"ConcertStage"' in live_build else ""
+    shelf = live_build.split('"GoodsStandHud"', 1)[-1].split('"HypeFlash"', 1)[0] if '"GoodsStandHud"' in live_build else ""
+    sponsor = live_build.split('"SponsorCardHud"', 1)[-1].split('"GoodsStandHud"', 1)[0] if '"SponsorCardHud"' in live_build else ""
+    rank_plate = build.split('"RankingBoardHud"', 1)[-1].split('"RankBody"', 1)[0] if '"RankingBoardHud"' in build else ""
+    agency_build = build.split('AgencyRoot"', 1)[-1].split('AgencySplashRoot"', 1)[0]
+    junior_build = build.split('JuniorRoot"', 1)[-1].split('ConcertBookRoot"', 1)[0]
+    found_plate = agency_build.split('"AgencyCardHud"', 1)[-1].split('"AgencyTitle"', 1)[0] if '"AgencyCardHud"' in agency_build else ""
+    scout_plate = junior_build.split('"JuniorCardHud"', 1)[-1].split('"JuniorTitle"', 1)[0] if '"JuniorCardHud"' in junior_build else ""
+    member_build = build.split('MemberRoot"', 1)[-1].split('ClipRoot"', 1)[0]
+    member_plate = member_build.split('"MemberCardHud"', 1)[-1].split('"MemberTitle"', 1)[0] if '"MemberCardHud"' in member_build else ""
+    clip_build = build.split('ClipRoot"', 1)[-1].split('GoodsRoot"', 1)[0]
+    clip_plate = clip_build.split('"ClipCardHud"', 1)[-1].split('"ClipTag"', 1)[0] if '"ClipCardHud"' in clip_build else ""
+    goods_build = build.split('GoodsRoot"', 1)[-1].split('AgencyRoot"', 1)[0]
+    goods_plate = goods_build.split('"GoodsCardHud"', 1)[-1].split('"GoodsTitle"', 1)[0] if '"GoodsCardHud"' in goods_build else ""
+    book_build = build.split('ConcertBookRoot"', 1)[-1].split('ConcertResultRoot"', 1)[0]
+    book_plate = book_build.split('"ConcertBookHud"', 1)[-1].split('"ConcertTitle"', 1)[0] if '"ConcertBookHud"' in book_build else ""
+    result_build = build.split('ConcertResultRoot"', 1)[-1]
+    result_plate = result_build.split('"ConcertResultHud"', 1)[-1].split('"ConcertResultTitle"', 1)[0] if '"ConcertResultHud"' in result_build else ""
+    result_show = settle_cs.split("void ShowConcertResult", 1)[-1].split("void OnConcertResultAck", 1)[0]
+    book_show = settle_cs.split("void ShowConcertCard", 1)[-1].split("void CloseConcertCard", 1)[0]
+    slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
+
+    if 'ConcertStage = "Art/concert_stage"' not in art_cs:
+        fail("ArtSprites does not hook Art/concert_stage")
+    elif '"ConcertResultHud"' not in result_build or "ArtSprites.ConcertStage" not in result_plate:
+        fail("Settlement does not hang concert_stage as a result desk plate")
+    elif "UiKit.Stretch" in result_plate:
+        fail("concert result plate is a full-screen backdrop; that is the live concert_stage job")
+    elif "preserveAspect = false" in result_plate or "preserveAspect = false" in result_show:
+        fail("concert result plate is still stretched")
+    elif "preserveAspect = true" not in result_plate or "preserveAspect = true" not in result_show:
+        fail("concert result plate is not preserveAspect desk paper")
+    elif "ArtSprites.PanelDark" not in result_build or "ApplySliced" not in result_build:
+        fail("concert result parent is not sliced PanelDark")
+    elif "ArtSprites.RankingBoard" in result_plate or "ArtSprites.ClipCard" in result_plate:
+        fail("concert result plate reused ranking / clip art")
+    elif "ArtSprites.GoodsStand" in result_plate or "ArtSprites.SponsorCard" in result_plate:
+        fail("concert result plate reused goods / sponsor art")
+    elif "ArtSprites.AgencyCard" in result_plate or "ArtSprites.MembershipCard" in result_plate:
+        fail("concert result plate reused agency / membership art")
+    elif "SetActive(false)" not in result_build:
+        fail("concert_stage result plate is not hidden on a non-result settlement")
+    elif "SetActive(true)" not in result_show:
+        fail("concert result plate is not shown with the existing result splash")
+    elif '"ConcertResultHud"' in live_cs or '"ConcertResultHud"' in title_cs:
+        fail("concert result plate leaked onto LiveStream / Title")
+    elif "개최비만 날림" not in result_show or "정산으로" not in result_build:
+        fail("concert result plate covered result copy")
+    elif "lastConcertFailed" not in result_show or "lastConcertPayout" not in result_show:
+        fail("concert result plate unhooked fail / payout routing")
+    elif "ApplyConcertResult" not in settle_cs or "ApplyConcertResult" not in w5r_cs:
+        fail("concert result plate unhooked ApplyConcertResult")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset:
+        fail("concert result plate retuned concert cost / payout")
+    elif "concertSuccessMultiplier: 1.3" not in w5_asset or "concertUnlockCash: 150000" not in w5_asset:
+        fail("concert result plate retuned concert 1.3x / unlock")
+    elif "concertFailMental: 25" not in w5_asset:
+        fail("concert result plate retuned concert fail mental")
+    elif "Audio/sfx_concert_book" not in settle_cs or "PlayConcertBookSfx();" not in book_show:
+        fail("concert result plate dropped booking sfx_concert_book")
+    elif '"ConcertBookHud"' not in book_build or "ArtSprites.ConcertStage" not in book_plate:
+        fail("concert result plate dropped concert booking desk plate")
+    elif "UiKit.Stretch" in book_plate:
+        fail("concert result plate stretched the booking desk plate")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in under:
+        fail("concert result plate dropped concert live concert_stage")
+    elif "preserveAspect = false" not in live_stage:
+        fail("concert result plate restyled the live concert backdrop")
+    elif "ArtSprites.StreamOverlay" not in overlay or "ArtSprites.ConcertStage" in overlay:
+        fail("concert result plate stole the live stream_overlay chrome")
+    elif "_concertShow ? \"Audio/bgm_concert\" : \"Audio/bgm_stream\"" not in apply:
+        fail("concert result plate retuned bgm_concert routing")
+    elif "ConcertStreamReady" not in start or "EnableConcert" not in start:
+        fail("concert result plate unhooked concert live arming")
+    elif '"GoodsCardHud"' not in goods_build or "ArtSprites.GoodsStand" not in goods_plate:
+        fail("concert result plate dropped goods unlock desk plate")
+    elif '"ClipCardHud"' not in clip_build or "ArtSprites.ClipCard" not in clip_plate:
+        fail("concert result plate dropped clip upload desk plate")
+    elif '"MemberCardHud"' not in member_build or "ArtSprites.MembershipCard" not in member_plate:
+        fail("concert result plate dropped membership unlock desk plate")
+    elif '"AgencyCardHud"' not in agency_build or "ArtSprites.AgencyCard" not in found_plate:
+        fail("concert result plate dropped agency found desk plate")
+    elif '"JuniorCardHud"' not in junior_build or "ArtSprites.AgencyCard" not in scout_plate:
+        fail("concert result plate dropped agency scout desk plate")
+    elif '"RankingBoardHud"' not in build or "ArtSprites.RankingBoard" not in rank_plate:
+        fail("concert result plate dropped ranking settlement plate")
+    elif "SetActive(_sponsorShow)" not in apply or "ArtSprites.SponsorCard" not in sponsor:
+        fail("concert result plate dropped sponsor-mention live plate")
+    elif "SetActive(_goodsShow)" not in apply or "ArtSprites.GoodsStand" not in shelf:
+        fail("concert result plate dropped goods-promo live goods_stand")
+    elif "EnableSponsorLine" not in start or "EnablePromo" not in start:
+        fail("concert result plate unhooked sponsor / goods live arming")
+    elif "EnableSponsorLine" not in session_cs or "EnablePromo" not in session_cs:
+        fail("concert result plate unhooked EnableSponsorLine / EnablePromo")
+    elif "sponsorLineBonus: 3000" not in w4_asset or "goodsUnlockCash: 60000" not in w3_asset:
+        fail("concert result plate retuned sponsor / goods numbers")
+    elif "clipCash: 30000" not in w2_asset or "clipChance: 30" not in w2_asset:
+        fail("concert result plate retuned clip numbers")
+    elif "ArtSprites.JudgePerfect" not in slam or "PlaySfx(_perfect" not in slam:
+        fail("concert result plate dropped Day-1 coach Perfect stamp")
+    elif "Audio/sfx_threat" not in live_cs or "PlayThreatSfx" not in live_cs:
+        fail("concert result plate dropped live sfx_threat")
+    elif "LastDayBanner" not in week_cs:
+        fail("concert result plate dropped morning last-day tab")
+    elif '"ContinueLastDayTab"' not in title_cs or '"SettleLastDayTab"' not in settle_cs:
+        fail("concert result plate dropped title / settlement last-day tabs")
+    elif "perfectWindow: 0.07" not in balance or "perfectWindow * " not in rules_cs:
+        fail("concert result plate retuned hit windows")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("concert result plate retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("concert result plate retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("concert result plate retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("concert result plate broke pads, 입력됨, or added timeScale")
+    elif "Week5" in title_cs or "콘서트" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising concert result plate / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("concert result plate dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("concert result plate moved Unity off 6000.5.9f1")
+    else:
+        ok("concert result hangs concert_stage as preserveAspect desk paper; a non-result settlement does not")
 
 
 def check_morning_bgm() -> None:
@@ -12460,6 +12615,7 @@ def check_readme_concert_book_plate() -> None:
     book_build = settle_build.split('ConcertBookRoot"', 1)[-1].split('ConcertResultRoot"', 1)[0]
     book_plate = book_build.split('"ConcertBookHud"', 1)[-1].split('"ConcertTitle"', 1)[0] if '"ConcertBookHud"' in book_build else ""
     result_build = settle_build.split('ConcertResultRoot"', 1)[-1]
+    result_plate = result_build.split('"ConcertResultHud"', 1)[-1].split('"ConcertResultTitle"', 1)[0] if '"ConcertResultHud"' in result_build else ""
     under = live_build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
     overlay = live_build.split('"StreamOverlay"', 1)[-1].split("_washVeil", 1)[0]
     shelf = live_build.split('"GoodsStandHud"', 1)[-1].split('"HypeFlash"', 1)[0] if '"GoodsStandHud"' in live_build else ""
@@ -12557,8 +12713,10 @@ def check_readme_concert_book_plate() -> None:
         fail("README concert booking plate dropped show / sfx_concert_book")
     elif '"ConcertBookHud"' in live_cs or '"ConcertBookHud"' in title_cs:
         fail("concert booking plate leaked onto LiveStream / Title")
-    elif "preserveAspect = false" not in result_build or "ArtSprites.ConcertStage" not in result_build:
-        fail("README concert booking plate restyled the concert result splash")
+    elif '"ConcertResultHud"' not in result_build or "ArtSprites.ConcertStage" not in result_plate:
+        fail("README concert booking plate dropped concert result desk plate")
+    elif "UiKit.Stretch" in result_plate or "preserveAspect = false" in result_plate:
+        fail("README concert booking plate stretched the concert result splash")
     elif '"ClipCardHud"' not in clip_build or "ArtSprites.ClipCard" not in clip_plate:
         fail("README concert booking plate dropped clip upload desk plate")
     elif '"MemberCardHud"' not in member_build or "ArtSprites.MembershipCard" not in member_plate:
@@ -12676,6 +12834,7 @@ def check_readme_goods_card_plate() -> None:
     book_build = settle_build.split('ConcertBookRoot"', 1)[-1].split('ConcertResultRoot"', 1)[0]
     book_plate = book_build.split('"ConcertBookHud"', 1)[-1].split('"ConcertTitle"', 1)[0] if '"ConcertBookHud"' in book_build else ""
     result_build = settle_build.split('ConcertResultRoot"', 1)[-1]
+    result_plate = result_build.split('"ConcertResultHud"', 1)[-1].split('"ConcertResultTitle"', 1)[0] if '"ConcertResultHud"' in result_build else ""
     promo_build = live_cs.split('"PromoCard"', 1)[-1].split('"LineCard"', 1)[0]
     under = live_build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
     overlay = live_build.split('"StreamOverlay"', 1)[-1].split("_washVeil", 1)[0]
@@ -12786,8 +12945,10 @@ def check_readme_goods_card_plate() -> None:
         fail("README goods unlock plate dropped concert booking desk plate")
     elif "SetActive(true)" not in book_show or "PlayConcertBookSfx();" not in book_show:
         fail("README goods unlock plate dropped concert booking show / sfx")
-    elif "preserveAspect = false" not in result_build or "ArtSprites.ConcertStage" not in result_build:
-        fail("README goods unlock plate restyled the concert result splash")
+    elif '"ConcertResultHud"' not in result_build or "ArtSprites.ConcertStage" not in result_plate:
+        fail("README goods unlock plate dropped concert result desk plate")
+    elif "UiKit.Stretch" in result_plate or "preserveAspect = false" in result_plate:
+        fail("README goods unlock plate stretched the concert result splash")
     elif '"ClipCardHud"' not in clip_build or "ArtSprites.ClipCard" not in clip_plate:
         fail("README goods unlock plate dropped clip upload desk plate")
     elif '"MemberCardHud"' not in member_build or "ArtSprites.MembershipCard" not in member_plate:

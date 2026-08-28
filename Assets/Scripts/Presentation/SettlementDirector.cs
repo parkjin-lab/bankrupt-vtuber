@@ -1084,10 +1084,15 @@ namespace BankruptVtuber
             resultWash.raycastTarget = true;
             var resultCard = UiKit.Panel(_concertResultRoot.transform, "ConcertResultCard", Color.white);
             UiKit.Layout(resultCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 360));
+            var resultImg = resultCard.GetComponent<Image>();
+            ArtSprites.ApplySliced(resultImg, ArtSprites.PanelDark, new Color(1f, 0.86f, 0.94f, 0.98f));
+            _concertResultPanel = UiKit.Image(resultCard, "ConcertResultHud", Color.white);
+            UiKit.Layout(_concertResultPanel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(680f, 320f));
+            ArtSprites.Apply(_concertResultPanel, ArtSprites.ConcertStage, Color.white, Color.white);
+            _concertResultPanel.preserveAspect = true;
+            _concertResultPanel.raycastTarget = false;
+            _concertResultPanel.transform.SetAsFirstSibling();
             SafeFitCard.Bind(resultCard, 720f, 360f);
-            _concertResultPanel = resultCard.GetComponent<Image>();
-            ArtSprites.Apply(_concertResultPanel, ArtSprites.ConcertStage, new Color(1f, 0.9f, 0.5f, 0.98f), Color.white);
-            _concertResultPanel.preserveAspect = false;
             _concertResultTitle = UiKit.Label(resultCard, "ConcertResultTitle", "", 48, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_concertResultTitle.rectTransform, new Vector2(0, 0.42f), new Vector2(1, 1), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _concertResultSub = UiKit.Label(resultCard, "ConcertResultSub", "", 24, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -2277,7 +2282,7 @@ namespace BankruptVtuber
                 if (_concertResultPanel != null)
                 {
                     ArtSprites.Apply(_concertResultPanel, ArtSprites.ConcertStage, new Color(1f, 0.72f, 0.74f, 0.98f), new Color(1f, 0.78f, 0.80f, 1f));
-                    _concertResultPanel.preserveAspect = false;
+                    _concertResultPanel.preserveAspect = true;
                 }
             }
             else
@@ -2289,7 +2294,7 @@ namespace BankruptVtuber
                 if (_concertResultPanel != null)
                 {
                     ArtSprites.Apply(_concertResultPanel, ArtSprites.ConcertStage, new Color(1f, 0.9f, 0.5f, 0.98f), Color.white);
-                    _concertResultPanel.preserveAspect = false;
+                    _concertResultPanel.preserveAspect = true;
                 }
             }
             if (_bookConcert != null)
