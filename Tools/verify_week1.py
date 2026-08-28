@@ -4304,6 +4304,8 @@ def check_continue_pulse() -> None:
         fail("이어 chip is not on the continue button")
     elif "ContinueClip" not in click or "ArtSprites.HeadlineClip" not in click:
         fail("continue pulse does not hang last night's scrap")
+    elif "ContinueCashSlip" not in click or "ArtSprites.CashSlip" not in click:
+        fail("continue pulse does not hang cash on Art/cash_slip")
     elif "activeInHierarchy" not in pulse or "_hasSave" not in hide or "SetActive(_hasSave)" not in hide:
         fail("continue pulse is not hidden when there is no save")
     elif "SetActive(hasHead)" not in hide:
@@ -7410,6 +7412,16 @@ def check_cash_slip() -> None:
         fail("morning cash slip dropped 청구보다 부족 / short-red")
     elif "ArtSprites.BillNotice" not in money or '"오늘 청구"' not in week_cs:
         fail("morning cash slip dropped the 오늘 청구 고지서")
+    elif "ContinueCashSlip" not in title_cs or "ArtSprites.CashSlip" not in title_cs:
+        fail("Title continue cash is not on the same Art/cash_slip")
+    elif "SetActive(_hasSave)" not in title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]:
+        fail("Title cash slip is not hidden without a save")
+    elif "Palette.MoneyRed" not in title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]:
+        fail("Title cash slip dropped panic-red cash tint")
+    elif '"부채 "' not in title_cs or "Palette.Gold" not in title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]:
+        fail("Title cash slip dropped debt display")
+    elif "TickContinuePulse" not in title_cs or "ContinueRun()" not in title_cs:
+        fail("Title cash slip dropped continue pulse / load")
     elif "Palette.MoneyRed" not in left or "PeekTomorrowTypical" not in settle_cs:
         fail("cash slip dropped short-red tint / tomorrow bill peek")
     elif "gm.Run.cash" not in left and "run.cash" not in left:
@@ -7439,7 +7451,7 @@ def check_cash_slip() -> None:
     elif "Art/cash_slip" not in (ROOT / "README.md").read_text(encoding="utf-8"):
         fail("README should mention Art/cash_slip")
     else:
-        ok("morning / settlement cash share cash_slip; short-red / 고지서 / counts stay")
+        ok("title / morning / settlement cash share cash_slip; panic / 고지서 / counts stay")
 
 
 def check_mental_sfx() -> None:
@@ -7985,8 +7997,8 @@ def check_readme_playable() -> None:
         fail("README dropped ranking / concert art")
     elif "headline_clip" not in readme or "오늘 헤드라인" not in readme or "어제:" not in readme or "이어서 하기" not in readme:
         fail("README dropped headline scrap on settlement / morning / title continue")
-    elif "cash_slip" not in readme or "남은 현금" not in readme:
-        fail("README dropped cash_slip leftover receipt")
+    elif "cash_slip" not in readme or "남은 현금" not in readme or "이어서 하기" not in readme:
+        fail("README dropped cash_slip on title / morning / settlement")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:
