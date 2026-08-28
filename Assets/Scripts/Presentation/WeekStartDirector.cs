@@ -51,7 +51,9 @@ namespace BankruptVtuber
         AudioSource _sfx;
         AudioClip _goLiveCue;
         AudioClip _pickCue;
+        AudioClip _threatCue;
         bool _leavingMorning;
+        bool _threatSfxPlayed;
 
         struct Bill
         {
@@ -75,6 +77,7 @@ namespace BankruptVtuber
             _sfx.playOnAwake = false;
             _goLiveCue = Resources.Load<AudioClip>("Audio/sfx_golive");
             _pickCue = Resources.Load<AudioClip>("Audio/sfx_pick");
+            _threatCue = Resources.Load<AudioClip>("Audio/sfx_threat");
             StartMorningBgm();
         }
 
@@ -714,6 +717,7 @@ namespace BankruptVtuber
 
         IEnumerator BillWave(GameManager gm)
         {
+            _threatSfxPlayed = false;
             var b = gm.Balance;
             ExtraThreatRules.EnsureRolled(gm.Run, b, gm.Week2, gm.Week3, gm.Week4, gm.Week5);
             Week3Rules.TryUnlockGoods(gm.Run, gm.Week3);
@@ -921,6 +925,8 @@ namespace BankruptVtuber
             var amt = UiKit.Label(card, "A", (bill.Gain ? "+" : "-") + EconomyRules.FormatWon(bill.Amount), 26, amtCol, TextAnchor.LowerCenter, FontStyle.Bold);
             UiKit.Layout(amt.rectTransform, new Vector2(0, 0), new Vector2(1, 0.24f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             StartCoroutine(Slam(card, x, threat));
+            if (threat)
+                PlayThreatSfx();
         }
 
         IEnumerator Slam(RectTransform card, float x, bool threat)
@@ -990,6 +996,15 @@ namespace BankruptVtuber
                 _morningBgm.Stop();
             }
             next?.Invoke();
+        }
+
+        void PlayThreatSfx()
+        {
+            if (_threatSfxPlayed)
+                return;
+            _threatSfxPlayed = true;
+            if (_sfx != null && _threatCue != null)
+                _sfx.PlayOneShot(_threatCue, 0.46f);
         }
     }
 }

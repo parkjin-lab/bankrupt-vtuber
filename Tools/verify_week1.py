@@ -1589,6 +1589,7 @@ def check_project() -> None:
     check_hype_frame()
     check_event_warn_plate()
     check_morning_event_warn()
+    check_threat_slam_sfx()
     check_settle_event_warn()
     check_title_event_warn()
     check_event_sting_overlays()
@@ -12108,6 +12109,85 @@ def check_morning_event_warn() -> None:
         fail("README event_warn inventory must name morning 오늘의 위협")
     else:
         ok("morning extra-threat slam sits on event_warn; names / amounts / slam / live plate stay")
+
+
+def check_threat_slam_sfx() -> None:
+    """Morning extra-threat slam plays a one-shot sfx_threat; no-extra log stays silent."""
+    import wave
+
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    extra_cs = (ROOT / "Assets/Scripts/Data/ExtraThreat.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    spawn = week_cs.split("void SpawnIncoming", 1)[-1].split("IEnumerator Slam", 1)[0]
+    wave_cs = week_cs.split("IEnumerator BillWave", 1)[-1].split("void SpawnIncoming", 1)[0]
+    play = week_cs.split("void PlayThreatSfx", 1)[-1].split("}", 1)[0]
+    morning = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_threat.wav"
+
+    if not path.exists() or path.stat().st_size < 2000:
+        fail("sfx_threat.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("sfx_threat.wav is not a readable PCM threat slam")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.14 or dur > 0.40:
+            fail(f"sfx_threat.wav duration {dur:.3f}s is not a short threat slam")
+            return
+
+    if "Audio/sfx_threat" not in week_cs or "PlayThreatSfx" not in week_cs:
+        fail("WeekStart does not load / play Audio/sfx_threat")
+    elif "PlayThreatSfx();" not in spawn or spawn.count("PlayThreatSfx();") != 1:
+        fail("extra-threat slam is not a single sfx_threat shot")
+    elif "if (threat)" not in spawn:
+        fail("sfx_threat does not fire on the extra-threat slam")
+    elif play.count("PlayOneShot") != 1:
+        fail("sfx_threat can fire more than one shot")
+    elif "_threatSfxPlayed" not in play or "_threatSfxPlayed = true" not in play:
+        fail("sfx_threat is not one-shot for the morning slam")
+    elif "_threatSfxPlayed = false" not in wave_cs:
+        fail("sfx_threat latch is not reset at the morning bill wave")
+    elif "PlayThreatSfx" in wave_cs:
+        fail("sfx_threat plays on the no-extra log line")
+    elif "오늘은 추가 위협이 없습니다." not in wave_cs:
+        fail("sfx_threat dropped the no-extra log line")
+    elif "ArtSprites.EventWarn" not in spawn or '"오늘의 위협"' not in spawn:
+        fail("sfx_threat dropped the event_warn 오늘의 위협 slam")
+    elif "bill.Name" not in spawn or "bill.Amount" not in spawn or "StartCoroutine(Slam" not in spawn:
+        fail("sfx_threat dropped extra-threat names / amounts / slam")
+    elif "장비 고장" not in extra_cs or "라이벌 견제" not in extra_cs or "minWon = 7000" not in extra_cs:
+        fail("sfx_threat retuned extra threat names / table")
+    elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
+        fail("sfx_threat retuned live 안티 온다 / 렉 온다")
+    elif "Audio/sfx_pick" not in week_cs or "PlayPickSfx" not in week_cs:
+        fail("sfx_threat dropped content pick confirm")
+    elif "Audio/sfx_golive" not in week_cs or "PlayGoLiveSfx" not in week_cs:
+        fail("sfx_threat dropped GO LIVE confirm")
+    elif "Audio/sfx_threat" in title_cs or "Audio/sfx_threat" in live_cs or "Audio/sfx_threat" in settle_cs:
+        fail("sfx_threat leaked onto Title / LiveStream / Settlement")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("sfx_threat retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("sfx_threat broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising sfx_threat / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("sfx_threat dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("sfx_threat moved Unity off 6000.5.9f1")
+    elif "sfx_threat" not in morning or "오늘의 위협" not in morning:
+        fail("README morning loop does not name sfx_threat on the extra-threat slam")
+    elif "sfx_threat" not in readme:
+        fail("README SFX inventory dropped sfx_threat")
+    else:
+        ok("morning extra-threat slam plays sfx_threat once; no-extra log / names / amounts stay")
 
 
 def check_settle_event_warn() -> None:
