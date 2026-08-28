@@ -1561,6 +1561,7 @@ def check_project() -> None:
     check_readme_note_lane()
     check_readme_note_lane_tint()
     check_readme_coach_pad_dock()
+    check_readme_coach_perfect_stamp()
     check_readme_threat_slam_sfx()
     check_readme_both_threat_sfx()
     check_readme_title_threat_sfx()
@@ -9994,6 +9995,95 @@ def check_readme_coach_pad_dock() -> None:
         ok("README names the Day-1 coach tray on the live pad_dock")
 
 
+def check_readme_coach_perfect_stamp() -> None:
+    """README names Day-1 coach completion on live judge_perfect / judge_miss."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    live_loop = readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]
+    hud_stack = readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]
+    coach_loop = next((ln for ln in readme.splitlines() if "1일차 코치" in ln and "coach_card" in ln), "")
+    coach_inv = next((ln for ln in readme.splitlines() if "Art/coach_card" in ln and "코치 카드" in ln), "")
+    stamp_inv = next((ln for ln in hud_stack.splitlines() if "코치 스탬프" in ln and "judge_perfect" in ln), "")
+    judge_inv = next((ln for ln in hud_stack.splitlines() if "판정 스탬프" in ln and "judge_perfect" in ln), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
+    cleared = slam.split("else", 1)[0] if "else" in slam else slam
+    timeout = slam.split("else", 1)[-1] if "else" in slam else ""
+    offer = session_cs.split("ShouldOfferFirstStreamCoach", 1)[-1].split("public void EnableFirstStreamCoach", 1)[0]
+
+    missing = next(
+        (
+            f"{label} {token}"
+            for label, block in (
+                ("coach loop", coach_loop),
+                ("coach inventory", coach_inv),
+                ("coach stamp inventory", stamp_inv),
+                ("live loop", live_loop),
+            )
+            for token in ("judge_perfect", "judge_miss")
+            if token not in block
+        ),
+        "",
+    )
+
+    if missing:
+        fail(f"README {missing} must name coach success Perfect / timeout Miss")
+    elif "코치 클리어" not in judge_inv or "코치 타임아웃" not in judge_inv:
+        fail("README 판정 스탬프 must name 1일차 코치 클리어 / 타임아웃")
+    elif "sfx_perfect" not in stamp_inv or "한 번" not in stamp_inv:
+        fail("README coach stamp inventory must name sfx_perfect once on a 3-hit clear")
+    elif "조용" not in stamp_inv or "가짜 미스" not in stamp_inv:
+        fail("README coach stamp inventory must say timeout Miss stays quiet and does not fake a miss")
+    elif "0.2" not in stamp_inv or "1.72" not in stamp_inv:
+        fail("README coach stamp inventory dropped the live Perfect 0.2s / 1.72 pop")
+    elif "코치 트레이" not in coach_loop or "pad_dock" not in coach_inv:
+        fail("README coach stamps dropped coach_card / pad_dock")
+    elif sfx_inv.count("sfx_threat") < 4:
+        fail("README SFX inventory dropped the four sfx_threat uses")
+    elif "ArtSprites.JudgePerfect" not in cleared or "PlaySfx(_perfect" not in cleared:
+        fail("README coach stamps lost the live Perfect slam")
+    elif "ArtSprites.JudgePerfect" in timeout or "PlaySfx" in timeout:
+        fail("README coach stamps let timeout fake a Perfect / play sfx")
+    elif "ArtSprites.JudgeMiss" not in timeout:
+        fail("README coach stamps lost the quiet timeout Miss")
+    elif "CoachCleared" not in session_cs or "SlamCoachStamp(_session.CoachCleared)" not in live_cs:
+        fail("README coach stamps lost CoachCleared gating")
+    elif 'JudgePerfect = "Art/judge_perfect"' not in art_cs or 'JudgeMiss = "Art/judge_miss"' not in art_cs:
+        fail("ArtSprites judge hooks were dropped")
+    elif "CoachSuccessTarget = 3" not in session_cs or "CoachSeconds = 8f" not in session_cs:
+        fail("README coach stamps changed dismiss (3 / 8s)")
+    elif "day != 1" not in offer and "day == 1" not in offer:
+        fail("README coach stamps are not Day-1 only")
+    elif "← 긍정" not in live_cs or "슈퍼챗 Space" not in live_cs:
+        fail("README coach stamps changed kind / superchat teach copy")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("README coach stamps retuned hit windows")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("README coach stamps retuned Judge windows")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README coach stamps retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README coach stamps retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README coach stamps retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README coach stamps broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising coach stamps / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README coach stamps dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README coach stamps moved Unity off 6000.5.9f1")
+    else:
+        ok("README names Day-1 coach success Perfect / timeout Miss; tray / four sfx_threat stay")
+
+
 def check_readme_threat_slam_sfx() -> None:
     """README: 오늘의 위협 slam plays sfx_threat once; silent if no extra."""
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -14123,6 +14213,8 @@ def check_readme_playable() -> None:
         fail("README dropped coach_card Day-1 sticky")
     elif "코치 카드" not in readme:
         fail("README does not inventory coach card")
+    elif "코치 스탬프" not in readme or "코치 클리어" not in readme or "코치 타임아웃" not in readme:
+        fail("README does not inventory Day-1 coach Perfect / Miss stamp reuse")
     elif "webcam_bezel" not in readme or "베젤" not in readme:
         fail("README dropped webcam_bezel live cam frame")
     elif "웹캠 베젤" not in readme:
@@ -14331,7 +14423,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + 코치 스탬프 + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
