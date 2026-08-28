@@ -18607,6 +18607,8 @@ def check_readme_morning_week_start() -> None:
         fail("README morning loop must name 아침 주차 첫날 on Art/day_tab")
     elif "2주차" not in morning_loop or "3주차" not in morning_loop or "4주차" not in morning_loop or "5주차" not in morning_loop:
         fail("README morning loop must name 2주차 / 3주차 / 4주차 / 5주차")
+    elif "**2주차**" in morning_loop or "**3주차**" in morning_loop or "**4주차**" in morning_loop or "**5주차**" in morning_loop:
+        fail("README morning week-start used isolated **n주차** tokens that steal Week 2–5 splits")
     elif "6/11/16/21" not in morning_loop or "preserveAspect" not in morning_loop or "숨김" not in morning_loop:
         fail("README morning loop must name week-start days vs hidden")
     elif "중간 아침" not in morning_loop:
@@ -18621,6 +18623,8 @@ def check_readme_morning_week_start() -> None:
         fail("README must inventory 아침 주차 첫날 on its own line")
     elif "2주차" not in week_inv or "6/11/16/21" not in week_inv or "preserveAspect" not in week_inv:
         fail("README 아침 주차 첫날 line must name the week-start calendar")
+    elif "**2주차**" in week_inv or "**3주차**" in week_inv or "**4주차**" in week_inv or "**5주차**" in week_inv:
+        fail("README 아침 주차 첫날 line used isolated **n주차** tokens that steal Week 2–5 splits")
     elif "아침 1일차" not in week_inv or "정산 1일차" not in week_inv or "새 게임 1일차" not in week_inv or "마지막 날" not in week_inv:
         fail("README 아침 주차 첫날 line must stay distinct from 1일차 tabs / last-day")
     elif week_inv == tab_inv or week_inv == morning_inv or week_inv == settle_inv or week_inv == newgame_inv:
