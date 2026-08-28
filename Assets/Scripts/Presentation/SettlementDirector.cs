@@ -256,12 +256,12 @@ namespace BankruptVtuber
             else if (_tileMental != null && _mentalTick > 0.02f)
             {
                 _mentalTick = Mathf.MoveTowards(_mentalTick, 0f, Time.deltaTime * 4f);
-                _tileMental.color = Color.Lerp(Color.white, Palette.CashGreen, _mentalTick);
+                _tileMental.color = Color.Lerp(Palette.Ink, Palette.CashGreen, _mentalTick);
                 _tileMental.rectTransform.localScale = Vector3.one * (1f + 0.10f * _mentalTick);
             }
             else if (_tileMental != null)
             {
-                _tileMental.color = Color.white;
+                _tileMental.color = Palette.Ink;
                 _tileMental.rectTransform.localScale = Vector3.one;
             }
             _incomeCoverFlash = Mathf.MoveTowards(_incomeCoverFlash, 0f, Time.deltaTime * 2.2f);
@@ -399,6 +399,26 @@ namespace BankruptVtuber
             _tileMiss = StudioChrome.RecapTile(recap, "Miss", "MISS", Palette.MoneyRed, 0.25f, 0.50f, 0f, 0.48f, false);
             _tileViewers = StudioChrome.RecapTile(recap, "Viewers", "시청자", Palette.Pink, 0.50f, 0.75f, 0f, 0.48f, true);
             _tileMental = StudioChrome.RecapTile(recap, "Mental", "멘탈", Palette.Pink, 0.75f, 1f, 0f, 0.48f, false);
+            var mentalTile = recap.Find("Mental") as RectTransform;
+            if (mentalTile != null)
+            {
+                var mentalImg = mentalTile.GetComponent<Image>();
+                if (mentalImg != null)
+                {
+                    ArtSprites.Apply(mentalImg, ArtSprites.MentalNote, new Color(1f, 0.95f, 0.72f, 0.98f), Color.white);
+                    mentalImg.preserveAspect = false;
+                    mentalImg.raycastTarget = false;
+                }
+                var mentalCap = mentalTile.Find("L");
+                if (mentalCap != null)
+                {
+                    var mentalCapT = mentalCap.GetComponent<Text>();
+                    if (mentalCapT != null)
+                        mentalCapT.color = Palette.Ink;
+                }
+            }
+            if (_tileMental != null)
+                _tileMental.color = Palette.Ink;
             _leftCashSlip = UiKit.Image(root, "LeftCashSlip", Color.white);
             UiKit.Layout(_leftCashSlip.rectTransform, new Vector2(0f, 1f), new Vector2(0.78f, 1f), new Vector2(0f, 1f), new Vector2(36f, -338f), new Vector2(0f, 52f));
             ArtSprites.Apply(_leftCashSlip, ArtSprites.CashSlip, new Color(0.98f, 0.94f, 0.86f, 0.98f), Color.white);

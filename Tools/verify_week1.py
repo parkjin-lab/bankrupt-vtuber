@@ -217,6 +217,7 @@ def check_project() -> None:
         "letter_card.png": "팬레터",
         "headline_clip.png": "어제 헤드라인",
         "cash_slip.png": "남은 현금",
+        "mental_note.png": "멘탈 메모",
         "membership_card.png": "멤버십",
         "clip_card.png": "클립",
         "pad_left.png": "← 키캡",
@@ -1482,6 +1483,7 @@ def check_project() -> None:
     check_week5_board_sfx()
     check_headline_clip()
     check_cash_slip()
+    check_mental_note()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -3093,6 +3095,8 @@ def check_mental_count() -> None:
         fail("falling 멘탈 is not tinted tired-red while it falls")
     elif "Palette.CashGreen" not in settle_cs.split("_mentalTick > 0.02f", 1)[-1].split("else if (_tileMental != null)", 1)[0]:
         fail("rising 멘탈 is not tinted green")
+    elif "ArtSprites.MentalNote" not in settle_cs or '"Mental"' not in settle_cs or '"멘탈"' not in settle_cs:
+        fail("멘탈 count is not on Art/mental_note")
     elif "mental =" in tick or "mentalAtDayStart =" in tick:
         fail("멘탈 count writes mental math")
     elif "mentalAtDayStart = mental" not in state_cs or "mentalAtDayStart" not in save_cs:
@@ -7496,6 +7500,79 @@ def check_cash_slip() -> None:
         ok("title / morning / live / settlement 오늘 수입+남은 현금 share cash_slip; count / short stay")
 
 
+def check_mental_note() -> None:
+    import struct
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    tint = settle_cs.split("_mentalCounting", 1)[-1].split("_incomeCoverFlash", 1)[0]
+    png = ROOT / "Assets/Resources/Art/mental_note.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("mental_note.png is missing")
+    elif w < 360 or h < 240:
+        fail("mental_note.png is not a readable sticky memo")
+    elif color != 6:
+        fail("mental_note.png is not RGBA")
+    elif 'MentalNote = "Art/mental_note"' not in art_cs:
+        fail("ArtSprites does not hook Art/mental_note")
+    elif "ArtSprites.MentalNote" not in build or 'recap.Find("Mental")' not in build or '"멘탈"' not in build:
+        fail("Settlement does not hang Art/mental_note under 멘탈")
+    elif "TickMentalCount" not in settle_cs or "_mentalCountT / 0.35f" not in settle_cs:
+        fail("mental note dropped 0.35s count")
+    elif "_mentalTo < _mentalFrom" not in settle_cs or "mentalAtDayStart" not in settle_cs:
+        fail("mental note dropped fall-only count")
+    elif "_mentalTo > _mentalFrom" not in settle_cs or "_mentalTick = 1f" not in settle_cs:
+        fail("mental note dropped rising green tick")
+    elif "Palette.MoneyRed" not in tint:
+        fail("mental note dropped tired-red fall tint")
+    elif "Palette.CashGreen" not in tint:
+        fail("mental note dropped green rise tint")
+    elif "LeftCashSlip" not in settle_cs or settle_cs.count("ArtSprites.CashSlip") < 2:
+        fail("mental note dropped cash slips")
+    elif "ArtSprites.BillNotice" not in settle_cs or '"부채"' not in settle_cs:
+        fail("mental note dropped bill notices")
+    elif "run.mental =" in settle_cs or "mental +=" in settle_cs or "mental -=" in settle_cs:
+        fail("mental note reimplemented mental math")
+    elif "RefreshMentalShow" not in live_cs or "멘탈 위험" not in live_cs:
+        fail("mental note dropped low-mental stream FX")
+    elif "missStreakMentalPenalty" not in rules_cs or "totalMissMentalPenalty" not in rules_cs:
+        fail("mental note retuned miss mental penalties")
+    elif "Mental <= 0" not in session_cs or "ForceEnded = true" not in session_cs:
+        fail("mental note changed the force-end rule")
+    elif "missStreakMental: 3" not in balance or "missStreakMentalPenalty: 12" not in balance:
+        fail("mental note retuned miss-streak mental numbers")
+    elif "billRent: 8000" not in balance or "startingMental: 100" not in balance or "startingCash: 45000" not in balance:
+        fail("mental note retuned Week 1 economy")
+    elif "ArtSprites.BillNotice" not in week_cs or '"오늘 청구"' not in week_cs:
+        fail("mental note dropped morning 고지서")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("mental note broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising mental note / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("mental note dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("mental note moved Unity off 6000.5.9f1")
+    elif "Art/mental_note" not in (ROOT / "README.md").read_text(encoding="utf-8"):
+        fail("README should mention Art/mental_note")
+    else:
+        ok("settlement 멘탈 sits on mental_note memo; count / red-green / slips stay")
+
+
 def check_mental_sfx() -> None:
     import wave
 
@@ -8041,6 +8118,8 @@ def check_readme_playable() -> None:
         fail("README dropped headline scrap on settlement / morning / title continue")
     elif "cash_slip" not in readme or "남은 현금" not in readme or "이어서 하기" not in readme or "지금 수입" not in readme or "오늘 수입" not in readme:
         fail("README dropped cash_slip on title / morning / live / settlement")
+    elif "mental_note" not in readme or "멘탈" not in readme:
+        fail("README dropped mental_note on settlement 멘탈")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:
