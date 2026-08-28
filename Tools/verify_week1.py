@@ -1480,6 +1480,7 @@ def check_project() -> None:
     check_settle_show_line()
     check_vtuber_face()
     check_webcam_bezel()
+    check_rival_webcam_bezel()
     check_bill_notice()
     check_stream_overlay()
     check_title_studio()
@@ -4782,6 +4783,59 @@ def check_webcam_bezel() -> None:
         fail("README should mention webcam_bezel")
     else:
         ok("live webcam sits in webcam_bezel; face / punch / tired / rival stay")
+
+
+def check_rival_webcam_bezel() -> None:
+    """Week 3 rival cam reuses webcam_bezel so the duel reads as two real webcams."""
+    duel_cs = (ROOT / "Assets/Scripts/Presentation/RivalDuelView.cs").read_text(encoding="utf-8")
+    avatar_cs = (ROOT / "Assets/Scripts/Presentation/AvatarView.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/webcam_bezel.png"
+    cam = duel_cs.split('"RivalCam"', 1)[-1].split("var bars", 1)[0] if '"RivalCam"' in duel_cs else ""
+
+    if not png.exists() or png.stat().st_size < 4000:
+        fail("webcam_bezel.png is missing for rival reuse")
+    elif 'WebcamBezel = "Art/webcam_bezel"' not in art_cs:
+        fail("ArtSprites does not hook Art/webcam_bezel")
+    elif "ArtSprites.WebcamBezel" not in avatar_cs:
+        fail("rival bezel reuse dropped player webcam_bezel")
+    elif "ArtSprites.WebcamBezel" not in duel_cs or '"Bezel"' not in duel_cs:
+        fail("rival cam does not hang Art/webcam_bezel")
+    elif "ApplySliced(bezel, ArtSprites.WebcamBezel" not in duel_cs and "ApplySliced(bezel,ArtSprites.WebcamBezel" not in duel_cs.replace(" ", ""):
+        fail("rival cam bezel is not applied sliced")
+    elif "ArtSprites.RivalAvatar" not in cam and "ArtSprites.RivalAvatar" not in duel_cs:
+        fail("rival bezel dropped rival_nyang face")
+    elif "RivalCamCount" not in duel_cs or "RefreshBars" not in duel_cs:
+        fail("rival bezel dropped ticking viewers")
+    elif "Audio/sfx_rival_win" not in live_cs or "Audio/sfx_rival_lose" not in live_cs:
+        fail("rival bezel dropped win/lose SFX")
+    elif "스틸 +" not in duel_cs or "라이벌 승" not in duel_cs or "라이벌 패" not in duel_cs:
+        fail("rival bezel dropped steal / win-lose feedback")
+    elif "rivalPerfectSteal: 0.6" not in w3_asset or "rivalWinCash: 20000" not in w3_asset or "rivalLoseMental: 12" not in w3_asset:
+        fail("rival bezel retuned Week3 rival numbers")
+    elif "playerViewers > rivalViewers" not in w3r_cs or "ApplyRivalResult" not in w3r_cs:
+        fail("rival bezel changed win/lose routing")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("rival bezel retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("rival bezel broke pads, 입력됨, or added timeScale")
+    elif "Week3" in title_cs or "라이벌" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising rival bezel / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("rival bezel dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("rival bezel moved Unity off 6000.5.9f1")
+    elif "Art/webcam_bezel" not in readme or "라이벌" not in readme:
+        fail("README should mention rival webcam_bezel reuse")
+    else:
+        ok("rival cam reuses webcam_bezel; face / ticks / win-lose SFX / rules stay")
 
 
 def check_bill_notice() -> None:
@@ -9960,6 +10014,8 @@ def check_rival_portrait() -> None:
         fail("RivalCam bust does not hang Art/rival_nyang")
     elif "ArtSprites.Avatar" in bust:
         fail("rival cam still uses the player pasan_nyang face")
+    elif "ArtSprites.WebcamBezel" not in duel_cs or '"Bezel"' not in duel_cs:
+        fail("rival portrait dropped shared webcam_bezel")
     elif 'Avatar = "Art/pasan_nyang"' not in art_cs or "ArtSprites.Avatar" not in avatar_cs:
         fail("player webcam no longer uses Art/pasan_nyang")
     elif not player_png.exists() or player_png.stat().st_size < 8000:

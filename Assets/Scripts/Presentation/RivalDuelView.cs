@@ -34,10 +34,15 @@ namespace BankruptVtuber
                 rootImg.raycastTarget = false;
             _root.gameObject.SetActive(false);
 
-            var cam = UiKit.Panel(_root, "RivalCam", new Color(0.08f, 0.05f, 0.1f, 0.96f));
+            var cam = UiKit.Panel(_root, "RivalCam", new Color(0, 0, 0, 0));
             UiKit.Layout(cam, new Vector2(0.52f, 0.24f), new Vector2(0.52f, 0.24f), new Vector2(0.5f, 0f), new Vector2(0f, 16f), new Vector2(280f, 380f));
 
-            var frame = UiKit.Image(cam, "RivalFrame", new Color(0.78f, 0.22f, 0.34f, 0.95f));
+            var bezel = UiKit.Image(cam, "Bezel", Color.white);
+            UiKit.Stretch(bezel.rectTransform, 0, 0, 0, 0);
+            ArtSprites.ApplySliced(bezel, ArtSprites.WebcamBezel, new Color(1f, 0.90f, 0.92f, 1f), new Vector4(56f, 64f, 56f, 64f));
+            bezel.raycastTarget = false;
+
+            var frame = UiKit.Image(cam, "RivalFrame", new Color(0.78f, 0.22f, 0.34f, 0.55f));
             UiKit.Stretch(frame.rectTransform, 8, 8, 36, 10);
 
             var window = UiKit.Image(cam, "RivalWindow", new Color(0.12f, 0.06f, 0.1f, 0.98f));
