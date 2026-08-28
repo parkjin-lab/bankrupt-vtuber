@@ -190,6 +190,7 @@ namespace BankruptVtuber
         Image _lastHeadline;
         Image _liveLastDay;
         Image _lastBill;
+        Image _weekBill;
         float _bedVolume;
         float _bedDuck;
         bool _threatGear;
@@ -1277,6 +1278,15 @@ namespace BankruptVtuber
             var lastBillT = UiKit.Label(_lastBill.transform, "T", "청구서", 16, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(lastBillT.rectTransform, new Vector2(0.12f, 0.18f), new Vector2(0.88f, 0.82f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _lastBill.gameObject.SetActive(false);
+
+            _weekBill = UiKit.Image(root, "LiveWeekBill", Color.white);
+            UiKit.Layout(_weekBill.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(338f, -268f), new Vector2(116f, 56f));
+            ArtSprites.Apply(_weekBill, ArtSprites.BillNotice, Color.white, Color.white);
+            _weekBill.preserveAspect = true;
+            _weekBill.raycastTarget = false;
+            var weekBillT = UiKit.Label(_weekBill.transform, "T", "청구서", 16, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(weekBillT.rectTransform, new Vector2(0.12f, 0.18f), new Vector2(0.88f, 0.82f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _weekBill.gameObject.SetActive(false);
 
             _liveLastDay = UiKit.Image(root, "LiveLastDay", Color.white);
             UiKit.Layout(_liveLastDay.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(200f, -276f), new Vector2(132f, 40f));
@@ -3297,6 +3307,8 @@ namespace BankruptVtuber
                 if (weekStart && _liveWeekStartLabel != null)
                     _liveWeekStartLabel.text = WeekSchedule.WeekNumber(GameManager.Instance.Run) + "주차";
             }
+            if (_weekBill != null)
+                _weekBill.gameObject.SetActive(LiveWeekStartDay(GameManager.Instance.Run.day));
             if (_lastHeadline != null)
                 _lastHeadline.gameObject.SetActive(LiveLastDay(GameManager.Instance.Run.day));
             if (_liveLastDay != null)
