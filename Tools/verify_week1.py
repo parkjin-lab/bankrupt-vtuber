@@ -1566,6 +1566,7 @@ def check_project() -> None:
     check_title_newgame_bill()
     check_title_newgame_cash()
     check_title_newgame_mental()
+    check_title_newgame_day()
     check_concert_live_badge()
     check_sponsor_live_badge()
     check_morning_bgm()
@@ -12165,6 +12166,8 @@ def check_title_newgame_mental() -> None:
     if "_startMental = UiKit.Image" in cash:
         cash = cash.split("_startMental = UiKit.Image", 1)[0]
     mental = start_hang.split("_startMental = UiKit.Image", 1)[-1] if "_startMental = UiKit.Image" in start_hang else ""
+    if "_startDay = UiKit.Image" in mental:
+        mental = mental.split("_startDay = UiKit.Image", 1)[0]
     hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
     fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
     build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
@@ -12263,6 +12266,138 @@ def check_title_newgame_mental() -> None:
         fail("new-game mental paper moved Unity off 6000.5.9f1")
     else:
         ok("no-save Title hangs mental_note beside bill and cash; continue Title hides it")
+
+
+def check_title_newgame_day() -> None:
+    """No-save Title hangs day_tab as a 1일차 calendar paper; continue Title hides it."""
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    bill = start_hang.split("_startBill = UiKit.Image", 1)[-1] if "_startBill = UiKit.Image" in start_hang else ""
+    if "_startCash = UiKit.Image" in bill:
+        bill = bill.split("_startCash = UiKit.Image", 1)[0]
+    cash = start_hang.split("_startCash = UiKit.Image", 1)[-1] if "_startCash = UiKit.Image" in start_hang else ""
+    if "_startMental = UiKit.Image" in cash:
+        cash = cash.split("_startMental = UiKit.Image", 1)[0]
+    mental = start_hang.split("_startMental = UiKit.Image", 1)[-1] if "_startMental = UiKit.Image" in start_hang else ""
+    if "_startDay = UiKit.Image" in mental:
+        mental = mental.split("_startDay = UiKit.Image", 1)[0]
+    day = start_hang.split("_startDay = UiKit.Image", 1)[-1] if "_startDay = UiKit.Image" in start_hang else ""
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    last_tab = build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in build else ""
+    morning = week_cs.split('"LastDayBanner"', 1)[-1].split('"WavePanel"', 1)[0]
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+
+    if 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif '"NewGameDay"' not in start_hang or "ArtSprites.DayTab" not in day:
+        fail("new-game Title does not hang Art/day_tab as a 1일차 calendar paper")
+    elif "_start.transform" not in day:
+        fail("new-game 1일차 tab is not on the start / new-game card")
+    elif "preserveAspect = true" not in day:
+        fail("new-game 1일차 tab is not preserveAspect")
+    elif "72f, 48f" in day:
+        fail("new-game 1일차 tab was hung as a 72×48 pin")
+    elif "180f, 56f" not in day or "412f, -10f" not in day:
+        fail("new-game 1일차 tab is not a desk calendar beside NewGameCash")
+    elif '"1일차"' not in day:
+        fail("new-game 1일차 tab is not Korean day-1 copy")
+    elif "마지막 날" in day or "주차 마지막" in day:
+        fail("new-game 1일차 tab reused last-day copy")
+    elif "16f, -10f" in day or "176f, 170f" in day:
+        fail("new-game 1일차 tab covers NewGameBill")
+    elif "200f, 68f" in day or "204f, -10f" in day:
+        fail("new-game 1일차 tab covers NewGameCash")
+    elif "160f, 110f" in day or "204f, -86f" in day:
+        fail("new-game 1일차 tab covers NewGameMental")
+    elif "56f, -40f" in day or "420f, 78f" in day:
+        fail("new-game 1일차 tab covers the start button")
+    elif "SetActive(false)" not in day:
+        fail("new-game 1일차 tab is not hidden until RefreshContinue")
+    elif "_startDay" not in hide or "SetActive(!_hasSave)" not in hide:
+        fail("new-game 1일차 tab is not shown only when there is no save")
+    elif "_continue.transform" in day or '"ContinueDayTab"' in day or '"ContinueLastDayTab"' in day:
+        fail("new-game 1일차 tab sat on the continue tile")
+    elif "UiKit.Stretch" in day:
+        fail("new-game 1일차 tab covers the start button")
+    elif '"NewGameBill"' not in start_hang or "16f, -10f" not in bill or "176f, 170f" not in bill:
+        fail("new-game 1일차 tab restyled NewGameBill")
+    elif '"NewGameCash"' not in start_hang or "200f, 68f" not in cash or "204f, -10f" not in cash:
+        fail("new-game 1일차 tab restyled NewGameCash")
+    elif '"NewGameMental"' not in start_hang or "160f, 110f" not in mental or "204f, -86f" not in mental:
+        fail("new-game 1일차 tab restyled NewGameMental")
+    elif '"StartChip"' not in start_hang or "ArtSprites.TitleStart" not in start_hang:
+        fail("new-game 1일차 tab dropped the start keycap / 시작 chip")
+    elif '"ContinueDayTab"' not in build or "ArtSprites.DayTab" not in build:
+        fail("new-game 1일차 tab dropped continue n일차 on Art/day_tab")
+    elif "_continueDayTab" not in hide or "SetActive(_hasSave)" not in hide:
+        fail("continue n일차 day_tab is not hidden without a save")
+    elif '"ContinueLastDayTab"' not in build or "166f, -6f" not in last_tab or "176f, 48f" not in last_tab:
+        fail("new-game 1일차 tab moved the continue last-day tab")
+    elif '"마지막 날"' not in last_tab or "주차 마지막" not in last_tab:
+        fail("new-game 1일차 tab changed continue last-day copy")
+    elif "LastDayOfCurrentWeek" not in fill or "SetActive(last)" not in fill:
+        fail("new-game 1일차 tab changed continue last-day logic")
+    elif "_continueLastDay" not in hide or "SetActive(false)" not in hide:
+        fail("new-game 1일차 tab dropped hide-without-save on continue last-day")
+    elif "ArtSprites.DayTab" not in morning or '"마지막 날"' not in morning:
+        fail("new-game 1일차 tab dropped morning last-day day_tab")
+    elif "LastDayOfCurrentWeek" not in week_cs or "RefreshLastDay" not in week_cs:
+        fail("new-game 1일차 tab dropped morning last-day refresh")
+    elif "ArtSprites.DayTab" not in week_cs or '"DayTab"' not in week_cs:
+        fail("new-game 1일차 tab dropped morning n일차 day_tab")
+    elif '"SettleDayTab"' not in settle_build or "ArtSprites.DayTab" not in settle_build:
+        fail("new-game 1일차 tab dropped settlement n일차 day_tab")
+    elif '"SettleLastDayTab"' not in settle_cs or "마지막 날" not in settle_cs:
+        fail("new-game 1일차 tab dropped settlement last-day tab")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("new-game 1일차 tab moved last-day week gates")
+    elif '"ContinueMemberPin"' not in build or "-8f, 10f" not in build:
+        fail("new-game 1일차 tab dropped the membership continue pin")
+    elif '"ContinueAgencyPin"' not in build or "-86f, 10f" not in build:
+        fail("new-game 1일차 tab dropped the agency continue pin")
+    elif '"ContinueGoodsPin"' not in build or "-164f, 10f" not in build:
+        fail("new-game 1일차 tab dropped the goods continue pin")
+    elif '"ContinueRankingPin"' not in build or "-242f, 10f" not in build:
+        fail("new-game 1일차 tab dropped the ranking continue pin")
+    elif '"ContinueClipPin"' not in build or "-320f, 10f" not in build:
+        fail("new-game 1일차 tab dropped the clip continue pin")
+    elif '"ContinueConcertPin"' not in build or "-398f, 10f" not in build:
+        fail("new-game 1일차 tab dropped the concert continue pin")
+    elif '"ContinueSponsorPin"' not in build or "-476f, 10f" not in build:
+        fail("new-game 1일차 tab dropped the sponsor continue pin")
+    elif "Audio/sfx_threat" not in title_cs or "PlayThreatSfx" not in fill or "PlayNewGameBillThreat" not in title_cs:
+        fail("new-game 1일차 tab dropped new-game / continue sfx_threat")
+    elif "Audio/sfx_threat" in day or "PlayThreatSfx" in day or "sfx_" in day.lower():
+        fail("new-game 1일차 tab added a title sting")
+    elif "peek.day =" in title_cs or "day += " in title_cs or "day -= " in title_cs:
+        fail("new-game 1일차 tab writes the day index")
+    elif "lastBills =" in week_cs or "billRent =" in title_cs or "TonightBills =" in title_cs:
+        fail("new-game 1일차 tab writes bill amounts")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("new-game 1일차 tab retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("new-game 1일차 tab retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("new-game 1일차 tab retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("new-game 1일차 tab broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising new-game 1일차 tab / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("new-game 1일차 tab dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("new-game 1일차 tab moved Unity off 6000.5.9f1")
+    else:
+        ok("no-save Title hangs 1일차 day_tab beside cash; continue Title hides it")
 
 
 def check_concert_live_badge() -> None:
