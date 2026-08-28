@@ -234,6 +234,7 @@ def check_project() -> None:
         "pad_superchat.png": "슈퍼챗 키캡",
         "chat_bubble.png": "채팅 버블",
         "note_chip.png": "노트 칩",
+        "superchat_chip.png": "슈퍼챗 봉투",
         "hit_rail.png": "히트 레일",
         "content_talk.png": "토크 아이콘",
         "content_game.png": "게임 아이콘",
@@ -1496,6 +1497,7 @@ def check_project() -> None:
     check_clock_plate()
     check_onair_led()
     check_judge_stamps()
+    check_superchat_chip()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -7954,6 +7956,77 @@ def check_judge_stamps() -> None:
         ok("PERFECT / GOOD / MISS sit on judge stamps; gold/white/red / SFX / punch / combo-break stay")
 
 
+def check_superchat_chip() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/superchat_chip.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    make = live_cs.split("RectTransform MakeBubble", 1)[-1].split("static void DimNamedBubble", 1)[0]
+    judge = live_cs.split("if (_session.LastJudgement.HasValue", 1)[-1].split("SyncNotes();", 1)[0]
+    success = judge.split("else if (note.IsSuperchat)", 1)[-1].split("else if (j == Judgement.Perfect)", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 4000:
+        fail("슈퍼챗 envelope PNG is missing")
+    elif w < 128 or h < 128 or abs(w - h) > 8:
+        fail("슈퍼챗 envelope PNG is not a readable square chip")
+    elif color != 6:
+        fail("슈퍼챗 envelope PNG is not RGBA")
+    elif 'SuperchatChip = "Art/superchat_chip"' not in art_cs:
+        fail("ArtSprites does not hook Art/superchat_chip")
+    elif "ArtSprites.SuperchatChip" not in make or '"NoteChip"' not in make:
+        fail("traveling superchat notes are not drawn on the gold envelope")
+    elif "ArtSprites.NoteChip" not in make:
+        fail("superchat envelope replaced regular note_chip")
+    elif "ArtSprites.SuperchatBanner" not in make or "Palette.Gold" not in live_cs.split("static Color NotePadColor", 1)[-1].split("static void TintTravelNote", 1)[0]:
+        fail("superchat envelope dropped gold banner / pad color")
+    elif "eta <= 0.4f" not in live_cs or "BuildSuperchatPip" not in live_cs:
+        fail("superchat envelope dropped the 0.4s telegraph pip")
+    elif "BeginSuperchatFly" not in success or "PlaySfx(_sc" not in success:
+        fail("superchat envelope dropped ₩ fly or sfx_superchat")
+    elif "Audio/sfx_superchat" not in live_cs:
+        fail("superchat envelope dropped Audio/sfx_superchat")
+    elif "ArtSprites.PadSuperchat" not in live_cs or "슈퍼챗" not in live_cs:
+        fail("superchat envelope dropped the gold pad")
+    elif "SuperchatIncome += note.SuperchatWon" not in session_cs:
+        fail("superchat envelope retuned session won income")
+    elif "StreamRules.SuperchatAmount(HypeActive, Rng, Balance)" not in session_cs:
+        fail("superchat envelope retuned amount path")
+    elif "superchatMinWon: 1000" not in balance or "superchatMaxWon: 6000" not in balance:
+        fail("superchat envelope retuned amounts")
+    elif "superchatMinCount: 8" not in balance or "superchatMaxCount: 10" not in balance:
+        fail("superchat envelope retuned spawn count")
+    elif "superchatMinInterval: 9" not in balance or "superchatMaxInterval: 11" not in balance:
+        fail("superchat envelope retuned spawn interval")
+    elif "hypeSuperchatMultiplier" not in rules_cs or "superchatMinWon" not in rules_cs:
+        fail("superchat envelope retuned StreamRules amounts")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("superchat envelope retuned Week 1 economy / hype")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("superchat envelope broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising superchat envelope / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("superchat envelope dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("superchat envelope moved Unity off 6000.5.9f1")
+    elif "Art/superchat_chip" not in readme or "봉투" not in readme:
+        fail("README should mention superchat_chip envelope")
+    else:
+        ok("traveling superchat notes sit on a gold envelope; telegraph / fly / SFX / pad stay")
+
+
 def check_mental_sfx() -> None:
     import wave
 
@@ -8489,8 +8562,8 @@ def check_readme_playable() -> None:
         fail("README dropped judge / event / ending SFX")
     elif "title_studio" not in readme or "morning_room" not in readme or "settlement_desk" not in readme or "pad_*" not in readme:
         fail("README dropped room / pad art")
-    elif "chat_bubble" not in readme or "note_chip" not in readme or "content_*" not in readme:
-        fail("README dropped chat / note / content icons")
+    elif "chat_bubble" not in readme or "note_chip" not in readme or "superchat_chip" not in readme or "content_*" not in readme:
+        fail("README dropped chat / note / superchat envelope / content icons")
     elif "rival_nyang" not in readme or "goods_stand" not in readme or "agency_card" not in readme:
         fail("README dropped rival / goods / agency art")
     elif "ranking_board" not in readme or "concert_stage" not in readme:
@@ -8524,6 +8597,8 @@ def check_readme_playable() -> None:
         or "MISS" not in readme
     ):
         fail("README dropped Perfect/Good/Miss judge stamps")
+    elif "superchat_chip" not in readme or "봉투" not in readme or "sfx_superchat" not in readme:
+        fail("README dropped superchat_chip gold envelope")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:

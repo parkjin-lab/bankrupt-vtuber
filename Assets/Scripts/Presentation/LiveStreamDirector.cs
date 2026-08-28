@@ -2082,18 +2082,22 @@ namespace BankruptVtuber
                     edge.color = new Color(color.r * 0.72f, color.g * 0.72f, color.b * 0.72f, 0.55f);
                 img.color = new Color(1f, 1f, 1f, named && note.FanWounded ? 0.72f : a);
             }
-            if (!super)
             {
                 var chipCol = named && note.FanWounded
                     ? new Color(color.r * 0.72f, color.g * 0.72f, color.b * 0.72f, 0.72f)
                     : new Color(color.r, color.g, color.b, a);
                 var chip = UiKit.Image(card, "NoteChip", chipCol);
-                float chipSize = (troll ? 78f : 72f) * scale;
+                float chipSize = (super ? 76f : troll ? 78f : 72f) * scale;
                 UiKit.Layout(chip.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(42f, 0f), new Vector2(chipSize, chipSize));
-                ArtSprites.Apply(chip, ArtSprites.NoteChip, chipCol, chipCol);
+                if (super)
+                    ArtSprites.Apply(chip, ArtSprites.SuperchatChip, chipCol, chipCol);
+                else
+                {
+                    ArtSprites.Apply(chip, ArtSprites.NoteChip, chipCol, chipCol);
+                    chip.rectTransform.localEulerAngles = new Vector3(0f, 0f, NoteChipAngle(note.Kind));
+                }
                 chip.preserveAspect = true;
                 chip.raycastTarget = false;
-                chip.rectTransform.localEulerAngles = new Vector3(0f, 0f, NoteChipAngle(note.Kind));
             }
 
             string key = super ? "SPACE" : note.Kind switch
