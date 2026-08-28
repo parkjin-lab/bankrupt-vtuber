@@ -182,6 +182,7 @@ namespace BankruptVtuber
         bool _sponsorPinShow;
         Image _sponsorBadge;
         Image _day1Headline;
+        Image _weekHeadline;
         float _bedVolume;
         float _bedDuck;
         bool _threatGear;
@@ -1166,6 +1167,14 @@ namespace BankruptVtuber
             _day1Headline.gameObject.SetActive(false);
 
             _avatar = new AvatarView(root as RectTransform);
+            _weekHeadline = UiKit.Image(root, "LiveWeekHeadline", Color.white);
+            UiKit.Layout(_weekHeadline.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -272f), new Vector2(168f, 68f));
+            ArtSprites.Apply(_weekHeadline, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
+            _weekHeadline.preserveAspect = true;
+            _weekHeadline.raycastTarget = false;
+            var weekHeadT = UiKit.Label(_weekHeadline.transform, "T", "헤드라인", 16, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(weekHeadT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _weekHeadline.gameObject.SetActive(false);
             _rivalDuel = new RivalDuelView(root as RectTransform);
             if (_avatar != null && _avatar.Root != null)
             {
@@ -3217,6 +3226,8 @@ namespace BankruptVtuber
                 _sponsorBadge.gameObject.SetActive(_sponsorPinShow);
             if (_day1Headline != null)
                 _day1Headline.gameObject.SetActive(1 == GameManager.Instance.Run.day);
+            if (_weekHeadline != null)
+                _weekHeadline.gameObject.SetActive(LiveWeekStartDay(GameManager.Instance.Run.day));
             UiKit.EnsureCamera(look.Wash);
             _avatar?.ApplyShow(look);
             if (_bed != null)
@@ -3261,6 +3272,9 @@ namespace BankruptVtuber
             StreamContentType.Reaction => "리액션",
             _ => ""
         };
+
+        static bool LiveWeekStartDay(int day) =>
+            day == 6 || day == 11 || day == 16 || day == 21;
 
         static Color ShowChipAccent(StreamContentType type) => type switch
         {
