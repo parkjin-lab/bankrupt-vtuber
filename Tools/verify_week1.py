@@ -251,6 +251,7 @@ def check_project() -> None:
         "pad_right.png": "→ 키캡",
         "pad_up.png": "↑ 키캡",
         "pad_superchat.png": "슈퍼챗 키캡",
+        "pad_dock.png": "패드 트레이",
         "golive_key.png": "방송 켜기 키캡",
         "title_start.png": "새 방송 시작 키캡",
         "title_continue.png": "이어서 하기 키캡",
@@ -1502,6 +1503,7 @@ def check_project() -> None:
     check_settlement_desk()
     check_morning_room()
     check_pad_keycaps()
+    check_pad_dock()
     check_chat_bubble()
     check_chat_nick()
     check_chat_troll()
@@ -6022,6 +6024,77 @@ def check_pad_keycaps() -> None:
         fail("pad keycaps moved Unity off 6000.5.9f1")
     else:
         ok("live pads are stream-deck keycaps; flash / pip / bindings stay")
+
+
+def check_pad_dock() -> None:
+    """Kind + superchat pads sit on a horizontal stream-deck tray."""
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    pad_cs = (ROOT / "Assets/Scripts/Input/StreamPadButton.cs").read_text(encoding="utf-8")
+    bind_cs = (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/pad_dock.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    row = live_cs.split('UiKit.Panel(bottom, "PadRow"', 1)[-1].split("BuildSuperchatPip", 1)[0]
+    add = live_cs.split("StreamPadButton AddColumnPad", 1)[-1].split("void BuildSuperchatPip", 1)[0]
+    live_loop = readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]
+    pad_inv = next((ln for ln in readme.splitlines() if "Art/pad_dock" in ln), "")
+
+    if not png.exists() or png.stat().st_size < 4000:
+        fail("pad_dock.png is missing")
+    elif w < 400 or h < 120 or w <= h:
+        fail("pad_dock.png is not a readable horizontal stream-deck tray")
+    elif color != 6:
+        fail("pad_dock.png is not RGBA")
+    elif 'PadDock = "Art/pad_dock"' not in art_cs:
+        fail("ArtSprites does not hook Art/pad_dock")
+    elif "ArtSprites.PadDock" not in row or '"PadDock"' not in row:
+        fail("pad row does not hang pad_dock behind the keycaps")
+    elif "SetAsFirstSibling" not in row or "ApplySliced" not in row:
+        fail("pad_dock is not drawn under the pad row")
+    elif "AddColumnPad(padRow, 0, 5" not in row or "슈퍼챗" not in row:
+        fail("pad_dock dropped kind / superchat pads")
+    elif "ArtSprites.PadLeft" not in add or "ArtSprites.PadSuperchat" not in add:
+        fail("pad_dock dropped pad_* keycaps")
+    elif "ArtSprites.PadDown" not in add or "ArtSprites.PadRight" not in add or "ArtSprites.PadUp" not in add:
+        fail("pad_dock dropped kind keycap arts")
+    elif "_flash = 0.08f" not in pad_cs:
+        fail("pad_dock dropped the 0.08s press flash")
+    elif "Audio/sfx_pad" not in live_cs or "PlayPadClick" not in live_cs:
+        fail("pad_dock dropped sfx_pad")
+    elif "GetKeyDown(KeyCode.LeftArrow)" not in bind_cs or "KeyCode.A" not in bind_cs or "GetKeyUp(KeyCode.Space)" not in bind_cs:
+        fail("pad_dock retuned pad bindings")
+    elif "CoachCard" not in live_cs or "ArtSprites.CoachCard" not in live_cs or "BuildCoachLegend" not in live_cs:
+        fail("pad_dock dropped Day-1 coach")
+    elif "ArtSprites.ChatDock" not in live_cs or '"ChatDock"' not in live_cs:
+        fail("pad_dock dropped chat_dock")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("pad_dock retuned QTE windows")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("pad_dock retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("pad_dock broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising pad_dock / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("pad_dock dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("pad_dock moved Unity off 6000.5.9f1")
+    elif "pad_dock" not in live_loop or "pad_*" not in live_loop:
+        fail("README live loop does not name pad_dock under the keycaps")
+    elif "pad_dock" not in pad_inv or "트레이" not in pad_inv:
+        fail("README pad inventory dropped pad_dock stream-deck tray")
+    else:
+        ok("pad row sits on pad_dock stream-deck tray; keycaps / flash / sfx / coach stay")
 
 
 def check_chat_bubble() -> None:
@@ -12472,6 +12545,8 @@ def check_readme_playable() -> None:
         fail("README dropped chat / note / superchat envelope / content icons")
     elif "chat_dock" not in readme or "독" not in readme:
         fail("README dropped chat_dock overlay dock")
+    elif "pad_dock" not in readme or "트레이" not in readme:
+        fail("README dropped pad_dock stream-deck tray")
     elif "chat_nick" not in readme or "닉" not in readme:
         fail("README dropped chat_nick nameplate")
     elif "chat_troll" not in readme or "트롤" not in readme:

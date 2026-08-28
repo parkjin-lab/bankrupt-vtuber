@@ -51,7 +51,7 @@
 
 웹캠 파산냥은 `Art/pasan_nyang` 256px 2D 얼굴이고, 바깥은 `Art/webcam_bezel` 스트림 캠 베젤이다. 3주차 라이벌 캠(`Art/rival_nyang`)의 **라이벌 HUD**는 같은 `Art/webcam_bezel` · 듀얼 중 플레이어 HUD와 같은 `Art/onair_led`(켜졌다가 승패가 나면 꺼짐) · 시청 카운트 `Art/viewer_badge` · ± 팝 `Art/viewer_pop`. Perfect 펀치 · Good 끄덕 · Miss 흔들 · 멘탈 ≤40 지침 · 시청 틱·승/패 SFX는 그대로다.
 
-라이브는 `Art/onair_led` LED 배지 **ON AIR** / **방송 시작**(0.6초, `Audio/sfx_onair` 시작 스팅)과 함께 `Audio/bgm_stream`이 타이틀보다 작게 루프한다. 웹캠 코너의 작은 `Art/onair_led` **ON AIR**는 90초 내내 켜져 있고, 마지막 10초는 시계와 같이 깜빡이다가 **방송 종료**에 꺼진다. **온에어 LED**는 그 HUD 스팅·90초 점등·깜빡·종료 꺼짐 + **방송 켜기** / **콘서트 방송** LIVE 핍 + 3주차 라이벌 캠(승패 나면 꺼짐). 5주차 콘서트 라이브만 `Audio/bgm_concert`가 스트림보다 크고 밝게 루프하고, 판정·슈퍼챗·하이프 SFX는 그대로 위에 뜬다. HUD가 이어진다. 바탕은 `Art/stream_overlay` 2D 오버레이(LIVE 핍 · 웹캠 베젤 · 채팅 테두리). 하단 키는 `Art/pad_*` 스트림덱 키캡(←파랑 / ↓초록 / →트롤 / ↑골드 / 슈퍼챗 골드). 칩 · 히트바 · FX · 0.08초 프레스 플래시는 그대로다. 1일차 코치는 `Art/coach_card` 스티키 카드로 그 다음. 90초가 끝나면 `Art/end_cut` 컷 카드 **방송 종료**(검정 플래시 · LIVE 점 꺼짐, 0.5초, `Audio/sfx_end_cut` 컷 스팅 · 베드 0.2초 페이드) 뒤 정산. F10 스킵은 조용히 정산으로. 정산은 `Art/settlement_desk` 방송 끝난 책상 바탕 위에 기존 카드가 그대로 올라간다.
+라이브는 `Art/onair_led` LED 배지 **ON AIR** / **방송 시작**(0.6초, `Audio/sfx_onair` 시작 스팅)과 함께 `Audio/bgm_stream`이 타이틀보다 작게 루프한다. 웹캠 코너의 작은 `Art/onair_led` **ON AIR**는 90초 내내 켜져 있고, 마지막 10초는 시계와 같이 깜빡이다가 **방송 종료**에 꺼진다. **온에어 LED**는 그 HUD 스팅·90초 점등·깜빡·종료 꺼짐 + **방송 켜기** / **콘서트 방송** LIVE 핍 + 3주차 라이벌 캠(승패 나면 꺼짐). 5주차 콘서트 라이브만 `Audio/bgm_concert`가 스트림보다 크고 밝게 루프하고, 판정·슈퍼챗·하이프 SFX는 그대로 위에 뜬다. HUD가 이어진다. 바탕은 `Art/stream_overlay` 2D 오버레이(LIVE 핍 · 웹캠 베젤 · 채팅 테두리). 하단 키는 `Art/pad_dock` 스트림덱 트레이 위에 `Art/pad_*` 키캡(←파랑 / ↓초록 / →트롤 / ↑골드 / 슈퍼챗 골드). 칩 · 히트바 · FX · 0.08초 프레스 플래시는 그대로다. 1일차 코치는 `Art/coach_card` 스티키 카드로 그 다음. 90초가 끝나면 `Art/end_cut` 컷 카드 **방송 종료**(검정 플래시 · LIVE 점 꺼짐, 0.5초, `Audio/sfx_end_cut` 컷 스팅 · 베드 0.2초 페이드) 뒤 정산. F10 스킵은 조용히 정산으로. 정산은 `Art/settlement_desk` 방송 끝난 책상 바탕 위에 기존 카드가 그대로 올라간다.
 
 라이브 HUD 스택(책상 종이 + 배지 + 스탬프 + 피크/사고 오버레이 + 채팅 독). 자세한 목록은 아래 **라이브 HUD 스택** / **책상 종이** / **돈 스탬프 · 팝 슬립**.
 
@@ -99,6 +99,7 @@
   - **채팅 독** — `Art/chat_dock` — 채팅 칼럼 오버레이 독(`Art/chat_bubble` · `Art/chat_nick` / `Art/chat_troll` / `Art/chat_super` 스택 뒤)
   - **피크 / 사고** — `Art/hype_frame`(하이프 골드 프레임, `sfx_hype`) · `Art/hype_chip`(**하이프 N**) · `Art/event_warn` — **이벤트 경고**(**안티 온다** / **렉 온다** · **아침 경고** **오늘의 위협** 슬램 · 정산 **위협** 줄 · **이어서 하기** 추가 위협, 세이브·위협 없으면 숨김) · `Art/anti_sting`(`sfx_anti`) · `Art/lag_sting`(`sfx_lag`)
 - **패드 / 채팅 / 노트** — 라이브 키캡·버블·닉 네임플레이트가 이미 붙어 있다(스폰·카탈로그·경제 숫자는 그대로).
+  - `Art/pad_dock` — 라이브 패드 행 스트림덱 트레이(`pad_*` 키캡·슈퍼챗 패드 뒤)
   - `Art/pad_*` — 라이브 키캡 (←파랑 / ↓초록 / →트롤 / ↑골드 / 슈퍼챗 골드). 위 **스트림덱 키캡**(`title_start` / `title_continue` / `golive_key` / `nextday_key`)
   - `Art/chat_dock` — 라이브 채팅 칼럼 오버레이 독(버블·닉 스택 뒤 패널)
   - `Art/chat_bubble` — 일반 채팅 다크 필(흰 글칸)

@@ -1172,6 +1172,12 @@ namespace BankruptVtuber
             var padRowImg = padRow.GetComponent<Image>();
             if (padRowImg != null)
                 padRowImg.raycastTarget = false;
+            var padDock = UiKit.Image(padRow, "PadDock", Color.white);
+            UiKit.Stretch(padDock.rectTransform);
+            ArtSprites.ApplySliced(padDock, ArtSprites.PadDock, Color.white, new Vector4(48f, 40f, 48f, 40f));
+            padDock.preserveAspect = false;
+            padDock.raycastTarget = false;
+            padDock.transform.SetAsFirstSibling();
             _lanePads[0] = AddColumnPad(padRow, 0, 5, "긍정", Palette.ForKind(ChatKind.Positive), StreamPadButton.Mode.Kind, ChatKind.Positive);
             _lanePads[1] = AddColumnPad(padRow, 1, 5, "공감", Palette.ForKind(ChatKind.Empathy), StreamPadButton.Mode.Kind, ChatKind.Empathy);
             _lanePads[2] = AddColumnPad(padRow, 2, 5, "웃음", Palette.ForKind(ChatKind.Laugh), StreamPadButton.Mode.Kind, ChatKind.Laugh);

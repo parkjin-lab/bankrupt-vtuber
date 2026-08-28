@@ -59,6 +59,7 @@ namespace BankruptVtuber
         public const string PadRight = "Art/pad_right";
         public const string PadUp = "Art/pad_up";
         public const string PadSuperchat = "Art/pad_superchat";
+        public const string PadDock = "Art/pad_dock";
         public const string GoLiveKey = "Art/golive_key";
         public const string TitleStart = "Art/title_start";
         public const string TitleContinue = "Art/title_continue";
