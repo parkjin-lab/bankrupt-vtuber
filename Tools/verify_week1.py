@@ -4316,6 +4316,8 @@ def check_continue_pulse() -> None:
         fail("continue pulse does not hang last night's scrap")
     elif "ContinueCashSlip" not in click or "ArtSprites.CashSlip" not in click:
         fail("continue pulse does not hang cash on Art/cash_slip")
+    elif "ContinueDebtNotice" not in click or "ArtSprites.BillNotice" not in click:
+        fail("continue pulse does not hang debt on Art/bill_notice")
     elif "activeInHierarchy" not in pulse or "_hasSave" not in hide or "SetActive(_hasSave)" not in hide:
         fail("continue pulse is not hidden when there is no save")
     elif "SetActive(hasHead)" not in hide:
@@ -4551,6 +4553,16 @@ def check_bill_notice() -> None:
         fail("live 청구 chip is not on the 고지서 sprite")
     elif "ArtSprites.BillNotice" not in settle_build or '"Debt"' not in settle_build or '"부채"' not in settle_build:
         fail("settlement 부채 is not on the 고지서 sprite")
+    elif "ContinueDebtNotice" not in title_cs or "ArtSprites.BillNotice" not in title_cs:
+        fail("Title continue debt is not on the same 고지서 sprite")
+    elif "SetActive(_hasSave)" not in title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]:
+        fail("Title debt notice is not hidden without a save")
+    elif "Palette.Gold" not in title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]:
+        fail("Title debt notice dropped panic-gold debt tint")
+    elif "ContinueCashSlip" not in title_cs or "ArtSprites.CashSlip" not in title_cs:
+        fail("Title debt notice dropped cash slip")
+    elif "TickContinuePulse" not in title_cs or "ContinueRun()" not in title_cs:
+        fail("Title debt notice dropped continue pulse / load")
     elif "TickDebtCount" not in settle_cs or "_debtCountT / 0.4f" not in settle_cs or "Palette.MoneyRed" not in settle_cs:
         fail("debt notice dropped count-up or red-increase tint")
     elif "LeftCashSlip" not in settle_cs or "ArtSprites.CashSlip" not in settle_cs:
@@ -4578,7 +4590,7 @@ def check_bill_notice() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("bill notice moved Unity off 6000.5.9f1")
     else:
-        ok("오늘 청구 / settlement 부채 use 고지서; slam / count / cash slips stay")
+        ok("title / morning / settlement debt share 고지서; pulse / cash slips stay")
 
 
 def check_stream_overlay() -> None:

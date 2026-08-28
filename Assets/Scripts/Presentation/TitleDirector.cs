@@ -26,6 +26,7 @@ namespace BankruptVtuber
         Text _continueHead;
         Image _continueClip;
         Image _continueCashSlip;
+        Image _continueDebtNotice;
         Text _wordmark;
         Button _how;
         Text _hint;
@@ -168,11 +169,14 @@ namespace BankruptVtuber
             _continueCashSlip.raycastTarget = false;
             _continueMoney = UiKit.Label(_continueCashSlip.transform, "SaveMoney", "", 18, Palette.MoneyRed, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(_continueMoney.rectTransform, new Vector2(0.08f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
-            var debtPlate = UiKit.Panel(moneyPlate, "DebtPlate", new Color(0.12f, 0.05f, 0.08f, 0.88f));
-            UiKit.Layout(debtPlate, new Vector2(0.50f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(-4f, 0f));
-            _continueDebt = UiKit.Label(debtPlate, "SaveDebt", "", 18, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UiKit.Layout(_continueDebt.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0.5f), new Vector2(8f, 0f), new Vector2(-8f, 0f));
+            _continueDebtNotice = UiKit.Image(moneyPlate, "ContinueDebtNotice", Color.white);
+            UiKit.Layout(_continueDebtNotice.rectTransform, new Vector2(0.50f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(-4f, 0f));
+            ArtSprites.ApplySliced(_continueDebtNotice, ArtSprites.BillNotice, Color.white, new Vector4(28f, 16f, 28f, 16f));
+            _continueDebtNotice.raycastTarget = false;
+            _continueDebt = UiKit.Label(_continueDebtNotice.transform, "SaveDebt", "", 18, Palette.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_continueDebt.rectTransform, new Vector2(0.08f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
             _continueCashSlip.gameObject.SetActive(false);
+            _continueDebtNotice.gameObject.SetActive(false);
             _continueClip = UiKit.Image(titleParent, "ContinueClip", Color.white);
             UiKit.Layout(_continueClip.rectTransform, new Vector2(0, 0.52f), new Vector2(0, 0.52f), new Vector2(0, 0.5f), new Vector2(56, -286), new Vector2(420, 72));
             ArtSprites.Apply(_continueClip, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
@@ -332,6 +336,8 @@ namespace BankruptVtuber
                 FillContinue(peek);
             if (_continueCashSlip != null)
                 _continueCashSlip.gameObject.SetActive(_hasSave);
+            if (_continueDebtNotice != null)
+                _continueDebtNotice.gameObject.SetActive(_hasSave);
             if (_continueClip != null)
                 _continueClip.gameObject.SetActive(hasHead);
             var caption = _start.transform.Find("Caption") != null
