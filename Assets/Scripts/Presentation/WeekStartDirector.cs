@@ -31,6 +31,7 @@ namespace BankruptVtuber
         Text _contentHud;
         Text _yesterday;
         Image _yesterdayClip;
+        Image _day1Tab;
         RectTransform _lastDayRoot;
         Text _lastDayWeek;
         Text _lastDayNeed;
@@ -218,6 +219,15 @@ namespace BankruptVtuber
             }
             _debt = MoneyChip(moneyBar, "DebtChip", "부채", Palette.MoneyRed, 0.52f, 0.76f);
             _mental = MoneyChip(moneyBar, "MentalChip", "멘탈", Palette.Pink, 0.76f, 1f);
+
+            _day1Tab = UiKit.Image(root, "MorningDay1", Color.white);
+            UiKit.Layout(_day1Tab.rectTransform, new Vector2(0.74f, 1f), new Vector2(0.74f, 1f), new Vector2(0f, 1f), new Vector2(8f, -220f), new Vector2(180f, 56f));
+            ArtSprites.Apply(_day1Tab, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _day1Tab.preserveAspect = true;
+            _day1Tab.raycastTarget = false;
+            var day1T = UiKit.Label(_day1Tab.transform, "T", "1일차", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(day1T.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _day1Tab.gameObject.SetActive(false);
 
             _lastDayRoot = UiKit.Panel(root, "LastDayBanner", Color.white);
             UiKit.Layout(_lastDayRoot, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(744, -8), new Vector2(312, 108));
@@ -411,6 +421,7 @@ namespace BankruptVtuber
             _contentHud.text = content;
             _contentHud.gameObject.SetActive(!string.IsNullOrEmpty(content));
             RefreshYesterday(run);
+            RefreshDay1(run);
             RefreshLastDay(run);
             RefreshCashShort();
         }
@@ -489,6 +500,13 @@ namespace BankruptVtuber
             if (_yesterdayClip != null)
                 _yesterdayClip.gameObject.SetActive(on);
             _yesterday.gameObject.SetActive(on);
+        }
+
+        void RefreshDay1(GameRunState run)
+        {
+            if (_day1Tab == null)
+                return;
+            _day1Tab.gameObject.SetActive(run != null && run.day == 1);
         }
 
         void RefreshLastDay(GameRunState run)
