@@ -118,6 +118,7 @@ namespace BankruptVtuber
         AudioClip _mentalCue;
         AudioClip _rivalWinCue;
         AudioClip _rivalLoseCue;
+        AudioClip _goodsCue;
         Image _wash;
         Image _washVeil;
         Image _chatPanel;
@@ -274,6 +275,9 @@ namespace BankruptVtuber
             _rivalLoseCue = Resources.Load<AudioClip>("Audio/sfx_rival_lose");
             if (_rivalLoseCue == null)
                 _rivalLoseCue = ToneClip("sfx_rival_lose", new[] { 330f, 247f, 196f }, 0.08f, 0.16f);
+            _goodsCue = Resources.Load<AudioClip>("Audio/sfx_goods");
+            if (_goodsCue == null)
+                _goodsCue = ToneClip("sfx_goods", new[] { 1318f, 1760f }, 0.07f, 0.20f);
             StreamBindings.OnLanePadPress += PlayPadClick;
         }
 
@@ -514,6 +518,8 @@ namespace BankruptVtuber
             TickEventWarn();
             TickSuperchatPip();
             RefreshEventOverlay();
+            if (!_promoWasActive && _session.PromoActive)
+                PlaySfx(_goodsCue, 0.48f);
             if (_promoWasActive && !_session.PromoActive && _session.Promo.Resolved && _session.Promo.Success)
                 FlashPromoSuccess();
             _promoWasActive = _session.PromoActive;

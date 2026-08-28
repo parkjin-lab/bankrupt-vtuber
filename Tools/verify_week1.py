@@ -1474,6 +1474,7 @@ def check_project() -> None:
     check_rival_sfx()
     check_membership_sfx()
     check_clip_sfx()
+    check_goods_sfx()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -6857,6 +6858,102 @@ def check_clip_sfx() -> None:
         fail("clip SFX moved Unity off 6000.5.9f1")
     else:
         ok("클립 카드 plays sfx_clip once; upload rules / membership chime stay")
+
+
+def check_goods_sfx() -> None:
+    import wave
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    bind_cs = (ROOT / "Assets/Scripts/Input/StreamBindings.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    show = settle_cs.split("void ShowGoodsSplash", 1)[-1].split("void OnGoodsAck", 1)[0]
+    ack = settle_cs.split("void OnGoodsAck", 1)[-1].split("void OnProduce", 1)[0]
+    produce = settle_cs.split("void OnProduce", 1)[-1].split("void ShowAgencySplash", 1)[0]
+    play = settle_cs.split("void PlayGoodsSfx", 1)[-1]
+    member = settle_cs.split("void ShowMemberSplash", 1)[-1].split("void OnMemberAck", 1)[0]
+    clip = settle_cs.split("void ShowClipCard", 1)[-1].split("void CloseClipCard", 1)[0]
+    promo = live_cs.split("else if (_session.PromoActive)", 1)[-1].split("else if (_session.LineActive)", 1)[0]
+    flash = live_cs.split("void FlashPromoSuccess", 1)[-1].split("void RefreshLineOverlay", 1)[0]
+    overlay = live_cs.split("void RefreshPromoOverlay", 1)[-1].split("void FlashPromoSuccess", 1)[0]
+    update = live_cs.split("void Update()", 1)[-1].split("IEnumerator EndRoutine", 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_goods.wav"
+
+    if not path.exists() or path.stat().st_size < 2000:
+        fail("sfx_goods.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("sfx_goods.wav is not a readable PCM plastic/register sting")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.16 or dur > 0.42:
+            fail(f"sfx_goods.wav duration {dur:.3f}s is not a short stand chime")
+            return
+
+    if "Audio/sfx_goods" not in settle_cs or "PlayGoodsSfx" not in settle_cs:
+        fail("Settlement does not load / play Audio/sfx_goods")
+    elif "PlayGoodsSfx();" not in show or show.count("PlayGoodsSfx();") != 1:
+        fail("acrylic unlock card does not play a single stand chime")
+    elif play.count("PlayOneShot") != 1:
+        fail("goods chime can fire more than one shot")
+    elif "PlayGoodsSfx" in ack or "PlayGoodsSfx" in produce:
+        fail("goods chime plays on 정산으로 or produce")
+    elif "Audio/sfx_goods" not in live_cs or "PlaySfx(_goodsCue" not in update:
+        fail("LiveStream does not play goods chime when promo appears")
+    elif "!_promoWasActive && _session.PromoActive" not in update:
+        fail("promo goods chime is not edge-triggered on card appear")
+    elif "PlaySfx" in promo or "sfx_goods" in promo:
+        fail("goods chime plays on 홍보하기 / 넘어가기")
+    elif "PlaySfx" in flash or "sfx_goods" in flash:
+        fail("goods chime plays on 홍보 성공 slam")
+    elif "PlaySfx" in overlay or "sfx_goods" in overlay:
+        fail("goods chime plays every promo overlay refresh")
+    elif "TryPromo(true)" not in promo or "TryPromo(false)" not in promo:
+        fail("goods SFX unhooked promo confirm / skip")
+    elif "PromoConfirmDown" not in bind_cs or "PromoSkipDown" not in bind_cs:
+        fail("goods SFX changed promo bindings")
+    elif 'GoodsStand = "Art/goods_stand"' not in art_cs or "ArtSprites.GoodsStand" not in settle_cs:
+        fail("goods SFX dropped goods_stand art")
+    elif "아크릴 스탠드 해금" not in settle_cs or "굿즈 홍보 타이밍" not in live_cs:
+        fail("goods SFX covered unlock / promo copy")
+    elif "홍보하기" not in live_cs or "넘어가기" not in live_cs:
+        fail("goods SFX dropped promo confirm copy")
+    elif "goodsUnlockCash: 60000" not in w3_asset or "goodsProduceCost: 2500" not in w3_asset or "goodsPrice: 7000" not in w3_asset:
+        fail("goods SFX retuned unlock / produce / price")
+    elif "goodsUnlockStock: 20" not in w3_asset or "goodsPromoMultiplier: 1.5" not in w3_asset:
+        fail("goods SFX retuned stock / promo multiplier")
+    elif "promoWindowSeconds: 1.2" not in w3_asset or "promoFallbackSeconds: 55" not in w3_asset:
+        fail("goods SFX retuned promo window")
+    elif "TryUnlockGoods" not in w3r_cs or "cash < w3.goodsUnlockCash" not in w3r_cs:
+        fail("goods SFX changed unlock routing")
+    elif "Audio/sfx_membership" not in settle_cs or "PlayMemberSfx();" not in member:
+        fail("goods SFX dropped membership badge chime")
+    elif "Audio/sfx_clip" not in settle_cs or "PlayClipSfx();" not in clip:
+        fail("goods SFX dropped clip shutter chime")
+    elif "Audio/sfx_goods" in title_cs or "Audio/sfx_goods" in week_cs:
+        fail("goods SFX leaked onto Title / WeekStart")
+    elif "ShowGoodsSplash" in debug_cs or "sfx_goods" in debug_cs:
+        fail("F10 skip is no longer mute-safe")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("goods SFX retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("goods SFX broke pads, 입력됨, or added timeScale")
+    elif "Week3" in title_cs or "아크릴" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising goods SFX / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("goods SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("goods SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("아크릴 해금 / 굿즈 홍보 play sfx_goods once each; confirm / numbers stay")
 
 
 def check_mental_sfx() -> None:

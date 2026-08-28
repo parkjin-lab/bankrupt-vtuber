@@ -151,6 +151,7 @@ namespace BankruptVtuber
         AudioClip _letterCue;
         AudioClip _memberCue;
         AudioClip _clipCue;
+        AudioClip _goodsCue;
         bool _leavingSettle;
         bool _resultStingPlayed;
 
@@ -1694,6 +1695,7 @@ namespace BankruptVtuber
             _goodsOpen = true;
             if (_produce != null)
                 _produce.gameObject.SetActive(false);
+            PlayGoodsSfx();
         }
 
         void OnGoodsAck()
@@ -2204,6 +2206,7 @@ namespace BankruptVtuber
             _letterCue = Resources.Load<AudioClip>("Audio/sfx_letter");
             _memberCue = Resources.Load<AudioClip>("Audio/sfx_membership");
             _clipCue = Resources.Load<AudioClip>("Audio/sfx_clip");
+            _goodsCue = Resources.Load<AudioClip>("Audio/sfx_goods");
         }
 
         void PlaySettleSfx(AudioClip clip, float volume)
@@ -2267,6 +2270,12 @@ namespace BankruptVtuber
                 _settleBgm.Stop();
             }
             next?.Invoke();
+        }
+
+        void PlayGoodsSfx()
+        {
+            if (_settleSfx != null && _goodsCue != null)
+                _settleSfx.PlayOneShot(_goodsCue, 0.48f);
         }
     }
 }
