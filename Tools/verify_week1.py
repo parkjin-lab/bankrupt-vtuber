@@ -1608,6 +1608,7 @@ def check_project() -> None:
     check_readme_title_clip_pin()
     check_readme_title_concert_pin()
     check_readme_title_sponsor_pin()
+    check_readme_title_newgame_bill()
     check_readme_concert_live_badge()
     check_readme_sponsor_live_badge()
     check_readme_clip_card_plate()
@@ -17233,6 +17234,78 @@ def check_readme_title_sponsor_pin() -> None:
         ok("README names the Title continue sponsor pin vs the live pin and mention-day plate")
 
 
+def check_readme_title_newgame_bill() -> None:
+    """README names the Title new-game bill paper vs morning 오늘 청구 and continue debt."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    title_loop = readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]
+    morning_loop = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    desk_paper = readme.split("- **책상 종이**", 1)[-1].split("- **돈 스탬프", 1)[0]
+    paper_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 청구서**")), "")
+    bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **고지서")), "")
+    sponsor_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **이어하기 스폰서 핀**")), "")
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    paper = start_hang.split("_startBill = UiKit.Image", 1)[-1] if "_startBill = UiKit.Image" in start_hang else ""
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+
+    if "새 게임 청구서" not in title_loop or "NewGameBill" not in title_loop or "bill_notice" not in title_loop:
+        fail("README title loop must name 새 게임 청구서 on Art/bill_notice")
+    elif "부채" not in title_loop or "preserveAspect" not in title_loop or "숨김" not in title_loop:
+        fail("README title loop must name the new-game bill paper vs hidden / 부채")
+    elif "오늘 청구" not in title_loop or "ContinueDebtNotice" not in title_loop:
+        fail("README title loop must keep 새 게임 청구서 distinct from morning / continue debt")
+    elif "새 게임 청구서" not in paper_inv or "NewGameBill" not in paper_inv or "bill_notice" not in paper_inv:
+        fail("README must inventory 새 게임 청구서 on its own line")
+    elif "오늘 청구" not in paper_inv or "ContinueDebtNotice" not in paper_inv:
+        fail("README 새 게임 청구서 line must stay distinct from morning / continue debt")
+    elif paper_inv == bill_inv:
+        fail("README must keep 새 게임 청구서 distinct from the shared 고지서 line")
+    elif "오늘 청구" not in bill_inv or "이어서 하기" not in bill_inv or "여섯 곳" not in bill_inv:
+        fail("README 새 게임 청구서 rewrote the shared 고지서 inventory")
+    elif "NewGameBill" in bill_inv:
+        fail("README folded 새 게임 청구서 into the shared 고지서 line")
+    elif "오늘 청구" not in morning_loop or "bill_notice" not in morning_loop:
+        fail("README 새 게임 청구서 dropped morning 오늘 청구")
+    elif "새 게임 청구서" in morning_loop or "NewGameBill" in morning_loop:
+        fail("README hung 새 게임 청구서 on the morning bill paper")
+    elif "새 게임 청구서" not in desk_paper or "ContinueDebtNotice" not in desk_paper:
+        fail("README desk paper dropped 새 게임 청구서 vs continue debt")
+    elif "ContinueSponsorPin" not in sponsor_inv or "타일 가득" not in sponsor_inv:
+        fail("README 새 게임 청구서 rewrote the Title continue sponsor pin")
+    elif '"NewGameBill"' not in start_hang or "ArtSprites.BillNotice" not in paper:
+        fail("README new-game bill paper lost the start-card hang")
+    elif "_start.transform" not in paper or "preserveAspect = true" not in paper or "176f, 170f" not in paper:
+        fail("README new-game bill paper restyled the start-card hang")
+    elif "SetActive(!_hasSave)" not in hide:
+        fail("README new-game bill paper is not hidden when continue is showing")
+    elif '"ContinueDebtNotice"' not in build or "ArtSprites.BillNotice" not in build:
+        fail("README new-game bill paper dropped continue debt")
+    elif "ArtSprites.BillNotice" not in money or '"오늘 청구"' not in week_cs:
+        fail("README new-game bill paper dropped morning 오늘 청구 hang")
+    elif 'BillNotice = "Art/bill_notice"' not in art_cs:
+        fail("ArtSprites does not hook Art/bill_notice")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README new-game bill paper retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README new-game bill paper retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README new-game bill paper retuned week-clear gates")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising README new-game bill paper / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README new-game bill paper dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README new-game bill paper moved Unity off 6000.5.9f1")
+    else:
+        ok("README names 새 게임 청구서 vs morning 오늘 청구 and continue debt")
+
+
 def check_readme_concert_live_badge() -> None:
     """README names the post-book webcam concert_stage pin vs backdrop vs both settlement plates."""
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -23157,6 +23230,10 @@ def check_readme_playable() -> None:
         fail("README does not inventory the Title continue sponsor pin")
     elif "이어하기 스폰서 핀" not in readme.split("**4주차**", 1)[-1].split("**5주차**", 1)[0]:
         fail("README Week 4 dropped the Title continue sponsor pin")
+    elif "새 게임 청구서" not in readme or "새 게임 청구서" not in readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]:
+        fail("README does not inventory the Title new-game bill paper")
+    elif "NewGameBill" not in desk_paper or "ContinueDebtNotice" not in desk_paper:
+        fail("README desk paper dropped 새 게임 청구서 vs continue debt")
     elif "클립 플레이트" not in readme or "클립 업로드" not in readme.split("**2주차**", 1)[-1].split("**3주차**", 1)[0]:
         fail("README does not inventory clip-upload settlement clip_card plate")
     elif "클립 핀" not in readme or "클립 핀" not in readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]:
@@ -23346,7 +23423,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + 코치 스탬프 + 콘서트 바탕 + 콘서트 핀 + 이어하기 콘서트 핀 + 콘서트 개최 플레이트 + 콘서트 결과 플레이트 + 굿즈 선반 + 굿즈 핀 + 이어하기 굿즈 핀 + 굿즈 해금 플레이트 + 스폰서 플레이트 + 스폰서 핀 + 이어하기 스폰서 핀 + 랭킹 플레이트 + 랭킹 핀 + 이어하기 랭킹 핀 + 에이전시 핀 + 이어하기 에이전시 핀 + 에이전시 플레이트 + 멤버십 배지 + 이어하기 멤버십 핀 + 멤버십 플레이트 + 클립 핀 + 이어하기 클립 핀 + 클립 플레이트 + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + 라이벌 HUD + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + 새 게임 청구서 + content_plate morning/live/settle + coach_card + 코치 스탬프 + 콘서트 바탕 + 콘서트 핀 + 이어하기 콘서트 핀 + 콘서트 개최 플레이트 + 콘서트 결과 플레이트 + 굿즈 선반 + 굿즈 핀 + 이어하기 굿즈 핀 + 굿즈 해금 플레이트 + 스폰서 플레이트 + 스폰서 핀 + 이어하기 스폰서 핀 + 랭킹 플레이트 + 랭킹 핀 + 이어하기 랭킹 핀 + 에이전시 핀 + 이어하기 에이전시 핀 + 에이전시 플레이트 + 멤버십 배지 + 이어하기 멤버십 핀 + 멤버십 플레이트 + 클립 핀 + 이어하기 클립 핀 + 클립 플레이트 + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
