@@ -1569,6 +1569,7 @@ def check_project() -> None:
     check_readme_concert_live_stage()
     check_readme_last_day_tab()
     check_readme_title_last_day_tab()
+    check_readme_settle_last_day_tab()
     check_readme_threat_slam_sfx()
     check_readme_both_threat_sfx()
     check_readme_title_threat_sfx()
@@ -10757,6 +10758,125 @@ def check_readme_title_last_day_tab() -> None:
         ok("README names title continue last-day on a second day_tab; other continues stay quiet; morning / concert / coach / four sfx_threat stay")
 
 
+def check_readme_settle_last_day_tab() -> None:
+    """README names settlement last-day on a second day_tab next to n일차."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    title_loop = readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]
+    morning = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    card_tabs = readme.split("- **카드 / 탭**", 1)[-1].split("- **책상 종이**", 1)[0]
+    day_inv = next((ln for ln in card_tabs.splitlines() if "Art/day_tab" in ln), "")
+    coach_stamp = next((ln for ln in readme.splitlines() if "코치 스탬프" in ln and "judge_perfect" in ln), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    stage_inv = next((ln for ln in readme.splitlines() if "콘서트 바탕" in ln and "concert_stage" in ln), "")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    render = settle_cs.split("void Render()", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+    last_tab = build.split('"SettleLastDayTab"', 1)[-1].split('"Recap"', 1)[0] if '"SettleLastDayTab"' in build else ""
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    morning_banner = week_cs.split('"LastDayBanner"', 1)[-1].split('"WavePanel"', 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+
+    missing = next(
+        (
+            f"{label} {token}"
+            for label, block in (
+                ("settle loop", settle_loop),
+                ("day_tab inventory", day_inv),
+            )
+            for token in ("마지막 날", "주차 마지막", "day_tab", "정산")
+            if token not in block
+        ),
+        "",
+    )
+
+    if missing:
+        fail(f"README {missing} must name settlement last-day on a second day_tab")
+    elif "둘째" not in day_inv or "옆" not in day_inv:
+        fail("README day_tab inventory must name settlement last-day as a second tab next to n일차")
+    elif "둘째" not in settle_loop or "옆" not in settle_loop:
+        fail("README settle loop must name settlement last-day next to n일차")
+    elif "골드" not in day_inv or "골드" not in settle_loop:
+        fail("README settlement last-day tab must stay gold like n일차")
+    elif "다른 정산" not in day_inv or "숨김" not in day_inv:
+        fail("README day_tab inventory must hide settlement last-day on other days")
+    elif "다른 정산" not in settle_loop or "숨김" not in settle_loop:
+        fail("README settle loop must hide last-day on other settlement days")
+    elif "5/10/15/20/25" not in settle_loop:
+        fail("README settle loop must still name days 5/10/15/20/25")
+    elif "다른 아침" not in day_inv or "다른 아침" not in morning:
+        fail("README settlement last-day dropped morning last-day hide")
+    elif "이어서 하기" not in day_inv or "마지막 날" not in title_loop:
+        fail("README settlement last-day dropped title continue last-day")
+    elif "아침" not in day_inv or "엔딩 탭" not in day_inv:
+        fail("README day_tab inventory dropped the existing seven uses")
+    elif "headline_clip" not in settle_loop or "오늘 헤드라인" not in settle_loop:
+        fail("README settle loop dropped headline")
+    elif "오늘 수입" not in settle_loop or "cash_slip" not in settle_loop:
+        fail("README settle loop dropped income count")
+    elif "bill_notice" not in settle_loop or "청구" not in settle_loop:
+        fail("README settle loop dropped bills")
+    elif "남은 현금" not in settle_loop or "mental_note" not in settle_loop:
+        fail("README settle loop dropped leftover / mental")
+    elif "답장하기" not in settle_loop or "nextday_key" not in settle_loop:
+        fail("README settle loop dropped letters / next-day")
+    elif "ending_clear" not in settle_loop or "ending_bankrupt" not in settle_loop:
+        fail("README settle loop dropped clear / bankrupt")
+    elif "콘서트 바탕" not in stage_inv or "concert_stage" not in stage_inv:
+        fail("README settlement last-day dropped concert backdrop")
+    elif "코치 스탬프" not in coach_stamp or "judge_miss" not in coach_stamp:
+        fail("README settlement last-day dropped Day-1 coach stamps")
+    elif sfx_inv.count("sfx_threat") < 4:
+        fail("README SFX inventory dropped the four sfx_threat uses")
+    elif "ArtSprites.DayTab" not in last_tab or '"SettleLastDayTab"' not in build:
+        fail("README settlement last-day lost the DayTab hang")
+    elif '"마지막 날"' not in last_tab or "주차 마지막" not in last_tab:
+        fail("README settlement last-day changed Korean copy")
+    elif "LastDayOfCurrentWeek" not in render or "SetActive(last)" not in render:
+        fail("README settlement last-day is not keyed off WeekSchedule last days")
+    elif '"SettleDayTab"' not in build or "run.day" not in render or '"일차"' not in render:
+        fail("README settlement last-day stole settlement n일차")
+    elif '"ContinueLastDayTab"' not in title_cs or "LastDayOfCurrentWeek" not in fill:
+        fail("README settlement last-day dropped title continue last-day")
+    elif "ArtSprites.DayTab" not in morning_banner or "ArtSprites.ThreatBanner" in morning_banner:
+        fail("README settlement last-day dropped morning last-day day_tab")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("README settlement last-day moved off days 5 / 25")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in live_cs:
+        fail("README settlement last-day dropped concert live concert_stage")
+    elif 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif "NextMorning()" not in settle_cs or "public void NextMorning()" not in gm:
+        fail("README settlement last-day changed next-morning routing")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README settlement last-day retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README settlement last-day retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README settlement last-day retuned week-clear gates")
+    elif "perfectWindow * " not in rules_cs:
+        fail("README settlement last-day retuned Judge windows")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README settlement last-day broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising settlement last-day / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README settlement last-day dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README settlement last-day moved Unity off 6000.5.9f1")
+    else:
+        ok("README names settlement last-day on a second day_tab; other settlements stay quiet; morning / continue / concert / coach / four sfx_threat stay")
+
+
 def check_readme_threat_slam_sfx() -> None:
     """README: 오늘의 위협 slam plays sfx_threat once; silent if no extra."""
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -14842,6 +14962,8 @@ def check_readme_playable() -> None:
         fail("README morning loop dropped last-day day_tab")
     elif "마지막 날" not in readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]:
         fail("README title loop dropped continue last-day day_tab")
+    elif "다른 정산" not in day_inv or "마지막 날" not in readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]:
+        fail("README settle loop dropped last-day day_tab")
     elif "title_wordmark" not in readme or "파산 버튜버" not in readme:
         fail("README dropped title_wordmark neon logo")
     elif "chat_bubble" not in readme or "note_chip" not in readme or "superchat_chip" not in readme or "content_*" not in readme:
