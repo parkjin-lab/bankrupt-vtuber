@@ -215,6 +215,8 @@ def check_project() -> None:
         "ending_clear.png": "주차 클리어",
         "ending_bankrupt.png": "파산",
         "letter_card.png": "팬레터",
+        "letter_reply.png": "답장하기 키캡",
+        "letter_ignore.png": "나중에 키캡",
         "headline_clip.png": "어제 헤드라인",
         "cash_slip.png": "남은 현금",
         "won_pop.png": "+₩ 슬립",
@@ -1504,6 +1506,7 @@ def check_project() -> None:
     check_result_stings()
     check_ending_backdrops()
     check_letter_card()
+    check_letter_keycaps()
     check_pad_sfx()
     check_golive_sfx()
     check_nextday_sfx()
@@ -6969,6 +6972,8 @@ def check_letter_card() -> None:
         fail("letter still uses flat PanelDark only")
     elif "답장하기" not in letter_build or "나중에" not in letter_build or "팬레터" not in letter_build:
         fail("letter paper covered 답장하기 / 나중에 / 팬레터")
+    elif "ArtSprites.LetterReply" not in letter_build or "ArtSprites.LetterIgnore" not in letter_build:
+        fail("letter paper dropped reply / ignore keycaps")
     elif "SendLetter" not in on_letter:
         fail("letter paper unhooked SendLetter")
     elif "FanLetterLook" not in settle_cs or "첫 도네" not in look_cs:
@@ -6993,6 +6998,78 @@ def check_letter_card() -> None:
         fail("letter paper moved Unity off 6000.5.9f1")
     else:
         ok("fan letter sits on letter_card paper; reply / ignore / counts stay")
+
+
+def check_letter_keycaps() -> None:
+    import struct
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    fandom_rules = (ROOT / "Assets/Scripts/Economy/FandomRules.cs").read_text(encoding="utf-8")
+    fandom_asset = (ROOT / "Assets/Resources/Balance/FandomBalance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    letter_build = settle_cs.split('LetterRoot"', 1)[-1].split('MemberRoot"', 1)[0]
+    reply_click = letter_build.split('"Reply"', 1)[-1].split('"Later"', 1)[0]
+    later_click = letter_build.split('"Later"', 1)[-1].split("SafePairLayout", 1)[0]
+    on_letter = settle_cs.split("void OnLetter", 1)[-1].split("void OnLetterLater", 1)[0]
+    later_fn = settle_cs.split("void OnLetterLater", 1)[-1].split("void MaybeShowLetter", 1)[0]
+
+    for name, label in (("letter_reply.png", "답장하기"), ("letter_ignore.png", "나중에")):
+        png = ROOT / "Assets/Resources/Art" / name
+        data = png.read_bytes() if png.exists() else b""
+        w = h = color = 0
+        if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+            w, h = struct.unpack(">II", data[16:24])
+            color = data[25]
+        if not png.exists() or png.stat().st_size < 8000:
+            fail(f"{label} keycap PNG is missing")
+            return
+        if w < 360 or h < 140 or w <= h:
+            fail(f"{label} keycap PNG is not a readable landscape stream-deck key")
+            return
+        if color != 6:
+            fail(f"{label} keycap PNG is not RGBA")
+            return
+
+    if 'LetterReply = "Art/letter_reply"' not in art_cs or 'LetterIgnore = "Art/letter_ignore"' not in art_cs:
+        fail("ArtSprites does not hook letter_reply / letter_ignore")
+    elif "ArtSprites.LetterReply" not in reply_click or "답장하기" not in letter_build:
+        fail("답장하기 does not hang letter_reply keycap")
+    elif "ArtSprites.LetterIgnore" not in later_click or "나중에" not in letter_build:
+        fail("나중에 does not hang letter_ignore keycap")
+    elif "ArtSprites.LetterCard" not in letter_build or 'LetterCard = "Art/letter_card"' not in art_cs:
+        fail("letter keycaps dropped letter_card paper")
+    elif "PlayLetterSfx();" not in on_letter or "Audio/sfx_letter" not in settle_cs:
+        fail("letter keycaps dropped sfx_letter on reply")
+    elif "PlayLetterSfx" in later_fn:
+        fail("letter ignore keycap plays sfx_letter")
+    elif "SendLetter" not in on_letter or "CloseLetter(true)" not in later_fn:
+        fail("letter keycaps changed reply / ignore routing")
+    elif "letterLoyalty: 4" not in fandom_asset or "letterMental: 8" not in fandom_asset:
+        fail("letter keycaps retuned loyalty / mental")
+    elif "CanSendLetter" not in fandom_rules or "ShouldOfferLetter" not in fandom_rules:
+        fail("letter keycaps changed offer / send routing")
+    elif "ArtSprites.GoLiveKey" not in week_cs or "ArtSprites.NextDayKey" not in settle_cs:
+        fail("letter keycaps dropped morning/settlement keycap match")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("letter keycaps retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("letter keycaps broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising letter keycaps / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("letter keycaps dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("letter keycaps moved Unity off 6000.5.9f1")
+    elif "Art/letter_reply" not in readme or "Art/letter_ignore" not in readme:
+        fail("README should mention letter_reply / letter_ignore")
+    else:
+        ok("letter 답장하기 / 나중에 sit on keycaps; paper / sfx / rewards stay")
 
 
 def check_pad_sfx() -> None:
@@ -7408,6 +7485,8 @@ def check_letter_sfx() -> None:
         fail("letter SFX covered 답장하기 / 나중에")
     elif "ArtSprites.LetterCard" not in letter_build or 'LetterCard = "Art/letter_card"' not in art_cs:
         fail("letter SFX dropped letter_card paper")
+    elif "ArtSprites.LetterReply" not in letter_build or "ArtSprites.LetterIgnore" not in letter_build:
+        fail("letter SFX dropped reply / ignore keycaps")
     elif "FanLetterLook" not in settle_cs or "첫 도네" not in look_cs:
         fail("letter SFX dropped named copy")
     elif "letterLoyalty: 4" not in fandom_asset or "letterMental: 8" not in fandom_asset:
@@ -9707,6 +9786,8 @@ def check_readme_playable() -> None:
         fail("README dropped nextday_key settlement keycap")
     elif "스트림덱 키캡" not in readme:
         fail("README does not inventory stream-deck keycaps")
+    elif "letter_reply" not in readme or "letter_ignore" not in readme or "답장하기" not in readme or "나중에" not in readme:
+        fail("README dropped letter_reply / letter_ignore fan-letter keycaps")
     elif "chat_bubble" not in readme or "note_chip" not in readme or "superchat_chip" not in readme or "content_*" not in readme:
         fail("README dropped chat / note / superchat envelope / content icons")
     elif "content_plate" not in readme or "콘텐츠" not in readme:

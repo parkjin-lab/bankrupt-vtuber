@@ -75,6 +75,8 @@ namespace BankruptVtuber
         public const string ContentSong = "Art/content_song";
         public const string ContentReaction = "Art/content_reaction";
         public const string ContentPlate = "Art/content_plate";
+        public const string LetterReply = "Art/letter_reply";
+        public const string LetterIgnore = "Art/letter_ignore";
 
         public static string ForContent(StreamContentType type) => type switch
         {

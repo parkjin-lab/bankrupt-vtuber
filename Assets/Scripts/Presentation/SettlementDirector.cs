@@ -696,8 +696,20 @@ namespace BankruptVtuber
             _letterBody.lineSpacing = 1.22f;
             var reply = UiKit.Button(paper, "Reply", "답장하기", OnLetter, Palette.PinkDeep, Color.white);
             UiKit.Layout(reply.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(-170, 28), new Vector2(300, 72));
+            var replyImg = reply.GetComponent<Image>();
+            if (replyImg != null)
+            {
+                ArtSprites.ApplySliced(replyImg, ArtSprites.LetterReply, Color.white, new Vector4(48f, 36f, 48f, 36f));
+                replyImg.raycastTarget = true;
+            }
             var later = UiKit.Button(paper, "Later", "나중에", OnLetterLater, Palette.StudioHi, Palette.Pastel);
             UiKit.Layout(later.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(170, 28), new Vector2(300, 72));
+            var laterImg = later.GetComponent<Image>();
+            if (laterImg != null)
+            {
+                ArtSprites.ApplySliced(laterImg, ArtSprites.LetterIgnore, Color.white, new Vector4(48f, 36f, 48f, 36f));
+                laterImg.raycastTarget = true;
+            }
             SafePairLayout.Bind(paper, reply.GetComponent<RectTransform>(), later.GetComponent<RectTransform>());
             _letterHeart = UiKit.Label(root, "LetterHeart", "", 36, Palette.Pink, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_letterHeart.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(640, 56));
