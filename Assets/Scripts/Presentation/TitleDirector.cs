@@ -19,6 +19,7 @@ namespace BankruptVtuber
         RectTransform _startChip;
         Image _startBill;
         Image _startCash;
+        Image _startMental;
         Button _continue;
         RectTransform _continueRt;
         RectTransform _continueChip;
@@ -197,6 +198,14 @@ namespace BankruptVtuber
             var startCashT = UiKit.Label(_startCash.transform, "T", "현금", 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(startCashT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _startCash.gameObject.SetActive(false);
+            _startMental = UiKit.Image(_start.transform, "NewGameMental", Color.white);
+            UiKit.Layout(_startMental.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(204f, -86f), new Vector2(160f, 110f));
+            ArtSprites.Apply(_startMental, ArtSprites.MentalNote, new Color(1f, 0.95f, 0.72f, 0.98f), Color.white);
+            _startMental.preserveAspect = true;
+            _startMental.raycastTarget = false;
+            var startMentalT = UiKit.Label(_startMental.transform, "T", "멘탈", 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(startMentalT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _startMental.gameObject.SetActive(false);
             _continue = UiKit.Button(titleParent, "Continue", "이어서 하기", OnContinue, Palette.Gold, Palette.Ink);
             StyleMenuButton(_continue, new Vector2(56, -154), new Vector2(560, 128), Palette.Gold);
             _continueRt = _continue.GetComponent<RectTransform>();
@@ -522,6 +531,8 @@ namespace BankruptVtuber
                 _startBill.gameObject.SetActive(!_hasSave);
             if (_startCash != null)
                 _startCash.gameObject.SetActive(!_hasSave);
+            if (_startMental != null)
+                _startMental.gameObject.SetActive(!_hasSave);
             if (_continueClip != null)
                 _continueClip.gameObject.SetActive(hasHead);
             if (!_hasSave && _continueWarn != null)
@@ -534,7 +545,7 @@ namespace BankruptVtuber
             if (_hint != null)
                 _hint.text = _hasSave ? "Space / Enter  이어서 하기" : "Space / Enter  방송 시작";
             if (_how != null)
-                StyleMenuButton(_how, new Vector2(56, !_hasSave ? -308 : hasHead ? -340 : -252), new Vector2(420, 70), Palette.StudioHi);
+                StyleMenuButton(_how, new Vector2(56, !_hasSave ? -324 : hasHead ? -340 : -252), new Vector2(420, 70), Palette.StudioHi);
         }
 
         void FillContinue(GameRunState peek)
