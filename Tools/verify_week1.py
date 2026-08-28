@@ -1561,6 +1561,7 @@ def check_project() -> None:
     check_ranking_live_badge()
     check_clip_live_badge()
     check_title_clip_pin()
+    check_title_concert_pin()
     check_concert_live_badge()
     check_sponsor_live_badge()
     check_morning_bgm()
@@ -11372,7 +11373,13 @@ def check_title_clip_pin() -> None:
     agency_pin = build.split("_continueAgencyPin = UiKit.Image", 1)[-1].split('"ContinueClip"', 1)[0] if "_continueAgencyPin = UiKit.Image" in build else ""
     goods_pin = build.split("_continueGoodsPin = UiKit.Image", 1)[-1].split('"ContinueWarn"', 1)[0] if "_continueGoodsPin = UiKit.Image" in build else ""
     ranking_pin = build.split("_continueRankingPin = UiKit.Image", 1)[-1].split("_continue.gameObject.SetActive(false)", 1)[0] if "_continueRankingPin = UiKit.Image" in build else ""
-    pin = build.split("_continueClipPin = UiKit.Image", 1)[-1].split("_how = UiKit.Button", 1)[0] if "_continueClipPin = UiKit.Image" in build else ""
+    pin = build.split("_continueClipPin = UiKit.Image", 1)[-1]
+    if "_continueConcertPin = UiKit.Image" in pin:
+        pin = pin.split("_continueConcertPin = UiKit.Image", 1)[0]
+    elif "_continueClipPin = UiKit.Image" in build:
+        pin = pin.split("_how = UiKit.Button", 1)[0]
+    else:
+        pin = ""
     live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
     apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
     start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
@@ -11519,6 +11526,206 @@ def check_title_clip_pin() -> None:
         fail("Title clip pin moved Unity off 6000.5.9f1")
     else:
         ok("title continue hangs a tiny clip_card pin after upload; Week 1 / pre-upload hide it")
+
+
+def check_title_concert_pin() -> None:
+    """Title continue hangs a tiny concert_stage pin after book; Weeks 1–4 / pre-book hide it."""
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    run_cs = (ROOT / "Assets/Scripts/Core/GameRunState.cs").read_text(encoding="utf-8")
+    save_cs = (ROOT / "Assets/Scripts/Core/RunSave.cs").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    w5r_cs = (ROOT / "Assets/Scripts/Economy/Week5Rules.cs").read_text(encoding="utf-8")
+    w2_asset = (ROOT / "Assets/Resources/Balance/Week2Balance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    last_tab = build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in build else ""
+    member_pin = build.split("_continueMemberPin = UiKit.Image", 1)[-1].split('"MoneyPlate"', 1)[0] if "_continueMemberPin = UiKit.Image" in build else ""
+    agency_pin = build.split("_continueAgencyPin = UiKit.Image", 1)[-1].split('"ContinueClip"', 1)[0] if "_continueAgencyPin = UiKit.Image" in build else ""
+    goods_pin = build.split("_continueGoodsPin = UiKit.Image", 1)[-1].split('"ContinueWarn"', 1)[0] if "_continueGoodsPin = UiKit.Image" in build else ""
+    ranking_pin = build.split("_continueRankingPin = UiKit.Image", 1)[-1].split("_continue.gameObject.SetActive(false)", 1)[0] if "_continueRankingPin = UiKit.Image" in build else ""
+    clip_pin = build.split("_continueClipPin = UiKit.Image", 1)[-1]
+    if "_continueConcertPin = UiKit.Image" in clip_pin:
+        clip_pin = clip_pin.split("_continueConcertPin = UiKit.Image", 1)[0]
+    elif "_continueClipPin = UiKit.Image" in build:
+        clip_pin = clip_pin.split("_how = UiKit.Button", 1)[0]
+    else:
+        clip_pin = ""
+    pin = build.split("_continueConcertPin = UiKit.Image", 1)[-1].split("_how = UiKit.Button", 1)[0] if "_continueConcertPin = UiKit.Image" in build else ""
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    under = live_build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
+    overlay = live_build.split('"StreamOverlay"', 1)[-1].split("_washVeil", 1)[0]
+    hud = live_build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in live_build else ""
+    member = live_build.split('"MemberBadgeHud"', 1)[-1].split('"AgencyBadgeHud"', 1)[0] if '"AgencyBadgeHud"' in live_build else ""
+    agency = live_build.split('"AgencyBadgeHud"', 1)[-1].split('"GoodsBadgeHud"', 1)[0] if '"GoodsBadgeHud"' in live_build else ""
+    goods = live_build.split('"GoodsBadgeHud"', 1)[-1].split('"RankingBadgeHud"', 1)[0] if '"RankingBadgeHud"' in live_build else ""
+    rank = live_build.split('"RankingBadgeHud"', 1)[-1].split('"ClipBadgeHud"', 1)[0] if '"ClipBadgeHud"' in live_build else ""
+    clip = live_build.split('"ClipBadgeHud"', 1)[-1].split('"ConcertBadgeHud"', 1)[0] if '"ConcertBadgeHud"' in live_build else ""
+    live_pin = live_build.split('"ConcertBadgeHud"', 1)[-1]
+    if '"SponsorBadgeHud"' in live_pin:
+        live_pin = live_pin.split('"SponsorBadgeHud"', 1)[0]
+    else:
+        live_pin = live_pin.split("var chatPanel", 1)[0] if '"ConcertBadgeHud"' in live_build else ""
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    book_build = settle_build.split('ConcertBookRoot"', 1)[-1].split('ConcertResultRoot"', 1)[0]
+    book_plate = book_build.split('"ConcertBookHud"', 1)[-1].split('"ConcertTitle"', 1)[0] if '"ConcertBookHud"' in book_build else ""
+    book_show = settle_cs.split("void ShowConcertCard", 1)[-1].split("void CloseConcertCard", 1)[0] if "void ShowConcertCard" in settle_cs else ""
+    result_build = settle_build.split('ConcertResultRoot"', 1)[-1]
+    begin_next = run_cs.split("void BeginNextDay", 1)[-1]
+    clear_w5 = run_cs.split("void ClearWeek5Progress", 1)[-1].split("void ", 1)[0]
+
+    if 'ConcertStage = "Art/concert_stage"' not in art_cs:
+        fail("ArtSprites does not hook Art/concert_stage")
+    elif '"ContinueConcertPin"' not in build or "ArtSprites.ConcertStage" not in pin:
+        fail("Title continue does not hang concert_stage as a tiny pin")
+    elif "_continue.transform" not in pin:
+        fail("Title concert pin is not on the continue HUD")
+    elif "72f, 48f" not in pin or "preserveAspect = true" not in pin:
+        fail("Title concert pin is not a tiny preserveAspect card")
+    elif "-398f, 10f" not in pin:
+        fail("Title concert pin is not stacked next to the clip continue pin")
+    elif "SetActive(false)" not in pin:
+        fail("Title concert pin is not hidden on a new-game / pre-book title")
+    elif "SetActive(peek.concertBooked)" not in fill:
+        fail("Title concert pin is not gated on the same book flag as the live pin")
+    elif "_continueConcertPin" not in hide or "SetActive(false)" not in hide:
+        fail("Title concert pin is not hidden without a save")
+    elif "concertBooked =" in title_cs:
+        fail("Title concert pin writes concert state")
+    elif '"ConcertBadgeHud"' in title_cs or '"ConcertBookHud"' in title_cs or '"ConcertResultHud"' in title_cs:
+        fail("Title concert pin copied the live pin or settlement plate name")
+    elif "_avatar.Root" in pin or "ConcertBadgeHud" in pin:
+        fail("Title concert pin is a live webcam cluster copy")
+    elif "UiKit.Stretch" in pin or "680f, 340f" in pin or "680f, 320f" in pin or "720, 380" in pin or "720, 360" in pin or "PanelDark" in pin:
+        fail("Title concert pin reused the concert-day backdrop or settlement plate")
+    elif "168f, 168f" in pin or "16f, 208f" in pin or "220f, 128f" in pin:
+        fail("Title concert pin stole the promo shelf or sponsor plate slot")
+    elif "166f, -6f" in pin or "-10f, -6f" in pin:
+        fail("Title concert pin covers the last-day / n일차 day_tab")
+    elif "-8f, 10f" in pin or "-86f, 10f" in pin or "-164f, 10f" in pin or "-242f, 10f" in pin or "-320f, 10f" in pin:
+        fail("Title concert pin covers the membership / agency / goods / ranking / clip continue pins")
+    elif "-10f, -10f" in pin or "-10f, -62f" in pin or "-10f, -114f" in pin or "-10f, -166f" in pin or "-10f, -218f" in pin or "-10f, -270f" in pin:
+        fail("Title concert pin reused the live webcam stack")
+    elif "ArtSprites.ConcertStage" in last_tab or '"ContinueConcertPin"' in last_tab:
+        fail("Title concert pin sat between last-day tab and ContinueChip")
+    elif "ArtSprites.ConcertStage" in member_pin or '"ContinueConcertPin"' in member_pin:
+        fail("Title concert pin sat on top of the membership continue pin hang")
+    elif "ArtSprites.ConcertStage" in agency_pin or '"ContinueConcertPin"' in agency_pin:
+        fail("Title concert pin sat on top of the agency continue pin hang")
+    elif "ArtSprites.ConcertStage" in goods_pin or '"ContinueConcertPin"' in goods_pin:
+        fail("Title concert pin sat on top of the goods continue pin hang")
+    elif "ArtSprites.ConcertStage" in ranking_pin or '"ContinueConcertPin"' in ranking_pin:
+        fail("Title concert pin sat on top of the ranking continue pin hang")
+    elif "ArtSprites.ConcertStage" in clip_pin or '"ContinueConcertPin"' in clip_pin:
+        fail("Title concert pin sat on top of the clip continue pin hang")
+    elif '"ContinueMemberPin"' not in build or "ArtSprites.MembershipCard" not in member_pin:
+        fail("Title concert pin dropped the membership continue pin")
+    elif "-8f, 10f" not in member_pin or "72f, 48f" not in member_pin:
+        fail("Title concert pin restyled the membership continue pin")
+    elif "SetActive(peek.membershipUnlocked)" not in fill:
+        fail("Title concert pin unhooked membership continue pin gating")
+    elif '"ContinueAgencyPin"' not in build or "ArtSprites.AgencyCard" not in agency_pin:
+        fail("Title concert pin dropped the agency continue pin")
+    elif "-86f, 10f" not in agency_pin or "72f, 48f" not in agency_pin:
+        fail("Title concert pin restyled the agency continue pin")
+    elif "SetActive(peek.agencyFounded)" not in fill:
+        fail("Title concert pin unhooked agency continue pin gating")
+    elif '"ContinueGoodsPin"' not in build or "ArtSprites.GoodsStand" not in goods_pin:
+        fail("Title concert pin dropped the goods continue pin")
+    elif "-164f, 10f" not in goods_pin or "72f, 48f" not in goods_pin:
+        fail("Title concert pin restyled the goods continue pin")
+    elif "SetActive(peek.goodsUnlocked)" not in fill:
+        fail("Title concert pin unhooked goods continue pin gating")
+    elif '"ContinueRankingPin"' not in build or "ArtSprites.RankingBoard" not in ranking_pin:
+        fail("Title concert pin dropped the ranking continue pin")
+    elif "-242f, 10f" not in ranking_pin or "72f, 48f" not in ranking_pin:
+        fail("Title concert pin restyled the ranking continue pin")
+    elif "WeekSchedule.RankingUnlocked(peek)" not in fill:
+        fail("Title concert pin unhooked ranking continue pin gating")
+    elif '"ContinueClipPin"' not in build or "ArtSprites.ClipCard" not in clip_pin:
+        fail("Title concert pin dropped the clip continue pin")
+    elif "-320f, 10f" not in clip_pin or "72f, 48f" not in clip_pin:
+        fail("Title concert pin restyled the clip continue pin")
+    elif "SetActive(peek.clipUploaded)" not in fill:
+        fail("Title concert pin unhooked clip continue pin gating")
+    elif '"ContinueLastDayTab"' not in build or "ArtSprites.DayTab" not in last_tab:
+        fail("Title concert pin dropped the last-day day_tab")
+    elif "LastDayOfCurrentWeek" not in fill or "SetActive(last)" not in fill:
+        fail("Title concert pin dropped last-day gating")
+    elif '"ContinueClip"' not in build or "ArtSprites.HeadlineClip" not in build:
+        fail("Title concert pin dropped the headline continue clip")
+    elif "Audio/sfx_concert_book" in title_cs or "PlayConcertBookSfx" in title_cs:
+        fail("Title concert pin stole sfx_concert_book off the settlement plate")
+    elif '"ConcertBadgeHud"' not in hud or "ArtSprites.ConcertStage" not in live_pin:
+        fail("Title concert pin dropped the live webcam pin")
+    elif "-10f, -270f" not in live_pin or "72f, 48f" not in live_pin:
+        fail("Title concert pin moved the live webcam pin")
+    elif "SetActive(_concertPinShow)" not in apply or "concertBooked" not in start:
+        fail("Title concert pin unhooked live pin book gating")
+    elif "ArtSprites.ConcertStage" not in under or "UiKit.Stretch" not in under:
+        fail("Title concert pin dropped the concert-day backdrop")
+    elif "SetActive(_concertShow)" not in apply:
+        fail("Title concert pin unhooked concert-day backdrop gating")
+    elif "ArtSprites.StreamOverlay" not in overlay or "ArtSprites.ConcertStage" in overlay:
+        fail("Title concert pin stole stream_overlay / concert_stage chrome")
+    elif '"MemberBadgeHud"' not in hud or "-10f, -10f" not in member:
+        fail("Title concert pin covered the live membership badge")
+    elif '"AgencyBadgeHud"' not in hud or "-10f, -62f" not in agency:
+        fail("Title concert pin covered the live agency pin")
+    elif '"GoodsBadgeHud"' not in hud or "-10f, -114f" not in goods:
+        fail("Title concert pin covered the live goods pin")
+    elif '"RankingBadgeHud"' not in hud or "-10f, -166f" not in rank:
+        fail("Title concert pin covered the live ranking pin")
+    elif '"ClipBadgeHud"' not in hud or "-10f, -218f" not in clip:
+        fail("Title concert pin covered the live clip pin")
+    elif '"ConcertBookHud"' not in book_build or "ArtSprites.ConcertStage" not in book_plate:
+        fail("Title concert pin dropped the settlement booking plate")
+    elif "PlayConcertBookSfx();" not in book_show or "콘서트 개최" not in settle_cs:
+        fail("Title concert pin restyled the settlement booking plate")
+    elif '"ConcertResultHud"' not in result_build or "ArtSprites.ConcertStage" not in result_build:
+        fail("Title concert pin dropped the settlement result plate")
+    elif "bool concertBooked;" not in run_cs:
+        fail("Title concert pin has no persistent book flag")
+    elif "concertBooked = true" not in w5r_cs:
+        fail("Title concert pin is not armed when BookConcert succeeds")
+    elif "concertBooked = run.concertBooked" not in save_cs or "run.concertBooked = data.concertBooked" not in save_cs:
+        fail("Title concert pin dropped the saved book flag")
+    elif "concertBooked = false" not in clear_w5:
+        fail("Title concert pin is not reset on a new run")
+    elif "concertBooked = false" in begin_next:
+        fail("Title concert pin unlock is cleared every morning")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset or "concertSuccessMultiplier: 1.3" not in w5_asset:
+        fail("Title concert pin retuned concert cost / payout / 1.3x")
+    elif "concertUnlockCash: 150000" not in w5_asset or "CanBookConcert" not in w5r_cs or "BookConcert" not in w5r_cs:
+        fail("Title concert pin changed concert unlock routing")
+    elif "clipCash: 30000" not in w2_asset or "clipChance: 30" not in w2_asset:
+        fail("Title concert pin retuned clip numbers")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("Title concert pin retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("Title concert pin retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("Title concert pin retuned week-clear gates")
+    elif "perfectWindow: 0.07" not in balance or "perfectWindow * " not in rules_cs:
+        fail("Title concert pin retuned hit windows")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("Title concert pin broke pads, 입력됨, or added timeScale")
+    elif "Week5" in title_cs or "콘서트" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising concert pin / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("Title concert pin dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("Title concert pin moved Unity off 6000.5.9f1")
+    else:
+        ok("title continue hangs a tiny concert_stage pin after book; Weeks 1–4 / pre-book hide it")
 
 
 def check_concert_live_badge() -> None:
