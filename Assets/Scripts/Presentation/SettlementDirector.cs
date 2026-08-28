@@ -153,6 +153,9 @@ namespace BankruptVtuber
         AudioClip _clipCue;
         AudioClip _goodsCue;
         AudioClip _agencyCue;
+        AudioClip _rankingCue;
+        AudioClip _concertBookCue;
+        bool _rankHeard;
         bool _leavingSettle;
         bool _resultStingPlayed;
 
@@ -1205,6 +1208,11 @@ namespace BankruptVtuber
             }
             _produce.gameObject.SetActive(run.goodsUnlocked && !offerClip && !week4Offer && !week5Offer && !_goodsOpen && !_agencyOpen && !_agencySplashOpen && !_juniorOpen && !_concertOpen && !_concertResultOpen && run.cash >= (w3 != null ? w3.goodsProduceCost : 2500));
             bool rankOn = Week5Rules.RankingUnlocked(run, w5);
+            if (rankOn && !_rankHeard)
+            {
+                PlayRankingSfx();
+                _rankHeard = true;
+            }
             _rankBox.gameObject.SetActive(rankOn);
             if (rankOn)
                 FillRankPanel(run, w5);
@@ -1889,6 +1897,7 @@ namespace BankruptVtuber
                 _concertRoot.transform.SetAsLastSibling();
             }
             _concertOpen = true;
+            PlayConcertBookSfx();
             if (_bookConcert != null)
                 _bookConcert.gameObject.SetActive(false);
             if (_produce != null)
@@ -2211,6 +2220,8 @@ namespace BankruptVtuber
             _clipCue = Resources.Load<AudioClip>("Audio/sfx_clip");
             _goodsCue = Resources.Load<AudioClip>("Audio/sfx_goods");
             _agencyCue = Resources.Load<AudioClip>("Audio/sfx_agency");
+            _rankingCue = Resources.Load<AudioClip>("Audio/sfx_ranking");
+            _concertBookCue = Resources.Load<AudioClip>("Audio/sfx_concert_book");
         }
 
         void PlaySettleSfx(AudioClip clip, float volume)
@@ -2274,6 +2285,18 @@ namespace BankruptVtuber
                 _settleBgm.Stop();
             }
             next?.Invoke();
+        }
+
+        void PlayRankingSfx()
+        {
+            if (_settleSfx != null && _rankingCue != null)
+                _settleSfx.PlayOneShot(_rankingCue, 0.48f);
+        }
+
+        void PlayConcertBookSfx()
+        {
+            if (_settleSfx != null && _concertBookCue != null)
+                _settleSfx.PlayOneShot(_concertBookCue, 0.48f);
         }
 
         void PlayAgencySfx()

@@ -1477,6 +1477,7 @@ def check_project() -> None:
     check_goods_sfx()
     check_agency_sfx()
     check_sponsor_sfx()
+    check_week5_board_sfx()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -7149,6 +7150,119 @@ def check_sponsor_sfx() -> None:
         fail("sponsor SFX moved Unity off 6000.5.9f1")
     else:
         ok("스폰서 멘트 plays sfx_sponsor once on appear; accept / skip / agency stay")
+
+
+def check_week5_board_sfx() -> None:
+    import wave
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    w5r_cs = (ROOT / "Assets/Scripts/Economy/Week5Rules.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    rank = settle_cs.split("bool rankOn = Week5Rules.RankingUnlocked", 1)[-1].split("if (run.lastClipAttempted)", 1)[0]
+    fill = settle_cs.split("void FillRankPanel", 1)[-1].split("void ShowConcertCard", 1)[0]
+    book = settle_cs.split("void ShowConcertCard", 1)[-1].split("void CloseConcertCard", 1)[0]
+    yes = settle_cs.split("void OnConcertYes", 1)[-1].split("void OnConcertLater", 1)[0]
+    later = settle_cs.split("void OnConcertLater", 1)[-1].split("void ShowConcertResult", 1)[0]
+    booked = settle_cs.split("void OnBookConcert", 1)[-1].split("void OnConcertLive", 1)[0]
+    result = settle_cs.split("void ShowConcertResult", 1)[-1].split("void OnConcertResultAck", 1)[0]
+    live_go = settle_cs.split("void OnConcertLive", 1)[-1].split("void OnRetire", 1)[0]
+    rank_play = settle_cs.split("void PlayRankingSfx", 1)[-1].split("void PlayConcertBookSfx", 1)[0]
+    book_play = settle_cs.split("void PlayConcertBookSfx", 1)[-1].split("void PlayAgencySfx", 1)[0]
+    agency = settle_cs.split("void ShowAgencyCard", 1)[-1].split("void CloseAgencyCard", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    update = live_cs.split("void Update()", 1)[-1].split("IEnumerator EndRoutine", 1)[0]
+    clips = {
+        "sfx_ranking.wav": (0.16, 0.42),
+        "sfx_concert_book.wav": (0.16, 0.42),
+    }
+    durs = {}
+    for name, (lo, hi) in clips.items():
+        path = ROOT / "Assets/Resources/Audio" / name
+        if not path.exists() or path.stat().st_size < 2000:
+            fail(f"{name} is missing")
+            return
+        with wave.open(str(path), "rb") as w:
+            if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+                fail(f"{name} is not a readable PCM sting")
+                return
+            dur = w.getnframes() / float(w.getframerate())
+            durs[name] = dur
+            if dur < lo or dur > hi:
+                fail(f"{name} duration {dur:.3f}s is not a short distinct sting")
+                return
+    if abs(durs["sfx_ranking.wav"] - durs["sfx_concert_book.wav"]) < 0.02:
+        fail("ranking / concert-book stings are not distinct")
+        return
+
+    if "Audio/sfx_ranking" not in settle_cs or "PlayRankingSfx" not in settle_cs:
+        fail("Settlement does not load / play Audio/sfx_ranking")
+    elif "PlayRankingSfx();" not in rank or rank.count("PlayRankingSfx();") != 1:
+        fail("ranking board does not play a single appear chime")
+    elif "!_rankHeard" not in rank:
+        fail("ranking chime is not once-on-appear")
+    elif "PlayRankingSfx" in fill:
+        fail("ranking chime plays on every FillRankPanel refresh")
+    elif rank_play.count("PlayOneShot") != 1:
+        fail("ranking chime can fire more than one shot")
+    elif "Audio/sfx_concert_book" not in settle_cs or "PlayConcertBookSfx" not in settle_cs:
+        fail("Settlement does not load / play Audio/sfx_concert_book")
+    elif "PlayConcertBookSfx();" not in book or book.count("PlayConcertBookSfx();") != 1:
+        fail("concert book card does not play a single appear chime")
+    elif book_play.count("PlayOneShot") != 1:
+        fail("concert book chime can fire more than one shot")
+    elif any("PlayConcertBookSfx" in block for block in (yes, later, booked, result, live_go)):
+        fail("concert book chime plays on 개최 / 나중에 / live / result")
+    elif "BookConcert" not in booked or "CanBookConcert" not in settle_cs:
+        fail("concert SFX unhooked BookConcert")
+    elif "_concertShow ? \"Audio/bgm_concert\" : \"Audio/bgm_stream\"" not in apply:
+        fail("concert book SFX replaced live bgm_concert routing")
+    elif "Audio/sfx_concert_book" in live_cs or "Audio/sfx_ranking" in live_cs:
+        fail("ranking / concert-book SFX leaked onto LiveStream")
+    elif "Audio/bgm_concert" in settle_cs:
+        fail("concert book SFX pulled bgm_concert onto Settlement")
+    elif 'RankingBoard = "Art/ranking_board"' not in art_cs or "ArtSprites.RankingBoard" not in settle_cs:
+        fail("week5 SFX dropped ranking_board art")
+    elif 'ConcertStage = "Art/concert_stage"' not in art_cs or "ArtSprites.ConcertStage" not in settle_cs:
+        fail("week5 SFX dropped concert_stage art")
+    elif "콘서트 개최" not in settle_cs or "1위 +" not in fill:
+        fail("week5 SFX covered ranking / concert copy")
+    elif "rankingDailyFirstCash: 10000" not in w5_asset or "rankingPeakViewers: 100" not in w5_asset or "rankingDay: 22" not in w5_asset:
+        fail("week5 SFX retuned ranking numbers")
+    elif "day >= w5.rankingDay" not in w5r_cs or "peakViewersEver >= w5.rankingPeakViewers" not in w5r_cs:
+        fail("week5 SFX changed ranking unlock routing")
+    elif "concertUnlockCash: 150000" not in w5_asset or "concertUnlockPeak: 90" not in w5_asset or "concertCost: 80000" not in w5_asset:
+        fail("week5 SFX retuned concert book numbers")
+    elif "concertBasePayout: 200000" not in w5_asset or "concertSuccessMultiplier: 1.3" not in w5_asset:
+        fail("week5 SFX retuned concert payout")
+    elif "CanBookConcert" not in w5r_cs or "cash >= w5.concertUnlockCash" not in w5r_cs:
+        fail("week5 SFX changed concert book routing")
+    elif "Audio/sfx_agency" not in settle_cs or "PlayAgencySfx();" not in agency:
+        fail("week5 SFX dropped agency office stamp")
+    elif "Audio/sfx_sponsor" not in live_cs or "PlaySfx(_sponsorCue" not in update:
+        fail("week5 SFX dropped sponsor line chime")
+    elif "Audio/sfx_ranking" in title_cs or "Audio/sfx_concert_book" in title_cs or "Audio/sfx_ranking" in week_cs:
+        fail("week5 SFX leaked onto Title / WeekStart")
+    elif "ShowConcertCard" in debug_cs or "sfx_ranking" in debug_cs or "sfx_concert_book" in debug_cs:
+        fail("F10 skip is no longer mute-safe")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("week5 SFX retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("week5 SFX broke pads, 입력됨, or added timeScale")
+    elif "Week5" in title_cs or "랭킹" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising week5 SFX / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("week5 SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("week5 SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("랭킹 보드 / 콘서트 개최 play once; live bgm_concert and ranks stay")
 
 
 def check_mental_sfx() -> None:
