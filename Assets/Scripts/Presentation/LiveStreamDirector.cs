@@ -39,6 +39,7 @@ namespace BankruptVtuber
         Image _bankruptFill;
         RectTransform _bankruptRow;
         Text _combo;
+        Image _comboPlate;
         Text _judge;
         Image _liveDot;
         RectTransform _onAirRoot;
@@ -981,8 +982,13 @@ namespace BankruptVtuber
             var bottom = UiKit.Panel(root, "Bottom", new Color(0.08f, 0.04f, 0.1f, 0.36f));
             UiKit.Layout(bottom, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(0, 200));
 
-            _combo = UiKit.Label(bottom, "Combo", "COMBO 0", 22, Palette.Pastel, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UiKit.Layout(_combo.rectTransform, new Vector2(0, 0.70f), new Vector2(0.55f, 1), new Vector2(0, 1), new Vector2(12, -4), new Vector2(0, 36));
+            _comboPlate = UiKit.Image(bottom, "ComboPlate", Color.white);
+            UiKit.Layout(_comboPlate.rectTransform, new Vector2(0, 0.70f), new Vector2(0.55f, 1), new Vector2(0, 1), new Vector2(12, -4), new Vector2(0, 40));
+            ArtSprites.Apply(_comboPlate, ArtSprites.ComboPlate, new Color(0.22f, 0.12f, 0.28f, 0.96f), Color.white);
+            _comboPlate.preserveAspect = false;
+            _comboPlate.raycastTarget = false;
+            _combo = UiKit.Label(_comboPlate.transform, "Combo", "COMBO 0", 22, Palette.Pastel, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Stretch(_combo.rectTransform, 18f, 18f, 6f, 6f);
 
             var tensionBg = UiKit.Image(bottom, "TensionBg", new Color(1, 1, 1, 0.12f));
             UiKit.Layout(tensionBg.rectTransform, new Vector2(0, 0.62f), new Vector2(0.40f, 0.70f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(0, 0));
@@ -2433,11 +2439,12 @@ namespace BankruptVtuber
         void TickComboPop()
         {
             _comboPop = Mathf.MoveTowards(_comboPop, 0f, Time.deltaTime);
-            if (_combo == null)
+            var popRt = _comboPlate != null ? _comboPlate.rectTransform : _combo != null ? _combo.rectTransform : null;
+            if (popRt == null)
                 return;
             float u = _comboPop / 0.1f;
             float amp = _comboPopBig ? 0.22f : 0.15f;
-            _combo.rectTransform.localScale = Vector3.one * (1f + amp * u);
+            popRt.localScale = Vector3.one * (1f + amp * u);
         }
 
         void TickComboBreak()

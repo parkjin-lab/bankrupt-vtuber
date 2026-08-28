@@ -218,6 +218,7 @@ def check_project() -> None:
         "headline_clip.png": "어제 헤드라인",
         "cash_slip.png": "남은 현금",
         "mental_note.png": "멘탈 메모",
+        "combo_plate.png": "콤보 배지",
         "membership_card.png": "멤버십",
         "clip_card.png": "클립",
         "pad_left.png": "← 키캡",
@@ -1484,6 +1485,7 @@ def check_project() -> None:
     check_headline_clip()
     check_cash_slip()
     check_mental_note()
+    check_combo_plate()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -3001,6 +3003,8 @@ def check_combo_pop() -> None:
         fail("combo chip does not pop 0.1s when combo goes up")
     elif "0.15f" not in pop or "0.22f" not in pop:
         fail("combo pop is not 1.15 / 1.22 at combo 5+")
+    elif "ArtSprites.ComboPlate" not in live_cs or '"ComboPlate"' not in live_cs:
+        fail("combo chip is not on Art/combo_plate")
     elif "_session.Combo > _lastCombo" not in live_cs:
         fail("combo pop is not keyed off combo going up")
     elif "_comboStingFlash = 1f" not in live_cs or "ShowComboBreak" not in live_cs:
@@ -7610,6 +7614,66 @@ def check_mental_note() -> None:
         ok("title continue / morning / live danger / settlement share mental_note; pulse stays")
 
 
+def check_combo_plate() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    pop = live_cs.split("void TickComboPop", 1)[-1].split("void TickComboBreak", 1)[0]
+    png = ROOT / "Assets/Resources/Art/combo_plate.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("combo_plate.png is missing")
+    elif w < 360 or h < 160 or w <= h:
+        fail("combo_plate.png is not a readable landscape stream badge")
+    elif color != 6:
+        fail("combo_plate.png is not RGBA")
+    elif 'ComboPlate = "Art/combo_plate"' not in art_cs:
+        fail("ArtSprites does not hook Art/combo_plate")
+    elif "ArtSprites.ComboPlate" not in live_cs or '"ComboPlate"' not in live_cs or '"Combo"' not in live_cs:
+        fail("LiveStream does not hang Art/combo_plate under COMBO")
+    elif "TickComboPop" not in live_cs or "_comboPop = 0.1f" not in live_cs:
+        fail("combo plate dropped 0.1s pop")
+    elif "0.15f" not in pop or "0.22f" not in pop:
+        fail("combo plate dropped 1.15 / 1.22 pop scales")
+    elif "_comboPlate" not in pop and "_combo.rectTransform" not in pop:
+        fail("combo plate pop does not scale the badge")
+    elif "_session.Combo > _lastCombo" not in live_cs:
+        fail("combo plate pop is not keyed off combo going up")
+    elif "ShowComboBreak" not in live_cs or "_comboBreakLeft = 0.25f" not in live_cs or "콤보 끊김" not in live_cs:
+        fail("combo plate dropped 콤보 끊김 sting")
+    elif "Audio/sfx_combo_break" not in live_cs and "_comboBreakSfx" not in live_cs:
+        fail("combo plate dropped combo-break SFX")
+    elif "reset = true" not in rules_cs or "if (result.ResetCombo)" not in session_cs:
+        fail("combo plate retuned combo math")
+    elif "hypePerfectCombo: 9" not in balance or "comboIncomeMultiplier: 1.5" not in balance:
+        fail("combo plate retuned hype / combo payout")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("combo plate retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("combo plate broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising combo plate / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("combo plate dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("combo plate moved Unity off 6000.5.9f1")
+    elif "Art/combo_plate" not in (ROOT / "README.md").read_text(encoding="utf-8"):
+        fail("README should mention Art/combo_plate")
+    else:
+        ok("live COMBO sits on combo_plate badge; 1.15/1.22 pop / break sting stay")
+
+
 def check_mental_sfx() -> None:
     import wave
 
@@ -8163,6 +8227,8 @@ def check_readme_playable() -> None:
         fail("README dropped bill_notice on morning bills / live bill / settlement+title debt")
     elif "mental_note" not in readme or "멘탈 위험" not in readme or "이어서 하기" not in readme or "멘탈" not in readme:
         fail("README dropped mental_note on settlement / live danger / morning / title continue")
+    elif "combo_plate" not in readme or "COMBO" not in readme or "콤보 끊김" not in readme:
+        fail("README dropped combo_plate live badge")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:
