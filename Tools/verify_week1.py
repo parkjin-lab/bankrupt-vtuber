@@ -1532,6 +1532,7 @@ def check_project() -> None:
     check_ending_backdrops()
     check_ending_desk_paper()
     check_ending_bill_short()
+    check_ending_bill_cover()
     check_letter_card()
     check_letter_keycaps()
     check_pad_sfx()
@@ -8155,6 +8156,90 @@ def check_ending_bill_short() -> None:
         ok("bankrupt shows bill_short 청구 미달; week-clear hides it; desk paper / sfx / rules stay")
 
 
+def check_ending_bill_cover() -> None:
+    """Week-clear splash reuses live 청구 커버 bill_cover; bankrupt stays on bill_short."""
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    splash = settle_cs.split("void ApplyResultSplashes", 1)[-1].split("void ApplyHeadline", 1)[0]
+    clear_fn = settle_cs.split("static bool IsWeekClear", 1)[-1].split("static bool ShouldShowEnding", 1)[0]
+    broke_fn = settle_cs.split("static bool IsBankruptResult", 1)[-1].split("static bool IsBurnoutResult", 1)[0]
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    clear_build = build.split('ClearRoot"', 1)[-1].split('StampRoot"', 1)[0]
+    stamp_build = build.split('StampRoot"', 1)[-1].split('LetterRoot"', 1)[0]
+    clear_splash = splash.split("if (clear &&", 1)[-1].split("if ((bankrupt", 1)[0]
+    broke_splash = splash.split("if ((bankrupt", 1)[-1].split("if (!_resultStingPlayed", 1)[0]
+    slam = live_cs.split("void SlamBillCover", 1)[-1].split("void ShowIncomeDelta", 1)[0]
+
+    if 'BillCover = "Art/bill_cover"' not in art_cs:
+        fail("ArtSprites does not hook Art/bill_cover")
+    elif "ArtSprites.BillCover" not in slam or "청구 커버" not in slam:
+        fail("ending bill_cover reuse dropped live 청구 커버")
+    elif "ArtSprites.BillShort" not in stamp_build or "청구 미달" not in stamp_build:
+        fail("ending bill_cover reuse dropped bankrupt bill_short")
+    elif "ArtSprites.BillCover" not in clear_build or '"ClearPaidStamp"' not in clear_build:
+        fail("week-clear splash does not hang Art/bill_cover")
+    elif "청구 커버" not in clear_build:
+        fail("week-clear bill_cover dropped 청구 커버 copy")
+    elif "ArtSprites.BillCover" in stamp_build or "ClearPaidStamp" in stamp_build:
+        fail("bankrupt splash grew a bill_cover stamp")
+    elif "ArtSprites.BillCover" not in clear_splash or "SetActive(true)" not in clear_splash:
+        fail("week-clear splash does not show bill_cover")
+    elif "_clearPaidStamp" not in broke_splash or "SetActive(false)" not in broke_splash:
+        fail("bankrupt does not hide week-clear bill_cover")
+    elif "SlamBillCover" in settle_cs or "CoverSlam" in settle_cs or "sfx_bill_cover" in settle_cs:
+        fail("week-clear bill_cover grew a live slam or sfx_bill_cover")
+    elif "ArtSprites.CashSlip" not in clear_build or "ArtSprites.BillNotice" not in clear_build or "ArtSprites.MentalNote" not in clear_build:
+        fail("ending bill_cover dropped desk-paper slips")
+    elif "ArtSprites.EndingClear" not in clear_build or "ArtSprites.EndingBankrupt" not in stamp_build:
+        fail("ending bill_cover dropped ending_clear / ending_bankrupt")
+    elif "주차 클리어" not in settle_cs or "1주차 생존" not in splash or "다음 주차 시작" not in settle_cs:
+        fail("ending bill_cover changed week-clear copy")
+    elif '"파산"' not in settle_cs or "번아웃" not in splash or "처음부터" not in stamp_build:
+        fail("ending bill_cover changed bankrupt / burnout copy")
+    elif "PlaySettleSfx(_clearCue" not in splash or "PlaySettleSfx(_bankruptCue" not in splash:
+        fail("ending bill_cover dropped sfx_clear / sfx_bankrupt")
+    elif "Audio/sfx_clear" not in settle_cs or "Audio/sfx_bankrupt" not in settle_cs:
+        fail("ending bill_cover dropped Audio/sfx_clear|sfx_bankrupt")
+    elif "WeekOutcome.Win" not in clear_fn or "WeekOutcome.Week4Win" not in clear_fn:
+        fail("ending bill_cover changed week-clear conditions")
+    elif "WeekOutcome.Bankrupt" not in broke_fn or "EndingKind.Bankrupt" not in broke_fn:
+        fail("ending bill_cover changed bankrupt conditions")
+    elif "BankruptDebt" not in eco_cs or "public void NextMorning()" not in gm:
+        fail("ending bill_cover changed bankrupt numbers or routing")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("ending bill_cover retuned Week 1 economy / bankrupt line")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("ending bill_cover retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("ending bill_cover broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising ending bill_cover / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("ending bill_cover dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("ending bill_cover moved Unity off 6000.5.9f1")
+    elif "bill_cover" not in readme or "클리어" not in readme or "청구 커버" not in readme:
+        fail("README should mention week-clear bill_cover")
+    elif (
+        "bill_cover" not in settle_loop
+        or "청구 커버" not in settle_loop
+        or "클리어" not in settle_loop
+        or "파산은 숨김" not in settle_loop
+    ):
+        fail("README loop does not name week-clear bill_cover / hide-on-bankrupt")
+    else:
+        ok("week-clear shows bill_cover 청구 커버; bankrupt hides it; desk paper / sfx / rules stay")
+
+
 def check_letter_card() -> None:
     import struct
 
@@ -11348,8 +11433,11 @@ def check_readme_playable() -> None:
         or "**부채**" not in settle_loop
         or "**멘탈**" not in settle_loop
         or "클리어는 숨김" not in settle_loop
+        or "bill_cover" not in settle_loop
+        or "청구 커버" not in settle_loop
+        or "파산은 숨김" not in settle_loop
     ):
-        fail("README loop does not name ending desk paper or bankrupt bill_short")
+        fail("README loop does not name ending desk paper, bankrupt bill_short, or clear bill_cover")
     elif "bill_short" not in desk_paper or "클리어는 숨김" not in desk_paper or "파산" not in desk_paper:
         fail("README desk paper dropped bankrupt bill_short hide-on-clear")
     elif "combo_plate" not in readme or "COMBO" not in readme or "콤보 끊김" not in readme:

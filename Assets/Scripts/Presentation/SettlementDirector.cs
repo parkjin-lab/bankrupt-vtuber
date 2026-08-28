@@ -68,6 +68,8 @@ namespace BankruptVtuber
         Text _clearDebt;
         Image _clearMentalNote;
         Text _clearMental;
+        Image _clearPaidStamp;
+        Text _clearPaid;
         GameObject _stampRoot;
         Image _stampWash;
         Text _stampMark;
@@ -702,6 +704,14 @@ namespace BankruptVtuber
             _clearMentalNote.raycastTarget = false;
             _clearMental = UiKit.Label(_clearMentalNote.transform, "M", "멘탈 0", 22, Palette.Ink, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(_clearMental.rectTransform, new Vector2(0.08f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
+            _clearPaidStamp = UiKit.Image(snap, "ClearPaidStamp", Color.white);
+            UiKit.Layout(_clearPaidStamp.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 8f), new Vector2(220f, 56f));
+            ArtSprites.Apply(_clearPaidStamp, ArtSprites.BillCover, Palette.Gold, Color.white);
+            _clearPaidStamp.preserveAspect = false;
+            _clearPaidStamp.raycastTarget = false;
+            _clearPaidStamp.rectTransform.localEulerAngles = new Vector3(0f, 0f, 8f);
+            _clearPaid = UiKit.Label(_clearPaidStamp.transform, "ClearPaid", "청구 커버", 16, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_clearPaid.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -1f), new Vector2(-10f, -6f));
             var clearGo = UiKit.Button(_clearRoot.transform, "ClearGo", "다음 주차 시작", () => LeaveSettle(() => GameManager.Instance.NextMorning()), Palette.Gold, Palette.Ink);
             UiKit.Layout(clearGo.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 48), new Vector2(420, 72));
             _clearRoot.SetActive(false);
@@ -2272,6 +2282,18 @@ namespace BankruptVtuber
                 _clearDebt.text = "부채  " + EconomyRules.FormatWon(run.debt);
                 if (_clearMental != null)
                     _clearMental.text = "멘탈  " + run.mental;
+                if (_clearPaidStamp != null)
+                {
+                    ArtSprites.Apply(_clearPaidStamp, ArtSprites.BillCover, Palette.Gold, Color.white);
+                    _clearPaidStamp.preserveAspect = false;
+                    _clearPaidStamp.gameObject.SetActive(true);
+                }
+                if (_clearPaid != null)
+                {
+                    _clearPaid.text = "청구 커버";
+                    _clearPaid.color = Palette.Gold;
+                    _clearPaid.gameObject.SetActive(true);
+                }
                 if (_stampShortStamp != null)
                     _stampShortStamp.gameObject.SetActive(false);
                 if (_stampShort != null)
@@ -2314,6 +2336,10 @@ namespace BankruptVtuber
                     _stampShort.color = Palette.MoneyRed;
                     _stampShort.gameObject.SetActive(true);
                 }
+                if (_clearPaidStamp != null)
+                    _clearPaidStamp.gameObject.SetActive(false);
+                if (_clearPaid != null)
+                    _clearPaid.gameObject.SetActive(false);
                 if (_stampHeadline != null)
                     _stampHeadline.text = DayHeadline.Build(run);
                 _stampPortrait?.PoseEnding(burn ? EndingKind.Burnout : EndingKind.Bankrupt);
