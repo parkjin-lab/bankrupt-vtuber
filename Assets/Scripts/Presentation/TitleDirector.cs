@@ -29,6 +29,7 @@ namespace BankruptVtuber
         Text _continueDay;
         Image _continueLastDay;
         Text _continueLastWeek;
+        Image _continueDay1;
         Image _continueWeekStart;
         Text _continueWeekStartLabel;
         Image _continueWeekHeadline;
@@ -276,6 +277,14 @@ namespace BankruptVtuber
                 contChipImg.raycastTarget = false;
             var contChipT = UiKit.Label(_continueChip, "T", "이어", 14, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Stretch(contChipT.rectTransform);
+            _continueDay1 = UiKit.Image(_continue.transform, "ContinueDay1", Color.white);
+            UiKit.Layout(_continueDay1.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(576f, -8f), new Vector2(180f, 56f));
+            ArtSprites.Apply(_continueDay1, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _continueDay1.preserveAspect = true;
+            _continueDay1.raycastTarget = false;
+            var day1T = UiKit.Label(_continueDay1.transform, "T", "1일차", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(day1T.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _continueDay1.gameObject.SetActive(false);
             _continueWeekStart = UiKit.Image(_continue.transform, "ContinueWeekStart", Color.white);
             UiKit.Layout(_continueWeekStart.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(576f, -8f), new Vector2(180f, 56f));
             ArtSprites.Apply(_continueWeekStart, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
@@ -571,6 +580,8 @@ namespace BankruptVtuber
                 _continueLastDay.gameObject.SetActive(false);
             if (_continueWeekStart != null && !_hasSave)
                 _continueWeekStart.gameObject.SetActive(false);
+            if (_continueDay1 != null && !_hasSave)
+                _continueDay1.gameObject.SetActive(false);
             if (_continueWeekHeadline != null && !_hasSave)
                 _continueWeekHeadline.gameObject.SetActive(false);
             if (_continueLastHeadline != null && !_hasSave)
@@ -620,6 +631,8 @@ namespace BankruptVtuber
         {
             if (_continueDay != null)
                 _continueDay.text = peek.day + "일차";
+            if (_continueDay1 != null)
+                _continueDay1.gameObject.SetActive(1 == peek.day);
             if (_continueDay1Headline != null)
                 _continueDay1Headline.gameObject.SetActive(1 == peek.day);
             if (_continueWeekStart != null)

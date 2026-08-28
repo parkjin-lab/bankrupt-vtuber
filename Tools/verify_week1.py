@@ -1582,6 +1582,7 @@ def check_project() -> None:
     check_title_week_start_headline()
     check_title_last_day_headline()
     check_title_day1_headline()
+    check_title_day1_tab()
     check_concert_live_badge()
     check_sponsor_live_badge()
     check_morning_bgm()
@@ -14878,6 +14879,189 @@ def check_title_day1_headline() -> None:
         fail("title day-1 headline paper moved Unity off 6000.5.9f1")
     else:
         ok("day-1 continue hangs headline_clip as debut news; other continue / new-game hide it; week-start / last-day / morning / settlement headlines stay")
+
+
+def check_title_day1_tab() -> None:
+    """Day-1 continue hangs day_tab as a 1일차 calendar; other continue / new-game hide it; week-start / last-day / NewGameDay / morning / settlement calendars stay."""
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_day = start_hang.split("_startDay = UiKit.Image", 1)[-1] if "_startDay = UiKit.Image" in start_hang else ""
+    if "_startHeadline = UiKit.Image" in title_day:
+        title_day = title_day.split("_startHeadline = UiKit.Image", 1)[0]
+    title_paper = start_hang.split("_startHeadline = UiKit.Image", 1)[-1] if "_startHeadline = UiKit.Image" in start_hang else ""
+    build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    tab = build.split('"ContinueDay1"', 1)[-1].split('"ContinueWeekStart"', 1)[0] if '"ContinueDay1"' in build else ""
+    week_start = build.split('"ContinueWeekStart"', 1)[-1].split('"ContinueWeekHeadline"', 1)[0] if '"ContinueWeekHeadline"' in build else ""
+    last_tab = build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in build else ""
+    n일차 = build.split('"ContinueDayTab"', 1)[-1].split('"ContinueLastDayTab"', 1)[0] if '"ContinueDayTab"' in build else ""
+    headline = build.split('"ContinueDay1Headline"', 1)[-1].split('"ContinueMemberPin"', 1)[0] if '"ContinueDay1Headline"' in build else ""
+    member_pin = build.split("_continueMemberPin = UiKit.Image", 1)[-1].split('"MoneyPlate"', 1)[0] if "_continueMemberPin = UiKit.Image" in build else ""
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    day1_gate = fill.split("if (_continueDay1 ", 1)[-1].split("if (_continueDay1Headline", 1)[0] if "if (_continueDay1 " in fill else ""
+    head_gate = fill.split("if (_continueDay1Headline", 1)[-1].split("if (_continueWeekStart", 1)[0] if "if (_continueDay1Headline" in fill else ""
+    week_gate = fill.split("if (_continueWeekStart", 1)[-1].split("bool last", 1)[0] if "if (_continueWeekStart" in fill else ""
+    last_gate = fill.split("bool last", 1)[-1].split("if (_continueMemberPin", 1)[0]
+    morning_build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
+    morning_day1 = morning_build.split('"MorningDay1"', 1)[-1].split('"MorningHeadline"', 1)[0] if '"MorningDay1"' in morning_build else ""
+    morning_week = morning_build.split('"MorningWeekStart"', 1)[-1].split('"MorningWeekHeadline"', 1)[0] if '"MorningWeekHeadline"' in morning_build else ""
+    day1_refresh = week_cs.split("void RefreshDay1", 1)[-1].split("void RefreshLastDay", 1)[0] if "void RefreshDay1" in week_cs else ""
+    week_refresh = week_cs.split("void RefreshWeekStart", 1)[-1].split("void RefreshDay1", 1)[0] if "void RefreshWeekStart" in week_cs else ""
+    last_refresh = week_cs.split("void RefreshLastDay", 1)[-1].split("static string LastDayClearReminder", 1)[0]
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    settle_day1 = settle_build.split('"SettleDay1"', 1)[-1].split('"SettleHeadline"', 1)[0] if '"SettleDay1"' in settle_build else ""
+    settle_week = settle_build.split('"SettleWeekStart"', 1)[-1].split('"SettleWeekHeadline"', 1)[0] if '"SettleWeekHeadline"' in settle_build else ""
+    settle_render = settle_cs.split("void Render()", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+    settle_gate = settle_render.split("if (_weekStartTab", 1)[-1].split("if (_day1Tab", 1)[0] if "if (_weekStartTab" in settle_render else ""
+    settle_day1_gate = settle_render.split("if (_day1Tab", 1)[-1].split("bool last", 1)[0]
+
+    if 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif '"ContinueDay1"' not in build or "ArtSprites.DayTab" not in tab:
+        fail("day-1 continue does not hang Art/day_tab as a 1일차 calendar")
+    elif "_continue.transform" not in tab:
+        fail("continue day-1 calendar is not on the continue tile")
+    elif "preserveAspect = true" not in tab:
+        fail("title day-1 continue tab is not preserveAspect")
+    elif "72f, 48f" in tab:
+        fail("title day-1 continue tab was hung as a 72×48 pin")
+    elif "180f, 56f" not in tab or "576f, -8f" not in tab:
+        fail("title day-1 continue tab is not a desk calendar beside the continue tile")
+    elif '"1일차"' not in tab:
+        fail("title day-1 continue tab is not Korean day-1 copy")
+    elif "헤드라인" in tab or "HeadlineClip" in tab or "ContinueDay1Headline" in tab:
+        fail("title day-1 continue tab reused the day-1 headline paper")
+    elif "576f, -76f" in tab or "228f, 92f" in tab:
+        fail("title day-1 continue tab covers ContinueDay1Headline")
+    elif "마지막 날" in tab or "주차 마지막" in tab or "2주차" in tab:
+        fail("title day-1 continue tab reused week-start or last-day copy")
+    elif "166f, -6f" in tab or "176f, 48f" in tab:
+        fail("title day-1 continue tab covers the continue last-day tab")
+    elif "-10f, -6f" in tab or "168f, 40f" in tab:
+        fail("title day-1 continue tab covers continue n일차")
+    elif "-8f, 10f" in tab or "-476f, 10f" in tab:
+        fail("title day-1 continue tab covers a continue pin")
+    elif "412f, -10f" in tab or '"NewGameDay"' in tab:
+        fail("title day-1 continue tab sat on NewGameDay")
+    elif "56f, -40f" in tab or "420f, 78f" in tab:
+        fail("title day-1 continue tab covers the start button")
+    elif "8f, -220f" in tab or "8f, -148f" in tab:
+        fail("title day-1 continue tab sat on MorningDay1 or SettleDay1")
+    elif "SetActive(false)" not in tab:
+        fail("title day-1 continue tab is not hidden until RefreshContinue")
+    elif '"ContinueDay1"' in week_start:
+        fail("ContinueWeekStart hang folded in the day-1 continue calendar")
+    elif '"ContinueDay1"' in last_tab or "576f, -8f" in last_tab:
+        fail("day-1 continue calendar sat between last-day tab and ContinueChip")
+    elif '"ContinueDay1"' in headline:
+        fail("ContinueDay1Headline hang folded in the day-1 continue calendar")
+    elif "1 == peek.day" not in day1_gate:
+        fail("title day-1 continue tab is not shown on saved day 1")
+    elif "_continueDay1" not in day1_gate or "SetActive" not in day1_gate:
+        fail("title day-1 continue tab is not hidden on other continue days")
+    elif "LastDayOfCurrentWeek" in day1_gate or "6 == peek.day" in day1_gate:
+        fail("title day-1 continue tab reused last-day or week-start gate")
+    elif "11 == peek.day" in day1_gate or "16 == peek.day" in day1_gate or "21 == peek.day" in day1_gate:
+        fail("title day-1 continue tab reused week-start gate")
+    elif "_continueWeekStart" in day1_gate or "_continueLastDay" in day1_gate:
+        fail("day-1 continue calendar folded another calendar into the day-1 gate")
+    elif "_continueDay1Headline" in day1_gate or "헤드라인" in day1_gate:
+        fail("title day-1 continue tab is not the day-1 headline paper")
+    elif "2 == peek.day" in day1_gate or "7 == peek.day" in day1_gate:
+        fail("title day-1 continue tab also shows on a mid-week continue")
+    elif re.search(r"(?<!\d)1 == peek\.day", week_gate):
+        fail("week-start continue also shows the day-1 calendar")
+    elif re.search(r"(?<!\d)1 == peek\.day", last_gate):
+        fail("last-day continue also shows the day-1 calendar")
+    elif "_continueDay1" in week_gate or "_continueDay1" in last_gate:
+        fail("day-1 continue calendar sat in the week-start or last-day gate")
+    elif "6 == peek.day" not in week_gate or "11 == peek.day" not in week_gate:
+        fail("title day-1 continue tab dropped week-start ContinueWeekStart")
+    elif "16 == peek.day" not in week_gate or "21 == peek.day" not in week_gate:
+        fail("title day-1 continue tab is not keeping ContinueWeekStart on 16 / 21")
+    elif "_continueWeekStart" not in week_gate or "SetActive(weekStart)" not in week_gate:
+        fail("title day-1 continue tab changed ContinueWeekStart hide")
+    elif "LastDayOfCurrentWeek" not in last_gate or "SetActive(last)" not in last_gate:
+        fail("title day-1 continue tab changed last-day tab logic")
+    elif "_continueLastDay" not in last_gate:
+        fail("title day-1 continue tab dropped the continue last-day tab")
+    elif "1 == peek.day" not in head_gate or "_continueDay1Headline" not in head_gate:
+        fail("title day-1 continue tab changed ContinueDay1Headline hide")
+    elif "6 == peek.day" in head_gate or "LastDayOfCurrentWeek" in head_gate:
+        fail("day-1 continue headline folded a week-start or last-day gate")
+    elif "_continueDay1 != null && !_hasSave" not in hide:
+        fail("title day-1 continue tab is not hidden when there is no save")
+    elif "_startDay" not in hide or "SetActive(!_hasSave)" not in hide:
+        fail("title day-1 continue tab dropped NewGameDay hide")
+    elif '"ContinueDay1"' in start_hang or "576f, -8f" in start_hang:
+        fail("no-save Title shows the day-1 continue calendar instead of NewGameDay")
+    elif '"NewGameDay"' not in start_hang or "412f, -10f" not in title_day or '"1일차"' not in title_day:
+        fail("title day-1 continue tab restyled NewGameDay")
+    elif "180f, 56f" not in title_day or "preserveAspect = true" not in title_day:
+        fail("title day-1 continue tab restyled the NewGameDay calendar")
+    elif '"NewGameHeadline"' not in start_hang or "412f, -78f" not in title_paper:
+        fail("title day-1 continue tab restyled NewGameHeadline")
+    elif '"NewGameBill"' not in start_hang or '"NewGameCash"' not in start_hang or '"NewGameMental"' not in start_hang:
+        fail("title day-1 continue tab dropped a new-game paper")
+    elif '"ContinueWeekStart"' not in build or "576f, -8f" not in week_start or '"2주차"' not in week_start:
+        fail("title day-1 continue tab restyled ContinueWeekStart")
+    elif "180f, 56f" not in week_start or "preserveAspect = true" not in week_start:
+        fail("title day-1 continue tab restyled the week-start calendar")
+    elif "ArtSprites.DayTab" not in last_tab or '"마지막 날"' not in last_tab or "166f, -6f" not in last_tab:
+        fail("title day-1 continue tab dropped the continue last-day tab")
+    elif "176f, 48f" not in last_tab or "주차 마지막" not in last_tab:
+        fail("title day-1 continue tab restyled the continue last-day tab")
+    elif "ArtSprites.DayTab" not in n일차 or "ContinueDayHead" not in n일차 or "-10f, -6f" not in n일차:
+        fail("title day-1 continue tab rewrote continue n일차")
+    elif '"ContinueDay1Headline"' not in build or "576f, -76f" not in headline or '"헤드라인"' not in headline:
+        fail("title day-1 continue tab restyled ContinueDay1Headline")
+    elif "72f, 48f" not in member_pin or "ArtSprites.MembershipCard" not in member_pin:
+        fail("title day-1 continue tab restyled the continue membership pin")
+    elif '"MorningDay1"' not in morning_build or "8f, -220f" not in morning_day1 or '"1일차"' not in morning_day1:
+        fail("title day-1 continue tab restyled MorningDay1")
+    elif "run.day == 1" not in day1_refresh or "_day1Tab" not in day1_refresh:
+        fail("title day-1 continue tab changed MorningDay1 hide")
+    elif '"MorningWeekStart"' not in morning_build or "8f, -220f" not in morning_week or '"2주차"' not in morning_week:
+        fail("title day-1 continue tab restyled MorningWeekStart")
+    elif "run.day == 6" not in week_refresh or "run.day == 21" not in week_refresh:
+        fail("title day-1 continue tab changed MorningWeekStart gate")
+    elif "LastDayOfCurrentWeek" not in last_refresh:
+        fail("title day-1 continue tab changed morning last-day gate")
+    elif '"SettleDay1"' not in settle_build or "8f, -148f" not in settle_day1 or '"1일차"' not in settle_day1:
+        fail("title day-1 continue tab restyled SettleDay1")
+    elif "1 == run.day" not in settle_day1_gate or "_day1Tab" not in settle_day1_gate:
+        fail("title day-1 continue tab changed SettleDay1 hide")
+    elif '"SettleWeekStart"' not in settle_build or "8f, -148f" not in settle_week or '"2주차"' not in settle_week:
+        fail("title day-1 continue tab restyled SettleWeekStart")
+    elif "6 == run.day" not in settle_gate or "21 == run.day" not in settle_gate:
+        fail("title day-1 continue tab changed SettleWeekStart gate")
+    elif "peek.day =" in title_cs or "day += " in title_cs or "day -= " in title_cs:
+        fail("title day-1 continue tab writes the day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("title day-1 continue tab moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("title day-1 continue tab retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("title day-1 continue tab retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("title day-1 continue tab retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("title day-1 continue tab broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising title day-1 calendar / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("title day-1 continue tab dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("title day-1 continue tab moved Unity off 6000.5.9f1")
+    else:
+        ok("day-1 continue hangs 1일차 day_tab; other continue / new-game hide it; week-start / last-day / NewGameDay / morning / settlement calendars stay")
 
 
 def check_concert_live_badge() -> None:
