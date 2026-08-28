@@ -144,5 +144,11 @@ namespace BankruptVtuber
             run.membershipJustUnlocked = true;
             FandomRules.SyncT3(run);
         }
+
+        public static bool RankingUnlocked(GameRunState run)
+        {
+            var gm = GameManager.Instance;
+            return Week5Rules.RankingUnlocked(run, gm != null ? gm.Week5 : Week5Balance.Load());
+        }
     }
 }

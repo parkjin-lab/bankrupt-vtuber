@@ -27,6 +27,7 @@ namespace BankruptVtuber
         Image _continueMemberPin;
         Image _continueAgencyPin;
         Image _continueGoodsPin;
+        Image _continueRankingPin;
         Text _continueMoney;
         Text _continueDebt;
         Text _continueHead;
@@ -291,6 +292,12 @@ namespace BankruptVtuber
             UiKit.Layout(_continueWarnLine.rectTransform, new Vector2(0.06f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             UiKit.Wrap(_continueWarnLine);
             _continueWarn.gameObject.SetActive(false);
+            _continueRankingPin = UiKit.Image(_continue.transform, "ContinueRankingPin", Color.white);
+            UiKit.Layout(_continueRankingPin.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-242f, 10f), new Vector2(72f, 48f));
+            ArtSprites.Apply(_continueRankingPin, ArtSprites.RankingBoard, Color.white, Color.white);
+            _continueRankingPin.preserveAspect = true;
+            _continueRankingPin.raycastTarget = false;
+            _continueRankingPin.gameObject.SetActive(false);
             _continue.gameObject.SetActive(false);
             _how = UiKit.Button(titleParent, "HowTo", "조작 설명", OpenHowTo, Palette.StudioHi, Palette.Pastel);
             StyleMenuButton(_how, new Vector2(56, -224), new Vector2(420, 70), Palette.StudioHi);
@@ -464,6 +471,8 @@ namespace BankruptVtuber
                 _continueAgencyPin.gameObject.SetActive(false);
             if (_continueGoodsPin != null && !_hasSave)
                 _continueGoodsPin.gameObject.SetActive(false);
+            if (_continueRankingPin != null && !_hasSave)
+                _continueRankingPin.gameObject.SetActive(false);
             if (_continueClip != null)
                 _continueClip.gameObject.SetActive(hasHead);
             if (!_hasSave && _continueWarn != null)
@@ -494,6 +503,8 @@ namespace BankruptVtuber
                 _continueAgencyPin.gameObject.SetActive(peek.agencyFounded);
             if (_continueGoodsPin != null)
                 _continueGoodsPin.gameObject.SetActive(peek.goodsUnlocked);
+            if (_continueRankingPin != null)
+                _continueRankingPin.gameObject.SetActive(WeekSchedule.RankingUnlocked(peek));
             int bills = EconomyRules.TonightBills(peek);
             bool shortfall = bills > 0 && peek.cash < bills;
             if (_continueMoney != null)
