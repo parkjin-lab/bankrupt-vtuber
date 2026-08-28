@@ -17,6 +17,7 @@ namespace BankruptVtuber
         Button _start;
         RectTransform _startRt;
         RectTransform _startChip;
+        Image _startBill;
         Button _continue;
         RectTransform _continueRt;
         RectTransform _continueChip;
@@ -179,6 +180,14 @@ namespace BankruptVtuber
             var startCap = _start.transform.Find("Caption") as RectTransform;
             if (startCap != null)
                 startCap.offsetMin = new Vector2(56f, 0f);
+            _startBill = UiKit.Image(_start.transform, "NewGameBill", Color.white);
+            UiKit.Layout(_startBill.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(16f, -10f), new Vector2(176f, 170f));
+            ArtSprites.Apply(_startBill, ArtSprites.BillNotice, Color.white, Color.white);
+            _startBill.preserveAspect = true;
+            _startBill.raycastTarget = false;
+            var startBillT = UiKit.Label(_startBill.transform, "T", "부채", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(startBillT.rectTransform, new Vector2(0.14f, 0.20f), new Vector2(0.86f, 0.80f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _startBill.gameObject.SetActive(false);
             _continue = UiKit.Button(titleParent, "Continue", "이어서 하기", OnContinue, Palette.Gold, Palette.Ink);
             StyleMenuButton(_continue, new Vector2(56, -154), new Vector2(560, 128), Palette.Gold);
             _continueRt = _continue.GetComponent<RectTransform>();
@@ -500,6 +509,8 @@ namespace BankruptVtuber
                 _continueConcertPin.gameObject.SetActive(false);
             if (_continueSponsorPin != null && !_hasSave)
                 _continueSponsorPin.gameObject.SetActive(false);
+            if (_startBill != null)
+                _startBill.gameObject.SetActive(!_hasSave);
             if (_continueClip != null)
                 _continueClip.gameObject.SetActive(hasHead);
             if (!_hasSave && _continueWarn != null)
@@ -512,7 +523,7 @@ namespace BankruptVtuber
             if (_hint != null)
                 _hint.text = _hasSave ? "Space / Enter  이어서 하기" : "Space / Enter  방송 시작";
             if (_how != null)
-                StyleMenuButton(_how, new Vector2(56, !_hasSave ? -132 : hasHead ? -340 : -252), new Vector2(420, 70), Palette.StudioHi);
+                StyleMenuButton(_how, new Vector2(56, !_hasSave ? -308 : hasHead ? -340 : -252), new Vector2(420, 70), Palette.StudioHi);
         }
 
         void FillContinue(GameRunState peek)
