@@ -9629,8 +9629,12 @@ def check_readme_playable() -> None:
         fail("README dropped room / pad art")
     elif "golive_key" not in readme or "방송 켜기" not in readme or "sfx_golive" not in readme:
         fail("README dropped golive_key morning keycap")
+    elif "title_start" not in readme or "title_continue" not in readme or "새 방송 시작" not in readme or "이어서 하기" not in readme:
+        fail("README dropped title_start / title_continue lobby keycaps")
     elif "nextday_key" not in readme or "다음날" not in readme or "sfx_nextday" not in readme:
         fail("README dropped nextday_key settlement keycap")
+    elif "스트림덱 키캡" not in readme:
+        fail("README does not inventory stream-deck keycaps")
     elif "chat_bubble" not in readme or "note_chip" not in readme or "superchat_chip" not in readme or "content_*" not in readme:
         fail("README dropped chat / note / superchat envelope / content icons")
     elif "rival_nyang" not in readme or "goods_stand" not in readme or "agency_card" not in readme:
@@ -9726,7 +9730,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names money stamps/slips + desk paper + HUD stack + Unity/portrait/controls")
+        ok("README names keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
