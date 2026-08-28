@@ -378,6 +378,12 @@ namespace BankruptVtuber
             _tileDebt = StudioChrome.RecapTile(recap, "Debt", "부채", Palette.MoneyRed, 0.75f, 1f, 0.48f, 0.52f, false);
             _cashTile = recap.Find("Cash") as RectTransform;
             _debtTile = recap.Find("Debt") as RectTransform;
+            if (_debtTile != null)
+            {
+                var debtImg = _debtTile.GetComponent<Image>();
+                if (debtImg != null)
+                    ArtSprites.ApplySliced(debtImg, ArtSprites.BillNotice, Color.white, new Vector4(28f, 24f, 28f, 24f));
+            }
             _billsTile = recap.Find("Bills") as RectTransform;
             if (_billsTile != null)
             {

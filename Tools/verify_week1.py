@@ -2859,6 +2859,8 @@ def check_debt_count() -> None:
 
     if "TickDebtCount" not in settle_cs or "_debtCountT / 0.4f" not in settle_cs:
         fail("부채 does not count up over ~0.4s")
+    elif "ArtSprites.BillNotice" not in settle_cs or '"Debt"' not in settle_cs or '"부채"' not in settle_cs:
+        fail("settlement 부채 is not on Art/bill_notice")
     elif "_debtTo > _debtFrom" not in settle_cs or "debtAtDayStart" not in settle_cs:
         fail("부채 count does not run only when tonight's debt rose")
     elif "Palette.MoneyRed" not in settle_cs.split("_debtCounting", 1)[-1].split("else if (_tileDebt != null && _debtDip", 1)[0]:
@@ -2871,6 +2873,8 @@ def check_debt_count() -> None:
         fail("부채 count reimplemented debt math")
     elif "TickIncomeCount" not in settle_cs or "ShowShortfall" not in settle_cs or "청구 미달" not in settle_cs:
         fail("부채 count dropped income count or 청구 미달")
+    elif "LeftCashSlip" not in settle_cs or "ArtSprites.CashSlip" not in settle_cs:
+        fail("부채 notice dropped cash slips")
     elif '"오늘 청구"' not in week_cs or "_billSlam = 0.25f" not in week_cs:
         fail("부채 count dropped WeekStart 오늘 청구 slam")
     elif "ShowEndCut" not in live_cs or "ShowIncomeDelta" not in live_cs:
@@ -4525,6 +4529,7 @@ def check_vtuber_face() -> None:
 def check_bill_notice() -> None:
     week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
     live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
     art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
     title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
     eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
@@ -4534,6 +4539,7 @@ def check_bill_notice() -> None:
     money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
     chip = live_cs.split('var billChip = UiKit.Panel', 1)[-1].split("var billTrack", 1)[0]
     hud = live_cs.split("void RefreshHud", 1)[-1].split("void TickEventWarn", 1)[0]
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
 
     if not png.exists() or png.stat().st_size < 8000:
         fail("고지서 sprite is missing")
@@ -4543,6 +4549,12 @@ def check_bill_notice() -> None:
         fail("WeekStart 오늘 청구 is not on the 고지서 sprite")
     elif "ArtSprites.BillNotice" not in chip or "BillChip" not in live_cs:
         fail("live 청구 chip is not on the 고지서 sprite")
+    elif "ArtSprites.BillNotice" not in settle_build or '"Debt"' not in settle_build or '"부채"' not in settle_build:
+        fail("settlement 부채 is not on the 고지서 sprite")
+    elif "TickDebtCount" not in settle_cs or "_debtCountT / 0.4f" not in settle_cs or "Palette.MoneyRed" not in settle_cs:
+        fail("debt notice dropped count-up or red-increase tint")
+    elif "LeftCashSlip" not in settle_cs or "ArtSprites.CashSlip" not in settle_cs:
+        fail("debt notice dropped cash slips")
     elif "_billSlam = 0.25f" not in week_cs or "청구보다 부족" not in week_cs:
         fail("bill notice dropped slam or 청구보다 부족")
     elif "new Vector2(180, 10)" not in live_cs or "ticking / (float)_tonightBills" not in hud:
@@ -4566,7 +4578,7 @@ def check_bill_notice() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("bill notice moved Unity off 6000.5.9f1")
     else:
-        ok("오늘 청구 uses a 고지서 sprite; slam / 부족 / fill / cover stay")
+        ok("오늘 청구 / settlement 부채 use 고지서; slam / count / cash slips stay")
 
 
 def check_stream_overlay() -> None:
