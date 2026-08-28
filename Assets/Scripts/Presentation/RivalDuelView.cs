@@ -216,7 +216,12 @@ namespace BankruptVtuber
                 _resultTitle.color = Palette.Gold;
                 _resultSub.text = $"+{EconomyRules.FormatWon(winCash)}";
                 _resultSub.color = Palette.Gold;
-                _resultPanel.color = new Color(0.16f, 0.12f, 0.04f, 0.96f);
+                if (_resultPanel != null)
+                {
+                    ArtSprites.Apply(_resultPanel, ArtSprites.JudgePerfect, Palette.Gold, Color.white);
+                    _resultPanel.preserveAspect = false;
+                    _resultPanel.raycastTarget = false;
+                }
             }
             else
             {
@@ -224,7 +229,12 @@ namespace BankruptVtuber
                 _resultTitle.color = Palette.MoneyRed;
                 _resultSub.text = $"멘탈 −{loseMental}";
                 _resultSub.color = new Color(1f, 0.7f, 0.72f);
-                _resultPanel.color = new Color(0.16f, 0.05f, 0.06f, 0.96f);
+                if (_resultPanel != null)
+                {
+                    ArtSprites.Apply(_resultPanel, ArtSprites.JudgeMiss, Palette.MoneyRed, Color.white);
+                    _resultPanel.preserveAspect = false;
+                    _resultPanel.raycastTarget = false;
+                }
             }
             _resultUntil = 1.4f;
         }

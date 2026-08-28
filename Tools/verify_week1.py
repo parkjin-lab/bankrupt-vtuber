@@ -1495,6 +1495,7 @@ def check_project() -> None:
     check_rival_onair_led()
     check_rival_viewer_badge()
     check_rival_viewer_pop()
+    check_rival_result_stamps()
     check_bill_notice()
     check_live_bill_notice()
     check_settle_bill_notice()
@@ -5446,6 +5447,75 @@ def check_rival_viewer_pop() -> None:
         fail("README Week 3 must name rival viewer_pop")
     else:
         ok("rival +/- pops sit on viewer_pop; badge / ticks / onair / bezel / numbers stay")
+
+
+def check_rival_result_stamps() -> None:
+    """Week 3 승/패 slam reuses live judge_perfect / judge_miss stamps."""
+    duel_cs = (ROOT / "Assets/Scripts/Presentation/RivalDuelView.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    show = duel_cs.split("void ShowResult", 1)[-1].split("void RefreshBars", 1)[0]
+    won = show.split("if (won)", 1)[-1].split("else", 1)[0]
+    lose = show.split("else", 1)[-1]
+    judge = live_cs.split("void ShowJudge", 1)[-1].split("void BeginSuperchatFly", 1)[0]
+    cam = duel_cs.split('"RivalCam"', 1)[-1].split("var bars", 1)[0] if '"RivalCam"' in duel_cs else ""
+    week3 = readme.split("**3주차**", 1)[-1].split("**4주차**", 1)[0]
+    face = readme.split("웹캠 파산냥", 1)[-1].split("라이브는", 1)[0]
+
+    if 'JudgePerfect = "Art/judge_perfect"' not in art_cs or 'JudgeMiss = "Art/judge_miss"' not in art_cs:
+        fail("ArtSprites does not hook judge_perfect / judge_miss")
+    elif "ArtSprites.JudgePerfect" not in judge or "ArtSprites.JudgeMiss" not in judge:
+        fail("rival result stamps dropped live Perfect / Miss stamps")
+    elif "ArtSprites.JudgePerfect" not in won or "라이벌 승" not in won:
+        fail("rival win does not sit on judge_perfect")
+    elif "ArtSprites.JudgeMiss" not in lose or "라이벌 패" not in lose:
+        fail("rival lose does not sit on judge_miss")
+    elif "ArtSprites.JudgeMiss" in won or "ArtSprites.JudgePerfect" in lose:
+        fail("rival 승/패 stamps are swapped")
+    elif "ArtSprites.ComboBreak" in show:
+        fail("rival lose should reuse judge_miss, not combo_break")
+    elif "FormatWon(winCash)" not in won or "loseMental" not in lose:
+        fail("rival result stamps dropped win cash / lose mental copy")
+    elif "SetActive(false)" not in show or "_onAir" not in show:
+        fail("rival result stamps dropped hide-on-resolve onair_led")
+    elif "ArtSprites.ViewerBadge" not in cam or "RefreshBars" not in duel_cs:
+        fail("rival result stamps dropped viewer_badge ticks")
+    elif "ArtSprites.ViewerPop" not in cam or "ArtSprites.OnAirLed" not in cam:
+        fail("rival result stamps dropped viewer_pop / onair_led")
+    elif "ArtSprites.WebcamBezel" not in duel_cs:
+        fail("rival result stamps dropped webcam_bezel")
+    elif "Audio/sfx_rival_win" not in live_cs or "Audio/sfx_rival_lose" not in live_cs:
+        fail("rival result stamps dropped win/lose SFX")
+    elif "ApplyRivalResult" not in live_cs or "ShowResult" not in live_cs:
+        fail("rival result stamps unhooked LiveStream duel resolve")
+    elif "rivalPerfectSteal: 0.6" not in w3_asset or "rivalWinCash: 20000" not in w3_asset or "rivalLoseMental: 12" not in w3_asset:
+        fail("rival result stamps retuned Week3 rival numbers")
+    elif "playerViewers > rivalViewers" not in w3r_cs or "ApplyRivalResult" not in w3r_cs:
+        fail("rival result stamps changed win/lose routing")
+    elif "Audio/sfx_threat" in title_cs:
+        fail("sfx_threat leaked onto Title continue")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("rival result stamps retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("rival result stamps broke pads, 입력됨, or added timeScale")
+    elif "Week3" in title_cs or "라이벌" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising rival result stamps / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("rival result stamps dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("rival result stamps moved Unity off 6000.5.9f1")
+    elif "judge_perfect" not in face or "judge_miss" not in face:
+        fail("README face loop does not name rival judge stamps")
+    elif "judge_perfect" not in week3 or "judge_miss" not in week3 or "라이벌 승" not in week3:
+        fail("README Week 3 must name rival 승/패 judge stamps")
+    else:
+        ok("rival 승/패 sit on judge_perfect / judge_miss; ticks / LED / badge / sfx / numbers stay")
 
 
 def check_bill_notice() -> None:
