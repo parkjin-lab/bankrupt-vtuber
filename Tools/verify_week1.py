@@ -1597,6 +1597,7 @@ def check_project() -> None:
     check_settle_event_warn()
     check_settle_threat_sfx()
     check_title_event_warn()
+    check_title_threat_sfx()
     check_event_sting_overlays()
     check_mental_sfx()
     check_week2_card_art()
@@ -5499,8 +5500,6 @@ def check_rival_result_stamps() -> None:
         fail("rival result stamps retuned Week3 rival numbers")
     elif "playerViewers > rivalViewers" not in w3r_cs or "ApplyRivalResult" not in w3r_cs:
         fail("rival result stamps changed win/lose routing")
-    elif "Audio/sfx_threat" in title_cs:
-        fail("sfx_threat leaked onto Title continue")
     elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
         fail("rival result stamps retuned Week 1 economy")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
@@ -9339,8 +9338,6 @@ def check_readme_rival_result_stamps() -> None:
         fail("README rival stamps dropped 승/패 copy")
     elif "Audio/sfx_rival_win" not in live_cs or "Audio/sfx_rival_lose" not in live_cs:
         fail("README rival stamps dropped win/lose SFX")
-    elif "Audio/sfx_threat" in title_cs:
-        fail("sfx_threat leaked onto Title continue")
     elif "rivalWinCash: 20000" not in w3_asset or "rivalLoseMental: 12" not in w3_asset:
         fail("README rival stamps retuned Week3 rival numbers")
     elif "playerViewers > rivalViewers" not in w3r_cs or "ApplyRivalResult" not in w3r_cs:
@@ -9979,8 +9976,8 @@ def check_readme_both_threat_sfx() -> None:
         fail("README both-threat retuned extra threat names")
     elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
         fail("README both-threat retuned live 안티 온다 / 렉 온다")
-    elif "Audio/sfx_threat" in title_cs or "Audio/sfx_threat" in live_cs:
-        fail("sfx_threat leaked onto Title / LiveStream")
+    elif "Audio/sfx_threat" in live_cs:
+        fail("sfx_threat leaked onto LiveStream")
     elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
         fail("README both-threat retuned Week 1 economy")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
@@ -12484,8 +12481,8 @@ def check_threat_slam_sfx() -> None:
         fail("sfx_threat dropped content pick confirm")
     elif "Audio/sfx_golive" not in week_cs or "PlayGoLiveSfx" not in week_cs:
         fail("sfx_threat dropped GO LIVE confirm")
-    elif "Audio/sfx_threat" in title_cs or "Audio/sfx_threat" in live_cs:
-        fail("sfx_threat leaked onto Title / LiveStream")
+    elif "Audio/sfx_threat" in live_cs:
+        fail("sfx_threat leaked onto LiveStream")
     elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
         fail("sfx_threat retuned Week 1 economy")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
@@ -12615,8 +12612,8 @@ def check_settle_threat_sfx() -> None:
         fail("settlement sfx_threat dropped the morning extra-threat slam")
     elif "Audio/sfx_nextday" not in settle_cs or "PlayNextDaySfx" not in settle_cs:
         fail("settlement sfx_threat dropped 다음날 confirm")
-    elif "Audio/sfx_threat" in title_cs or "Audio/sfx_threat" in live_cs:
-        fail("sfx_threat leaked onto Title / LiveStream")
+    elif "Audio/sfx_threat" in live_cs:
+        fail("sfx_threat leaked onto LiveStream")
     elif "장비 고장" not in extra_cs or "라이벌 견제" not in extra_cs or "minWon = 7000" not in extra_cs:
         fail("settlement sfx_threat retuned extra threat names / table")
     elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
@@ -12707,6 +12704,75 @@ def check_title_event_warn() -> None:
         fail("README event_warn inventory dropped 이어서 하기 extra threat")
     else:
         ok("title continue shows event_warn only for a saved extra threat; cash / desk / numbers stay")
+
+
+def check_title_threat_sfx() -> None:
+    """Title continue extra-threat plate plays a one-shot sfx_threat; silent if none."""
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    extra_cs = (ROOT / "Assets/Scripts/Data/ExtraThreat.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    play = title_cs.split("void PlayThreatSfx", 1)[-1]
+    leave = title_cs.split("void LeaveTitle", 1)[-1].split("IEnumerator FadeTitleBgmThen", 1)[0]
+    pulse = title_cs.split("void TickContinuePulse", 1)[-1].split("void OpenHowTo", 1)[0]
+    start = title_cs.split("void OnStartBroadcast", 1)[-1].split("void BeginNewRun", 1)[0]
+    spawn = week_cs.split("void SpawnIncoming", 1)[-1].split("IEnumerator Slam", 1)[0]
+    bind = settle_cs.split("void BindExtraWarn", 1)[-1].split("void ApplyHeadline", 1)[0]
+
+    if "Audio/sfx_threat" not in title_cs or "PlayThreatSfx" not in title_cs:
+        fail("Title continue does not load / play Audio/sfx_threat")
+    elif "PlayThreatSfx();" not in fill or fill.count("PlayThreatSfx();") != 1:
+        fail("title continue extra-threat is not a single sfx_threat shot")
+    elif "if (extraOn)" not in fill or "PlayThreatSfx();" not in fill.split("if (extraOn)", 1)[-1]:
+        fail("sfx_threat does not fire when title continue extra-threat appears")
+    elif play.count("PlayOneShot") != 1:
+        fail("title continue sfx_threat can fire more than one shot")
+    elif "_threatSfxPlayed" not in play or "_threatSfxPlayed = true" not in play:
+        fail("title continue sfx_threat is not one-shot")
+    elif "PlayThreatSfx" in hide:
+        fail("sfx_threat plays on title open without a continue extra-threat")
+    elif "PlayThreatSfx" in leave or "PlayThreatSfx" in pulse or "PlayThreatSfx" in start:
+        fail("sfx_threat plays on title leave / pulse / new game")
+    elif "SetActive(extraOn)" not in fill or "IsNullOrWhiteSpace(extras)" not in fill:
+        fail("title continue sfx_threat dropped hide-if-none")
+    elif "_continueWarn" not in hide or "SetActive(false)" not in hide:
+        fail("title continue sfx_threat dropped hide-without-save")
+    elif "ArtSprites.EventWarn" not in title_cs or '"ContinueWarn"' not in title_cs:
+        fail("title continue sfx_threat dropped the event_warn plate")
+    elif 'extras += $"위협 ' not in fill or "extraThreatName" not in fill:
+        fail("title continue sfx_threat dropped 위협 name / amount copy")
+    elif "extraThreatRolled =" in title_cs or "extraThreatAmount =" in title_cs:
+        fail("title continue sfx_threat writes extra-threat save fields")
+    elif "Audio/sfx_title" not in title_cs or "PlayTitleSfx();" not in leave:
+        fail("title continue sfx_threat dropped leave confirm")
+    elif "PlayThreatSfx();" not in spawn or "PlayThreatSfx();" not in bind:
+        fail("title continue sfx_threat dropped morning / settlement shots")
+    elif "Audio/sfx_threat" in live_cs:
+        fail("sfx_threat leaked onto LiveStream")
+    elif "장비 고장" not in extra_cs or "minWon = 7000" not in extra_cs:
+        fail("title continue sfx_threat retuned extra threat names / table")
+    elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
+        fail("title continue sfx_threat retuned live 안티 온다 / 렉 온다")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("title continue sfx_threat retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("title continue sfx_threat broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising title continue sfx_threat / later weeks")
+    elif "Week3" in title_cs or "라이벌" in title_cs:
+        fail("Title started advertising Week3 / 라이벌")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("title continue sfx_threat dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("title continue sfx_threat moved Unity off 6000.5.9f1")
+    else:
+        ok("title continue extra-threat plays sfx_threat once; no-save / no-extra / leave stay silent")
 
 
 def check_event_sting_overlays() -> None:

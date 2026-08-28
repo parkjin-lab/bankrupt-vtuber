@@ -49,7 +49,9 @@ namespace BankruptVtuber
         AudioSource _titleBgm;
         AudioSource _titleSfx;
         AudioClip _titleCue;
+        AudioClip _threatCue;
         bool _leavingTitle;
+        bool _threatSfxPlayed;
 
         void Awake()
         {
@@ -57,8 +59,8 @@ namespace BankruptVtuber
             UiKit.EnsureEventSystem();
             UiKit.UnlockUiInputForStream();
             Build();
-            RefreshContinue();
             StartTitleBgm();
+            RefreshContinue();
         }
 
         void OnDestroy()
@@ -494,6 +496,8 @@ namespace BankruptVtuber
                 _continueWarnLine.text = extraOn ? extras.Trim() : "";
             if (_continueWarn != null)
                 _continueWarn.gameObject.SetActive(extraOn);
+            if (extraOn)
+                PlayThreatSfx();
         }
 
         void OpenWipe()
@@ -676,6 +680,7 @@ namespace BankruptVtuber
             _titleSfx = gameObject.AddComponent<AudioSource>();
             _titleSfx.playOnAwake = false;
             _titleCue = Resources.Load<AudioClip>("Audio/sfx_title");
+            _threatCue = Resources.Load<AudioClip>("Audio/sfx_threat");
         }
 
         void PlayTitleSfx()
@@ -710,6 +715,15 @@ namespace BankruptVtuber
                 _titleBgm.Stop();
             }
             next?.Invoke();
+        }
+
+        void PlayThreatSfx()
+        {
+            if (_threatSfxPlayed)
+                return;
+            _threatSfxPlayed = true;
+            if (_titleSfx != null && _threatCue != null)
+                _titleSfx.PlayOneShot(_threatCue, 0.46f);
         }
     }
 }
