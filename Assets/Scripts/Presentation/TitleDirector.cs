@@ -28,6 +28,8 @@ namespace BankruptVtuber
         Text _continueDay;
         Image _continueLastDay;
         Text _continueLastWeek;
+        Image _continueWeekStart;
+        Text _continueWeekStartLabel;
         Image _continueMemberPin;
         Image _continueAgencyPin;
         Image _continueGoodsPin;
@@ -262,6 +264,14 @@ namespace BankruptVtuber
                 contChipImg.raycastTarget = false;
             var contChipT = UiKit.Label(_continueChip, "T", "이어", 14, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Stretch(contChipT.rectTransform);
+            _continueWeekStart = UiKit.Image(_continue.transform, "ContinueWeekStart", Color.white);
+            UiKit.Layout(_continueWeekStart.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(576f, -8f), new Vector2(180f, 56f));
+            ArtSprites.Apply(_continueWeekStart, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _continueWeekStart.preserveAspect = true;
+            _continueWeekStart.raycastTarget = false;
+            _continueWeekStartLabel = UiKit.Label(_continueWeekStart.transform, "T", "2주차", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_continueWeekStartLabel.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _continueWeekStart.gameObject.SetActive(false);
             _continueMemberPin = UiKit.Image(_continue.transform, "ContinueMemberPin", Color.white);
             UiKit.Layout(_continueMemberPin.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-8f, 10f), new Vector2(72f, 48f));
             ArtSprites.Apply(_continueMemberPin, ArtSprites.MembershipCard, Color.white, Color.white);
@@ -523,6 +533,8 @@ namespace BankruptVtuber
                 _continueDayTab.gameObject.SetActive(_hasSave);
             if (_continueLastDay != null && !_hasSave)
                 _continueLastDay.gameObject.SetActive(false);
+            if (_continueWeekStart != null && !_hasSave)
+                _continueWeekStart.gameObject.SetActive(false);
             if (_continueMemberPin != null && !_hasSave)
                 _continueMemberPin.gameObject.SetActive(false);
             if (_continueAgencyPin != null && !_hasSave)
@@ -564,6 +576,13 @@ namespace BankruptVtuber
         {
             if (_continueDay != null)
                 _continueDay.text = peek.day + "일차";
+            if (_continueWeekStart != null)
+            {
+                bool weekStart = 6 == peek.day || 11 == peek.day || 16 == peek.day || 21 == peek.day;
+                _continueWeekStart.gameObject.SetActive(weekStart);
+                if (weekStart && _continueWeekStartLabel != null)
+                    _continueWeekStartLabel.text = WeekSchedule.WeekNumber(peek) + "주차";
+            }
             bool last = WeekSchedule.LastDayOfCurrentWeek(peek) == peek.day;
             if (_continueLastDay != null)
                 _continueLastDay.gameObject.SetActive(last);

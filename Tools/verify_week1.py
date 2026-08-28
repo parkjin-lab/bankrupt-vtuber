@@ -1571,6 +1571,7 @@ def check_project() -> None:
     check_morning_week_start_tab()
     check_settle_day1_tab()
     check_settle_week_start_tab()
+    check_title_week_start_tab()
     check_concert_live_badge()
     check_sponsor_live_badge()
     check_morning_bgm()
@@ -12870,6 +12871,125 @@ def check_settle_week_start_tab() -> None:
         fail("settlement week-start tab moved Unity off 6000.5.9f1")
     else:
         ok("week-start settlements hang 2–5주차 day_tab; day 1, last-day, mid-week, and MorningWeekStart stay")
+
+
+def check_title_week_start_tab() -> None:
+    """Continue week-start hangs day_tab as 2–5주차; last-day, no-save NewGameDay, morning/settlement week-start stay."""
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_day = start_hang.split("_startDay = UiKit.Image", 1)[-1] if "_startDay = UiKit.Image" in start_hang else ""
+    build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    week_start = build.split('"ContinueWeekStart"', 1)[-1].split('"ContinueMemberPin"', 1)[0] if '"ContinueWeekStart"' in build else ""
+    last_tab = build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in build else ""
+    n일차 = build.split('"ContinueDayTab"', 1)[-1].split('"ContinueLastDayTab"', 1)[0] if '"ContinueDayTab"' in build else ""
+    member_pin = build.split("_continueMemberPin = UiKit.Image", 1)[-1].split('"MoneyPlate"', 1)[0] if "_continueMemberPin = UiKit.Image" in build else ""
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    week_gate = fill.split("if (_continueWeekStart", 1)[-1].split("bool last", 1)[0] if "if (_continueWeekStart" in fill else ""
+    last_gate = fill.split("bool last", 1)[-1].split("if (_continueMemberPin", 1)[0]
+    morning_build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
+    morning_week = morning_build.split('"MorningWeekStart"', 1)[-1].split('"MorningDay1"', 1)[0] if '"MorningWeekStart"' in morning_build else ""
+    morning_week_refresh = week_cs.split("void RefreshWeekStart", 1)[-1].split("void RefreshDay1", 1)[0] if "void RefreshWeekStart" in week_cs else ""
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    settle_week = settle_build.split('"SettleWeekStart"', 1)[-1].split('"SettleDay1"', 1)[0] if '"SettleWeekStart"' in settle_build else ""
+    settle_render = settle_cs.split("void Render()", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+    settle_gate = settle_render.split("if (_weekStartTab", 1)[-1].split("if (_day1Tab", 1)[0] if "if (_weekStartTab" in settle_render else ""
+
+    if 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif '"ContinueWeekStart"' not in build or "ArtSprites.DayTab" not in week_start:
+        fail("week-start continue does not hang Art/day_tab as a week calendar")
+    elif "_continue.transform" not in week_start:
+        fail("week-start continue tab is not on the continue tile")
+    elif "preserveAspect = true" not in week_start:
+        fail("title week-start tab is not preserveAspect")
+    elif "72f, 48f" in week_start:
+        fail("title week-start tab was hung as a 72×48 pin")
+    elif "180f, 56f" not in week_start or "576f, -8f" not in week_start:
+        fail("title week-start tab is not a desk calendar beside the continue tile")
+    elif '"2주차"' not in week_start:
+        fail("title week-start tab is not Korean week-start copy")
+    elif "1일차" in week_start or "마지막 날" in week_start or "주차 마지막" in week_start:
+        fail("title week-start tab reused 1일차 or last-day copy")
+    elif "166f, -6f" in week_start or "176f, 48f" in week_start:
+        fail("title week-start tab covers the continue last-day tab")
+    elif "-10f, -6f" in week_start or "168f, 40f" in week_start:
+        fail("title week-start tab covers continue n일차")
+    elif "-8f, 10f" in week_start or "-476f, 10f" in week_start:
+        fail("title week-start tab covers a continue pin")
+    elif "412f, -10f" in week_start or '"NewGameDay"' in week_start:
+        fail("title week-start tab sat on NewGameDay")
+    elif "SetActive(false)" not in week_start:
+        fail("title week-start tab is not hidden until RefreshContinue")
+    elif "6 == peek.day" not in week_gate or "11 == peek.day" not in week_gate:
+        fail("title week-start tab is not shown on days 6 / 11")
+    elif "16 == peek.day" not in week_gate or "21 == peek.day" not in week_gate:
+        fail("title week-start tab is not shown on days 16 / 21")
+    elif "LastDayOfCurrentWeek" in week_gate:
+        fail("title week-start tab reused last-day gate")
+    elif re.search(r"(?<!\d)1 == peek\.day", week_gate):
+        fail("title week-start tab reused a day-1 gate")
+    elif 'WeekNumber(peek) + "주차"' not in week_gate:
+        fail("title week-start tab does not write 2주차 / 3주차 / 4주차 / 5주차")
+    elif "SetActive(weekStart)" not in week_gate:
+        fail("title week-start tab is not hidden on other continue days")
+    elif "2 == peek.day" in week_gate or "7 == peek.day" in week_gate:
+        fail("title week-start tab also shows on a mid-week continue")
+    elif "_continueWeekStart" not in hide or "SetActive(false)" not in hide:
+        fail("title week-start tab is not hidden without a save")
+    elif "_startDay" not in hide or "SetActive(!_hasSave)" not in hide:
+        fail("title week-start tab dropped NewGameDay hide")
+    elif '"NewGameDay"' not in start_hang or "412f, -10f" not in title_day or '"1일차"' not in title_day:
+        fail("title week-start tab restyled NewGameDay")
+    elif '"ContinueWeekStart"' in start_hang or "576f, -8f" in start_hang:
+        fail("no-save Title shows the week-start tab instead of NewGameDay")
+    elif "LastDayOfCurrentWeek" not in last_gate or "SetActive(last)" not in last_gate:
+        fail("title week-start tab changed last-day tab logic")
+    elif "6 == peek.day" in last_gate or "_continueWeekStart" in last_gate:
+        fail("last-day continue also shows the week-start tab")
+    elif "ArtSprites.DayTab" not in last_tab or '"마지막 날"' not in last_tab or "166f, -6f" not in last_tab:
+        fail("title week-start tab dropped the continue last-day tab")
+    elif '"ContinueWeekStart"' in last_tab or "576f, -8f" in last_tab:
+        fail("title week-start tab sat between last-day tab and ContinueChip")
+    elif "ArtSprites.DayTab" not in n일차 or "ContinueDayHead" not in n일차 or "-10f, -6f" not in n일차:
+        fail("title week-start tab rewrote continue n일차")
+    elif "72f, 48f" not in member_pin or "ArtSprites.MembershipCard" not in member_pin:
+        fail("title week-start tab restyled the continue membership pin")
+    elif "peek.day =" in title_cs or "day += " in title_cs or "day -= " in title_cs:
+        fail("title week-start tab writes the day index")
+    elif '"MorningWeekStart"' not in morning_build or "8f, -220f" not in morning_week or '"2주차"' not in morning_week:
+        fail("title week-start tab restyled MorningWeekStart")
+    elif "run.day == 6" not in morning_week_refresh or "run.day == 21" not in morning_week_refresh:
+        fail("title week-start tab changed MorningWeekStart gate")
+    elif '"SettleWeekStart"' not in settle_build or "8f, -148f" not in settle_week or '"2주차"' not in settle_week:
+        fail("title week-start tab restyled SettleWeekStart")
+    elif "6 == run.day" not in settle_gate or "21 == run.day" not in settle_gate:
+        fail("title week-start tab changed SettleWeekStart gate")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("title week-start tab moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("title week-start tab retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("title week-start tab retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("title week-start tab retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("title week-start tab broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising title week-start tab / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("title week-start tab dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("title week-start tab moved Unity off 6000.5.9f1")
+    else:
+        ok("week-start continue hangs 2–5주차 day_tab; last-day, NewGameDay, and morning/settlement week-start stay")
 
 
 def check_concert_live_badge() -> None:
