@@ -1556,6 +1556,7 @@ def check_project() -> None:
     check_agency_live_badge()
     check_title_agency_pin()
     check_goods_live_badge()
+    check_title_goods_pin()
     check_ranking_live_badge()
     check_clip_live_badge()
     check_concert_live_badge()
@@ -10660,6 +10661,137 @@ def check_goods_live_badge() -> None:
         fail("goods pin moved Unity off 6000.5.9f1")
     else:
         ok("post-unlock live hangs a tiny goods_stand pin; Weeks 1–2 / pre-unlock hide it")
+
+
+def check_title_goods_pin() -> None:
+    """Title continue hangs a tiny goods_stand pin after unlock; Weeks 1–2 / pre-unlock hide it."""
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    last_tab = build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in build else ""
+    member_pin = build.split("_continueMemberPin = UiKit.Image", 1)[-1].split('"MoneyPlate"', 1)[0] if "_continueMemberPin = UiKit.Image" in build else ""
+    agency_pin = build.split("_continueAgencyPin = UiKit.Image", 1)[-1].split('"ContinueClip"', 1)[0] if "_continueAgencyPin = UiKit.Image" in build else ""
+    pin = build.split("_continueGoodsPin = UiKit.Image", 1)[-1].split('"ContinueWarn"', 1)[0] if "_continueGoodsPin = UiKit.Image" in build else ""
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    hud = live_build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in live_build else ""
+    member = live_build.split('"MemberBadgeHud"', 1)[-1].split('"AgencyBadgeHud"', 1)[0] if '"AgencyBadgeHud"' in live_build else ""
+    agency = live_build.split('"AgencyBadgeHud"', 1)[-1].split('"GoodsBadgeHud"', 1)[0] if '"GoodsBadgeHud"' in live_build else ""
+    live_pin = live_build.split('"GoodsBadgeHud"', 1)[-1]
+    if '"RankingBadgeHud"' in live_pin:
+        live_pin = live_pin.split('"RankingBadgeHud"', 1)[0]
+    else:
+        live_pin = live_pin.split("var chatPanel", 1)[0] if '"GoodsBadgeHud"' in live_build else ""
+    shelf = live_build.split('"GoodsStandHud"', 1)[-1].split('"HypeFlash"', 1)[0] if '"GoodsStandHud"' in live_build else ""
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    goods_build = settle_build.split('GoodsRoot"', 1)[-1].split('AgencyRoot"', 1)[0]
+    goods_plate = goods_build.split('"GoodsCardHud"', 1)[-1].split('"GoodsTitle"', 1)[0] if '"GoodsCardHud"' in goods_build else ""
+    goods_show = settle_cs.split("void ShowGoodsSplash", 1)[-1].split("void OnGoodsAck", 1)[0]
+
+    if 'GoodsStand = "Art/goods_stand"' not in art_cs:
+        fail("ArtSprites does not hook Art/goods_stand")
+    elif '"ContinueGoodsPin"' not in build or "ArtSprites.GoodsStand" not in pin:
+        fail("Title continue does not hang goods_stand as a tiny pin")
+    elif "_continue.transform" not in pin:
+        fail("Title goods pin is not on the continue HUD")
+    elif "72f, 48f" not in pin or "preserveAspect = true" not in pin:
+        fail("Title goods pin is not a tiny preserveAspect card")
+    elif "-164f, 10f" not in pin:
+        fail("Title goods pin is not stacked next to the agency continue pin")
+    elif "SetActive(false)" not in pin:
+        fail("Title goods pin is not hidden on a new-game / pre-unlock title")
+    elif "SetActive(peek.goodsUnlocked)" not in fill:
+        fail("Title goods pin is not gated on the same unlock flag as the live pin")
+    elif "_continueGoodsPin" not in hide or "SetActive(false)" not in hide:
+        fail("Title goods pin is not hidden without a save")
+    elif "goodsUnlocked =" in title_cs:
+        fail("Title goods pin writes goods state")
+    elif '"GoodsBadgeHud"' in title_cs or '"GoodsCardHud"' in title_cs or '"GoodsStandHud"' in title_cs:
+        fail("Title goods pin copied the live pin, shelf, or settlement plate name")
+    elif "_avatar.Root" in pin or "GoodsBadgeHud" in pin:
+        fail("Title goods pin is a live webcam cluster copy")
+    elif "UiKit.Stretch" in pin or "680f, 340f" in pin or "PanelDark" in pin:
+        fail("Title goods pin reused the settlement unlock plate")
+    elif "168f, 168f" in pin or "16f, 208f" in pin or "220f, 128f" in pin:
+        fail("Title goods pin stole the promo shelf or sponsor plate slot")
+    elif "166f, -6f" in pin or "-10f, -6f" in pin:
+        fail("Title goods pin covers the last-day / n일차 day_tab")
+    elif "-8f, 10f" in pin or "-86f, 10f" in pin or "-10f, -114f" in pin or "-10f, -62f" in pin or "-10f, -10f" in pin:
+        fail("Title goods pin covers the membership / agency continue pins or live webcam stack")
+    elif "ArtSprites.GoodsStand" in last_tab or '"ContinueGoodsPin"' in last_tab:
+        fail("Title goods pin sat between last-day tab and ContinueChip")
+    elif "ArtSprites.GoodsStand" in member_pin or '"ContinueGoodsPin"' in member_pin:
+        fail("Title goods pin sat on top of the membership continue pin hang")
+    elif "ArtSprites.GoodsStand" in agency_pin or '"ContinueGoodsPin"' in agency_pin:
+        fail("Title goods pin sat on top of the agency continue pin hang")
+    elif '"ContinueMemberPin"' not in build or "ArtSprites.MembershipCard" not in member_pin:
+        fail("Title goods pin dropped the membership continue pin")
+    elif "-8f, 10f" not in member_pin or "72f, 48f" not in member_pin:
+        fail("Title goods pin restyled the membership continue pin")
+    elif "SetActive(peek.membershipUnlocked)" not in fill:
+        fail("Title goods pin unhooked membership continue pin gating")
+    elif '"ContinueAgencyPin"' not in build or "ArtSprites.AgencyCard" not in agency_pin:
+        fail("Title goods pin dropped the agency continue pin")
+    elif "-86f, 10f" not in agency_pin or "72f, 48f" not in agency_pin:
+        fail("Title goods pin restyled the agency continue pin")
+    elif "SetActive(peek.agencyFounded)" not in fill:
+        fail("Title goods pin unhooked agency continue pin gating")
+    elif '"ContinueLastDayTab"' not in build or "ArtSprites.DayTab" not in last_tab:
+        fail("Title goods pin dropped the last-day day_tab")
+    elif "LastDayOfCurrentWeek" not in fill or "SetActive(last)" not in fill:
+        fail("Title goods pin dropped last-day gating")
+    elif "Audio/sfx_goods" in title_cs or "PlayGoodsSfx" in title_cs:
+        fail("Title goods pin stole sfx_goods off the settlement plate")
+    elif '"GoodsBadgeHud"' not in hud or "ArtSprites.GoodsStand" not in live_pin:
+        fail("Title goods pin dropped the live webcam pin")
+    elif "-10f, -114f" not in live_pin or "72f, 48f" not in live_pin:
+        fail("Title goods pin moved the live webcam pin")
+    elif "SetActive(_goodsPinShow)" not in apply or "goodsUnlocked" not in start:
+        fail("Title goods pin unhooked live pin unlock gating")
+    elif '"MemberBadgeHud"' not in hud or "-10f, -10f" not in member:
+        fail("Title goods pin covered the live membership badge")
+    elif '"AgencyBadgeHud"' not in hud or "-10f, -62f" not in agency:
+        fail("Title goods pin covered the live agency pin")
+    elif "SetActive(_goodsShow)" not in apply or "168f, 168f" not in shelf:
+        fail("Title goods pin dropped the promo live shelf")
+    elif '"GoodsCardHud"' not in goods_build or "ArtSprites.GoodsStand" not in goods_plate:
+        fail("Title goods pin dropped the settlement unlock plate")
+    elif "PlayGoodsSfx();" not in goods_show or "아크릴 스탠드 해금" not in goods_build:
+        fail("Title goods pin restyled the settlement unlock plate")
+    elif "goodsUnlockCash: 60000" not in w3_asset or "goodsProduceCost: 2500" not in w3_asset or "goodsPrice: 7000" not in w3_asset:
+        fail("Title goods pin retuned unlock / produce / price")
+    elif "goodsPromoMultiplier: 1.5" not in w3_asset or "promoWindowSeconds: 1.2" not in w3_asset:
+        fail("Title goods pin retuned promo numbers")
+    elif "TryUnlockGoods" not in w3r_cs or "ProduceGoods" not in w3r_cs:
+        fail("Title goods pin changed unlock / produce routing")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("Title goods pin retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("Title goods pin retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("Title goods pin retuned week-clear gates")
+    elif "perfectWindow: 0.07" not in balance or "perfectWindow * " not in rules_cs:
+        fail("Title goods pin retuned hit windows")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("Title goods pin broke pads, 입력됨, or added timeScale")
+    elif "Week3" in title_cs or "아크릴" in title_cs or "굿즈" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising goods pin / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("Title goods pin dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("Title goods pin moved Unity off 6000.5.9f1")
+    else:
+        ok("title continue hangs a tiny goods_stand pin after unlock; Weeks 1–2 / pre-unlock hide it")
 
 
 def check_ranking_live_badge() -> None:

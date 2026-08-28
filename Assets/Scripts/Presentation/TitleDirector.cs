@@ -26,6 +26,7 @@ namespace BankruptVtuber
         Text _continueLastWeek;
         Image _continueMemberPin;
         Image _continueAgencyPin;
+        Image _continueGoodsPin;
         Text _continueMoney;
         Text _continueDebt;
         Text _continueHead;
@@ -275,6 +276,12 @@ namespace BankruptVtuber
             UiKit.Layout(_continueHead.rectTransform, new Vector2(0.07f, 0.14f), new Vector2(0.93f, 0.86f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             UiKit.Wrap(_continueHead);
             _continueClip.gameObject.SetActive(false);
+            _continueGoodsPin = UiKit.Image(_continue.transform, "ContinueGoodsPin", Color.white);
+            UiKit.Layout(_continueGoodsPin.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-164f, 10f), new Vector2(72f, 48f));
+            ArtSprites.Apply(_continueGoodsPin, ArtSprites.GoodsStand, Color.white, Color.white);
+            _continueGoodsPin.preserveAspect = true;
+            _continueGoodsPin.raycastTarget = false;
+            _continueGoodsPin.gameObject.SetActive(false);
             _continueWarn = UiKit.Image(titleParent, "ContinueWarn", Color.white);
             UiKit.Layout(_continueWarn.rectTransform, new Vector2(0, 0.52f), new Vector2(0, 0.52f), new Vector2(0, 0.5f), new Vector2(488, -286), new Vector2(380, 52));
             ArtSprites.Apply(_continueWarn, ArtSprites.EventWarn, new Color(0.58f, 0.08f, 0.16f, 0.94f), Color.white);
@@ -455,6 +462,8 @@ namespace BankruptVtuber
                 _continueMemberPin.gameObject.SetActive(false);
             if (_continueAgencyPin != null && !_hasSave)
                 _continueAgencyPin.gameObject.SetActive(false);
+            if (_continueGoodsPin != null && !_hasSave)
+                _continueGoodsPin.gameObject.SetActive(false);
             if (_continueClip != null)
                 _continueClip.gameObject.SetActive(hasHead);
             if (!_hasSave && _continueWarn != null)
@@ -483,6 +492,8 @@ namespace BankruptVtuber
                 _continueMemberPin.gameObject.SetActive(peek.membershipUnlocked);
             if (_continueAgencyPin != null)
                 _continueAgencyPin.gameObject.SetActive(peek.agencyFounded);
+            if (_continueGoodsPin != null)
+                _continueGoodsPin.gameObject.SetActive(peek.goodsUnlocked);
             int bills = EconomyRules.TonightBills(peek);
             bool shortfall = bills > 0 && peek.cash < bills;
             if (_continueMoney != null)
