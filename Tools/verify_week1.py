@@ -216,6 +216,7 @@ def check_project() -> None:
         "ending_bankrupt.png": "파산",
         "letter_card.png": "팬레터",
         "headline_clip.png": "어제 헤드라인",
+        "cash_slip.png": "남은 현금",
         "membership_card.png": "멤버십",
         "clip_card.png": "클립",
         "pad_left.png": "← 키캡",
@@ -1480,6 +1481,7 @@ def check_project() -> None:
     check_sponsor_sfx()
     check_week5_board_sfx()
     check_headline_clip()
+    check_cash_slip()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -3377,6 +3379,8 @@ def check_left_cash() -> None:
 
     if "TickLeftCash" not in settle_cs or "남은 현금" not in settle_cs:
         fail("settlement has no 남은 현금 snap")
+    elif "LeftCashSlip" not in settle_cs or "ArtSprites.CashSlip" not in settle_cs:
+        fail("남은 현금 is not on Art/cash_slip")
     elif "!_incomeCounting && !_debtCounting" not in settle_cs:
         fail("남은 현금 does not wait for income / debt counts")
     elif "gm.Run.cash" not in left and "run.cash" not in left:
@@ -7364,6 +7368,70 @@ def check_headline_clip() -> None:
         ok("Title / morning / settlement share headline_clip scrap; copy / counts stay")
 
 
+def check_cash_slip() -> None:
+    import struct
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    left = settle_cs.split("void TickLeftCash", 1)[-1].split("void ShowShortfall", 1)[0]
+    png = ROOT / "Assets/Resources/Art/cash_slip.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("cash_slip.png is missing")
+    elif w < 360 or h < 160 or w <= h:
+        fail("cash_slip.png is not a readable landscape receipt slip")
+    elif color != 6:
+        fail("cash_slip.png is not RGBA")
+    elif 'CashSlip = "Art/cash_slip"' not in art_cs:
+        fail("ArtSprites does not hook Art/cash_slip")
+    elif "ArtSprites.CashSlip" not in build or '"LeftCashSlip"' not in build:
+        fail("Settlement does not hang Art/cash_slip under 남은 현금")
+    elif '"LeftCash"' not in build or "남은 현금" not in build:
+        fail("cash slip dropped the 남은 현금 text line")
+    elif "Palette.MoneyRed" not in left or "PeekTomorrowTypical" not in settle_cs:
+        fail("cash slip dropped short-red tint / tomorrow bill peek")
+    elif "gm.Run.cash" not in left and "run.cash" not in left:
+        fail("cash slip does not read the real leftover cash")
+    elif "run.cash =" in left or "lastBills =" in left or "cash +=" in left:
+        fail("cash slip writes cash / bill math")
+    elif "TickIncomeCount" not in settle_cs or "ShowShortfall" not in settle_cs or "청구 미달" not in settle_cs:
+        fail("cash slip dropped count-up / bill-short")
+    elif "ArtSprites.HeadlineClip" not in build or '"HeadlineClip"' not in build:
+        fail("cash slip dropped the headline scrap")
+    elif "LeaveSettle(() => gm.NextMorning())" not in settle_cs and "NextMorning()" not in settle_cs:
+        fail("cash slip changed next-morning routing")
+    elif "public void NextMorning()" not in gm:
+        fail("cash slip changed GameManager.NextMorning")
+    elif "ArtSprites.BillNotice" not in week_cs or "YesterdayLine" not in week_cs:
+        fail("cash slip dropped 고지서 / 어제 headline")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("cash slip retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("cash slip broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising cash slip / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("cash slip dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("cash slip moved Unity off 6000.5.9f1")
+    elif "Art/cash_slip" not in (ROOT / "README.md").read_text(encoding="utf-8"):
+        fail("README should mention Art/cash_slip")
+    else:
+        ok("남은 현금 sits on cash_slip receipt; short-red / counts / headline stay")
+
+
 def check_mental_sfx() -> None:
     import wave
 
@@ -7907,6 +7975,8 @@ def check_readme_playable() -> None:
         fail("README dropped ranking / concert art")
     elif "headline_clip" not in readme or "오늘 헤드라인" not in readme or "어제:" not in readme or "이어서 하기" not in readme:
         fail("README dropped headline scrap on settlement / morning / title continue")
+    elif "cash_slip" not in readme or "남은 현금" not in readme:
+        fail("README dropped cash_slip leftover receipt")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:

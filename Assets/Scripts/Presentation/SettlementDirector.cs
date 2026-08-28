@@ -50,6 +50,7 @@ namespace BankruptVtuber
         Text _tileMental;
         RectTransform _cashTile;
         RectTransform _debtTile;
+        Image _leftCashSlip;
         StudioPortrait _portrait;
         StudioPortrait _endingPortrait;
         StudioPortrait _clearPortrait;
@@ -372,9 +373,14 @@ namespace BankruptVtuber
             _tileMiss = StudioChrome.RecapTile(recap, "Miss", "MISS", Palette.MoneyRed, 0.25f, 0.50f, 0f, 0.48f, false);
             _tileViewers = StudioChrome.RecapTile(recap, "Viewers", "시청자", Palette.Pink, 0.50f, 0.75f, 0f, 0.48f, true);
             _tileMental = StudioChrome.RecapTile(recap, "Mental", "멘탈", Palette.Pink, 0.75f, 1f, 0f, 0.48f, false);
-            _leftCash = UiKit.Label(root, "LeftCash", "남은 현금", 24, Palette.Pastel, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UiKit.Layout(_leftCash.rectTransform, new Vector2(0f, 1f), new Vector2(0.78f, 1f), new Vector2(0f, 1f), new Vector2(40f, -344f), new Vector2(0f, 34f));
-            _leftCash.gameObject.SetActive(false);
+            _leftCashSlip = UiKit.Image(root, "LeftCashSlip", Color.white);
+            UiKit.Layout(_leftCashSlip.rectTransform, new Vector2(0f, 1f), new Vector2(0.78f, 1f), new Vector2(0f, 1f), new Vector2(36f, -338f), new Vector2(0f, 52f));
+            ArtSprites.Apply(_leftCashSlip, ArtSprites.CashSlip, new Color(0.98f, 0.94f, 0.86f, 0.98f), Color.white);
+            _leftCashSlip.preserveAspect = false;
+            _leftCashSlip.raycastTarget = false;
+            _leftCash = UiKit.Label(_leftCashSlip.transform, "LeftCash", "남은 현금", 24, Palette.Pastel, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_leftCash.rectTransform, new Vector2(0.08f, 0.14f), new Vector2(0.90f, 0.86f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _leftCashSlip.gameObject.SetActive(false);
 
             var panel = UiKit.Panel(root, "Sheet", Color.white);
             UiKit.Layout(panel, new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.42f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(980, 200));
@@ -899,7 +905,8 @@ namespace BankruptVtuber
                 return;
             _leftCashSnap = Mathf.MoveTowards(_leftCashSnap, 0f, dt * 4f);
             float u = _leftCashSnap;
-            _leftCash.rectTransform.localScale = Vector3.one * (1f + 0.10f * u);
+            var rt = _leftCashSlip != null ? _leftCashSlip.rectTransform : _leftCash.rectTransform;
+            rt.localScale = Vector3.one * (1f + 0.10f * u);
         }
 
         void ShowLeftCash()
@@ -907,6 +914,8 @@ namespace BankruptVtuber
             _leftCashShown = true;
             _leftCashSnap = 1f;
             ApplyLeftCash();
+            if (_leftCashSlip != null)
+                _leftCashSlip.gameObject.SetActive(true);
             if (_leftCash != null)
                 _leftCash.gameObject.SetActive(true);
         }
