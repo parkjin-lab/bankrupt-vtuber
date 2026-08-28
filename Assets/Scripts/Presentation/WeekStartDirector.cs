@@ -37,6 +37,7 @@ namespace BankruptVtuber
         Image _weekStartHeadline;
         Text _weekStartLabel;
         RectTransform _lastDayRoot;
+        Image _lastDayHeadline;
         Text _lastDayWeek;
         Text _lastDayNeed;
         Button _goLive;
@@ -272,6 +273,14 @@ namespace BankruptVtuber
             UiKit.Layout(_lastDayNeed.rectTransform, new Vector2(0, 0), new Vector2(1, 0.38f), new Vector2(0, 0), new Vector2(16, 6), new Vector2(-28, 0));
             UiKit.Wrap(_lastDayNeed);
             _lastDayRoot.gameObject.SetActive(false);
+            _lastDayHeadline = UiKit.Image(root, "MorningLastHeadline", Color.white);
+            UiKit.Layout(_lastDayHeadline.rectTransform, new Vector2(0.74f, 1f), new Vector2(0.74f, 1f), new Vector2(0f, 1f), new Vector2(8f, -284f), new Vector2(228f, 92f));
+            ArtSprites.Apply(_lastDayHeadline, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
+            _lastDayHeadline.preserveAspect = true;
+            _lastDayHeadline.raycastTarget = false;
+            var lastHeadT = UiKit.Label(_lastDayHeadline.transform, "T", "헤드라인", 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(lastHeadT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _lastDayHeadline.gameObject.SetActive(false);
 
             var wavePanel = UiKit.Panel(root, "WavePanel", new Color(1, 1, 1, 0.06f));
             UiKit.Layout(wavePanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -20), new Vector2(1320, 480));
@@ -556,10 +565,11 @@ namespace BankruptVtuber
 
         void RefreshLastDay(GameRunState run)
         {
-            if (_lastDayRoot == null)
-                return;
             bool last = run != null && run.day == WeekSchedule.LastDayOfCurrentWeek(run);
-            _lastDayRoot.gameObject.SetActive(last);
+            if (_lastDayRoot != null)
+                _lastDayRoot.gameObject.SetActive(last);
+            if (_lastDayHeadline != null)
+                _lastDayHeadline.gameObject.SetActive(last);
             if (!last)
                 return;
             int week = WeekSchedule.WeekNumber(run);

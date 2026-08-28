@@ -1572,6 +1572,7 @@ def check_project() -> None:
     check_morning_day1_headline()
     check_morning_week_start_tab()
     check_morning_week_start_headline()
+    check_morning_last_day_headline()
     check_settle_day1_tab()
     check_settle_day1_headline()
     check_settle_week_start_headline()
@@ -13288,6 +13289,215 @@ def check_morning_week_start_headline() -> None:
         fail("morning week-start headline paper moved Unity off 6000.5.9f1")
     else:
         ok("week-start mornings hang headline_clip as week news; other mornings hide it; day-1 / Title / settlement headlines stay")
+
+
+def check_morning_last_day_headline() -> None:
+    """Last-day mornings hang headline_clip as week-end news paper; other mornings hide it; day-1 / week-start / Title / settlement headlines stay."""
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    head_cs = (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
+    paper = build.split('"MorningLastHeadline"', 1)[-1].split('"WavePanel"', 1)[0] if '"MorningLastHeadline"' in build else ""
+    banner = build.split('"LastDayBanner"', 1)[-1].split('"MorningLastHeadline"', 1)[0] if '"MorningLastHeadline"' in build else ""
+    week_paper = build.split('"MorningWeekHeadline"', 1)[-1].split('"MorningDay1"', 1)[0] if '"MorningWeekHeadline"' in build else ""
+    week_start = build.split('"MorningWeekStart"', 1)[-1].split('"MorningWeekHeadline"', 1)[0] if '"MorningWeekHeadline"' in build else ""
+    day1_paper = build.split('"MorningHeadline"', 1)[-1].split('"LastDayBanner"', 1)[0] if '"MorningHeadline"' in build else ""
+    day1 = build.split('"MorningDay1"', 1)[-1].split('"MorningHeadline"', 1)[0] if '"MorningHeadline"' in build else ""
+    head = week_cs.split('"DayTab"', 1)[-1].split('"DayLabel"', 1)[0] if '"DayTab"' in week_cs else ""
+    morning_clip = week_cs.split('"YesterdayClip"', 1)[-1].split('"Yesterday"', 1)[0] if '"YesterdayClip"' in week_cs else ""
+    day1_refresh = week_cs.split("void RefreshDay1", 1)[-1].split("void RefreshLastDay", 1)[0] if "void RefreshDay1" in week_cs else ""
+    week_refresh = week_cs.split("void RefreshWeekStart", 1)[-1].split("void RefreshDay1", 1)[0] if "void RefreshWeekStart" in week_cs else ""
+    yest = week_cs.split("void RefreshYesterday", 1)[-1].split("void RefreshWeekStart", 1)[0]
+    last_refresh = week_cs.split("void RefreshLastDay", 1)[-1].split("static string LastDayClearReminder", 1)[0]
+    hud = week_cs.split("void RefreshHud", 1)[-1].split("void RefreshCashShort", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_paper = start_hang.split("_startHeadline = UiKit.Image", 1)[-1] if "_startHeadline = UiKit.Image" in start_hang else ""
+    title_day = start_hang.split("_startDay = UiKit.Image", 1)[-1] if "_startDay = UiKit.Image" in start_hang else ""
+    if "_startHeadline = UiKit.Image" in title_day:
+        title_day = title_day.split("_startHeadline = UiKit.Image", 1)[0]
+    title_build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    continue_week_paper = title_build.split('"ContinueWeekHeadline"', 1)[-1].split('"ContinueMemberPin"', 1)[0] if '"ContinueWeekHeadline"' in title_build else ""
+    continue_clip = title_build.split('"ContinueClip"', 1)[-1].split('"ContinueGoodsPin"', 1)[0] if '"ContinueClip"' in title_build else ""
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    week_gate = fill.split("if (_continueWeekStart", 1)[-1].split("bool last", 1)[0] if "if (_continueWeekStart" in fill else ""
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    settle_week_paper = settle_build.split('"SettleWeekHeadline"', 1)[-1].split('"SettleDay1"', 1)[0] if '"SettleWeekHeadline"' in settle_build else ""
+    settle_paper = settle_build.split('"SettleHeadline"', 1)[-1].split('"Sheet"', 1)[0] if '"SettleHeadline"' in settle_build else ""
+    settle_clip = settle_build.split('"HeadlineClip"', 1)[-1].split('"HeadlineTag"', 1)[0] if '"HeadlineClip"' in settle_build else ""
+    settle_render = settle_cs.split("void Render()", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+    settle_gate = settle_render.split("if (_weekStartTab", 1)[-1].split("if (_day1Tab", 1)[0] if "if (_weekStartTab" in settle_render else ""
+    settle_day1_gate = settle_render.split("if (_day1Tab", 1)[-1].split("bool last", 1)[0]
+
+    if 'HeadlineClip = "Art/headline_clip"' not in art_cs:
+        fail("ArtSprites does not hook Art/headline_clip")
+    elif '"MorningLastHeadline"' not in build or "ArtSprites.HeadlineClip" not in paper:
+        fail("last-day morning does not hang Art/headline_clip as week-end news paper")
+    elif "preserveAspect = true" not in paper:
+        fail("morning last-day headline paper is not preserveAspect")
+    elif "72f, 48f" in paper:
+        fail("morning last-day headline paper was hung as a 72×48 pin")
+    elif "228f, 92f" not in paper or "8f, -284f" not in paper or "0.74f, 1f" not in paper:
+        fail("morning last-day headline paper is not a desk scrap on last-day mornings")
+    elif '"헤드라인"' not in paper:
+        fail("morning last-day headline paper is not Korean week-end news copy")
+    elif "1일차" in paper or "2주차" in paper or "마지막 날" in paper or "주차 마지막" in paper:
+        fail("morning last-day headline paper reused calendar-tab copy")
+    elif "어제:" in paper or "오늘 헤드라인" in paper or "lastHeadline" in paper:
+        fail("morning last-day headline paper reused live / continue / settlement headline copy")
+    elif "NewGameHeadline" in paper or "412f, -78f" in paper or "240f, 88f" in paper:
+        fail("morning last-day headline paper sat on Title NewGameHeadline")
+    elif "ContinueWeekHeadline" in paper or "576f, -76f" in paper:
+        fail("morning last-day headline paper sat on ContinueWeekHeadline")
+    elif "SettleHeadline" in paper or "SettleWeekHeadline" in paper or "8f, -212f" in paper or "0.80f, 1f" in paper:
+        fail("morning last-day headline paper sat on a settlement headline")
+    elif "MorningHeadline" in paper or "MorningWeekHeadline" in paper:
+        fail("morning last-day headline paper sat on a day-1 / week-start morning headline")
+    elif "8f, -220f" in paper or "180f, 56f" in paper:
+        fail("morning last-day headline paper covers MorningDay1 / MorningWeekStart")
+    elif '"BillChip"' in paper or '"CashChip"' in paper or '"MentalChip"' in paper or "24, -220" in paper:
+        fail("morning last-day headline paper covers cash / bill / mental")
+    elif "360, 70" in paper or "0, 36" in paper:
+        fail("morning last-day headline paper covers GO STREAM")
+    elif "430, -8" in paper or "300, 72" in paper:
+        fail("morning last-day headline paper covers n일차 DayTab")
+    elif "744, -8" in paper or "312, 108" in paper:
+        fail("morning last-day headline paper covers the last-day tab")
+    elif "0, -42" in paper or "0, 78" in paper:
+        fail("morning last-day headline paper sat on YesterdayClip")
+    elif "SetActive(false)" not in paper:
+        fail("morning last-day headline paper is not hidden until RefreshHud")
+    elif "RefreshLastDay" not in hud:
+        fail("morning last-day headline paper is not refreshed")
+    elif "LastDayOfCurrentWeek" not in last_refresh:
+        fail("morning last-day headline paper is not keyed off WeekSchedule last days")
+    elif "_lastDayHeadline" not in last_refresh or "SetActive(last)" not in last_refresh:
+        fail("morning last-day headline paper is not hidden on other mornings")
+    elif "Week1LastDay = 5" not in sched_cs or "Week2LastDay = 10" not in sched_cs:
+        fail("morning last-day headline paper is not shown on days 5 / 10")
+    elif "Week3LastDay = 15" not in sched_cs or "Week4LastDay = 20" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("morning last-day headline paper is not shown on days 15 / 20 / 25")
+    elif re.search(r"run\.day == 1\b", last_refresh):
+        fail("morning last-day headline paper reused the day-1 gate")
+    elif "run.day == 6" in last_refresh or "run.day == 11" in last_refresh:
+        fail("morning last-day headline paper reused week-start gate")
+    elif re.search(r"run\.day == 2\b", last_refresh) or re.search(r"run\.day == 7\b", last_refresh):
+        fail("morning last-day headline paper also shows on a mid-week morning")
+    elif "_day1Headline" in last_refresh or "_weekStartHeadline" in last_refresh:
+        fail("last-day morning folded a day-1 / week-start headline into RefreshLastDay")
+    elif "RefreshDay1" not in hud or "run.day == 1" not in day1_refresh:
+        fail("morning last-day headline paper dropped day-1 MorningHeadline")
+    elif "_day1Headline" not in day1_refresh or "SetActive(day1)" not in day1_refresh:
+        fail("morning last-day headline paper changed MorningHeadline hide")
+    elif "LastDayOfCurrentWeek" in day1_refresh or "_lastDayHeadline" in day1_refresh:
+        fail("day-1 morning also shows the last-day headline paper")
+    elif "RefreshWeekStart" not in hud or "run.day == 6" not in week_refresh or "run.day == 21" not in week_refresh:
+        fail("morning last-day headline paper dropped week-start MorningWeekHeadline")
+    elif "run.day == 11" not in week_refresh or "run.day == 16" not in week_refresh:
+        fail("morning last-day headline paper is not keeping MorningWeekHeadline on 11 / 16")
+    elif "_weekStartHeadline" not in week_refresh or "SetActive(on)" not in week_refresh:
+        fail("morning last-day headline paper changed MorningWeekHeadline hide")
+    elif "LastDayOfCurrentWeek" in week_refresh or "_lastDayHeadline" in week_refresh:
+        fail("week-start morning also shows the last-day headline paper")
+    elif '"MorningWeekHeadline"' not in build or "ArtSprites.HeadlineClip" not in week_paper:
+        fail("morning last-day headline paper dropped MorningWeekHeadline")
+    elif "8f, -284f" not in week_paper or "228f, 92f" not in week_paper or '"헤드라인"' not in week_paper:
+        fail("morning last-day headline paper restyled MorningWeekHeadline")
+    elif "MorningLastHeadline" in week_paper:
+        fail("MorningWeekHeadline hang folded in the last-day headline paper")
+    elif '"MorningWeekStart"' not in build or "8f, -220f" not in week_start or '"2주차"' not in week_start:
+        fail("morning last-day headline paper restyled MorningWeekStart")
+    elif '"MorningHeadline"' not in build or "ArtSprites.HeadlineClip" not in day1_paper:
+        fail("morning last-day headline paper dropped MorningHeadline")
+    elif "8f, -284f" not in day1_paper or "228f, 92f" not in day1_paper or '"헤드라인"' not in day1_paper:
+        fail("morning last-day headline paper restyled MorningHeadline")
+    elif "MorningLastHeadline" in day1_paper:
+        fail("MorningHeadline hang folded in the last-day headline paper")
+    elif '"MorningDay1"' not in build or "8f, -220f" not in day1 or '"1일차"' not in day1:
+        fail("morning last-day headline paper restyled MorningDay1")
+    elif "ArtSprites.DayTab" not in head or "300, 72" not in head:
+        fail("morning last-day headline paper rewrote n일차 DayTab")
+    elif "ArtSprites.DayTab" not in banner or '"마지막 날"' not in banner or "744, -8" not in banner:
+        fail("morning last-day headline paper dropped the last-day tab")
+    elif "312, 108" not in banner or "주차 마지막" not in banner:
+        fail("morning last-day headline paper restyled the last-day tab")
+    elif "_lastDayRoot" not in last_refresh or "SetActive(last)" not in last_refresh:
+        fail("morning last-day headline paper changed last-day tab logic")
+    elif "ArtSprites.HeadlineClip" not in week_cs or '"YesterdayClip"' not in week_cs:
+        fail("morning last-day headline paper dropped morning 어제 scrap")
+    elif "0, -42" not in morning_clip or "0, 78" not in morning_clip:
+        fail("morning last-day headline paper restyled YesterdayClip")
+    elif "YesterdayLine" not in yest or "SetActive(on)" not in yest:
+        fail("morning last-day headline paper changed scrolling headline chips")
+    elif "day <= 1" not in head_cs or '"어제: "' not in head_cs:
+        fail("morning last-day headline paper changed 어제 copy or day math")
+    elif "ArtSprites.BillNotice" not in money or '"오늘 청구"' not in week_cs:
+        fail("morning last-day headline paper dropped the 오늘 청구 paper")
+    elif "ArtSprites.CashSlip" not in money or '"CashChip"' not in week_cs:
+        fail("morning last-day headline paper dropped the morning 현금 paper")
+    elif "ArtSprites.MentalNote" not in money or '"MentalChip"' not in week_cs:
+        fail("morning last-day headline paper dropped the morning 멘탈 paper")
+    elif '"GoLive"' not in build or "360, 70" not in build:
+        fail("morning last-day headline paper dropped GO STREAM")
+    elif '"NewGameHeadline"' not in start_hang or "ArtSprites.HeadlineClip" not in title_paper:
+        fail("morning last-day headline paper dropped Title NewGameHeadline")
+    elif "412f, -78f" not in title_paper or "240f, 88f" not in title_paper or '"헤드라인"' not in title_paper:
+        fail("morning last-day headline paper restyled Title NewGameHeadline")
+    elif "SetActive(!_hasSave)" not in hide:
+        fail("morning last-day headline paper changed Title NewGameHeadline hide")
+    elif '"ContinueWeekHeadline"' in start_hang or "576f, -76f" in start_hang:
+        fail("morning last-day headline paper sat on the no-save Title hang")
+    elif '"NewGameDay"' not in start_hang or "412f, -10f" not in title_day or '"1일차"' not in title_day:
+        fail("morning last-day headline paper restyled Title NewGameDay")
+    elif '"ContinueWeekHeadline"' not in title_build or "576f, -76f" not in continue_week_paper or '"헤드라인"' not in continue_week_paper:
+        fail("morning last-day headline paper restyled ContinueWeekHeadline")
+    elif "6 == peek.day" not in week_gate or "_continueWeekHeadline" not in week_gate or "SetActive(weekStart)" not in week_gate:
+        fail("morning last-day headline paper changed ContinueWeekHeadline hide")
+    elif '"ContinueClip"' not in title_build or "56, -286" not in continue_clip or "420, 72" not in continue_clip:
+        fail("morning last-day headline paper restyled continue headline scrap")
+    elif '"어제: "' not in fill or "lastHeadline" not in fill:
+        fail("morning last-day headline paper dropped continue 어제: + lastHeadline")
+    elif '"SettleWeekHeadline"' not in settle_build or "8f, -212f" not in settle_week_paper or '"헤드라인"' not in settle_week_paper:
+        fail("morning last-day headline paper restyled SettleWeekHeadline")
+    elif "6 == run.day" not in settle_gate or "_weekStartHeadline" not in settle_gate or "SetActive(weekStart)" not in settle_gate:
+        fail("morning last-day headline paper changed SettleWeekHeadline hide")
+    elif '"SettleHeadline"' not in settle_build or "8f, -212f" not in settle_paper or '"헤드라인"' not in settle_paper:
+        fail("morning last-day headline paper restyled SettleHeadline")
+    elif "1 == run.day" not in settle_day1_gate or "_day1Headline" not in settle_day1_gate:
+        fail("morning last-day headline paper changed SettleHeadline hide")
+    elif "ArtSprites.HeadlineClip" not in settle_build or "36, -66" not in settle_clip or "오늘 헤드라인" not in settle_cs:
+        fail("morning last-day headline paper restyled the 오늘 헤드라인 scrap")
+    elif "ArtSprites.HeadlineClip" in live_cs:
+        fail("morning last-day headline paper hung headline_clip on live")
+    elif "매드라인" in week_cs:
+        fail("morning last-day headline paper used 매드라인 instead of 헤드라인")
+    elif re.search(r"run\.day\s*=(?!=)", week_cs) or "day += " in week_cs or "day -= " in week_cs:
+        fail("morning last-day headline paper writes the day index")
+    elif "peek.day =" in title_cs or "day += " in title_cs or "day -= " in title_cs:
+        fail("morning last-day headline paper writes the Title day index")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("morning last-day headline paper retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("morning last-day headline paper retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("morning last-day headline paper retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("morning last-day headline paper broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising morning last-day headline / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("morning last-day headline paper dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("morning last-day headline paper moved Unity off 6000.5.9f1")
+    else:
+        ok("last-day mornings hang headline_clip as week-end news; other mornings hide it; day-1 / week-start / Title / settlement headlines stay")
 
 
 def check_settle_day1_tab() -> None:
