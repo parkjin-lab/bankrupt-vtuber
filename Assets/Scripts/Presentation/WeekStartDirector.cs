@@ -570,7 +570,7 @@ namespace BankruptVtuber
             rt.offsetMin = new Vector2(10f, 16f);
             rt.offsetMax = new Vector2(-10f, -8f);
             var img = btn.GetComponent<Image>();
-            ArtSprites.ApplySliced(img, ArtSprites.BubblePill, look.Card);
+            ArtSprites.ApplySliced(img, ArtSprites.ContentPlate, look.Card, new Vector4(40f, 48f, 40f, 48f));
             img.raycastTarget = true;
             var wash = UiKit.Image(btn.transform, "ShowWash", look.Wash);
             UiKit.Layout(wash.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -6), new Vector2(-20, 10));

@@ -257,6 +257,7 @@ def check_project() -> None:
         "content_game.png": "게임 아이콘",
         "content_song.png": "노래 아이콘",
         "content_reaction.png": "리액션 아이콘",
+        "content_plate.png": "콘텐츠 픽 카드 플레이트",
         "badge_superchat.png": "superchat",
         "badge_troll.png": "troll",
     }
@@ -1494,6 +1495,7 @@ def check_project() -> None:
     check_hype_sfx()
     check_event_sfx()
     check_content_icons()
+    check_content_plate()
     check_title_bgm()
     check_stream_bgm()
     check_concert_bgm()
@@ -3328,6 +3330,8 @@ def check_content_card_mood() -> None:
         fail("game / reaction cards have no show icons")
     elif "ContentPickAccent" not in week_cs or "Palette.Pink" not in week_cs or "Palette.Gold" not in week_cs:
         fail("content pick cards have no accent colors")
+    elif "ArtSprites.ContentPlate" not in pick or 'ContentPlate = "Art/content_plate"' not in (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8"):
+        fail("content pick cards are not on content_plate")
     elif "토크" not in week_cs or "게임" not in week_cs or "노래" not in week_cs or "리액션" not in week_cs:
         fail("content pick renamed the four types")
     elif "ContentRules.Pick" not in week_cs or "StreamContentType.Talk" not in week_cs:
@@ -6290,6 +6294,8 @@ def check_content_icons() -> None:
         fail("ForContent missing song/reaction mapping")
     elif "ArtSprites.Apply" not in pick or '"Icon"' not in pick:
         fail("content cards do not draw the show icon")
+    elif "ArtSprites.ContentPlate" not in pick or 'ContentPlate = "Art/content_plate"' not in art_cs:
+        fail("content icons dropped content_plate card plate")
     elif "ContentPickAccent" not in week_cs or "Palette.Pink" not in week_cs or "Palette.Troll" not in week_cs:
         fail("content icons dropped accent colors")
     elif "편하게 잡담" not in week_cs or "같이 깨자" not in week_cs or "고음 승부" not in week_cs or "같이 보자" not in week_cs:
@@ -6314,6 +6320,70 @@ def check_content_icons() -> None:
         fail("content icons moved Unity off 6000.5.9f1")
     else:
         ok("content picks have distinct 2D show icons; accents / vibes / multipliers stay")
+
+
+def check_content_plate() -> None:
+    import struct
+
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    content_asset = (ROOT / "Assets/Resources/Balance/ContentBalance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    pick = week_cs.split("void AddContentButton", 1)[-1].split("void OnPickContent", 1)[0]
+    choose = week_cs.split("void OnPickContent", 1)[-1].split("static void StyleConflictCard", 1)[0]
+    png = ROOT / "Assets/Resources/Art/content_plate.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("content_plate.png is missing")
+    elif w < 240 or h < 280 or w >= h:
+        fail("content_plate.png is not a readable portrait stream card plate")
+    elif color != 6:
+        fail("content_plate.png is not RGBA")
+    elif 'ContentPlate = "Art/content_plate"' not in art_cs:
+        fail("ArtSprites does not hook Art/content_plate")
+    elif "ArtSprites.ContentPlate" not in pick or "ApplySliced" not in pick:
+        fail("content pick buttons do not hang Art/content_plate")
+    elif pick.count("ArtSprites.ContentPlate") < 1:
+        fail("content_plate is not reused on the four pick cards")
+    elif "ArtSprites.ForContent" not in week_cs or '"Icon"' not in pick:
+        fail("content_plate dropped show icons")
+    elif "ContentPickAccent" not in week_cs or "Palette.Pink" not in week_cs or "Palette.Gold" not in week_cs:
+        fail("content_plate dropped accent colors")
+    elif "편하게 잡담" not in week_cs or "같이 깨자" not in week_cs or "고음 승부" not in week_cs or "같이 보자" not in week_cs:
+        fail("content_plate dropped Korean vibe lines")
+    elif "토크" not in week_cs or "게임" not in week_cs or "노래" not in week_cs or "리액션" not in week_cs:
+        fail("content_plate dropped Korean labels")
+    elif "PlayPickSfx();" not in choose or "Audio/sfx_pick" not in week_cs:
+        fail("content_plate dropped sfx_pick")
+    elif "ContentRules.Pick" not in choose or "gm.SaveRun()" not in choose:
+        fail("content_plate changed pick/confirm flow")
+    elif "talkIncomeMultiplier: 1" not in content_asset or "gameIncomeMultiplier: 1.15" not in content_asset:
+        fail("content_plate retuned income multipliers")
+    elif "songMentalCost: 8" not in content_asset or "talkMentalCost: 6" not in content_asset:
+        fail("content_plate retuned mental costs")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("content_plate retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("content_plate broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising content_plate / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("content_plate dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("content_plate moved Unity off 6000.5.9f1")
+    elif "Art/content_plate" not in readme or "콘텐츠" not in readme:
+        fail("README should mention content_plate")
+    else:
+        ok("content picks sit on shared content_plate; icons / accents / vibes / sfx stay")
 
 
 def check_title_bgm() -> None:
@@ -7259,6 +7329,8 @@ def check_pick_sfx() -> None:
         fail("content pick SFX plays on GO LIVE or card build")
     elif "ContentPickIcon" not in week_cs or "ArtSprites.ForContent" not in week_cs:
         fail("content pick SFX dropped show icons")
+    elif "ArtSprites.ContentPlate" not in cards or 'ContentPlate = "Art/content_plate"' not in (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8"):
+        fail("content pick SFX dropped content_plate card plate")
     elif "ContentPickAccent" not in week_cs or "Palette.Pink" not in week_cs or "Palette.Gold" not in week_cs:
         fail("content pick SFX dropped accent colors")
     elif "편하게 잡담" not in week_cs or "같이 깨자" not in week_cs or "고음 승부" not in week_cs or "같이 보자" not in week_cs:
@@ -9637,6 +9709,8 @@ def check_readme_playable() -> None:
         fail("README does not inventory stream-deck keycaps")
     elif "chat_bubble" not in readme or "note_chip" not in readme or "superchat_chip" not in readme or "content_*" not in readme:
         fail("README dropped chat / note / superchat envelope / content icons")
+    elif "content_plate" not in readme or "콘텐츠" not in readme:
+        fail("README dropped content_plate stream card plate")
     elif "rival_nyang" not in readme or "goods_stand" not in readme or "agency_card" not in readme:
         fail("README dropped rival / goods / agency art")
     elif "ranking_board" not in readme or "concert_stage" not in readme:
