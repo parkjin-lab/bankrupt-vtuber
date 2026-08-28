@@ -224,6 +224,7 @@ def check_project() -> None:
         "onair_led.png": "ON AIR LED",
         "judge_perfect.png": "PERFECT 스탬프",
         "judge_good.png": "GOOD 스탬프",
+        "judge_miss.png": "MISS 스탬프",
         "membership_card.png": "멤버십",
         "clip_card.png": "클립",
         "pad_left.png": "← 키캡",
@@ -2608,6 +2609,8 @@ def check_perfect_good() -> None:
         fail("judge pop lost PERFECT / GOOD labels")
     elif "ArtSprites.JudgePerfect" not in judge or "ArtSprites.JudgeGood" not in judge:
         fail("Perfect/Good are not on judge stamps")
+    elif "ArtSprites.JudgeMiss" not in judge:
+        fail("Miss is not on a judge stamp")
     elif "Palette.Gold" not in judge or "_judgePopMax = 0.2f" not in judge:
         fail("Perfect is not a gold 0.2s pop")
     elif "Color.white" not in judge or "1.08f" not in judge:
@@ -2635,7 +2638,7 @@ def check_perfect_good() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("Perfect/Good pop moved Unity off 6000.5.9f1")
     else:
-        ok("Perfect is a gold 0.2s pop; Good is a smaller white GOOD; Miss stays red")
+        ok("Perfect is a gold 0.2s pop; Good is a smaller white GOOD; Miss is a red stamp")
 
 
 def check_income_pop() -> None:
@@ -7885,6 +7888,7 @@ def check_judge_stamps() -> None:
     for name, label, min_w, min_h in (
         ("judge_perfect.png", "PERFECT", 360, 160),
         ("judge_good.png", "GOOD", 360, 160),
+        ("judge_miss.png", "MISS", 360, 160),
     ):
         png = ROOT / "Assets/Resources/Art" / name
         data = png.read_bytes() if png.exists() else b""
@@ -7902,22 +7906,32 @@ def check_judge_stamps() -> None:
             fail(f"{label} stamp PNG is not RGBA")
             return
 
-    if 'JudgePerfect = "Art/judge_perfect"' not in art_cs or 'JudgeGood = "Art/judge_good"' not in art_cs:
-        fail("ArtSprites does not hook judge_perfect / judge_good")
-    elif "ArtSprites.JudgePerfect" not in judge or "ArtSprites.JudgeGood" not in judge:
-        fail("ShowJudge does not hang Perfect/Good on stamps")
-    elif "PERFECT" not in judge or "GOOD" not in judge:
-        fail("judge stamps dropped PERFECT / GOOD labels")
-    elif "Palette.Gold" not in judge or "Color.white" not in judge:
-        fail("judge stamps dropped gold vs white")
+    if (
+        'JudgePerfect = "Art/judge_perfect"' not in art_cs
+        or 'JudgeGood = "Art/judge_good"' not in art_cs
+        or 'JudgeMiss = "Art/judge_miss"' not in art_cs
+    ):
+        fail("ArtSprites does not hook judge_perfect / judge_good / judge_miss")
+    elif (
+        "ArtSprites.JudgePerfect" not in judge
+        or "ArtSprites.JudgeGood" not in judge
+        or "ArtSprites.JudgeMiss" not in judge
+    ):
+        fail("ShowJudge does not hang Perfect/Good/Miss on stamps")
+    elif "PERFECT" not in judge or "GOOD" not in judge or "MISS" not in judge:
+        fail("judge stamps dropped PERFECT / GOOD / MISS labels")
+    elif "Palette.Gold" not in judge or "Color.white" not in judge or "Palette.MoneyRed" not in judge:
+        fail("judge stamps dropped gold / white / red")
     elif "_judgePopMax = 0.2f" not in judge or "1.72f" not in judge:
         fail("Perfect stamp dropped 0.2s big pop")
     elif "_judgePopMax = 0.12f" not in judge or "1.08f" not in judge:
         fail("Good stamp dropped smaller pop")
-    elif "Palette.MoneyRed" not in judge or "_judgePopMax = 0.25f" not in judge:
-        fail("judge stamps dropped Miss red pop")
-    elif "Audio/sfx_perfect" not in live_cs or "Audio/sfx_good" not in live_cs:
-        fail("judge stamps dropped Perfect/Good SFX")
+    elif "_judgePopMax = 0.25f" not in judge or "1.58f" not in judge:
+        fail("Miss stamp dropped red 0.25s pop")
+    elif "Audio/sfx_perfect" not in live_cs or "Audio/sfx_good" not in live_cs or "Audio/sfx_miss" not in live_cs:
+        fail("judge stamps dropped Perfect/Good/Miss SFX")
+    elif "콤보 끊김" not in live_cs or "comboWas >= 2" not in live_cs or "Audio/sfx_combo_break" not in live_cs:
+        fail("Miss stamp dropped combo-break sting/SFX")
     elif "_punch = 0.12f" not in avatar_cs:
         fail("judge stamps dropped Perfect webcam punch")
     elif "perfectWindow: 0.07" not in balance or "greatWindow: 0.13" not in balance or "goodWindow: 0.22" not in balance:
@@ -7934,10 +7948,10 @@ def check_judge_stamps() -> None:
         fail("judge stamps dropped the Android Portrait lock")
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("judge stamps moved Unity off 6000.5.9f1")
-    elif "Art/judge_perfect" not in readme or "Art/judge_good" not in readme:
-        fail("README should mention judge_perfect / judge_good")
+    elif "Art/judge_perfect" not in readme or "Art/judge_good" not in readme or "Art/judge_miss" not in readme:
+        fail("README should mention judge_perfect / judge_good / judge_miss")
     else:
-        ok("PERFECT / GOOD sit on judge stamps; gold/white / size / SFX / punch stay")
+        ok("PERFECT / GOOD / MISS sit on judge stamps; gold/white/red / SFX / punch / combo-break stay")
 
 
 def check_mental_sfx() -> None:
@@ -8501,8 +8515,15 @@ def check_readme_playable() -> None:
         fail("README dropped clock_plate live broadcast clock")
     elif "onair_led" not in readme or "ON AIR" not in readme or "sfx_onair" not in readme:
         fail("README dropped onair_led broadcast LED")
-    elif "judge_perfect" not in readme or "judge_good" not in readme or "PERFECT" not in readme or "GOOD" not in readme:
-        fail("README dropped Perfect/Good judge stamps")
+    elif (
+        "judge_perfect" not in readme
+        or "judge_good" not in readme
+        or "judge_miss" not in readme
+        or "PERFECT" not in readme
+        or "GOOD" not in readme
+        or "MISS" not in readme
+    ):
+        fail("README dropped Perfect/Good/Miss judge stamps")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:

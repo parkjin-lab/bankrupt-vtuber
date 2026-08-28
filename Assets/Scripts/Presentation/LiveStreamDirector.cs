@@ -2223,6 +2223,13 @@ namespace BankruptVtuber
                     _judgeStamp.gameObject.SetActive(true);
                     UiKit.Layout(_judgeStamp.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(360, 72));
                 }
+                else if (j == Judgement.Miss)
+                {
+                    ArtSprites.Apply(_judgeStamp, ArtSprites.JudgeMiss, Palette.MoneyRed, Color.white);
+                    _judgeStamp.preserveAspect = false;
+                    _judgeStamp.gameObject.SetActive(true);
+                    UiKit.Layout(_judgeStamp.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(480, 96));
+                }
                 else
                 {
                     _judgeStamp.gameObject.SetActive(false);
@@ -2241,7 +2248,10 @@ namespace BankruptVtuber
             else if (j == Judgement.Miss)
             {
                 _judgePopMax = 0.25f;
-                _judge.rectTransform.localScale = Vector3.one * 1.58f;
+                var s = Vector3.one * 1.58f;
+                _judge.rectTransform.localScale = s;
+                if (_judgeStamp != null)
+                    _judgeStamp.rectTransform.localScale = s;
             }
             else if (j == Judgement.Good)
             {

@@ -38,6 +38,7 @@ namespace BankruptVtuber
         public const string OnAirLed = "Art/onair_led";
         public const string JudgePerfect = "Art/judge_perfect";
         public const string JudgeGood = "Art/judge_good";
+        public const string JudgeMiss = "Art/judge_miss";
         public const string MembershipCard = "Art/membership_card";
         public const string ClipCard = "Art/clip_card";
         public const string PadLeft = "Art/pad_left";
