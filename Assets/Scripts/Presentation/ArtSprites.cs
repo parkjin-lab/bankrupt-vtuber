@@ -33,6 +33,7 @@ namespace BankruptVtuber
         public const string CashSlip = "Art/cash_slip";
         public const string WonPop = "Art/won_pop";
         public const string BillCover = "Art/bill_cover";
+        public const string BillShort = "Art/bill_short";
         public const string MentalNote = "Art/mental_note";
         public const string ComboPlate = "Art/combo_plate";
         public const string ComboBreak = "Art/combo_break";

@@ -219,6 +219,7 @@ def check_project() -> None:
         "cash_slip.png": "남은 현금",
         "won_pop.png": "+₩ 슬립",
         "bill_cover.png": "청구 커버",
+        "bill_short.png": "청구 미달",
         "mental_note.png": "멘탈 메모",
         "combo_plate.png": "콤보 배지",
         "combo_break.png": "콤보 끊김 스탬프",
@@ -1478,6 +1479,7 @@ def check_project() -> None:
     check_bill_cover_stamp()
     check_won_pop_slip()
     check_viewer_pop_chip()
+    check_bill_short_stamp()
     check_hype_sfx()
     check_event_sfx()
     check_content_icons()
@@ -2821,6 +2823,8 @@ def check_shortfall() -> None:
 
     if "ShowShortfall" not in settle_cs or "청구 미달" not in settle_cs:
         fail("short night has no 청구 미달 chip")
+    elif "ArtSprites.BillShort" not in settle_cs or '"ShortStamp"' not in settle_cs:
+        fail("청구 미달 is not on bill_short stamp")
     elif "_shortFlash = 0.35f" not in settle_cs:
         fail("청구 미달 flash is not 0.35s")
     elif "_incomeTarget < _incomeBill" not in count or "ShowShortfall" not in count:
@@ -5681,6 +5685,72 @@ def check_viewer_pop_chip() -> None:
         fail("viewer_pop chip dropped settlement headline")
     else:
         ok("시청 ± sits on viewer_pop chip; 1.12 badge / tint / values / math stay")
+
+
+def check_bill_short_stamp() -> None:
+    import struct
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    head_cs = (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/bill_short.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    show = settle_cs.split("void ShowShortfall", 1)[-1].split("void TickShortfall", 1)[0]
+    tick = settle_cs.split("void TickShortfall", 1)[-1].split("void Render", 1)[0]
+    count = settle_cs.split("void TickIncomeCount", 1)[-1].split("void ShowShortfall", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("bill_short.png is missing")
+    elif w < 360 or h < 160 or w <= h:
+        fail("bill_short.png is not a readable landscape red stamp")
+    elif color != 6:
+        fail("bill_short.png is not RGBA")
+    elif 'BillShort = "Art/bill_short"' not in art_cs:
+        fail("ArtSprites does not hook Art/bill_short")
+    elif "ArtSprites.BillShort" not in show or '"ShortStamp"' not in settle_cs:
+        fail("ShowShortfall does not hang Art/bill_short under 청구 미달")
+    elif "청구 미달" not in show or "_shortFlash = 0.35f" not in show:
+        fail("bill_short stamp dropped Korean copy or 0.35s red flash")
+    elif "_incomeTarget < _incomeBill" not in count or "ShowShortfall" not in count:
+        fail("bill_short stamp does not fire after short-night count snap")
+    elif "ShowShortfall" in settle_cs.split("if (!_coverCrossed && _incomeTarget >= _incomeBill", 1)[-1].split("void ShowShortfall", 1)[0]:
+        fail("covered nights also stamp 청구 미달")
+    elif "LeftCashSlip" not in settle_cs or "ArtSprites.CashSlip" not in settle_cs:
+        fail("bill_short stamp dropped leftover-cash slip")
+    elif "SlamBillCover" in settle_cs or "CoverSlam" in settle_cs or "bill_cover" in settle_cs:
+        fail("bill_short stamp grew a fake 청구 커버 slam")
+    elif "lastBills =" in show:
+        fail("bill_short stamp writes bill / save numbers")
+    elif "TonightBills" not in eco_cs or "billRent: 8000" not in balance:
+        fail("bill_short stamp retuned bills / TonightBills")
+    elif "startingCash: 45000" not in balance or "billElectricNet: 4000" not in balance:
+        fail("bill_short stamp retuned Week 1 economy")
+    elif "청구 미달" not in head_cs:
+        fail("headline lost 청구 미달")
+    elif "1f + 0.22f" not in tick or "Palette.MoneyRed" not in tick:
+        fail("bill_short stamp dropped red flash scale")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("bill_short stamp broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising bill_short / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("bill_short stamp dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("bill_short stamp moved Unity off 6000.5.9f1")
+    elif "Art/bill_short" not in readme or "청구 미달" not in readme:
+        fail("README should mention bill_short / 청구 미달")
+    else:
+        ok("청구 미달 sits on bill_short stamp; red flash / cash slip / numbers / economy stay")
 
 
 def check_hype_sfx() -> None:
@@ -9229,6 +9299,8 @@ def check_readme_playable() -> None:
         fail("README dropped superchat_pip gold telegraph")
     elif "bill_cover" not in readme or "청구 커버" not in readme or "sfx_bill_cover" not in readme:
         fail("README dropped bill_cover PAID stamp")
+    elif "bill_short" not in readme or "청구 미달" not in readme:
+        fail("README dropped bill_short 청구 미달 stamp")
     elif "won_pop" not in readme or "+₩" not in readme:
         fail("README dropped won_pop +₩ cash slip")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
