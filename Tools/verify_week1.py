@@ -1539,6 +1539,7 @@ def check_project() -> None:
     check_ending_headline_clip()
     check_ending_day_tab()
     check_readme_ending_clip_tab()
+    check_readme_onair_led()
     check_letter_card()
     check_letter_keycaps()
     check_pad_sfx()
@@ -8645,6 +8646,78 @@ def check_readme_ending_clip_tab() -> None:
         ok("README names ending lastHeadline clip and n일차 day tab; stamps / desk paper / numbers stay")
 
 
+def check_readme_onair_led() -> None:
+    """README names onair_led HUD sting/90s/blink/end-cut, GO LIVE pip, and Week 3 rival cam."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    duel_cs = (ROOT / "Assets/Scripts/Presentation/RivalDuelView.cs").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    live_loop = readme.split("라이브는 `Art/onair_led`", 1)[-1].split("## 지금 보이는", 1)[0]
+    hud_stack = readme.split("- **라이브 HUD 스택**", 1)[-1].split("- **패드 / 채팅 / 노트**", 1)[0]
+    onair_inv = next((ln for ln in hud_stack.splitlines() if "Art/onair_led" in ln), "")
+    golive_inv = next((ln for ln in readme.splitlines() if "Art/golive_key" in ln and "sfx_golive" in ln), "")
+
+    missing_loop = next(
+        (token for token in (
+            "온에어 LED",
+            "스팅",
+            "90초",
+            "깜빡",
+            "방송 종료",
+            "방송 켜기",
+            "콘서트 방송",
+            "라이벌",
+            "승패",
+        ) if token not in live_loop),
+        "",
+    )
+    missing_inv = next(
+        (token for token in (
+            "온에어 LED",
+            "ON AIR",
+            "스팅",
+            "90초",
+            "깜빡",
+            "방송 종료",
+            "방송 켜기",
+            "콘서트 방송",
+            "라이벌",
+            "승패",
+        ) if token not in onair_inv),
+        "",
+    )
+
+    if missing_loop:
+        fail(f"README live loop must name onair_led use {missing_loop}")
+    elif missing_inv:
+        fail(f"README onair_led inventory must name {missing_inv}")
+    elif "onair_led" not in golive_inv or "콘서트 방송" not in golive_inv:
+        fail("README golive_key inventory dropped onair_led / 콘서트 방송 pip")
+    elif "ArtSprites.OnAirLed" not in live_cs or '"HudOnAir"' not in live_cs:
+        fail("README onair_led lost the live HUD LED")
+    elif "ArtSprites.OnAirLed" not in week_cs or '"LivePip"' not in week_cs:
+        fail("README onair_led lost the GO LIVE pip")
+    elif "ArtSprites.OnAirLed" not in duel_cs or '"RivalOnAir"' not in duel_cs:
+        fail("README onair_led lost the rival cam LED")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README onair_led retuned Week 1 economy / bankrupt line")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README onair_led retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README onair_led broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising onair_led / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README onair_led dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README onair_led moved Unity off 6000.5.9f1")
+    else:
+        ok("README names onair_led HUD sting/90s/blink/end-cut, GO LIVE pip, and rival cam")
+
+
 def check_letter_card() -> None:
     import struct
 
@@ -11900,6 +11973,9 @@ def check_readme_playable() -> None:
         or "방송 시작" not in hud_stack
         or "방송 종료" not in hud_stack
         or "sfx_onair" not in hud_stack
+        or "온에어 LED" not in hud_stack
+        or "콘서트 방송" not in hud_stack
+        or "라이벌" not in hud_stack
     ):
         fail("README Live HUD stack dropped persistent/blinking onair_led ON AIR")
     elif "end_cut" not in readme or "방송 종료" not in readme or "sfx_end_cut" not in readme:
@@ -11944,7 +12020,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names ending desk paper + stamps + clip + day tab + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names ending desk paper + stamps + clip + day tab + onair_led HUD/GO LIVE/rival + day_tab morning/title/settle + persistent/blinking ON AIR + bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
