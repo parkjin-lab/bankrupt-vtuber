@@ -1589,6 +1589,7 @@ def check_project() -> None:
     check_live_week_start_tab()
     check_live_last_day_tab()
     check_live_day1_bill()
+    check_live_last_day_bill()
     check_title_day1_tab()
     check_concert_live_badge()
     check_sponsor_live_badge()
@@ -16527,6 +16528,191 @@ def check_live_day1_bill() -> None:
         fail("live day-1 bill paper moved Unity off 6000.5.9f1")
     else:
         ok("day-1 live hangs bill_notice as HUD 청구서; other lives hide it; LiveDay1 / LiveDay1Headline / NewGameBill / morning / settlement bills stay")
+
+
+def check_live_last_day_bill() -> None:
+    """Last-day lives hang bill_notice as a tiny HUD 청구서 paper; other lives hide it; LiveDay1Bill / LiveLastDay / LiveLastHeadline / NewGameBill / morning / settlement bills stay."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
+    build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    paper = build.split('"LiveLastBill"', 1)[-1].split('"LiveLastDay"', 1)[0] if '"LiveLastBill"' in build else ""
+    day1_bill = build.split('"LiveDay1Bill"', 1)[-1].split('"LiveLastBill"', 1)[0] if '"LiveLastBill"' in build else ""
+    last_tab = build.split('"LiveLastDay"', 1)[-1].split("var chatPanel", 1)[0] if '"LiveLastDay"' in build else ""
+    last_paper = build.split('"LiveLastHeadline"', 1)[-1].split("if (_avatar != null && _avatar.Root != null)", 1)[0] if '"LiveLastHeadline"' in build else ""
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    last_bill_apply = apply.split("if (_lastBill", 1)[-1].split("UiKit.EnsureCamera", 1)[0] if "if (_lastBill" in apply else ""
+    live_bill_apply = apply.split("if (_day1Bill", 1)[-1].split("if (_weekHeadline", 1)[0] if "if (_day1Bill" in apply else ""
+    live_last_apply = apply.split("if (_liveLastDay", 1)[-1].split("if (_lastBill", 1)[0] if "if (_lastBill" in apply else ""
+    last_live_gate = live_cs.split("static bool LiveLastDay", 1)[-1].split("void ApplyThreatShow", 1)[0] if "static bool LiveLastDay" in live_cs else ""
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_bill = start_hang.split("_startBill = UiKit.Image", 1)[-1] if "_startBill = UiKit.Image" in start_hang else ""
+    if "_startCash = UiKit.Image" in title_bill:
+        title_bill = title_bill.split("_startCash = UiKit.Image", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    settle_debt = settle_build.split('_debtTile = recap.Find("Debt")', 1)[-1].split('_billsTile = recap.Find("Bills")', 1)[0] if '_debtTile = recap.Find("Debt")' in settle_build else ""
+    settle_bills = settle_build.split('_billsTile = recap.Find("Bills")', 1)[-1].split("var shortHost", 1)[0] if '_billsTile = recap.Find("Bills")' in settle_build else ""
+
+    if 'BillNotice = "Art/bill_notice"' not in art_cs:
+        fail("ArtSprites does not hook Art/bill_notice")
+    elif '"LiveLastBill"' not in build or "ArtSprites.BillNotice" not in paper:
+        fail("last-day live does not hang Art/bill_notice as a HUD 청구서 paper")
+    elif "preserveAspect = true" not in paper:
+        fail("live last-day bill paper is not preserveAspect")
+    elif "ApplySliced" in paper:
+        fail("live last-day bill paper reused the persistent BillChip slice")
+    elif "72f, 48f" in paper:
+        fail("live last-day bill paper was hung as a 72×48 pin")
+    elif "116f, 56f" not in paper or "338f, -268f" not in paper:
+        fail("live last-day bill paper is not a tiny HUD scrap beside the show chip")
+    elif "176f, 170f" in paper or "16f, -10f" in paper:
+        fail("live last-day bill paper sat on Title NewGameBill")
+    elif "8f, -220f" in paper or "8f, -148f" in paper or "0.74f, 1f" in paper or "0.80f, 1f" in paper:
+        fail("live last-day bill paper sat on a morning / settlement desk paper")
+    elif '"청구서"' not in paper:
+        fail("live last-day bill paper is not Korean 청구서 copy")
+    elif "헤드라인" in paper or "HeadlineClip" in paper or "DayTab" in paper:
+        fail("live last-day bill paper reused a headline or calendar hang")
+    elif "1일차" in paper or "마지막 날" in paper or "2주차" in paper or "주차 마지막" in paper:
+        fail("live last-day bill paper reused calendar-tab copy")
+    elif "168f, 68f" in paper or "24f, -272f" in paper:
+        fail("live last-day bill paper covers LiveLastHeadline")
+    elif "132f, 40f" in paper or "200f, -276f" in paper:
+        fail("live last-day bill paper covers LiveLastDay")
+    elif "24, -214" in paper or "168, 44" in paper or '"ShowChip"' in paper:
+        fail("live last-day bill paper covers the show chip")
+    elif "460, -210" in paper or "248, 52" in paper or '"BillChip"' in paper:
+        fail("live last-day bill paper covers the live bill chip")
+    elif "710, -228" in paper or "180, 18" in paper:
+        fail("live last-day bill paper covers the bill fill")
+    elif "ClockPlate" in paper or '"Timer"' in paper or "0.64f, 1f" in paper:
+        fail("live last-day bill paper covers the timer")
+    elif "ChatDock" in paper or "420, -220" in paper or "실시간 채팅" in paper:
+        fail("live last-day bill paper covers chat")
+    elif "PadRow" in paper or "AddColumnPad" in paper or "1–4" in paper:
+        fail("live last-day bill paper covers QTE / pads")
+    elif "CoachCard" in paper or "720, 220" in paper or "-80, 0" in paper:
+        fail("live last-day bill paper covers the day-1 coach")
+    elif "MemberBadgeHud" in paper or "AgencyBadgeHud" in paper or "GoodsBadgeHud" in paper:
+        fail("live last-day bill paper sat on an unlock pin")
+    elif "RankingBadgeHud" in paper or "ClipBadgeHud" in paper or "ConcertBadgeHud" in paper or "SponsorBadgeHud" in paper:
+        fail("live last-day bill paper sat on an unlock pin")
+    elif "-10f, -10f" in paper or "-10f, -322f" in paper:
+        fail("live last-day bill paper covers a webcam unlock pin")
+    elif "360, 70" in paper or '"GoLive"' in paper:
+        fail("live last-day bill paper sat on morning GO LIVE")
+    elif "NewGameBill" in paper or "ContinueDebtNotice" in paper or '"부채"' in paper:
+        fail("live last-day bill paper sat on Title NewGameBill / continue debt")
+    elif "오늘 청구" in paper or "_billSlam" in paper:
+        fail("live last-day bill paper sat on the morning bill tile")
+    elif "LiveDay1Headline" in paper or "LiveLastHeadline" in paper or "LiveWeekHeadline" in paper:
+        fail("live last-day bill paper folded a live headline into the same hang")
+    elif '"LiveDay1"' in paper or '"LiveWeekStart"' in paper or '"LiveLastDay"' in paper:
+        fail("live last-day bill paper folded a live calendar into the same hang")
+    elif '"LiveDay1Bill"' in paper:
+        fail("live last-day bill paper folded LiveDay1Bill into the same hang")
+    elif "UiKit.Stretch" in paper:
+        fail("live last-day bill paper was stretched over the HUD")
+    elif "SetActive(false)" not in paper:
+        fail("live last-day bill paper is not hidden until ApplyContentShow")
+    elif "Audio/sfx_threat" in paper or "PlayThreatSfx" in paper or "PlayNewGameBillThreat" in paper:
+        fail("live last-day bill paper added a new threat sting")
+    elif "_lastBill" not in apply or "LiveLastDay" not in last_bill_apply:
+        fail("live last-day bill paper is not shown on last-day lives")
+    elif "SetActive(LiveLastDay(GameManager.Instance.Run.day))" not in last_bill_apply:
+        fail("live last-day bill paper is not hidden on other lives")
+    elif "1 == GameManager.Instance.Run.day" in last_bill_apply:
+        fail("live last-day bill paper reused the day-1 live gate")
+    elif "LastDayOfCurrentWeek" in last_bill_apply or "LiveWeekStartDay" in last_bill_apply:
+        fail("live last-day bill paper reused last-day or week-start gate")
+    elif "LastDayOfCurrentWeek" in apply or "6 == " in apply or "run.day == 6" in apply:
+        fail("live last-day bill paper reused last-day or week-start gate in ApplyContentShow")
+    elif "day == 5" not in last_live_gate or "day == 10" not in last_live_gate or "day == 15" not in last_live_gate:
+        fail("live last-day bill paper is not shown on days 5 / 10 / 15")
+    elif "day == 20" not in last_live_gate or "day == 25" not in last_live_gate:
+        fail("live last-day bill paper is not shown on days 20 / 25")
+    elif re.search(r"day == 1\b", last_live_gate) or re.search(r"day == 6\b", last_live_gate) or re.search(r"day == 2\b", last_live_gate) or re.search(r"day == 7\b", last_live_gate) or re.search(r"day == 11\b", last_live_gate):
+        fail("live last-day bill paper also shows on a non-last-day live")
+    elif "_day1Bill" not in apply or "SetActive(1 == GameManager.Instance.Run.day)" not in live_bill_apply:
+        fail("live last-day bill paper dropped LiveDay1Bill day-1 hide")
+    elif "LiveLastDay" in live_bill_apply or "LiveWeekStartDay" in live_bill_apply:
+        fail("LiveDay1Bill reused last-day or week-start gate")
+    elif '"LiveDay1Bill"' not in build or "ArtSprites.BillNotice" not in day1_bill or '"청구서"' not in day1_bill:
+        fail("live last-day bill paper restyled LiveDay1Bill")
+    elif "116f, 56f" not in day1_bill or "338f, -268f" not in day1_bill or "preserveAspect = true" not in day1_bill:
+        fail("live last-day bill paper moved LiveDay1Bill")
+    elif "LiveLastBill" in day1_bill or "마지막 날" in day1_bill:
+        fail("LiveDay1Bill hang folded in the last-day live bill paper")
+    elif '"LiveLastDay"' not in build or "ArtSprites.DayTab" not in last_tab or '"마지막 날"' not in last_tab:
+        fail("live last-day bill paper restyled LiveLastDay")
+    elif "132f, 40f" not in last_tab or "200f, -276f" not in last_tab:
+        fail("live last-day bill paper moved LiveLastDay")
+    elif "청구서" in last_tab or "BillNotice" in last_tab or "LiveLastBill" in last_tab or "LiveDay1Bill" in last_tab:
+        fail("LiveLastDay hang folded in the last-day live bill paper")
+    elif "_liveLastDay" not in apply or "SetActive(LiveLastDay(GameManager.Instance.Run.day))" not in live_last_apply:
+        fail("live last-day bill paper dropped LiveLastDay last-day hide")
+    elif '"LiveLastHeadline"' not in build or "ArtSprites.HeadlineClip" not in last_paper or '"헤드라인"' not in last_paper:
+        fail("live last-day bill paper restyled LiveLastHeadline")
+    elif "168f, 68f" not in last_paper or "24f, -272f" not in last_paper:
+        fail("live last-day bill paper moved LiveLastHeadline")
+    elif "LiveLastBill" in last_paper or "청구서" in last_paper or "BillNotice" in last_paper:
+        fail("LiveLastHeadline hang folded in the last-day live bill paper")
+    elif "_lastHeadline" not in apply or "SetActive(LiveLastDay(GameManager.Instance.Run.day))" not in apply:
+        fail("live last-day bill paper dropped LiveLastHeadline last-day hide")
+    elif '"NewGameBill"' not in start_hang or "ArtSprites.BillNotice" not in title_bill or "176f, 170f" not in title_bill:
+        fail("live last-day bill paper restyled NewGameBill")
+    elif "16f, -10f" not in title_bill or '"부채"' not in title_bill or "preserveAspect = true" not in title_bill:
+        fail("live last-day bill paper restyled the NewGameBill desk paper")
+    elif "SetActive(!_hasSave)" not in hide:
+        fail("live last-day bill paper changed Title NewGameBill hide")
+    elif "ArtSprites.BillNotice" not in money or '"오늘 청구"' not in week_cs or "_billSlam = 0.25f" not in week_cs:
+        fail("live last-day bill paper dropped morning 오늘 청구")
+    elif "ArtSprites.BillNotice" not in settle_debt or '"부채"' not in settle_build:
+        fail("live last-day bill paper dropped settlement 부채")
+    elif "ArtSprites.BillNotice" not in settle_bills or '"Bills"' not in settle_build:
+        fail("live last-day bill paper dropped settlement 청구")
+    elif "Audio/sfx_threat" not in live_cs or "PlayThreatSfx" not in live_cs:
+        fail("live last-day bill paper dropped live GO LIVE / extra-threat sfx_threat")
+    elif "PlayNewGameBillThreat" in live_cs:
+        fail("live last-day bill paper folded Title NewGameBill sting onto live")
+    elif '"NewGameBill"' in live_cs or '"ContinueDebtNotice"' in live_cs:
+        fail("live last-day bill paper folded Title bill papers onto live")
+    elif "run.day =" in live_cs or "day += " in live_cs or "day -= " in live_cs:
+        fail("live last-day bill paper writes the day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("live last-day bill paper moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("live last-day bill paper retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("live last-day bill paper retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("live last-day bill paper retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("live last-day bill paper broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising live last-day bill paper / later weeks")
+    elif "def check_live_day1_bill()" not in verify_src or "def check_live_last_day_tab()" not in verify_src:
+        fail("live last-day bill paper dropped LiveDay1Bill / LiveLastDay hang locks")
+    elif "def check_live_last_day_headline()" not in verify_src:
+        fail("live last-day bill paper dropped LiveLastHeadline hang lock")
+    elif "def check_title_newgame_bill()" not in verify_src or "def check_morning_bill()" not in verify_src:
+        fail("live last-day bill paper dropped NewGameBill / morning bill locks")
+    elif "def check_live_bill_notice()" not in verify_src or "def check_settle_bill_notice()" not in verify_src:
+        fail("live last-day bill paper dropped live / settlement bill_notice locks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("live last-day bill paper dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("live last-day bill paper moved Unity off 6000.5.9f1")
+    else:
+        ok("last-day live hangs bill_notice as HUD 청구서; other lives hide it; LiveDay1Bill / LiveLastDay / LiveLastHeadline / NewGameBill / morning / settlement bills stay")
 
 
 def check_title_day1_tab() -> None:

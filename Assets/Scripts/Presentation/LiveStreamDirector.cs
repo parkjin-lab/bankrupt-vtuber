@@ -189,6 +189,7 @@ namespace BankruptVtuber
         Image _weekHeadline;
         Image _lastHeadline;
         Image _liveLastDay;
+        Image _lastBill;
         float _bedVolume;
         float _bedDuck;
         bool _threatGear;
@@ -1267,6 +1268,15 @@ namespace BankruptVtuber
             var day1BillT = UiKit.Label(_day1Bill.transform, "T", "청구서", 16, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(day1BillT.rectTransform, new Vector2(0.12f, 0.18f), new Vector2(0.88f, 0.82f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _day1Bill.gameObject.SetActive(false);
+
+            _lastBill = UiKit.Image(root, "LiveLastBill", Color.white);
+            UiKit.Layout(_lastBill.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(338f, -268f), new Vector2(116f, 56f));
+            ArtSprites.Apply(_lastBill, ArtSprites.BillNotice, Color.white, Color.white);
+            _lastBill.preserveAspect = true;
+            _lastBill.raycastTarget = false;
+            var lastBillT = UiKit.Label(_lastBill.transform, "T", "청구서", 16, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(lastBillT.rectTransform, new Vector2(0.12f, 0.18f), new Vector2(0.88f, 0.82f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _lastBill.gameObject.SetActive(false);
 
             _liveLastDay = UiKit.Image(root, "LiveLastDay", Color.white);
             UiKit.Layout(_liveLastDay.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(200f, -276f), new Vector2(132f, 40f));
@@ -3291,6 +3301,8 @@ namespace BankruptVtuber
                 _lastHeadline.gameObject.SetActive(LiveLastDay(GameManager.Instance.Run.day));
             if (_liveLastDay != null)
                 _liveLastDay.gameObject.SetActive(LiveLastDay(GameManager.Instance.Run.day));
+            if (_lastBill != null)
+                _lastBill.gameObject.SetActive(LiveLastDay(GameManager.Instance.Run.day));
             UiKit.EnsureCamera(look.Wash);
             _avatar?.ApplyShow(look);
             if (_bed != null)
