@@ -1601,6 +1601,7 @@ def check_project() -> None:
     check_settle_threat_sfx()
     check_title_event_warn()
     check_title_threat_sfx()
+    check_live_threat_sfx()
     check_event_sting_overlays()
     check_mental_sfx()
     check_week2_card_art()
@@ -10143,8 +10144,10 @@ def check_readme_both_threat_sfx() -> None:
         fail("README both-threat retuned extra threat names")
     elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
         fail("README both-threat retuned live 안티 온다 / 렉 온다")
-    elif "Audio/sfx_threat" in live_cs:
-        fail("sfx_threat leaked onto LiveStream")
+    elif "PlayThreatSfx();" not in live_cs.split("void ApplyThreatShow", 1)[-1].split("void AddThreatBadge", 1)[0]:
+        fail("sfx_threat dropped the live extra-threat chip")
+    elif "PlayThreatSfx" in live_cs.split("void TickEventWarn", 1)[-1].split("void TickStrike", 1)[0]:
+        fail("sfx_threat plays on live 안티/렉 telegraph")
     elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
         fail("README both-threat retuned Week 1 economy")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
@@ -10212,8 +10215,10 @@ def check_readme_title_threat_sfx() -> None:
         fail("README title-continue sfx_threat dropped morning / settlement shots")
     elif "장비 고장" not in extra_cs or "라이벌 견제" not in extra_cs:
         fail("README title-continue sfx_threat retuned extra threat names")
-    elif "Audio/sfx_threat" in live_cs:
-        fail("sfx_threat leaked onto LiveStream")
+    elif "PlayThreatSfx();" not in live_cs.split("void ApplyThreatShow", 1)[-1].split("void AddThreatBadge", 1)[0]:
+        fail("sfx_threat dropped the live extra-threat chip")
+    elif "PlayThreatSfx" in live_cs.split("void TickEventWarn", 1)[-1].split("void TickStrike", 1)[0]:
+        fail("sfx_threat plays on live 안티/렉 telegraph")
     elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
         fail("README title-continue sfx_threat retuned Week 1 economy")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
@@ -12728,8 +12733,10 @@ def check_threat_slam_sfx() -> None:
         fail("sfx_threat dropped content pick confirm")
     elif "Audio/sfx_golive" not in week_cs or "PlayGoLiveSfx" not in week_cs:
         fail("sfx_threat dropped GO LIVE confirm")
-    elif "Audio/sfx_threat" in live_cs:
-        fail("sfx_threat leaked onto LiveStream")
+    elif "PlayThreatSfx();" not in live_cs.split("void ApplyThreatShow", 1)[-1].split("void AddThreatBadge", 1)[0]:
+        fail("sfx_threat dropped the live extra-threat chip")
+    elif "PlayThreatSfx" in live_cs.split("void TickEventWarn", 1)[-1].split("void TickStrike", 1)[0]:
+        fail("sfx_threat plays on live 안티/렉 telegraph")
     elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
         fail("sfx_threat retuned Week 1 economy")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
@@ -12859,8 +12866,10 @@ def check_settle_threat_sfx() -> None:
         fail("settlement sfx_threat dropped the morning extra-threat slam")
     elif "Audio/sfx_nextday" not in settle_cs or "PlayNextDaySfx" not in settle_cs:
         fail("settlement sfx_threat dropped 다음날 confirm")
-    elif "Audio/sfx_threat" in live_cs:
-        fail("sfx_threat leaked onto LiveStream")
+    elif "PlayThreatSfx();" not in live_cs.split("void ApplyThreatShow", 1)[-1].split("void AddThreatBadge", 1)[0]:
+        fail("sfx_threat dropped the live extra-threat chip")
+    elif "PlayThreatSfx" in live_cs.split("void TickEventWarn", 1)[-1].split("void TickStrike", 1)[0]:
+        fail("sfx_threat plays on live 안티/렉 telegraph")
     elif "장비 고장" not in extra_cs or "라이벌 견제" not in extra_cs or "minWon = 7000" not in extra_cs:
         fail("settlement sfx_threat retuned extra threat names / table")
     elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
@@ -13000,8 +13009,10 @@ def check_title_threat_sfx() -> None:
         fail("title continue sfx_threat dropped leave confirm")
     elif "PlayThreatSfx();" not in spawn or "PlayThreatSfx();" not in bind:
         fail("title continue sfx_threat dropped morning / settlement shots")
-    elif "Audio/sfx_threat" in live_cs:
-        fail("sfx_threat leaked onto LiveStream")
+    elif "PlayThreatSfx();" not in live_cs.split("void ApplyThreatShow", 1)[-1].split("void AddThreatBadge", 1)[0]:
+        fail("sfx_threat dropped the live extra-threat chip")
+    elif "PlayThreatSfx" in live_cs.split("void TickEventWarn", 1)[-1].split("void TickStrike", 1)[0]:
+        fail("sfx_threat plays on live 안티/렉 telegraph")
     elif "장비 고장" not in extra_cs or "minWon = 7000" not in extra_cs:
         fail("title continue sfx_threat retuned extra threat names / table")
     elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
@@ -13020,6 +13031,79 @@ def check_title_threat_sfx() -> None:
         fail("title continue sfx_threat moved Unity off 6000.5.9f1")
     else:
         ok("title continue extra-threat plays sfx_threat once; no-save / no-extra / leave stay silent")
+
+
+def check_live_threat_sfx() -> None:
+    """Live extra-threat chip plays a one-shot sfx_threat on appear; silent if none."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    extra_cs = (ROOT / "Assets/Scripts/Data/ExtraThreat.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    apply = live_cs.split("void ApplyThreatShow", 1)[-1].split("void AddThreatBadge", 1)[0]
+    play = live_cs.split("void PlayThreatSfx", 1)[-1].split("void PlayPadClick", 1)[0]
+    warn = live_cs.split("void TickEventWarn", 1)[-1].split("void TickStrike", 1)[0]
+    tick_fx = live_cs.split("void TickThreatFx", 1)[-1].split("void BeginEventAccident", 1)[0]
+    begin = live_cs.split("void BeginEventAccident", 1)[-1].split("void TickEventAccident", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    spawn = week_cs.split("void SpawnIncoming", 1)[-1].split("IEnumerator Slam", 1)[0]
+    bind = settle_cs.split("void BindExtraWarn", 1)[-1].split("void ApplyHeadline", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+
+    if "Audio/sfx_threat" not in live_cs or "PlayThreatSfx" not in live_cs:
+        fail("LiveStream does not load / play Audio/sfx_threat")
+    elif "PlayThreatSfx();" not in apply or apply.count("PlayThreatSfx();") != 1:
+        fail("live extra-threat chip is not a single sfx_threat shot")
+    elif "extraRolls.Count == 0" not in apply or "return;" not in apply:
+        fail("live extra-threat chip does not stay silent when there is no extra threat")
+    elif "PlayThreatSfx();" not in apply.split("extraRolls.Count == 0", 1)[-1]:
+        fail("sfx_threat does not fire when the live extra-threat chip appears")
+    elif play.count("PlaySfx") != 1:
+        fail("live sfx_threat can fire more than one shot")
+    elif "_threatSfxPlayed" not in play or "_threatSfxPlayed = true" not in play:
+        fail("live sfx_threat is not one-shot")
+    elif "PlayThreatSfx" in warn:
+        fail("sfx_threat plays on live 안티/렉 telegraph")
+    elif "PlayThreatSfx" in tick_fx:
+        fail("sfx_threat plays on every live threat FX tick")
+    elif "PlayThreatSfx" in begin:
+        fail("sfx_threat plays on anti/lag fire")
+    elif "PlayThreatSfx" in start:
+        fail("sfx_threat plays on every GO LIVE before the extra-threat chip")
+    elif '"ThreatBadges"' not in apply or "AddThreatBadge" not in apply:
+        fail("live sfx_threat dropped the extra-threat chip")
+    elif "ArtSprites.EventWarn" not in live_cs or "EventWarnBox" not in live_cs:
+        fail("live sfx_threat dropped the event_warn plate")
+    elif "PlaySfx(_antiCue" not in begin or "PlaySfx(_lagCue" not in begin:
+        fail("live sfx_threat dropped anti / lag SFX")
+    elif "eta > 0.5f" not in session_cs or "안티 온다" not in event_cs or "렉 온다" not in event_cs:
+        fail("live sfx_threat retuned live 안티 온다 / 렉 온다")
+    elif "PlayThreatSfx();" not in spawn or "PlayThreatSfx();" not in bind or "PlayThreatSfx();" not in fill:
+        fail("live sfx_threat dropped morning / settlement / title continue shots")
+    elif "extraThreatRolled =" in live_cs or "extraThreatAmount =" in live_cs:
+        fail("live sfx_threat writes extra-threat save fields")
+    elif "장비 고장" not in extra_cs or "라이벌 견제" not in extra_cs or "minWon = 7000" not in extra_cs:
+        fail("live sfx_threat retuned extra threat names / table")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("live sfx_threat retuned Week 1 economy")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("live sfx_threat retuned week-clear / bankrupt gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("live sfx_threat broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising live sfx_threat / later weeks")
+    elif "Week3" in title_cs or "라이벌" in title_cs:
+        fail("Title started advertising Week3 / 라이벌")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("live sfx_threat dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("live sfx_threat moved Unity off 6000.5.9f1")
+    else:
+        ok("live extra-threat chip plays sfx_threat once; no-extra / anti-lag / HUD refresh stay silent")
 
 
 def check_event_sting_overlays() -> None:

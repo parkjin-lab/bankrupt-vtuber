@@ -128,6 +128,8 @@ namespace BankruptVtuber
         AudioClip _rivalLoseCue;
         AudioClip _goodsCue;
         AudioClip _sponsorCue;
+        AudioClip _threatCue;
+        bool _threatSfxPlayed;
         Image _wash;
         Image _washVeil;
         Image _chatPanel;
@@ -296,6 +298,7 @@ namespace BankruptVtuber
             _sponsorCue = Resources.Load<AudioClip>("Audio/sfx_sponsor");
             if (_sponsorCue == null)
                 _sponsorCue = ToneClip("sfx_sponsor", new[] { 1109f, 1397f, 1760f }, 0.07f, 0.20f);
+            _threatCue = Resources.Load<AudioClip>("Audio/sfx_threat");
             StreamBindings.OnLanePadPress += PlayPadClick;
         }
 
@@ -3065,6 +3068,7 @@ namespace BankruptVtuber
         {
             if (run == null || run.extraRolls == null || run.extraRolls.Count == 0)
                 return;
+            PlayThreatSfx();
 
             var root = _showTitle != null ? _showTitle.transform.parent : transform;
             var badges = UiKit.Panel(root, "ThreatBadges", new Color(0, 0, 0, 0));
@@ -3390,6 +3394,14 @@ namespace BankruptVtuber
                 if (_eventKeys[i] != null)
                     _eventKeys[i].rectTransform.localScale = Vector3.one;
             }
+        }
+
+        void PlayThreatSfx()
+        {
+            if (_threatSfxPlayed)
+                return;
+            _threatSfxPlayed = true;
+            PlaySfx(_threatCue, 0.46f);
         }
 
         void PlayPadClick() => PlaySfx(_padClick, 0.34f);
