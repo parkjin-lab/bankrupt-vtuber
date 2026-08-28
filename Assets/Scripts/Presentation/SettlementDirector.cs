@@ -111,6 +111,8 @@ namespace BankruptVtuber
         float _mentalTick;
         string _bodyLead;
         Text _leftCash;
+        Image _extraWarn;
+        Text _extraWarnLine;
         bool _leftCashShown;
         float _leftCashSnap;
         RectTransform _billsTile;
@@ -387,6 +389,16 @@ namespace BankruptVtuber
             UiKit.Wrap(_headline);
             _headline.lineSpacing = 1.1f;
             _headlineClip.gameObject.SetActive(false);
+
+            _extraWarn = UiKit.Image(root, "ExtraWarn", Color.white);
+            UiKit.Layout(_extraWarn.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(420, -10), new Vector2(440, 52));
+            ArtSprites.Apply(_extraWarn, ArtSprites.EventWarn, new Color(0.58f, 0.08f, 0.16f, 0.94f), Color.white);
+            _extraWarn.preserveAspect = false;
+            _extraWarn.raycastTarget = false;
+            _extraWarnLine = UiKit.Label(_extraWarn.transform, "ExtraWarnLine", "", 16, Color.white, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UiKit.Layout(_extraWarnLine.rectTransform, new Vector2(0.06f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            UiKit.Wrap(_extraWarnLine);
+            _extraWarn.gameObject.SetActive(false);
 
             var recap = UiKit.Panel(root, "Recap", new Color(0, 0, 0, 0));
             UiKit.Layout(recap, new Vector2(0, 1), new Vector2(0.78f, 1), new Vector2(0, 1), new Vector2(20, -148), new Vector2(0, 190));
@@ -1260,6 +1272,7 @@ namespace BankruptVtuber
             }
             else if (run.extraThreatAmount > 0)
                 extras = $"위협 {run.extraThreatName,-10} -{EconomyRules.FormatWon(run.extraThreatAmount)}\n";
+            BindExtraWarn(extras);
 
             string memberDelta = "";
             if (run.lastMembershipFromHype > 0)
@@ -2409,6 +2422,15 @@ namespace BankruptVtuber
                 _bookConcert.gameObject.SetActive(false);
                 _concertLive.gameObject.SetActive(false);
             }
+        }
+
+        void BindExtraWarn(string extras)
+        {
+            bool on = !string.IsNullOrWhiteSpace(extras);
+            if (_extraWarnLine != null)
+                _extraWarnLine.text = on ? extras.Trim() : "";
+            if (_extraWarn != null)
+                _extraWarn.gameObject.SetActive(on);
         }
 
         void ApplyHeadline(GameRunState run)

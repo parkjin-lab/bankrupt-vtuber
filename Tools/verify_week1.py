@@ -1576,6 +1576,7 @@ def check_project() -> None:
     check_hype_frame()
     check_event_warn_plate()
     check_morning_event_warn()
+    check_settle_event_warn()
     check_event_sting_overlays()
     check_mental_sfx()
     check_week2_card_art()
@@ -11401,6 +11402,74 @@ def check_morning_event_warn() -> None:
         ok("morning extra-threat slam sits on event_warn; names / amounts / slam / live plate stay")
 
 
+def check_settle_event_warn() -> None:
+    """Settlement extra-threat line sits on the same event_warn plate; hidden when none."""
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    extra_cs = (ROOT / "Assets/Scripts/Data/ExtraThreat.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickIncomeCount", 1)[0]
+    bind = settle_cs.split("void BindExtraWarn", 1)[-1].split("void ApplyHeadline", 1)[0]
+    render = settle_cs.split("void Render()", 1)[-1].split("void BindExtraWarn", 1)[0]
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    morning = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    warn_inv = next((ln for ln in readme.splitlines() if "Art/event_warn" in ln and "안티 온다" in ln), "")
+    spawn = week_cs.split("void SpawnIncoming", 1)[-1].split("IEnumerator Slam", 1)[0]
+
+    if 'EventWarn = "Art/event_warn"' not in art_cs:
+        fail("ArtSprites does not hook Art/event_warn")
+    elif "ArtSprites.EventWarn" not in live_cs or "EventWarnBox" not in live_cs:
+        fail("settle event_warn reuse dropped the live warning plate")
+    elif "ArtSprites.EventWarn" not in spawn:
+        fail("settle event_warn reuse dropped the morning extra-threat slam")
+    elif "ArtSprites.EventWarn" not in build or '"ExtraWarn"' not in build or '"ExtraWarnLine"' not in build:
+        fail("settlement extra-threat line does not sit on event_warn")
+    elif "BindExtraWarn(extras)" not in render:
+        fail("settlement does not bind extras onto event_warn")
+    elif "SetActive(on)" not in bind or "IsNullOrWhiteSpace(extras)" not in bind:
+        fail("settlement event_warn does not hide when there was no extra threat")
+    elif 'extras += $"위협 ' not in render or "extraThreatName" not in render:
+        fail("settlement event_warn dropped 위협 name / amount copy")
+    elif "extras +" not in render:
+        fail("settlement event_warn dropped the ledger extra-threat line")
+    elif "ArtSprites.HeadlineClip" not in build or '"HeadlineClip"' not in build:
+        fail("settlement event_warn dropped headline_clip")
+    elif "ArtSprites.DayTab" not in build or '"SettleDayTab"' not in build:
+        fail("settlement event_warn dropped day_tab")
+    elif "ArtSprites.ContentPlate" not in build:
+        fail("settlement event_warn dropped content_plate")
+    elif "ArtSprites.SettlementDesk" not in build or "ArtSprites.CashSlip" not in build:
+        fail("settlement event_warn dropped desk paper")
+    elif "장비 고장" not in extra_cs or "라이벌 견제" not in extra_cs or "인터넷 끊김" not in extra_cs:
+        fail("settlement event_warn retuned extra threat names")
+    elif "id = \"gear_break\"" not in extra_cs or "minWon = 7000" not in extra_cs:
+        fail("settlement event_warn retuned the extra threat table")
+    elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
+        fail("settlement event_warn retuned live 안티 온다 / 렉 온다")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("settlement event_warn retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("settlement event_warn broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising settle event_warn / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("settlement event_warn dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("settlement event_warn moved Unity off 6000.5.9f1")
+    elif "event_warn" not in settle_loop or "위협" not in settle_loop or "없으면 숨김" not in settle_loop:
+        fail("README settlement loop does not name extra-threat event_warn hide")
+    elif "아침 경고" not in morning or "event_warn" not in warn_inv:
+        fail("README dropped morning event_warn reuse while naming settlement")
+    else:
+        ok("settlement extra-threat line sits on event_warn; hide-if-none / morning / live / numbers stay")
+
+
 def check_event_sting_overlays() -> None:
     import struct
 
@@ -12290,6 +12359,8 @@ def check_readme_playable() -> None:
         fail("README morning dropped extra-threat event_warn")
     elif "아침 경고" not in readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]:
         fail("README morning dropped 아침 경고 event_warn reuse")
+    elif "event_warn" not in readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0] or "없으면 숨김" not in readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]:
+        fail("README settlement dropped extra-threat event_warn")
     elif "anti_sting" not in readme or "lag_sting" not in readme or "sfx_lag" not in readme:
         fail("README dropped anti_sting / lag_sting overlays")
     elif "viewer_badge" not in readme or "시청자" not in readme or ("시청 +" not in readme and "시청 ±" not in readme):
