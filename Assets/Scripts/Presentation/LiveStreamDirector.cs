@@ -829,11 +829,18 @@ namespace BankruptVtuber
             UiKit.Layout(_comboSting.rectTransform, new Vector2(0.12f, 0.54f), new Vector2(0.48f, 0.54f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 36));
             _comboBreak = UiKit.Label(root, "ComboBreak", "", 40, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_comboBreak.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.58f, 0.16f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 44));
-            var warn = UiKit.Panel(root, "MentalWarnBox", new Color(0.52f, 0.08f, 0.16f, 0.94f));
+            var warn = UiKit.Panel(root, "MentalWarnBox", new Color(1f, 0.95f, 0.72f, 0.98f));
             _mentalWarnBox = warn;
-            UiKit.Layout(warn, new Vector2(0.74f, 1), new Vector2(1f, 1), new Vector2(1, 1), new Vector2(-16, -208), new Vector2(220, 34));
-            _mentalWarn = UiKit.Label(warn, "MentalWarn", "멘탈 위험", 18, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Stretch(_mentalWarn.rectTransform);
+            UiKit.Layout(warn, new Vector2(0.74f, 1), new Vector2(1f, 1), new Vector2(1, 1), new Vector2(-16, -214), new Vector2(236, 48));
+            var warnImg = warn.GetComponent<Image>();
+            if (warnImg != null)
+            {
+                ArtSprites.Apply(warnImg, ArtSprites.MentalNote, new Color(1f, 0.95f, 0.72f, 0.98f), Color.white);
+                warnImg.preserveAspect = false;
+                warnImg.raycastTarget = false;
+            }
+            _mentalWarn = UiKit.Label(warn, "MentalWarn", "멘탈 위험", 18, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Stretch(_mentalWarn.rectTransform, 10f, 10f, 6f, 6f);
             warn.gameObject.SetActive(false);
             _eventWarnBox = UiKit.Panel(root, "EventWarnBox", new Color(0.58f, 0.08f, 0.16f, 0.94f));
             UiKit.Layout(_eventWarnBox, new Vector2(0.18f, 0.62f), new Vector2(0.52f, 0.62f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 44));

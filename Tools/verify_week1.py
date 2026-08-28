@@ -7514,6 +7514,8 @@ def check_mental_note() -> None:
     player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
     build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
     tint = settle_cs.split("_mentalCounting", 1)[-1].split("_incomeCoverFlash", 1)[0]
+    warn = live_cs.split('var warn = UiKit.Panel', 1)[-1].split("_eventWarnBox", 1)[0]
+    mental = live_cs.split("void RefreshMentalShow", 1)[-1].split("static Sprite GrainSprite", 1)[0]
     png = ROOT / "Assets/Resources/Art/mental_note.png"
     data = png.read_bytes() if png.exists() else b""
     w = h = color = 0
@@ -7531,6 +7533,14 @@ def check_mental_note() -> None:
         fail("ArtSprites does not hook Art/mental_note")
     elif "ArtSprites.MentalNote" not in build or 'recap.Find("Mental")' not in build or '"멘탈"' not in build:
         fail("Settlement does not hang Art/mental_note under 멘탈")
+    elif "ArtSprites.MentalNote" not in warn or "MentalWarnBox" not in warn or "멘탈 위험" not in warn:
+        fail("live 멘탈 위험 is not on the same Art/mental_note")
+    elif "SetActive(danger)" not in mental or "m <= 20" not in mental or "m <= 40" not in mental:
+        fail("mental note changed danger / tired thresholds")
+    elif "SetTired(tired, danger)" not in mental or "MentalGrain" not in live_cs:
+        fail("mental note dropped tired avatar or grain wash")
+    elif "PlaySfx(_mentalCue" not in mental or "danger && !_mentalWasDanger" not in mental:
+        fail("mental note dropped one-shot sfx_mental")
     elif "TickMentalCount" not in settle_cs or "_mentalCountT / 0.35f" not in settle_cs:
         fail("mental note dropped 0.35s count")
     elif "_mentalTo < _mentalFrom" not in settle_cs or "mentalAtDayStart" not in settle_cs:
@@ -7570,7 +7580,7 @@ def check_mental_note() -> None:
     elif "Art/mental_note" not in (ROOT / "README.md").read_text(encoding="utf-8"):
         fail("README should mention Art/mental_note")
     else:
-        ok("settlement 멘탈 sits on mental_note memo; count / red-green / slips stay")
+        ok("live 멘탈 위험 + settlement 멘탈 share mental_note; wash / sting / count stay")
 
 
 def check_mental_sfx() -> None:
@@ -8118,8 +8128,8 @@ def check_readme_playable() -> None:
         fail("README dropped headline scrap on settlement / morning / title continue")
     elif "cash_slip" not in readme or "남은 현금" not in readme or "이어서 하기" not in readme or "지금 수입" not in readme or "오늘 수입" not in readme:
         fail("README dropped cash_slip on title / morning / live / settlement")
-    elif "mental_note" not in readme or "멘탈" not in readme:
-        fail("README dropped mental_note on settlement 멘탈")
+    elif "mental_note" not in readme or "멘탈 위험" not in readme or "멘탈" not in readme:
+        fail("README dropped mental_note on live danger / settlement 멘탈")
     elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
         fail("README dropped letter / rival SFX")
     elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:
