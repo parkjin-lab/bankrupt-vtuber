@@ -1535,6 +1535,7 @@ def check_project() -> None:
     check_ending_bill_cover()
     check_readme_ending_stamps()
     check_ending_headline_clip()
+    check_ending_day_tab()
     check_letter_card()
     check_letter_keycaps()
     check_pad_sfx()
@@ -8373,6 +8374,93 @@ def check_ending_headline_clip() -> None:
         ok("clear / bankrupt lastHeadline sit on headline_clip; empty hides it; stamps / sfx / rules stay")
 
 
+def check_ending_day_tab() -> None:
+    """Clear / bankrupt n일차 sit on the same day_tab as morning, title continue, and settlement."""
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    splash = settle_cs.split("void ApplyResultSplashes", 1)[-1].split("void ApplyHeadline", 1)[0]
+    day_fn = settle_cs.split("void ApplyEndingDay", 1)[-1].split("void PaintShowLine", 1)[0]
+    clear_fn = settle_cs.split("static bool IsWeekClear", 1)[-1].split("static bool ShouldShowEnding", 1)[0]
+    broke_fn = settle_cs.split("static bool IsBankruptResult", 1)[-1].split("static bool IsBurnoutResult", 1)[0]
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    clear_build = build.split('ClearRoot"', 1)[-1].split('StampRoot"', 1)[0]
+    stamp_build = build.split('StampRoot"', 1)[-1].split('LetterRoot"', 1)[0]
+    render = settle_cs.split("void Render()", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+
+    if 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif "ArtSprites.DayTab" not in week_cs or '"DayTab"' not in week_cs:
+        fail("ending day_tab reuse dropped morning calendar tab")
+    elif "ArtSprites.DayTab" not in title_cs or '"ContinueDayTab"' not in title_cs:
+        fail("ending day_tab reuse dropped title continue tab")
+    elif "ArtSprites.DayTab" not in build or '"SettleDayTab"' not in build:
+        fail("ending day_tab reuse dropped settlement n일차")
+    elif "ArtSprites.DayTab" not in clear_build or '"ClearDayTab"' not in clear_build:
+        fail("week-clear splash does not hang Art/day_tab")
+    elif "ArtSprites.DayTab" not in stamp_build or '"StampDayTab"' not in stamp_build:
+        fail("bankrupt splash does not hang Art/day_tab")
+    elif '"일차"' not in day_fn or "run.day" not in day_fn:
+        fail("ending day_tab does not read run.day into n일차")
+    elif "ApplyEndingDay(run)" not in splash:
+        fail("ending day_tab is not applied on splash")
+    elif "run.day" not in render or '"일차"' not in render:
+        fail("ending day_tab dropped settlement n일차 read")
+    elif "peek.day" not in fill or '"일차"' not in fill:
+        fail("ending day_tab dropped title continue n일차")
+    elif "run.day =" in settle_cs or "day += " in settle_cs or "day -= " in settle_cs:
+        fail("ending day_tab writes the day index")
+    elif "ArtSprites.HeadlineClip" not in clear_build or "ArtSprites.HeadlineClip" not in stamp_build:
+        fail("ending day_tab dropped headline_clip")
+    elif "ArtSprites.CashSlip" not in clear_build or "ArtSprites.BillNotice" not in stamp_build:
+        fail("ending day_tab dropped desk-paper slips")
+    elif "ArtSprites.BillCover" not in clear_build or "ArtSprites.BillShort" not in stamp_build:
+        fail("ending day_tab dropped PAID / 미달 stamps")
+    elif "ArtSprites.EndingClear" not in clear_build or "ArtSprites.EndingBankrupt" not in stamp_build:
+        fail("ending day_tab dropped ending_clear / ending_bankrupt")
+    elif "주차 클리어" not in settle_cs or "1주차 생존" not in splash or "다음 주차 시작" not in settle_cs:
+        fail("ending day_tab changed week-clear copy")
+    elif '"파산"' not in settle_cs or "번아웃" not in splash or "처음부터" not in stamp_build:
+        fail("ending day_tab changed bankrupt / burnout copy")
+    elif "PlaySettleSfx(_clearCue" not in splash or "PlaySettleSfx(_bankruptCue" not in splash:
+        fail("ending day_tab dropped sfx_clear / sfx_bankrupt")
+    elif "Audio/sfx_clear" not in settle_cs or "Audio/sfx_bankrupt" not in settle_cs:
+        fail("ending day_tab dropped Audio/sfx_clear|sfx_bankrupt")
+    elif "WeekOutcome.Win" not in clear_fn or "WeekOutcome.Week4Win" not in clear_fn:
+        fail("ending day_tab changed week-clear conditions")
+    elif "WeekOutcome.Bankrupt" not in broke_fn or "EndingKind.Bankrupt" not in broke_fn:
+        fail("ending day_tab changed bankrupt conditions")
+    elif "BankruptDebt" not in eco_cs or "public void NextMorning()" not in gm:
+        fail("ending day_tab changed bankrupt numbers or routing")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("ending day_tab retuned Week 1 economy / bankrupt line")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("ending day_tab retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("ending day_tab broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising ending day_tab / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("ending day_tab dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("ending day_tab moved Unity off 6000.5.9f1")
+    elif "day_tab" not in readme or "일차" not in readme or "클리어" not in readme or "파산" not in readme:
+        fail("README should mention ending day_tab")
+    elif "day_tab" not in settle_loop or "일차" not in settle_loop:
+        fail("README loop does not name ending n일차 day_tab")
+    else:
+        ok("clear / bankrupt n일차 sit on day_tab; desk paper / stamps / clip / sfx / rules stay")
+
+
 def check_letter_card() -> None:
     import struct
 
@@ -11442,6 +11530,8 @@ def check_readme_playable() -> None:
         or "숨김" not in day_inv
     ):
         fail("README Cards / Tabs must name day_tab morning, title continue hide-no-save, and settlement n일차")
+    elif "클리어" not in day_inv or "파산" not in day_inv:
+        fail("README Cards / Tabs dropped ending day_tab n일차")
     elif "title_wordmark" not in readme or "파산 버튜버" not in readme:
         fail("README dropped title_wordmark neon logo")
     elif "chat_bubble" not in readme or "note_chip" not in readme or "superchat_chip" not in readme or "content_*" not in readme:

@@ -42,8 +42,12 @@ namespace BankruptVtuber
         Image _showLineImg;
         Text _clearHeadline;
         Image _clearHeadlineClip;
+        Image _clearDayTab;
+        Text _clearDay;
         Text _stampHeadline;
         Image _stampHeadlineClip;
+        Image _stampDayTab;
+        Text _stampDay;
         Text _endingHeadline;
         Text _tileIncome;
         Text _tileBills;
@@ -674,6 +678,13 @@ namespace BankruptVtuber
             UiKit.Layout(clearGlow.rectTransform, new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(900, 900));
             var clearTag = UiKit.Label(_clearRoot.transform, "ClearTag", "주차 클리어", 28, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(clearTag.rectTransform, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -36), new Vector2(480, 40));
+            _clearDayTab = UiKit.Image(_clearRoot.transform, "ClearDayTab", Color.white);
+            UiKit.Layout(_clearDayTab.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(28, -28), new Vector2(188, 48));
+            ArtSprites.Apply(_clearDayTab, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _clearDayTab.preserveAspect = false;
+            _clearDayTab.raycastTarget = false;
+            _clearDay = UiKit.Label(_clearDayTab.transform, "ClearDayHead", "", 20, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_clearDay.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -2f), new Vector2(-16f, -8f));
             _clearTitle = UiKit.Label(_clearRoot.transform, "ClearTitle", "1주차 생존", 72, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_clearTitle.rectTransform, new Vector2(0.04f, 1), new Vector2(0.96f, 1), new Vector2(0.5f, 1), new Vector2(0, -100), new Vector2(0, 90));
             UiKit.Wrap(_clearTitle);
@@ -735,6 +746,13 @@ namespace BankruptVtuber
             _stampPortrait = new StudioPortrait(_stampRoot.transform, new Vector2(0.18f, 0.50f), new Vector2(320, 400), false);
             _stampMark = UiKit.Label(_stampRoot.transform, "StampMark", "파산", 120, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_stampMark.rectTransform, new Vector2(0.58f, 0.62f), new Vector2(0.58f, 0.62f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 160));
+            _stampDayTab = UiKit.Image(_stampRoot.transform, "StampDayTab", Color.white);
+            UiKit.Layout(_stampDayTab.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(28, -28), new Vector2(188, 48));
+            ArtSprites.Apply(_stampDayTab, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _stampDayTab.preserveAspect = false;
+            _stampDayTab.raycastTarget = false;
+            _stampDay = UiKit.Label(_stampDayTab.transform, "StampDayHead", "", 20, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_stampDay.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -2f), new Vector2(-16f, -8f));
             _stampMark.rectTransform.localEulerAngles = new Vector3(0f, 0f, -8f);
             var stampSnap = UiKit.Panel(_stampRoot.transform, "StampSnap", new Color(0, 0, 0, 0));
             UiKit.Layout(stampSnap, new Vector2(0.40f, 0.38f), new Vector2(0.96f, 0.38f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 72));
@@ -2313,6 +2331,7 @@ namespace BankruptVtuber
                 if (_stampShort != null)
                     _stampShort.gameObject.SetActive(false);
                 ApplyEndingHeadline(run);
+                ApplyEndingDay(run);
                 _clearPortrait?.PoseEnding(EndingKind.SoloLegend);
             }
             if ((bankrupt || burnout) && _stampRoot != null && _stampRoot.activeSelf)
@@ -2354,6 +2373,7 @@ namespace BankruptVtuber
                 if (_clearPaid != null)
                     _clearPaid.gameObject.SetActive(false);
                 ApplyEndingHeadline(run);
+                ApplyEndingDay(run);
                 _stampPortrait?.PoseEnding(burn ? EndingKind.Burnout : EndingKind.Bankrupt);
             }
             if (!_resultStingPlayed)
@@ -2419,6 +2439,15 @@ namespace BankruptVtuber
                 _stampHeadline.text = line;
             if (_stampHeadlineClip != null)
                 _stampHeadlineClip.gameObject.SetActive(hasHead);
+        }
+
+        void ApplyEndingDay(GameRunState run)
+        {
+            string line = run != null ? run.day + "일차" : "";
+            if (_clearDay != null)
+                _clearDay.text = line;
+            if (_stampDay != null)
+                _stampDay.text = line;
         }
 
         void PaintShowLine(GameRunState run)
