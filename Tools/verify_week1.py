@@ -1568,6 +1568,7 @@ def check_project() -> None:
     check_title_newgame_mental()
     check_title_newgame_day()
     check_morning_day1_tab()
+    check_morning_week_start_tab()
     check_settle_day1_tab()
     check_concert_live_badge()
     check_sponsor_live_badge()
@@ -12507,6 +12508,130 @@ def check_morning_day1_tab() -> None:
         fail("morning 1일차 tab moved Unity off 6000.5.9f1")
     else:
         ok("day-1 morning hangs 1일차 day_tab; other mornings hide it; last-day and NewGameDay stay")
+
+
+def check_morning_week_start_tab() -> None:
+    """Week-start mornings hang day_tab as 2–5주차; day 1, last-day, and mid-week stay as they were."""
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
+    week_start = build.split('"MorningWeekStart"', 1)[-1].split('"MorningDay1"', 1)[0] if '"MorningWeekStart"' in build else ""
+    day1 = build.split('"MorningDay1"', 1)[-1].split('"LastDayBanner"', 1)[0] if '"MorningDay1"' in build else ""
+    head = week_cs.split('"DayTab"', 1)[-1].split('"DayLabel"', 1)[0] if '"DayTab"' in week_cs else ""
+    banner = week_cs.split('"LastDayBanner"', 1)[-1].split('"WavePanel"', 1)[0]
+    last_refresh = week_cs.split("void RefreshLastDay", 1)[-1].split("static string LastDayClearReminder", 1)[0]
+    day1_refresh = week_cs.split("void RefreshDay1", 1)[-1].split("void RefreshLastDay", 1)[0] if "void RefreshDay1" in week_cs else ""
+    week_refresh = week_cs.split("void RefreshWeekStart", 1)[-1].split("void RefreshDay1", 1)[0] if "void RefreshWeekStart" in week_cs else ""
+    hud = week_cs.split("void RefreshHud", 1)[-1].split("void RefreshCashShort", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_day = start_hang.split("_startDay = UiKit.Image", 1)[-1] if "_startDay = UiKit.Image" in start_hang else ""
+    title_build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    last_tab = title_build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in title_build else ""
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    settle_day1 = settle_build.split('"SettleDay1"', 1)[-1].split('"Sheet"', 1)[0] if '"SettleDay1"' in settle_build else ""
+    settle_render = settle_cs.split("void Render()", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+
+    if 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif '"MorningWeekStart"' not in build or "ArtSprites.DayTab" not in week_start:
+        fail("week-start morning does not hang Art/day_tab as a week calendar")
+    elif "preserveAspect = true" not in week_start:
+        fail("morning week-start tab is not preserveAspect")
+    elif "72f, 48f" in week_start:
+        fail("morning week-start tab was hung as a 72×48 pin")
+    elif "180f, 56f" not in week_start or "0.74f, 1f" not in week_start or "8f, -220f" not in week_start:
+        fail("morning week-start tab is not a desk calendar beside the money papers")
+    elif '"2주차"' not in week_start:
+        fail("morning week-start tab is not Korean week-start copy")
+    elif "1일차" in week_start or "마지막 날" in week_start or "주차 마지막" in week_start:
+        fail("morning week-start tab reused 1일차 or last-day copy")
+    elif "430, -8" in week_start or "300, 72" in week_start:
+        fail("morning week-start tab covers n일차 DayTab")
+    elif "744, -8" in week_start or "312, 108" in week_start:
+        fail("morning week-start tab covers the last-day tab")
+    elif "360, 70" in week_start or "0, 36" in week_start:
+        fail("morning week-start tab covers GO STREAM")
+    elif '"BillChip"' in week_start or '"CashChip"' in week_start or '"MentalChip"' in week_start:
+        fail("morning week-start tab restyled cash / bill / mental papers")
+    elif "SetActive(false)" not in week_start:
+        fail("morning week-start tab is not hidden until RefreshHud")
+    elif "RefreshWeekStart" not in hud:
+        fail("morning week-start tab is not refreshed")
+    elif "run.day == 6" not in week_refresh or "run.day == 11" not in week_refresh:
+        fail("morning week-start tab is not shown on days 6 / 11")
+    elif "run.day == 16" not in week_refresh or "run.day == 21" not in week_refresh:
+        fail("morning week-start tab is not shown on days 16 / 21")
+    elif "LastDayOfCurrentWeek" in week_refresh:
+        fail("morning week-start tab reused last-day gate")
+    elif "run.day == 1" in week_refresh:
+        fail("morning week-start tab reused the day-1 gate")
+    elif 'WeekNumber(run) + "주차"' not in week_refresh:
+        fail("morning week-start tab does not write 2주차 / 3주차 / 4주차 / 5주차")
+    elif "1일차" in week_refresh or "마지막 날" in week_refresh:
+        fail("morning week-start refresh reused 1일차 or last-day copy")
+    elif "SetActive(on)" not in week_refresh:
+        fail("morning week-start tab is not hidden on mid-week mornings")
+    elif "run.day == 2" in week_refresh or "run.day == 7" in week_refresh:
+        fail("morning week-start tab also shows on a mid-week morning")
+    elif "RefreshDay1" not in hud or "run.day == 1" not in day1_refresh:
+        fail("morning week-start tab dropped day-1 1일차")
+    elif "run.day == 6" in day1_refresh or "_weekStartTab" in day1_refresh:
+        fail("day-1 morning also shows the week-start tab")
+    elif "LastDayOfCurrentWeek" in day1_refresh:
+        fail("morning week-start tab changed MorningDay1 gate")
+    elif '"MorningDay1"' not in build or '"1일차"' not in day1 or "8f, -220f" not in day1:
+        fail("morning week-start tab restyled MorningDay1")
+    elif '"2주차"' in day1 or "MorningWeekStart" in day1:
+        fail("MorningDay1 is no longer 1일차 only")
+    elif "run.day == 6" in last_refresh or "_weekStartTab" in last_refresh:
+        fail("last-day morning also shows the week-start tab")
+    elif "RefreshLastDay" not in hud or "LastDayOfCurrentWeek" not in last_refresh or "SetActive(last)" not in last_refresh:
+        fail("morning week-start tab changed last-day tab logic")
+    elif "ArtSprites.DayTab" not in banner or '"마지막 날"' not in banner or "744, -8" not in banner:
+        fail("morning week-start tab dropped the last-day tab")
+    elif "ArtSprites.DayTab" not in head or "DayHead" not in head or "300, 72" not in head:
+        fail("morning week-start tab rewrote n일차 DayTab")
+    elif "ArtSprites.BillNotice" not in money or '"오늘 청구"' not in week_cs:
+        fail("morning week-start tab dropped the 오늘 청구 paper")
+    elif "ArtSprites.CashSlip" not in money or '"CashChip"' not in week_cs:
+        fail("morning week-start tab dropped the morning 현금 paper")
+    elif "ArtSprites.MentalNote" not in money or '"MentalChip"' not in week_cs:
+        fail("morning week-start tab dropped the morning 멘탈 paper")
+    elif '"GoLive"' not in build or "360, 70" not in build:
+        fail("morning week-start tab dropped GO STREAM")
+    elif '"NewGameDay"' not in start_hang or "412f, -10f" not in title_day or '"1일차"' not in title_day:
+        fail("morning week-start tab restyled Title NewGameDay")
+    elif '"SettleDay1"' not in settle_build or "8f, -148f" not in settle_day1 or "1 == run.day" not in settle_render:
+        fail("morning week-start tab restyled SettleDay1")
+    elif '"ContinueLastDayTab"' not in title_build or "166f, -6f" not in last_tab:
+        fail("morning week-start tab moved the continue last-day tab")
+    elif "Week1LastDay = 5" not in sched_cs or "Week2LastDay = 10" not in sched_cs:
+        fail("morning week-start tab moved last-day week gates")
+    elif "Week3LastDay = 15" not in sched_cs or "Week4LastDay = 20" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("morning week-start tab moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("morning week-start tab retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("morning week-start tab retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("morning week-start tab retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("morning week-start tab broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising morning week-start tab / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("morning week-start tab dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("morning week-start tab moved Unity off 6000.5.9f1")
+    else:
+        ok("week-start mornings hang 2–5주차 day_tab; day 1, last-day, and mid-week stay as they were")
 
 
 def check_settle_day1_tab() -> None:

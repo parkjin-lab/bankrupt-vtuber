@@ -32,6 +32,8 @@ namespace BankruptVtuber
         Text _yesterday;
         Image _yesterdayClip;
         Image _day1Tab;
+        Image _weekStartTab;
+        Text _weekStartLabel;
         RectTransform _lastDayRoot;
         Text _lastDayWeek;
         Text _lastDayNeed;
@@ -219,6 +221,15 @@ namespace BankruptVtuber
             }
             _debt = MoneyChip(moneyBar, "DebtChip", "부채", Palette.MoneyRed, 0.52f, 0.76f);
             _mental = MoneyChip(moneyBar, "MentalChip", "멘탈", Palette.Pink, 0.76f, 1f);
+
+            _weekStartTab = UiKit.Image(root, "MorningWeekStart", Color.white);
+            UiKit.Layout(_weekStartTab.rectTransform, new Vector2(0.74f, 1f), new Vector2(0.74f, 1f), new Vector2(0f, 1f), new Vector2(8f, -220f), new Vector2(180f, 56f));
+            ArtSprites.Apply(_weekStartTab, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _weekStartTab.preserveAspect = true;
+            _weekStartTab.raycastTarget = false;
+            _weekStartLabel = UiKit.Label(_weekStartTab.transform, "T", "2주차", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_weekStartLabel.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _weekStartTab.gameObject.SetActive(false);
 
             _day1Tab = UiKit.Image(root, "MorningDay1", Color.white);
             UiKit.Layout(_day1Tab.rectTransform, new Vector2(0.74f, 1f), new Vector2(0.74f, 1f), new Vector2(0f, 1f), new Vector2(8f, -220f), new Vector2(180f, 56f));
@@ -421,6 +432,7 @@ namespace BankruptVtuber
             _contentHud.text = content;
             _contentHud.gameObject.SetActive(!string.IsNullOrEmpty(content));
             RefreshYesterday(run);
+            RefreshWeekStart(run);
             RefreshDay1(run);
             RefreshLastDay(run);
             RefreshCashShort();
@@ -500,6 +512,17 @@ namespace BankruptVtuber
             if (_yesterdayClip != null)
                 _yesterdayClip.gameObject.SetActive(on);
             _yesterday.gameObject.SetActive(on);
+        }
+
+        void RefreshWeekStart(GameRunState run)
+        {
+            if (_weekStartTab == null)
+                return;
+            bool on = run != null && (run.day == 6 || run.day == 11 || run.day == 16 || run.day == 21);
+            _weekStartTab.gameObject.SetActive(on);
+            if (!on || _weekStartLabel == null)
+                return;
+            _weekStartLabel.text = WeekSchedule.WeekNumber(run) + "주차";
         }
 
         void RefreshDay1(GameRunState run)
