@@ -318,14 +318,25 @@ namespace BankruptVtuber
             bool cash = name.Contains("Cash");
             bool debt = name.Contains("Debt");
             bool bill = name.Contains("Bill");
-            ArtSprites.ApplySliced(
-                panel.GetComponent<Image>(),
-                debt ? ArtSprites.ThreatBanner : bill ? ArtSprites.BillNotice : cash ? ArtSprites.CashBanner : ArtSprites.PanelDark,
-                debt ? Palette.MoneyRed : bill ? Color.white : cash ? Palette.CashGreen : new Color(0.92f, 0.45f, 0.62f, 1f));
-            UiKit.Label(panel, "L", label, 16, Color.white, TextAnchor.UpperLeft, FontStyle.Bold);
+            var img = panel.GetComponent<Image>();
+            if (cash)
+            {
+                ArtSprites.Apply(img, ArtSprites.CashSlip, new Color(0.98f, 0.94f, 0.86f, 0.98f), Color.white);
+                img.preserveAspect = false;
+                img.raycastTarget = false;
+            }
+            else
+            {
+                ArtSprites.ApplySliced(
+                    img,
+                    debt ? ArtSprites.ThreatBanner : bill ? ArtSprites.BillNotice : ArtSprites.PanelDark,
+                    debt ? Palette.MoneyRed : bill ? Color.white : new Color(0.92f, 0.45f, 0.62f, 1f));
+            }
+            Color caption = cash ? Palette.Ink : Color.white;
+            UiKit.Label(panel, "L", label, 16, caption, TextAnchor.UpperLeft, FontStyle.Bold);
             var l = panel.Find("L") as RectTransform;
             UiKit.Layout(l, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(16, -6), new Vector2(-20, 20));
-            var v = UiKit.Label(panel, "V", "₩0", 28, Color.white, TextAnchor.LowerLeft, FontStyle.Bold);
+            var v = UiKit.Label(panel, "V", "₩0", 28, caption, TextAnchor.LowerLeft, FontStyle.Bold);
             UiKit.Layout(v.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(16, 8), new Vector2(-20, -24));
             return v;
         }
@@ -389,14 +400,14 @@ namespace BankruptVtuber
                 if (_cash != null)
                     _cash.color = Palette.MoneyRed;
                 if (_cashImg != null)
-                    _cashImg.color = Palette.MoneyRed;
+                    _cashImg.color = Color.white;
             }
             else
             {
                 if (_cash != null)
-                    _cash.color = Color.white;
+                    _cash.color = Palette.Ink;
                 if (_cashImg != null)
-                    _cashImg.color = Palette.CashGreen;
+                    _cashImg.color = Color.white;
             }
         }
 

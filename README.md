@@ -47,7 +47,7 @@
 
 **Title**은 `Art/title_studio` 파산 스튜디오 바탕 위에 워드마크·버튼이 그대로 올라간다. `Audio/bgm_title` 불안한 네온 루프(로비만. 떠나면 0.2초 페이드). **새 방송 시작**은 작은 **시작** 칩과 함께 1.03으로 숨쉰다. 세이브가 있으면 **이어서 하기**도 작은 **이어** 칩과 함께 1.03으로 숨쉬고, **이어하기 n일차** + 현금/부채(청구를 알면 현금 부족은 빨강, 부채는 골드). 어제 헤드라인이 있으면 그 줄이 `Art/headline_clip` 신문 스크랩으로 이어하기 옆에 붙는다(세이브·헤드라인 없으면 숨김). **새 방송 시작**은 **진행 중인 n일차를 지울까?** 확인 후 지운다. 로비를 떠나면(`방송 시작` / `이어서 하기` / `지우고 시작`) `Audio/sfx_title` 확인이 한 번 난다.
 
-**Title** → **WeekStart**는 `Art/morning_room` 청구 아침 방 위에 `Audio/bgm_morning` 불안한 청구 루프(타이틀보다 작고 날카로움. **방송 켜기**/콘서트 시작으로 떠나면 0.2초 페이드)와 **n일차**가 크게 0.25초 팝 → **오늘 청구**가 고지서 칸에서 0.25초 슬램(현금이 청구보다 적으면 **현금**이 경고 빨강 + **청구보다 부족**. 막히면 그대로) → 청구 카드 → 콘텐츠 픽(토크/게임/노래/리액션, `Art/content_*` 아이콘 + 편하게 잡담 / 같이 깨자 / 고음 승부 / 같이 보자. 고르면 `Audio/sfx_pick` 확인이 한 번) → **방송 켜기**(콘서트면 **콘서트 방송**)가 빨간 LIVE 핍과 함께 1.04로 숨쉬고, 누르면 `Audio/sfx_golive` 확인 후쉬가 한 번 난 뒤 아침 베드가 0.2초 페이드 → 라이브 화면의 0.6초 **ON AIR**(`Audio/sfx_onair`)는 그대로 → **90초 라이브** → **Settlement**.
+**Title** → **WeekStart**는 `Art/morning_room` 청구 아침 방 위에 `Audio/bgm_morning` 불안한 청구 루프(타이틀보다 작고 날카로움. **방송 켜기**/콘서트 시작으로 떠나면 0.2초 페이드)와 **n일차**가 크게 0.25초 팝 → **오늘 청구**가 고지서 칸에서 0.25초 슬램(**현금**은 정산과 같은 `Art/cash_slip` 영수증. 청구보다 적으면 경고 빨강 + **청구보다 부족**. 막히면 그대로) → 청구 카드 → 콘텐츠 픽(토크/게임/노래/리액션, `Art/content_*` 아이콘 + 편하게 잡담 / 같이 깨자 / 고음 승부 / 같이 보자. 고르면 `Audio/sfx_pick` 확인이 한 번) → **방송 켜기**(콘서트면 **콘서트 방송**)가 빨간 LIVE 핍과 함께 1.04로 숨쉬고, 누르면 `Audio/sfx_golive` 확인 후쉬가 한 번 난 뒤 아침 베드가 0.2초 페이드 → 라이브 화면의 0.6초 **ON AIR**(`Audio/sfx_onair`)는 그대로 → **90초 라이브** → **Settlement**.
 
 웹캠 파산냥은 `Art/pasan_nyang` 256px 2D 얼굴이다. Perfect 펀치 · Good 끄덕 · Miss 흔들 · 멘탈 ≤40 지침은 그대로다.
 
@@ -70,7 +70,7 @@
 - **패드 / 채팅 / 노트** — `Art/pad_*` · `Art/chat_bubble` · `Art/note_chip` · `Art/hit_rail`
 - **얼굴 / 아이콘** — `Art/pasan_nyang` · `Art/rival_nyang` · `Art/content_*`
 - **헤드라인** — 정산 **오늘 헤드라인** · 다음날 아침 **어제:** · 타이틀 **이어서 하기** 가 같은 `Art/headline_clip` 신문 스크랩(세이브·헤드라인 없으면 로비 스크랩 숨김)
-- **영수증** — 정산 **남은 현금** `Art/cash_slip` (모자라면 경고 빨강. 숫자·라우팅은 그대로)
+- **영수증** — 아침 **현금** · 정산 **남은 현금** 이 같은 `Art/cash_slip` (모자라면 경고 빨강 + **청구보다 부족**. 숫자·고지서·라우팅은 그대로)
 - **주차 카드** — `Art/goods_stand` · `Art/agency_card` · `Art/sponsor_card` · `Art/ranking_board` · `Art/concert_stage` · `Art/letter_card` · `Art/membership_card` · `Art/clip_card`
 - **BGM** — Title `Audio/bgm_title` · 아침 `Audio/bgm_morning` · 라이브 `Audio/bgm_stream` · 콘서트 라이브만 `Audio/bgm_concert`(일반 라이브는 `bgm_stream` 유지) · 정산 `Audio/bgm_settlement` (각 화면에서 떠나면 0.2초 페이드)
 - **SFX** — 판정 `sfx_perfect` / `sfx_good` / `sfx_miss` · 이벤트 `sfx_anti` / `sfx_lag` · 엔딩 `sfx_clear` / `sfx_bankrupt` · 로비/아침/정산 확인 `sfx_title` / `sfx_pick` / `sfx_golive` / `sfx_nextday` · 답장하기 `sfx_letter` · 라이벌 승/패 `sfx_rival_win` / `sfx_rival_lose` · 멤버십 `sfx_membership` · 클립 `sfx_clip` · 굿즈 `sfx_goods` · 에이전시 `sfx_agency` · 스폰서 `sfx_sponsor` · 랭킹 `sfx_ranking` · 콘서트 개최 `sfx_concert_book`

@@ -3129,6 +3129,8 @@ def check_morning_cash_short() -> None:
 
     if "RefreshCashShort" not in week_cs or "청구보다 부족" not in week_cs:
         fail("broke morning has no 청구보다 부족 line")
+    elif "ArtSprites.CashSlip" not in week_cs or '"CashChip"' not in week_cs:
+        fail("morning 현금 is not on Art/cash_slip")
     elif "run.cash <" not in week_cs or "PeekTodayBills" not in warn:
         fail("청구보다 부족 does not compare current cash to today's bill")
     elif "Palette.MoneyRed" not in warn:
@@ -7381,6 +7383,8 @@ def check_cash_slip() -> None:
     player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
     build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
     left = settle_cs.split("void TickLeftCash", 1)[-1].split("void ShowShortfall", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+    warn = week_cs.split("void RefreshCashShort", 1)[-1].split("static int PeekTodayBills", 1)[0]
     png = ROOT / "Assets/Resources/Art/cash_slip.png"
     data = png.read_bytes() if png.exists() else b""
     w = h = color = 0
@@ -7400,6 +7404,12 @@ def check_cash_slip() -> None:
         fail("Settlement does not hang Art/cash_slip under 남은 현금")
     elif '"LeftCash"' not in build or "남은 현금" not in build:
         fail("cash slip dropped the 남은 현금 text line")
+    elif "ArtSprites.CashSlip" not in money or '"CashChip"' not in week_cs:
+        fail("WeekStart 현금 is not on the same Art/cash_slip")
+    elif "청구보다 부족" not in week_cs or "Palette.MoneyRed" not in warn:
+        fail("morning cash slip dropped 청구보다 부족 / short-red")
+    elif "ArtSprites.BillNotice" not in money or '"오늘 청구"' not in week_cs:
+        fail("morning cash slip dropped the 오늘 청구 고지서")
     elif "Palette.MoneyRed" not in left or "PeekTomorrowTypical" not in settle_cs:
         fail("cash slip dropped short-red tint / tomorrow bill peek")
     elif "gm.Run.cash" not in left and "run.cash" not in left:
@@ -7429,7 +7439,7 @@ def check_cash_slip() -> None:
     elif "Art/cash_slip" not in (ROOT / "README.md").read_text(encoding="utf-8"):
         fail("README should mention Art/cash_slip")
     else:
-        ok("남은 현금 sits on cash_slip receipt; short-red / counts / headline stay")
+        ok("morning / settlement cash share cash_slip; short-red / 고지서 / counts stay")
 
 
 def check_mental_sfx() -> None:
