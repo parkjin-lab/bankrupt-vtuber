@@ -1592,6 +1592,7 @@ def check_project() -> None:
     check_live_last_day_bill()
     check_live_week_start_bill()
     check_live_day1_cash()
+    check_live_last_day_cash()
     check_title_day1_tab()
     check_concert_live_badge()
     check_sponsor_live_badge()
@@ -17171,6 +17172,237 @@ def check_live_day1_cash() -> None:
         fail("live day-1 cash paper moved Unity off 6000.5.9f1")
     else:
         ok("day-1 live hangs cash_slip as HUD 현금; other lives hide it; LiveDay1Bill / NewGameCash / morning / continue cash stay")
+
+
+def check_live_last_day_cash() -> None:
+    """Last-day lives hang cash_slip as a tiny HUD 현금 paper; other lives hide it; LiveDay1Cash / LiveLastBill / NewGameCash / morning / continue cash stay."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
+    build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    paper = build.split('"LiveLastCash"', 1)[-1].split('"LiveLastBill"', 1)[0] if '"LiveLastCash"' in build else ""
+    day1_cash = build.split('"LiveDay1Cash"', 1)[-1].split('"LiveLastCash"', 1)[0] if '"LiveLastCash"' in build else ""
+    last_bill = build.split('"LiveLastBill"', 1)[-1].split('"LiveWeekBill"', 1)[0] if '"LiveWeekBill"' in build else ""
+    last_tab = build.split('"LiveLastDay"', 1)[-1].split("var chatPanel", 1)[0] if '"LiveLastDay"' in build else ""
+    last_head = build.split('"LiveLastHeadline"', 1)[-1].split("if (_avatar != null && _avatar.Root != null)", 1)[0] if '"LiveLastHeadline"' in build else ""
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    cash_apply = apply.split("if (_lastCash", 1)[-1].split("UiKit.EnsureCamera", 1)[0] if "if (_lastCash" in apply else ""
+    day1_cash_apply = apply.split("if (_day1Cash", 1)[-1].split("if (_weekHeadline", 1)[0] if "if (_day1Cash" in apply else ""
+    last_bill_apply = apply.split("if (_lastBill", 1)[-1].split("if (_lastCash", 1)[0] if "if (_lastCash" in apply else ""
+    last_live_gate = live_cs.split("static bool LiveLastDay", 1)[-1].split("void ApplyThreatShow", 1)[0] if "static bool LiveLastDay" in live_cs else ""
+    show = build.split('"ShowChip"', 1)[-1].split('"BillChip"', 1)[0] if '"ShowChip"' in build else ""
+    bill = build.split('"BillChip"', 1)[-1].split('"LiveDay1Headline"', 1)[0] if '"LiveDay1Headline"' in build else ""
+    hud = build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in build else ""
+    chat = build.split('"ChatDock"', 1)[-1].split('"Lane"', 1)[0] if '"ChatDock"' in build else ""
+    pads = build.split('"PadRow"', 1)[-1].split('"MissSting"', 1)[0] if '"PadRow"' in build else ""
+    coach = build.split('"CoachCard"', 1)[-1].split('"CoachStamp"', 1)[0] if '"CoachCard"' in build else ""
+    timer = build.split('"Timer"', 1)[-1].split('"Cash"', 1)[0] if '"Timer"' in build else ""
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_cash = start_hang.split("_startCash = UiKit.Image", 1)[-1] if "_startCash = UiKit.Image" in start_hang else ""
+    if "_startMental = UiKit.Image" in title_cash:
+        title_cash = title_cash.split("_startMental = UiKit.Image", 1)[0]
+    title_build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+    warn = week_cs.split("void RefreshCashShort", 1)[-1].split("static int PeekTodayBills", 1)[0] if "void RefreshCashShort" in week_cs else ""
+
+    if 'CashSlip = "Art/cash_slip"' not in art_cs:
+        fail("ArtSprites does not hook Art/cash_slip")
+    elif '"LiveLastCash"' not in build or "ArtSprites.CashSlip" not in paper:
+        fail("last-day live does not hang Art/cash_slip as a HUD 현금 paper")
+    elif "preserveAspect = true" not in paper:
+        fail("live last-day cash paper is not preserveAspect")
+    elif "ApplySliced" in paper:
+        fail("live last-day cash paper reused the continue cash slice")
+    elif "72f, 48f" in paper:
+        fail("live last-day cash paper was hung as a 72×48 pin")
+    elif "110f, 48f" not in paper or "456f, -268f" not in paper:
+        fail("live last-day cash paper is not a tiny HUD scrap beside LiveLastBill")
+    elif "338f, -268f" in paper or "116f, 56f" in paper:
+        fail("live last-day cash paper covers LiveLastBill")
+    elif "204f, -10f" in paper or "200f, 68f" in paper:
+        fail("live last-day cash paper sat on Title NewGameCash")
+    elif "176f, 170f" in paper or "16f, -10f" in paper:
+        fail("live last-day cash paper sat on Title NewGameBill")
+    elif "8f, -220f" in paper or "8f, -148f" in paper or "0.74f, 1f" in paper or "0.80f, 1f" in paper:
+        fail("live last-day cash paper sat on a morning / settlement desk paper")
+    elif '"현금"' not in paper:
+        fail("live last-day cash paper is not Korean 현금 copy")
+    elif "청구서" in paper or "BillNotice" in paper:
+        fail("live last-day cash paper reused a bill hang")
+    elif "헤드라인" in paper or "HeadlineClip" in paper or "DayTab" in paper:
+        fail("live last-day cash paper reused a headline or calendar hang")
+    elif "1일차" in paper or "마지막 날" in paper or "2주차" in paper or "주차 마지막" in paper:
+        fail("live last-day cash paper reused calendar-tab copy")
+    elif "168f, 68f" in paper or "24f, -272f" in paper:
+        fail("live last-day cash paper covers LiveLastHeadline")
+    elif "132f, 40f" in paper or "200f, -276f" in paper:
+        fail("live last-day cash paper covers LiveLastDay")
+    elif "24, -214" in paper or "168, 44" in paper or '"ShowChip"' in paper:
+        fail("live last-day cash paper covers the show chip")
+    elif "460, -210" in paper or "248, 52" in paper or '"BillChip"' in paper:
+        fail("live last-day cash paper covers the live bill chip")
+    elif "710, -228" in paper or "180, 18" in paper:
+        fail("live last-day cash paper covers the bill fill")
+    elif "ClockPlate" in paper or '"Timer"' in paper or "0.64f, 1f" in paper:
+        fail("live last-day cash paper covers the timer")
+    elif "ChatDock" in paper or "420, -220" in paper or "실시간 채팅" in paper:
+        fail("live last-day cash paper covers chat")
+    elif "PadRow" in paper or "AddColumnPad" in paper or "1–4" in paper:
+        fail("live last-day cash paper covers QTE / pads")
+    elif "CoachCard" in paper or "720, 220" in paper or "-80, 0" in paper:
+        fail("live last-day cash paper covers the day-1 coach")
+    elif "MemberBadgeHud" in paper or "AgencyBadgeHud" in paper or "GoodsBadgeHud" in paper:
+        fail("live last-day cash paper sat on an unlock pin")
+    elif "RankingBadgeHud" in paper or "ClipBadgeHud" in paper or "ConcertBadgeHud" in paper or "SponsorBadgeHud" in paper:
+        fail("live last-day cash paper sat on an unlock pin")
+    elif "-10f, -10f" in paper or "-10f, -322f" in paper:
+        fail("live last-day cash paper covers a webcam unlock pin")
+    elif "360, 70" in paper or '"GoLive"' in paper:
+        fail("live last-day cash paper sat on morning GO LIVE")
+    elif "NewGameCash" in paper or "ContinueCashSlip" in paper or "NewGameBill" in paper:
+        fail("live last-day cash paper sat on Title cash / bill papers")
+    elif "오늘 청구" in paper or "_billSlam" in paper:
+        fail("live last-day cash paper sat on the morning bill tile")
+    elif "LiveDay1Headline" in paper or "LiveLastHeadline" in paper or "LiveWeekHeadline" in paper:
+        fail("live last-day cash paper folded a live headline into the same hang")
+    elif '"LiveDay1"' in paper or '"LiveWeekStart"' in paper or '"LiveLastDay"' in paper:
+        fail("live last-day cash paper folded a live calendar into the same hang")
+    elif '"LiveDay1Bill"' in paper or '"LiveLastBill"' in paper or '"LiveWeekBill"' in paper:
+        fail("live last-day cash paper folded a live bill paper into the same hang")
+    elif '"LiveDay1Cash"' in paper:
+        fail("live last-day cash paper folded LiveDay1Cash into the same hang")
+    elif "UiKit.Stretch" in paper:
+        fail("live last-day cash paper was stretched over the HUD")
+    elif "SetActive(false)" not in paper:
+        fail("live last-day cash paper is not hidden until ApplyContentShow")
+    elif "Audio/sfx_threat" in paper or "PlayThreatSfx" in paper or "PlayNewGameBillThreat" in paper:
+        fail("live last-day cash paper added a new sting")
+    elif "_lastCash" not in apply or "LiveLastDay" not in cash_apply:
+        fail("live last-day cash paper is not shown on last-day lives")
+    elif "SetActive(LiveLastDay(GameManager.Instance.Run.day))" not in cash_apply:
+        fail("live last-day cash paper is not hidden on other lives")
+    elif "1 == GameManager.Instance.Run.day" in cash_apply:
+        fail("live last-day cash paper reused the day-1 live gate")
+    elif "LastDayOfCurrentWeek" in cash_apply or "LiveWeekStartDay" in cash_apply:
+        fail("live last-day cash paper reused last-day or week-start gate")
+    elif "LastDayOfCurrentWeek" in apply or "6 == " in apply or "run.day == 6" in apply:
+        fail("live last-day cash paper reused last-day or week-start gate in ApplyContentShow")
+    elif "day == 5" not in last_live_gate or "day == 10" not in last_live_gate or "day == 15" not in last_live_gate:
+        fail("live last-day cash paper is not shown on days 5 / 10 / 15")
+    elif "day == 20" not in last_live_gate or "day == 25" not in last_live_gate:
+        fail("live last-day cash paper is not shown on days 20 / 25")
+    elif re.search(r"day == 1\b", last_live_gate) or re.search(r"day == 6\b", last_live_gate) or re.search(r"day == 2\b", last_live_gate) or re.search(r"day == 7\b", last_live_gate) or re.search(r"day == 11\b", last_live_gate):
+        fail("live last-day cash paper also shows on a non-last-day live")
+    elif "_day1Cash" not in apply or "SetActive(1 == GameManager.Instance.Run.day)" not in day1_cash_apply:
+        fail("live last-day cash paper dropped LiveDay1Cash day-1 hide")
+    elif "LiveLastDay" in day1_cash_apply or "LiveWeekStartDay" in day1_cash_apply:
+        fail("LiveDay1Cash reused last-day or week-start gate")
+    elif '"LiveDay1Cash"' not in build or "ArtSprites.CashSlip" not in day1_cash or '"현금"' not in day1_cash:
+        fail("live last-day cash paper restyled LiveDay1Cash")
+    elif "110f, 48f" not in day1_cash or "456f, -268f" not in day1_cash or "preserveAspect = true" not in day1_cash:
+        fail("live last-day cash paper moved LiveDay1Cash")
+    elif "LiveLastCash" in day1_cash or "마지막 날" in day1_cash:
+        fail("LiveDay1Cash hang folded in the last-day live cash paper")
+    elif "_lastBill" not in apply or "SetActive(LiveLastDay(GameManager.Instance.Run.day))" not in last_bill_apply:
+        fail("live last-day cash paper dropped LiveLastBill last-day hide")
+    elif "1 == GameManager.Instance.Run.day" in last_bill_apply:
+        fail("LiveLastBill reused the day-1 live gate")
+    elif '"LiveLastBill"' not in build or "ArtSprites.BillNotice" not in last_bill or '"청구서"' not in last_bill:
+        fail("live last-day cash paper restyled LiveLastBill")
+    elif "116f, 56f" not in last_bill or "338f, -268f" not in last_bill or "preserveAspect = true" not in last_bill:
+        fail("live last-day cash paper moved LiveLastBill")
+    elif "CashSlip" in last_bill or "LiveLastCash" in last_bill or "LiveDay1Cash" in last_bill:
+        fail("LiveLastBill hang folded in a live cash paper")
+    elif '"LiveLastDay"' not in build or "ArtSprites.DayTab" not in last_tab or '"마지막 날"' not in last_tab:
+        fail("live last-day cash paper restyled LiveLastDay")
+    elif "132f, 40f" not in last_tab or "200f, -276f" not in last_tab:
+        fail("live last-day cash paper moved LiveLastDay")
+    elif "현금" in last_tab or "CashSlip" in last_tab or "LiveLastCash" in last_tab:
+        fail("LiveLastDay hang folded in the last-day live cash paper")
+    elif '"LiveLastHeadline"' not in build or "ArtSprites.HeadlineClip" not in last_head or '"헤드라인"' not in last_head:
+        fail("live last-day cash paper restyled LiveLastHeadline")
+    elif "168f, 68f" not in last_head or "24f, -272f" not in last_head:
+        fail("live last-day cash paper moved LiveLastHeadline")
+    elif "현금" in last_head or "CashSlip" in last_head or "LiveLastCash" in last_head:
+        fail("LiveLastHeadline hang folded in the last-day live cash paper")
+    elif "_lastHeadline" not in apply or "SetActive(LiveLastDay(GameManager.Instance.Run.day))" not in apply:
+        fail("live last-day cash paper dropped LiveLastHeadline last-day hide")
+    elif '"NewGameCash"' not in start_hang or "ArtSprites.CashSlip" not in title_cash:
+        fail("live last-day cash paper restyled NewGameCash")
+    elif "204f, -10f" not in title_cash or "200f, 68f" not in title_cash or '"현금"' not in title_cash:
+        fail("live last-day cash paper restyled the NewGameCash desk paper")
+    elif "preserveAspect = true" not in title_cash:
+        fail("live last-day cash paper restyled NewGameCash preserveAspect")
+    elif "SetActive(!_hasSave)" not in hide:
+        fail("live last-day cash paper changed Title NewGameCash hide")
+    elif '"ContinueCashSlip"' not in title_build or "ArtSprites.CashSlip" not in title_build:
+        fail("live last-day cash paper dropped Title continue cash")
+    elif "SetActive(_hasSave)" not in hide:
+        fail("live last-day cash paper changed Title continue cash hide")
+    elif "ArtSprites.CashSlip" not in money or '"CashChip"' not in week_cs:
+        fail("live last-day cash paper dropped morning 현금")
+    elif "청구보다 부족" not in week_cs or "Palette.MoneyRed" not in warn:
+        fail("live last-day cash paper dropped morning 청구보다 부족")
+    elif '"오늘 청구"' not in week_cs or "_billSlam = 0.25f" not in week_cs:
+        fail("live last-day cash paper dropped morning 오늘 청구")
+    elif '"TonightIncome"' not in live_cs or "ArtSprites.CashSlip" not in live_cs or '"지금 수입"' not in live_cs:
+        fail("live last-day cash paper dropped live 지금 수입")
+    elif "24, -214" not in show or "168, 44" not in show:
+        fail("live last-day cash paper restyled the show chip")
+    elif "460, -210" not in bill or "248, 52" not in bill or "ArtSprites.BillNotice" not in bill:
+        fail("live last-day cash paper restyled the live bill chip")
+    elif "ArtSprites.ClockPlate" not in timer:
+        fail("live last-day cash paper dropped the timer plate")
+    elif "ArtSprites.ChatDock" not in chat:
+        fail("live last-day cash paper dropped chat dock")
+    elif "AddColumnPad" not in pads or "슈퍼챗" not in pads:
+        fail("live last-day cash paper dropped live pads")
+    elif "ArtSprites.CoachCard" not in coach or "720, 220" not in coach:
+        fail("live last-day cash paper dropped the day-1 coach")
+    elif '"MemberBadgeHud"' not in hud or "72f, 48f" not in hud or "-10f, -10f" not in hud:
+        fail("live last-day cash paper restyled the membership pin")
+    elif '"SponsorBadgeHud"' not in hud or "-10f, -322f" not in hud:
+        fail("live last-day cash paper restyled the sponsor pin")
+    elif "SetActive(_memberShow)" not in apply or "SetActive(_sponsorPinShow)" not in apply:
+        fail("live last-day cash paper changed unlock pin hide")
+    elif "Audio/sfx_threat" not in live_cs or "PlayThreatSfx" not in live_cs:
+        fail("live last-day cash paper dropped live GO LIVE / extra-threat sfx_threat")
+    elif "PlayNewGameBillThreat" in live_cs:
+        fail("live last-day cash paper folded Title NewGameBill sting onto live")
+    elif '"NewGameCash"' in live_cs or '"ContinueCashSlip"' in live_cs:
+        fail("live last-day cash paper folded Title cash papers onto live")
+    elif "run.day =" in live_cs or "day += " in live_cs or "day -= " in live_cs:
+        fail("live last-day cash paper writes the day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("live last-day cash paper moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("live last-day cash paper retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("live last-day cash paper retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("live last-day cash paper retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("live last-day cash paper broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising live last-day cash paper / later weeks")
+    elif "def check_live_day1_cash()" not in verify_src or "def check_live_last_day_bill()" not in verify_src:
+        fail("live last-day cash paper dropped LiveDay1Cash / LiveLastBill hang locks")
+    elif "def check_title_newgame_cash()" not in verify_src or "def check_morning_cash_short()" not in verify_src:
+        fail("live last-day cash paper dropped NewGameCash / morning cash locks")
+    elif "def check_cash_slip()" not in verify_src:
+        fail("live last-day cash paper dropped the shared cash_slip lock")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("live last-day cash paper dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("live last-day cash paper moved Unity off 6000.5.9f1")
+    else:
+        ok("last-day live hangs cash_slip as HUD 현금; other lives hide it; LiveDay1Cash / LiveLastBill / NewGameCash / morning / continue cash stay")
 
 
 def check_title_day1_tab() -> None:
