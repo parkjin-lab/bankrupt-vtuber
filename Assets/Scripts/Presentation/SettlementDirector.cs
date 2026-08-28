@@ -77,6 +77,8 @@ namespace BankruptVtuber
         Text _stampDebt;
         Image _stampMentalNote;
         Text _stampMental;
+        Image _stampShortStamp;
+        Text _stampShort;
         Text _stampEpitaph;
         float _mood;
         bool _cashUp;
@@ -741,6 +743,14 @@ namespace BankruptVtuber
             _stampMentalNote.raycastTarget = false;
             _stampMental = UiKit.Label(_stampMentalNote.transform, "StampMental", "", 18, Palette.Ink, TextAnchor.MiddleLeft, FontStyle.Bold);
             UiKit.Layout(_stampMental.rectTransform, new Vector2(0.08f, 0.10f), new Vector2(0.94f, 0.90f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
+            _stampShortStamp = UiKit.Image(stampSnap, "StampShortStamp", Color.white);
+            UiKit.Layout(_stampShortStamp.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 8f), new Vector2(220f, 56f));
+            ArtSprites.Apply(_stampShortStamp, ArtSprites.BillShort, Palette.MoneyRed, Color.white);
+            _stampShortStamp.preserveAspect = false;
+            _stampShortStamp.raycastTarget = false;
+            _stampShortStamp.rectTransform.localEulerAngles = new Vector3(0f, 0f, -8f);
+            _stampShort = UiKit.Label(_stampShortStamp.transform, "StampShort", "청구 미달", 16, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_stampShort.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -1f), new Vector2(-10f, -6f));
             _stampEpitaph = UiKit.Label(_stampRoot.transform, "StampEpitaph", "", 22, Palette.Pastel, TextAnchor.MiddleCenter);
             UiKit.Layout(_stampEpitaph.rectTransform, new Vector2(0.58f, 0.28f), new Vector2(0.58f, 0.28f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760, 64));
             _stampEpitaph.horizontalOverflow = HorizontalWrapMode.Wrap;
@@ -2262,6 +2272,10 @@ namespace BankruptVtuber
                 _clearDebt.text = "부채  " + EconomyRules.FormatWon(run.debt);
                 if (_clearMental != null)
                     _clearMental.text = "멘탈  " + run.mental;
+                if (_stampShortStamp != null)
+                    _stampShortStamp.gameObject.SetActive(false);
+                if (_stampShort != null)
+                    _stampShort.gameObject.SetActive(false);
                 if (_clearHeadline != null)
                     _clearHeadline.text = DayHeadline.Build(run);
                 _clearPortrait?.PoseEnding(EndingKind.SoloLegend);
@@ -2288,6 +2302,18 @@ namespace BankruptVtuber
                 _stampEpitaph.text = burn
                     ? Week5Rules.EndingBody(EndingKind.Burnout)
                     : $"부채가 {EconomyRules.FormatWon(cap)}을 넘었습니다. 채널은 여기서 멈춥니다.";
+                if (_stampShortStamp != null)
+                {
+                    ArtSprites.Apply(_stampShortStamp, ArtSprites.BillShort, Palette.MoneyRed, Color.white);
+                    _stampShortStamp.preserveAspect = false;
+                    _stampShortStamp.gameObject.SetActive(true);
+                }
+                if (_stampShort != null)
+                {
+                    _stampShort.text = "청구 미달";
+                    _stampShort.color = Palette.MoneyRed;
+                    _stampShort.gameObject.SetActive(true);
+                }
                 if (_stampHeadline != null)
                     _stampHeadline.text = DayHeadline.Build(run);
                 _stampPortrait?.PoseEnding(burn ? EndingKind.Burnout : EndingKind.Bankrupt);
