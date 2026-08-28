@@ -1473,6 +1473,7 @@ def check_project() -> None:
     check_letter_sfx()
     check_rival_sfx()
     check_membership_sfx()
+    check_clip_sfx()
     check_mental_sfx()
     check_week2_card_art()
     check_coach_pad_icons()
@@ -6721,8 +6722,8 @@ def check_membership_sfx() -> None:
         fail("membership chime can fire more than one shot")
     elif "PlayMemberSfx" in ack:
         fail("membership chime plays on 정산으로 dismiss")
-    elif "PlayMemberSfx" in clip or "sfx_membership" in clip or "sfx_clip" in settle_cs:
-        fail("clip card gained SFX this slice")
+    elif "PlayMemberSfx" in clip or "sfx_membership" in clip:
+        fail("membership chime leaked onto the clip card")
     elif "membershipJustUnlocked" not in beats or "ShowMemberSplash" not in beats:
         fail("membership SFX unhooked the unlock splash")
     elif beats.find("ShouldOfferLetter") > beats.find("membershipJustUnlocked"):
@@ -6766,7 +6767,96 @@ def check_membership_sfx() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("membership SFX moved Unity off 6000.5.9f1")
     else:
-        ok("멤버십 해금 plays sfx_membership once; clip silent; letter / rival stay")
+        ok("멤버십 해금 plays sfx_membership once; clip card / letter / rival stay")
+
+
+def check_clip_sfx() -> None:
+    import wave
+
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    w2_asset = (ROOT / "Assets/Resources/Balance/Week2Balance.asset").read_text(encoding="utf-8")
+    w2r_cs = (ROOT / "Assets/Scripts/Economy/Week2Rules.cs").read_text(encoding="utf-8")
+    debug_cs = (ROOT / "Assets/Scripts/Core/PlaytestDebug.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    show = settle_cs.split("void ShowClipCard", 1)[-1].split("void CloseClipCard", 1)[0]
+    yes = settle_cs.split("void OnClipYes", 1)[-1].split("void OnClipNo", 1)[0]
+    no = settle_cs.split("void OnClipNo", 1)[-1].split("void ShowGoodsSplash", 1)[0]
+    close = settle_cs.split("void CloseClipCard", 1)[-1].split("void OnClipYes", 1)[0]
+    play = settle_cs.split("void PlayClipSfx", 1)[-1].split("IEnumerator FadeSettleBgmThen", 1)[0]
+    member = settle_cs.split("void ShowMemberSplash", 1)[-1].split("void OnMemberAck", 1)[0]
+    beats = settle_cs.split("void AdvanceBeats", 1)[-1].split("void ShowMemberSplash", 1)[0]
+    clip_build = settle_cs.split('ClipRoot"', 1)[-1].split('GoodsRoot"', 1)[0]
+    path = ROOT / "Assets/Resources/Audio/sfx_clip.wav"
+
+    if not path.exists() or path.stat().st_size < 2000:
+        fail("sfx_clip.wav is missing")
+        return
+    with wave.open(str(path), "rb") as w:
+        if w.getnchannels() < 1 or w.getsampwidth() != 2 or w.getframerate() < 22050:
+            fail("sfx_clip.wav is not a readable PCM shutter")
+            return
+        dur = w.getnframes() / float(w.getframerate())
+        if dur < 0.14 or dur > 0.40:
+            fail(f"sfx_clip.wav duration {dur:.3f}s is not a short shutter/upload chime")
+            return
+
+    if "Audio/sfx_clip" not in settle_cs or "PlayClipSfx" not in settle_cs:
+        fail("Settlement does not load / play Audio/sfx_clip")
+    elif "PlayClipSfx();" not in show or show.count("PlayClipSfx();") != 1:
+        fail("clip card does not play a single shutter chime")
+    elif play.count("PlayOneShot") != 1:
+        fail("clip chime can fire more than one shot")
+    elif "PlayClipSfx" in yes or "PlayClipSfx" in no or "PlayClipSfx" in close:
+        fail("clip chime plays on 올린다 / 패스 / close")
+    elif "PlayClipSfx" in member or "sfx_clip" in member:
+        fail("clip chime leaked onto membership unlock")
+    elif "membershipJustUnlocked" not in beats or "CanOfferClip" not in beats:
+        fail("clip SFX unhooked membership → clip routing")
+    elif beats.find("membershipJustUnlocked") > beats.find("CanOfferClip"):
+        fail("clip SFX moved the clip card ahead of membership")
+    elif 'ClipCard = "Art/clip_card"' not in art_cs or "ArtSprites.ClipCard" not in clip_build:
+        fail("clip SFX dropped phone/thumbnail art")
+    elif "오늘 클립 올릴까" not in clip_build or "올린다" not in clip_build or "패스" not in clip_build:
+        fail("clip SFX covered 올린다 / 패스 copy")
+    elif "클립 업로드" not in settle_cs or "올리지 않기" not in settle_cs:
+        fail("clip SFX dropped existing clip copy")
+    elif "AttemptClip" not in yes or "DeclineClip" not in no:
+        fail("clip SFX unhooked AttemptClip / DeclineClip")
+    elif "clipCash" not in yes or "시청자 +" not in yes:
+        fail("clip SFX dropped the success slam")
+    elif "clipCash: 30000" not in w2_asset or "clipChance: 30" not in w2_asset or "clipPerfectsRequired: 25" not in w2_asset:
+        fail("clip SFX retuned clip numbers")
+    elif "CanOfferClip" not in w2r_cs or "InWeek2" not in w2r_cs.split("CanOfferClip", 1)[-1][:300]:
+        fail("clip SFX changed clip routing")
+    elif "Audio/sfx_membership" not in settle_cs or "PlayMemberSfx" not in settle_cs:
+        fail("clip SFX dropped membership badge chime")
+    elif "PlayMemberSfx();" not in member:
+        fail("clip SFX unhooked membership appear chime")
+    elif "Audio/sfx_letter" not in settle_cs or "PlayLetterSfx" not in settle_cs:
+        fail("clip SFX dropped letter reply confirm")
+    elif "Audio/sfx_clip" in title_cs or "Audio/sfx_clip" in week_cs or "Audio/sfx_clip" in live_cs:
+        fail("clip SFX leaked onto Title / WeekStart / LiveStream")
+    elif "ShowClipCard" in debug_cs or "sfx_clip" in debug_cs:
+        fail("F10 skip is no longer mute-safe")
+    elif "startingMembers: 8" not in w2_asset or "membershipPassivePerMember: 150" not in w2_asset:
+        fail("clip SFX retuned membership numbers")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("clip SFX retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("clip SFX broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising clip SFX / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("clip SFX dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("clip SFX moved Unity off 6000.5.9f1")
+    else:
+        ok("클립 카드 plays sfx_clip once; upload rules / membership chime stay")
 
 
 def check_mental_sfx() -> None:

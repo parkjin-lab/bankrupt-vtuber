@@ -150,6 +150,7 @@ namespace BankruptVtuber
         AudioClip _nextDayCue;
         AudioClip _letterCue;
         AudioClip _memberCue;
+        AudioClip _clipCue;
         bool _leavingSettle;
         bool _resultStingPlayed;
 
@@ -1637,6 +1638,7 @@ namespace BankruptVtuber
                 _clipRoot.transform.SetAsLastSibling();
             }
             _clipOpen = true;
+            PlayClipSfx();
         }
 
         void CloseClipCard()
@@ -2201,6 +2203,7 @@ namespace BankruptVtuber
             _nextDayCue = Resources.Load<AudioClip>("Audio/sfx_nextday");
             _letterCue = Resources.Load<AudioClip>("Audio/sfx_letter");
             _memberCue = Resources.Load<AudioClip>("Audio/sfx_membership");
+            _clipCue = Resources.Load<AudioClip>("Audio/sfx_clip");
         }
 
         void PlaySettleSfx(AudioClip clip, float volume)
@@ -2240,6 +2243,12 @@ namespace BankruptVtuber
                 return;
             _leavingSettle = true;
             StartCoroutine(FadeSettleBgmThen(next));
+        }
+
+        void PlayClipSfx()
+        {
+            if (_settleSfx != null && _clipCue != null)
+                _settleSfx.PlayOneShot(_clipCue, 0.46f);
         }
 
         IEnumerator FadeSettleBgmThen(System.Action next)
