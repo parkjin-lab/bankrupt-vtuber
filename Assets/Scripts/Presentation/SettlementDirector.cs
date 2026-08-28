@@ -184,9 +184,11 @@ namespace BankruptVtuber
         AudioClip _agencyCue;
         AudioClip _rankingCue;
         AudioClip _concertBookCue;
+        AudioClip _threatCue;
         bool _rankHeard;
         bool _leavingSettle;
         bool _resultStingPlayed;
+        bool _threatSfxPlayed;
 
         void Awake()
         {
@@ -2431,6 +2433,8 @@ namespace BankruptVtuber
                 _extraWarnLine.text = on ? extras.Trim() : "";
             if (_extraWarn != null)
                 _extraWarn.gameObject.SetActive(on);
+            if (on)
+                PlayThreatSfx();
         }
 
         void ApplyHeadline(GameRunState run)
@@ -2579,12 +2583,22 @@ namespace BankruptVtuber
             _agencyCue = Resources.Load<AudioClip>("Audio/sfx_agency");
             _rankingCue = Resources.Load<AudioClip>("Audio/sfx_ranking");
             _concertBookCue = Resources.Load<AudioClip>("Audio/sfx_concert_book");
+            _threatCue = Resources.Load<AudioClip>("Audio/sfx_threat");
         }
 
         void PlaySettleSfx(AudioClip clip, float volume)
         {
             if (_settleSfx != null && clip != null)
                 _settleSfx.PlayOneShot(clip, volume);
+        }
+
+        void PlayThreatSfx()
+        {
+            if (_threatSfxPlayed)
+                return;
+            _threatSfxPlayed = true;
+            if (_settleSfx != null && _threatCue != null)
+                _settleSfx.PlayOneShot(_threatCue, 0.46f);
         }
 
         void PlayNextDaySfx()

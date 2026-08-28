@@ -1592,6 +1592,7 @@ def check_project() -> None:
     check_morning_event_warn()
     check_threat_slam_sfx()
     check_settle_event_warn()
+    check_settle_threat_sfx()
     check_title_event_warn()
     check_event_sting_overlays()
     check_mental_sfx()
@@ -12246,8 +12247,8 @@ def check_threat_slam_sfx() -> None:
         fail("sfx_threat dropped content pick confirm")
     elif "Audio/sfx_golive" not in week_cs or "PlayGoLiveSfx" not in week_cs:
         fail("sfx_threat dropped GO LIVE confirm")
-    elif "Audio/sfx_threat" in title_cs or "Audio/sfx_threat" in live_cs or "Audio/sfx_threat" in settle_cs:
-        fail("sfx_threat leaked onto Title / LiveStream / Settlement")
+    elif "Audio/sfx_threat" in title_cs or "Audio/sfx_threat" in live_cs:
+        fail("sfx_threat leaked onto Title / LiveStream")
     elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
         fail("sfx_threat retuned Week 1 economy")
     elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
@@ -12332,6 +12333,73 @@ def check_settle_event_warn() -> None:
         fail("README dropped morning event_warn reuse while naming settlement")
     else:
         ok("settlement extra-threat line sits on event_warn; hide-if-none / morning / live / numbers stay")
+
+
+def check_settle_threat_sfx() -> None:
+    """Settlement extra-threat plate plays a one-shot sfx_threat; silent when none."""
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    extra_cs = (ROOT / "Assets/Scripts/Data/ExtraThreat.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    bind = settle_cs.split("void BindExtraWarn", 1)[-1].split("void ApplyHeadline", 1)[0]
+    render = settle_cs.split("void Render()", 1)[-1].split("void BindExtraWarn", 1)[0]
+    play = settle_cs.split("void PlayThreatSfx", 1)[-1].split("void PlayNextDaySfx", 1)[0]
+    spawn = week_cs.split("void SpawnIncoming", 1)[-1].split("IEnumerator Slam", 1)[0]
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+
+    if "Audio/sfx_threat" not in settle_cs or "PlayThreatSfx" not in settle_cs:
+        fail("Settlement does not load / play Audio/sfx_threat")
+    elif "PlayThreatSfx();" not in bind or bind.count("PlayThreatSfx();") != 1:
+        fail("settlement extra-threat plate is not a single sfx_threat shot")
+    elif "if (on)" not in bind or "PlayThreatSfx();" not in bind.split("if (on)", 1)[-1]:
+        fail("sfx_threat does not fire when the settlement extra-threat plate appears")
+    elif play.count("PlayOneShot") != 1:
+        fail("settlement sfx_threat can fire more than one shot")
+    elif "_threatSfxPlayed" not in play or "_threatSfxPlayed = true" not in play:
+        fail("settlement sfx_threat is not one-shot")
+    elif "PlayThreatSfx" in render:
+        fail("sfx_threat plays before the settlement extra-threat plate binds")
+    elif "SetActive(on)" not in bind or "IsNullOrWhiteSpace(extras)" not in bind:
+        fail("settlement sfx_threat dropped hide-if-none")
+    elif "ArtSprites.EventWarn" not in settle_cs or '"ExtraWarn"' not in settle_cs:
+        fail("settlement sfx_threat dropped the event_warn plate")
+    elif 'extras += $"위협 ' not in render or "extraThreatName" not in render:
+        fail("settlement sfx_threat dropped 위협 name / amount copy")
+    elif "ArtSprites.SettlementDesk" not in settle_cs or "ArtSprites.CashSlip" not in settle_cs:
+        fail("settlement sfx_threat dropped desk paper")
+    elif "ArtSprites.HeadlineClip" not in settle_cs or "ArtSprites.DayTab" not in settle_cs:
+        fail("settlement sfx_threat dropped headline / day tab")
+    elif "Audio/sfx_threat" not in week_cs or "PlayThreatSfx();" not in spawn:
+        fail("settlement sfx_threat dropped the morning extra-threat slam")
+    elif "Audio/sfx_nextday" not in settle_cs or "PlayNextDaySfx" not in settle_cs:
+        fail("settlement sfx_threat dropped 다음날 confirm")
+    elif "Audio/sfx_threat" in title_cs or "Audio/sfx_threat" in live_cs:
+        fail("sfx_threat leaked onto Title / LiveStream")
+    elif "장비 고장" not in extra_cs or "라이벌 견제" not in extra_cs or "minWon = 7000" not in extra_cs:
+        fail("settlement sfx_threat retuned extra threat names / table")
+    elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
+        fail("settlement sfx_threat retuned live 안티 온다 / 렉 온다")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("settlement sfx_threat retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("settlement sfx_threat broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising settlement sfx_threat / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("settlement sfx_threat dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("settlement sfx_threat moved Unity off 6000.5.9f1")
+    elif "sfx_threat" not in settle_loop or "한 번" not in settle_loop:
+        fail("README settlement loop does not name sfx_threat once")
+    elif "스팅 없음" not in settle_loop or "없으면 숨김" not in settle_loop:
+        fail("README settlement loop must stay silent if no extra threat")
+    else:
+        ok("settlement extra-threat plate plays sfx_threat once; hide-if-none / copy / desk / numbers stay")
 
 
 def check_title_event_warn() -> None:
