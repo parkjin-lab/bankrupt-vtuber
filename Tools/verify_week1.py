@@ -10865,6 +10865,15 @@ def check_readme_playable() -> None:
         fail("README dropped cash_slip on morning cash")
     elif "bill_notice" not in readme or "오늘 청구" not in readme or "청구" not in readme or "부채" not in readme:
         fail("README dropped bill_notice on morning bills / live bill / settlement+title debt")
+    elif (
+        "bill_notice" not in readme
+        or "오늘 청구" not in readme
+        or "청구 ₩N" not in readme
+        or "이어서 하기" not in readme
+        or "정산 **부채**" not in readme
+        or "정산 **오늘 청구**" not in readme
+    ):
+        fail("README bill_notice inventory dropped morning / title / live / settlement 부채 / settlement 오늘 청구")
     elif "mental_note" not in readme or "멘탈 위험" not in readme or "이어서 하기" not in readme or "멘탈" not in readme:
         fail("README dropped mental_note on settlement / live danger / morning / title continue")
     elif "combo_plate" not in readme or "COMBO" not in readme or "콤보 끊김" not in readme:
@@ -10929,7 +10938,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names bill_notice morning/title/live/settle + content_plate morning/live/settle + coach_card + leftover bill_short + webcam_bezel + bill_bar + chat plates + title_wordmark + cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
