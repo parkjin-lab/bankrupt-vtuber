@@ -1534,6 +1534,7 @@ def check_project() -> None:
     check_ending_bill_short()
     check_ending_bill_cover()
     check_readme_ending_stamps()
+    check_ending_headline_clip()
     check_letter_card()
     check_letter_keycaps()
     check_pad_sfx()
@@ -8292,6 +8293,86 @@ def check_readme_ending_stamps() -> None:
         ok("README names week-clear bill_cover PAID and bankrupt bill_short; desk paper / numbers stay")
 
 
+def check_ending_headline_clip() -> None:
+    """Clear / bankrupt lastHeadline sit on the same headline_clip scrap; empty hides it."""
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    gm = (ROOT / "Assets/Scripts/Core/GameManager.cs").read_text(encoding="utf-8")
+    eco_cs = (ROOT / "Assets/Scripts/Economy/EconomyRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    splash = settle_cs.split("void ApplyResultSplashes", 1)[-1].split("void ApplyHeadline", 1)[0]
+    apply = settle_cs.split("void ApplyHeadline", 1)[-1].split("void PaintShowLine", 1)[0]
+    end_fn = settle_cs.split("void ApplyEndingHeadline", 1)[-1].split("void PaintShowLine", 1)[0]
+    clear_fn = settle_cs.split("static bool IsWeekClear", 1)[-1].split("static bool ShouldShowEnding", 1)[0]
+    broke_fn = settle_cs.split("static bool IsBankruptResult", 1)[-1].split("static bool IsBurnoutResult", 1)[0]
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    clear_build = build.split('ClearRoot"', 1)[-1].split('StampRoot"', 1)[0]
+    stamp_build = build.split('StampRoot"', 1)[-1].split('LetterRoot"', 1)[0]
+
+    if 'HeadlineClip = "Art/headline_clip"' not in art_cs:
+        fail("ArtSprites does not hook Art/headline_clip")
+    elif "ArtSprites.HeadlineClip" not in week_cs or "ArtSprites.HeadlineClip" not in title_cs:
+        fail("ending headline_clip reuse dropped morning / title scrap")
+    elif "ArtSprites.HeadlineClip" not in settle_cs or '"HeadlineClip"' not in settle_cs:
+        fail("ending headline_clip reuse dropped settlement 오늘 헤드라인")
+    elif "ArtSprites.HeadlineClip" not in clear_build or '"ClearHeadlineClip"' not in clear_build:
+        fail("week-clear splash does not hang Art/headline_clip")
+    elif "ArtSprites.HeadlineClip" not in stamp_build or '"StampHeadlineClip"' not in stamp_build:
+        fail("bankrupt splash does not hang Art/headline_clip")
+    elif "lastHeadline" not in end_fn or "SetActive(hasHead)" not in end_fn:
+        fail("ending clips do not show lastHeadline or hide when empty")
+    elif "ApplyEndingHeadline(run)" not in splash or "ApplyEndingHeadline(run)" not in apply:
+        fail("ending clips are not applied on splash / headline")
+    elif "ArtSprites.CashSlip" not in clear_build or "ArtSprites.BillNotice" not in stamp_build:
+        fail("ending headline_clip dropped desk-paper slips")
+    elif "ArtSprites.BillCover" not in clear_build or "ArtSprites.BillShort" not in stamp_build:
+        fail("ending headline_clip dropped PAID / 미달 stamps")
+    elif "ArtSprites.EndingClear" not in clear_build or "ArtSprites.EndingBankrupt" not in stamp_build:
+        fail("ending headline_clip dropped ending_clear / ending_bankrupt")
+    elif "주차 클리어" not in settle_cs or "1주차 생존" not in splash or "다음 주차 시작" not in settle_cs:
+        fail("ending headline_clip changed week-clear copy")
+    elif '"파산"' not in settle_cs or "번아웃" not in splash or "처음부터" not in stamp_build:
+        fail("ending headline_clip changed bankrupt / burnout copy")
+    elif "PlaySettleSfx(_clearCue" not in splash or "PlaySettleSfx(_bankruptCue" not in splash:
+        fail("ending headline_clip dropped sfx_clear / sfx_bankrupt")
+    elif "Audio/sfx_clear" not in settle_cs or "Audio/sfx_bankrupt" not in settle_cs:
+        fail("ending headline_clip dropped Audio/sfx_clear|sfx_bankrupt")
+    elif "WeekOutcome.Win" not in clear_fn or "WeekOutcome.Week4Win" not in clear_fn:
+        fail("ending headline_clip changed week-clear conditions")
+    elif "WeekOutcome.Bankrupt" not in broke_fn or "EndingKind.Bankrupt" not in broke_fn:
+        fail("ending headline_clip changed bankrupt conditions")
+    elif "BankruptDebt" not in eco_cs or "public void NextMorning()" not in gm:
+        fail("ending headline_clip changed bankrupt numbers or routing")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("ending headline_clip retuned Week 1 economy / bankrupt line")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("ending headline_clip retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("ending headline_clip broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising ending headline_clip / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("ending headline_clip dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("ending headline_clip moved Unity off 6000.5.9f1")
+    elif "headline_clip" not in readme or "lastHeadline" not in readme or "클리어" not in readme or "파산" not in readme:
+        fail("README should mention ending headline_clip")
+    elif (
+        "headline_clip" not in settle_loop
+        or "lastHeadline" not in settle_loop
+        or "숨김" not in settle_loop
+    ):
+        fail("README loop does not name ending headline_clip hide-if-empty")
+    else:
+        ok("clear / bankrupt lastHeadline sit on headline_clip; empty hides it; stamps / sfx / rules stay")
+
+
 def check_letter_card() -> None:
     import struct
 
@@ -9608,6 +9689,10 @@ def check_headline_clip() -> None:
         fail("headline clip dropped today's settlement headline")
     elif "ArtSprites.HeadlineClip" not in title_build or '"ContinueClip"' not in title_build:
         fail("Title does not hang Art/headline_clip near 이어서 하기")
+    elif "ArtSprites.HeadlineClip" not in settle_cs or '"ClearHeadlineClip"' not in settle_cs or '"StampHeadlineClip"' not in settle_cs:
+        fail("endings do not hang Art/headline_clip under lastHeadline")
+    elif "lastHeadline" not in apply or "SetActive(hasHead)" not in apply:
+        fail("ending headline_clip does not hide when lastHeadline is empty")
     elif "SetActive(hasHead)" not in title_refresh:
         fail("Title does not hide the scrap unless a save and lastHeadline exist")
     elif '"어제: "' not in title_fill or "lastHeadline" not in title_fill:
@@ -11450,6 +11535,8 @@ def check_readme_playable() -> None:
         fail("README money-stamp inventory dropped bill_cover / bill_bar / won_pop / viewer_pop / bill_short")
     elif "headline_clip" not in readme or "오늘 헤드라인" not in readme or "어제:" not in readme or "이어서 하기" not in readme:
         fail("README dropped headline scrap on settlement / morning / title continue")
+    elif "headline_clip" not in readme or "lastHeadline" not in readme or "클리어" not in readme or "파산" not in readme:
+        fail("README dropped ending headline_clip on clear / bankrupt lastHeadline")
     elif "cash_slip" not in readme or "남은 현금" not in readme or "이어서 하기" not in readme or "지금 수입" not in readme or "오늘 수입" not in readme:
         fail("README dropped cash_slip on leftover / title / live / settlement income")
     elif "아침" not in readme or "**현금**" not in readme:

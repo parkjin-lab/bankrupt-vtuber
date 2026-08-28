@@ -41,7 +41,9 @@ namespace BankruptVtuber
         Image _showLineIcon;
         Image _showLineImg;
         Text _clearHeadline;
+        Image _clearHeadlineClip;
         Text _stampHeadline;
+        Image _stampHeadlineClip;
         Text _endingHeadline;
         Text _tileIncome;
         Text _tileBills;
@@ -675,9 +677,15 @@ namespace BankruptVtuber
             _clearTitle = UiKit.Label(_clearRoot.transform, "ClearTitle", "1주차 생존", 72, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_clearTitle.rectTransform, new Vector2(0.04f, 1), new Vector2(0.96f, 1), new Vector2(0.5f, 1), new Vector2(0, -100), new Vector2(0, 90));
             UiKit.Wrap(_clearTitle);
-            _clearHeadline = UiKit.Label(_clearRoot.transform, "ClearHeadline", "", 28, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_clearHeadline.rectTransform, new Vector2(0.06f, 1), new Vector2(0.94f, 1), new Vector2(0.5f, 1), new Vector2(0, -188), new Vector2(0, 48));
+            _clearHeadlineClip = UiKit.Image(_clearRoot.transform, "ClearHeadlineClip", Color.white);
+            UiKit.Layout(_clearHeadlineClip.rectTransform, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -188), new Vector2(720, 56));
+            ArtSprites.Apply(_clearHeadlineClip, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
+            _clearHeadlineClip.preserveAspect = false;
+            _clearHeadlineClip.raycastTarget = false;
+            _clearHeadline = UiKit.Label(_clearHeadlineClip.transform, "ClearHeadline", "", 22, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_clearHeadline.rectTransform, new Vector2(0.07f, 0.12f), new Vector2(0.93f, 0.88f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             UiKit.Wrap(_clearHeadline);
+            _clearHeadlineClip.gameObject.SetActive(false);
             _clearPortrait = new StudioPortrait(_clearRoot.transform, new Vector2(0.5f, 0.46f), new Vector2(340, 420), false);
             var snap = UiKit.Panel(_clearRoot.transform, "ClearSnap", new Color(0, 0, 0, 0));
             UiKit.Layout(snap, new Vector2(0.08f, 0), new Vector2(0.92f, 0), new Vector2(0.5f, 0), new Vector2(0, 156), new Vector2(0, 88));
@@ -764,9 +772,15 @@ namespace BankruptVtuber
             _stampEpitaph = UiKit.Label(_stampRoot.transform, "StampEpitaph", "", 22, Palette.Pastel, TextAnchor.MiddleCenter);
             UiKit.Layout(_stampEpitaph.rectTransform, new Vector2(0.58f, 0.28f), new Vector2(0.58f, 0.28f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760, 64));
             _stampEpitaph.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _stampHeadline = UiKit.Label(_stampRoot.transform, "StampHeadline", "", 24, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_stampHeadline.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 132), new Vector2(720, 44));
+            _stampHeadlineClip = UiKit.Image(_stampRoot.transform, "StampHeadlineClip", Color.white);
+            UiKit.Layout(_stampHeadlineClip.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 132), new Vector2(720, 52));
+            ArtSprites.Apply(_stampHeadlineClip, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
+            _stampHeadlineClip.preserveAspect = false;
+            _stampHeadlineClip.raycastTarget = false;
+            _stampHeadline = UiKit.Label(_stampHeadlineClip.transform, "StampHeadline", "", 20, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_stampHeadline.rectTransform, new Vector2(0.07f, 0.12f), new Vector2(0.93f, 0.88f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             UiKit.Wrap(_stampHeadline);
+            _stampHeadlineClip.gameObject.SetActive(false);
             var stampRestart = UiKit.Button(_stampRoot.transform, "StampRestart", "처음부터", () => LeaveSettle(() => GameManager.Instance.RestartRun()), Palette.Ink, Palette.Pastel);
             UiKit.Layout(stampRestart.GetComponent<RectTransform>(), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 48), new Vector2(360, 72));
             _stampRoot.SetActive(false);
@@ -2298,8 +2312,7 @@ namespace BankruptVtuber
                     _stampShortStamp.gameObject.SetActive(false);
                 if (_stampShort != null)
                     _stampShort.gameObject.SetActive(false);
-                if (_clearHeadline != null)
-                    _clearHeadline.text = DayHeadline.Build(run);
+                ApplyEndingHeadline(run);
                 _clearPortrait?.PoseEnding(EndingKind.SoloLegend);
             }
             if ((bankrupt || burnout) && _stampRoot != null && _stampRoot.activeSelf)
@@ -2340,8 +2353,7 @@ namespace BankruptVtuber
                     _clearPaidStamp.gameObject.SetActive(false);
                 if (_clearPaid != null)
                     _clearPaid.gameObject.SetActive(false);
-                if (_stampHeadline != null)
-                    _stampHeadline.text = DayHeadline.Build(run);
+                ApplyEndingHeadline(run);
                 _stampPortrait?.PoseEnding(burn ? EndingKind.Burnout : EndingKind.Bankrupt);
             }
             if (!_resultStingPlayed)
@@ -2390,12 +2402,23 @@ namespace BankruptVtuber
                 _headlineClip.gameObject.SetActive(on);
             if (_headlineTag != null)
                 _headlineTag.gameObject.SetActive(on);
-            if (_clearHeadline != null)
-                _clearHeadline.text = line;
-            if (_stampHeadline != null)
-                _stampHeadline.text = line;
             if (_endingHeadline != null)
                 _endingHeadline.text = line;
+            ApplyEndingHeadline(run);
+        }
+
+        void ApplyEndingHeadline(GameRunState run)
+        {
+            bool hasHead = run != null && run.lastHeadline != null && run.lastHeadline.Length > 0;
+            string line = hasHead ? run.lastHeadline : "";
+            if (_clearHeadline != null)
+                _clearHeadline.text = line;
+            if (_clearHeadlineClip != null)
+                _clearHeadlineClip.gameObject.SetActive(hasHead);
+            if (_stampHeadline != null)
+                _stampHeadline.text = line;
+            if (_stampHeadlineClip != null)
+                _stampHeadlineClip.gameObject.SetActive(hasHead);
         }
 
         void PaintShowLine(GameRunState run)
