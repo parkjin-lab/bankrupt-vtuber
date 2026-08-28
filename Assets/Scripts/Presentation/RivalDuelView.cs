@@ -75,6 +75,18 @@ namespace BankruptVtuber
             _camCount = UiKit.Label(camBadge.transform, "RivalCamCount", "25", 18, Palette.Pastel, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Stretch(_camCount.rectTransform, 10f, 10f, 4f, 4f);
 
+            _stealBg = UiKit.Image(cam, "StealFlash", Color.white);
+            UiKit.Layout(_stealBg.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-12f, -46f), new Vector2(158f, 36f));
+            ArtSprites.Apply(_stealBg, ArtSprites.ViewerPop, new Color(0.16f, 0.22f, 0.38f, 0.96f), Color.white);
+            _stealBg.preserveAspect = false;
+            _stealBg.raycastTarget = false;
+            _stealFlash = UiKit.Label(_stealBg.transform, "StealFlashText", "스틸 +0.6", 20, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Stretch(_stealFlash.rectTransform, 10f, 10f, 4f, 4f);
+            SetAlpha(_stealFlash, 0f);
+            var stealHide = _stealBg.color;
+            stealHide.a = 0f;
+            _stealBg.color = stealHide;
+
             var bars = UiKit.Panel(_root, "RivalBars", new Color(0.06f, 0.04f, 0.08f, 0.88f));
             UiKit.Layout(bars, new Vector2(0.08f, 1f), new Vector2(0.58f, 1f), new Vector2(0f, 1f), new Vector2(8f, -268f), new Vector2(-8f, 68f));
 
@@ -89,13 +101,6 @@ namespace BankruptVtuber
             _rivalCount = UiKit.Label(bars, "RivalBarCount", "0", 14, Palette.Pastel, TextAnchor.MiddleRight, FontStyle.Bold);
             UiKit.Layout(_rivalCount.rectTransform, new Vector2(0.82f, 0f), new Vector2(1f, 0.45f), new Vector2(1f, 0.5f), new Vector2(-8f, 0f), new Vector2(-4f, 0f));
             _rivalFill = MakeFill(bars, "RivalFill", new Vector2(0.14f, 0.10f), new Vector2(0.82f, 0.38f), Palette.Troll);
-
-            var flash = UiKit.Panel(_root, "StealFlash", new Color(1f, 0.85f, 0.2f, 0f));
-            UiKit.Layout(flash, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-80f, -344f), new Vector2(280f, 36f));
-            _stealBg = flash.GetComponent<Image>();
-            _stealFlash = UiKit.Label(flash, "StealFlashText", "스틸 +0.6", 20, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Stretch(_stealFlash.rectTransform);
-            SetAlpha(_stealFlash, 0f);
 
             _resultRoot = UiKit.Panel(_root, "RivalResultSlam", new Color(0.16f, 0.12f, 0.04f, 0.96f)).gameObject;
             var resultRt = _resultRoot.GetComponent<RectTransform>();
@@ -177,14 +182,22 @@ namespace BankruptVtuber
                 _stealFlash.text = $"스틸 +{perfectSteal:0.#}";
                 _stealFlash.color = Palette.Gold;
                 if (_stealBg != null)
+                {
+                    ArtSprites.Apply(_stealBg, ArtSprites.ViewerPop, new Color(0.16f, 0.22f, 0.38f, 0.96f), Color.white);
+                    _stealBg.preserveAspect = false;
                     _stealBg.color = new Color(1f, 0.82f, 0.15f, 0.88f);
+                }
             }
             else
             {
                 _stealFlash.text = $"라이벌 스틸 +{missSteal:0.#}";
                 _stealFlash.color = new Color(1f, 0.78f, 0.82f);
                 if (_stealBg != null)
+                {
+                    ArtSprites.Apply(_stealBg, ArtSprites.ViewerPop, new Color(0.16f, 0.22f, 0.38f, 0.96f), Color.white);
+                    _stealBg.preserveAspect = false;
                     _stealBg.color = new Color(0.72f, 0.16f, 0.22f, 0.9f);
+                }
             }
             _stealUntil = 0.7f;
             SetAlpha(_stealFlash, 1f);
