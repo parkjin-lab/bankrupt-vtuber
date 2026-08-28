@@ -890,8 +890,13 @@ namespace BankruptVtuber
             var memberCard = UiKit.Panel(_memberRoot.transform, "MemberCard", Color.white);
             UiKit.Layout(memberCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 380));
             var memberImg = memberCard.GetComponent<Image>();
-            ArtSprites.Apply(memberImg, ArtSprites.MembershipCard, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
-            memberImg.preserveAspect = false;
+            ArtSprites.ApplySliced(memberImg, ArtSprites.PanelDark, new Color(1f, 0.92f, 0.55f, 0.98f));
+            var memberPlate = UiKit.Image(memberCard, "MemberCardHud", Color.white);
+            UiKit.Layout(memberPlate.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(680f, 340f));
+            ArtSprites.Apply(memberPlate, ArtSprites.MembershipCard, Color.white, Color.white);
+            memberPlate.preserveAspect = true;
+            memberPlate.raycastTarget = false;
+            memberPlate.transform.SetAsFirstSibling();
             SafeFitCard.Bind(memberCard, 720f, 380f);
             var memberTitle = UiKit.Label(memberCard, "MemberTitle", "멤버십 해금", 52, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(memberTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(-40, 70));
