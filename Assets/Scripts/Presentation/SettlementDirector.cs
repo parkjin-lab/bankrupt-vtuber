@@ -39,6 +39,8 @@ namespace BankruptVtuber
         Text _dayHead;
         Image _lastDayTab;
         Image _day1Tab;
+        Image _weekStartTab;
+        Text _weekStartLabel;
         Text _lastDayWeek;
         Text _showLine;
         Image _showLineIcon;
@@ -511,6 +513,15 @@ namespace BankruptVtuber
             UiKit.Layout(_leftCashShort.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -1f), new Vector2(-10f, -6f));
             _leftCashShort.gameObject.SetActive(false);
             _leftCashSlip.gameObject.SetActive(false);
+
+            _weekStartTab = UiKit.Image(root, "SettleWeekStart", Color.white);
+            UiKit.Layout(_weekStartTab.rectTransform, new Vector2(0.80f, 1f), new Vector2(0.80f, 1f), new Vector2(0f, 1f), new Vector2(8f, -148f), new Vector2(180f, 56f));
+            ArtSprites.Apply(_weekStartTab, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _weekStartTab.preserveAspect = true;
+            _weekStartTab.raycastTarget = false;
+            _weekStartLabel = UiKit.Label(_weekStartTab.transform, "T", "2주차", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_weekStartLabel.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _weekStartTab.gameObject.SetActive(false);
 
             _day1Tab = UiKit.Image(root, "SettleDay1", Color.white);
             UiKit.Layout(_day1Tab.rectTransform, new Vector2(0.80f, 1f), new Vector2(0.80f, 1f), new Vector2(0f, 1f), new Vector2(8f, -148f), new Vector2(180f, 56f));
@@ -1320,6 +1331,13 @@ namespace BankruptVtuber
             var run = gm.Run;
             if (_dayHead != null)
                 _dayHead.text = run.day + "일차";
+            if (_weekStartTab != null)
+            {
+                bool weekStart = 6 == run.day || 11 == run.day || 16 == run.day || 21 == run.day;
+                _weekStartTab.gameObject.SetActive(weekStart);
+                if (weekStart && _weekStartLabel != null)
+                    _weekStartLabel.text = WeekSchedule.WeekNumber(run) + "주차";
+            }
             if (_day1Tab != null)
                 _day1Tab.gameObject.SetActive(1 == run.day);
             bool last = WeekSchedule.LastDayOfCurrentWeek(run) == run.day;
