@@ -224,6 +224,7 @@ def check_project() -> None:
         "combo_plate.png": "콤보 배지",
         "combo_break.png": "콤보 끊김 스탬프",
         "hype_frame.png": "하이프 프레임",
+        "hype_chip.png": "하이프 칩",
         "event_warn.png": "이벤트 경고",
         "anti_sting.png": "안티 스팅",
         "lag_sting.png": "렉 스팅",
@@ -1482,6 +1483,7 @@ def check_project() -> None:
     check_viewer_pop_chip()
     check_bill_short_stamp()
     check_superchat_fly_envelope()
+    check_hype_chip()
     check_hype_sfx()
     check_event_sfx()
     check_content_icons()
@@ -2461,6 +2463,10 @@ def check_hype_wash() -> None:
         fail("하이프 2.5x ticker was dropped")
     elif "HypeLeft" not in live_cs or "HypeCount" not in live_cs:
         fail("hype countdown is not visible")
+    elif "ArtSprites.HypeChip" not in hype or '"HypeChip"' not in live_cs:
+        fail("hype countdown is not on hype_chip")
+    elif '"하이프 "' not in hype and "하이프 {" not in hype:
+        fail("hype countdown dropped Korean 하이프 N copy")
     elif "SetHype" not in avatar_cs or "SetHype(true)" not in live_cs:
         fail("avatar has no hype sparkle / happy pose")
     elif "HypeChatGlow" not in live_cs:
@@ -5853,6 +5859,65 @@ def check_superchat_fly_envelope() -> None:
         fail("README should mention superchat_fly envelope")
     else:
         ok("flying ₩ sits on superchat_fly envelope; path / pip / chip / sfx / values stay")
+
+
+def check_hype_chip() -> None:
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/hype_chip.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    hype = live_cs.split("void RefreshHypeShow", 1)[-1].split("void RefreshMentalShow", 1)[0]
+
+    if not png.exists() or png.stat().st_size < 8000:
+        fail("hype_chip.png is missing")
+    elif w < 300 or h < 100 or w <= h:
+        fail("hype_chip.png is not a readable landscape gold chip")
+    elif color != 6:
+        fail("hype_chip.png is not RGBA")
+    elif 'HypeChip = "Art/hype_chip"' not in art_cs:
+        fail("ArtSprites does not hook Art/hype_chip")
+    elif "ArtSprites.HypeChip" not in hype or '"HypeChip"' not in live_cs or "HypeCount" not in live_cs:
+        fail("RefreshHypeShow does not hang Art/hype_chip under 하이프 N")
+    elif "하이프 {" not in hype and '"하이프 "' not in hype:
+        fail("hype_chip dropped Korean 하이프 N leftover copy")
+    elif "CeilToInt" not in hype or "HypeLeft" not in hype:
+        fail("hype_chip does not show leftover seconds from HypeLeft")
+    elif "ArtSprites.HypeFrame" not in hype or "PlaySfx(_hypeCue" not in hype:
+        fail("hype_chip dropped hype_frame or sfx_hype")
+    elif "interval *= 0.5f" not in session_cs:
+        fail("hype_chip dropped chat ~2x spawn")
+    elif "HypeLeft = Balance.hypeSeconds" not in session_cs:
+        fail("hype_chip retuned duration assignment")
+    elif "hypePerfectCombo: 9" not in balance or "hypeSeconds: 12" not in balance:
+        fail("hype_chip retuned combo-9 trigger or duration")
+    elif "hypeIncomeMultiplier: 2.5" not in balance or "return b.hypeIncomeMultiplier;" not in rules_cs:
+        fail("hype_chip retuned 2.5x payout")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance:
+        fail("hype_chip retuned Week 1 economy")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("hype_chip broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising hype_chip / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("hype_chip dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("hype_chip moved Unity off 6000.5.9f1")
+    elif "Art/hype_chip" not in readme or "하이프" not in readme:
+        fail("README should mention hype_chip / 하이프 N")
+    else:
+        ok("hype leftover sits on hype_chip; frame / 2x chat / sfx / 12s / combo-9 stay")
 
 
 def check_hype_sfx() -> None:
@@ -9387,6 +9452,8 @@ def check_readme_playable() -> None:
         fail("README dropped combo_break stamp")
     elif "hype_frame" not in readme or "sfx_hype" not in readme or "하이프" not in readme:
         fail("README dropped hype_frame gold overlay")
+    elif "hype_chip" not in readme or "하이프" not in readme:
+        fail("README dropped hype_chip leftover chip")
     elif "event_warn" not in readme or "안티 온다" not in readme or "렉 온다" not in readme or "sfx_anti" not in readme:
         fail("README dropped event_warn warning plate")
     elif "anti_sting" not in readme or "lag_sting" not in readme or "sfx_lag" not in readme:

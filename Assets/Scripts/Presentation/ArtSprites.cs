@@ -38,6 +38,7 @@ namespace BankruptVtuber
         public const string ComboPlate = "Art/combo_plate";
         public const string ComboBreak = "Art/combo_break";
         public const string HypeFrame = "Art/hype_frame";
+        public const string HypeChip = "Art/hype_chip";
         public const string EventWarn = "Art/event_warn";
         public const string AntiSting = "Art/anti_sting";
         public const string LagSting = "Art/lag_sting";

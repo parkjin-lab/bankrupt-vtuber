@@ -131,6 +131,7 @@ namespace BankruptVtuber
         Image _chatPanel;
         Image _hypeChatGlow;
         Text _hypeBanner;
+        Image _hypeChip;
         Text _hypeCount;
         Text _comboSting;
         float _comboStingFlash;
@@ -896,8 +897,14 @@ namespace BankruptVtuber
             _hypeFrame.gameObject.SetActive(false);
             _hypeBanner = UiKit.Label(root, "HypeBanner", "", 62, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_hypeBanner.rectTransform, new Vector2(0.08f, 0.58f), new Vector2(0.52f, 0.58f), new Vector2(0.5f, 0.5f), new Vector2(0, 36), new Vector2(0, 72));
-            _hypeCount = UiKit.Label(root, "HypeCount", "", 34, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UiKit.Layout(_hypeCount.rectTransform, new Vector2(0.08f, 0.58f), new Vector2(0.52f, 0.58f), new Vector2(0.5f, 0.5f), new Vector2(0, -18), new Vector2(0, 40));
+            _hypeChip = UiKit.Image(root, "HypeChip", Color.white);
+            UiKit.Layout(_hypeChip.rectTransform, new Vector2(0.08f, 0.58f), new Vector2(0.52f, 0.58f), new Vector2(0.5f, 0.5f), new Vector2(0, -18), new Vector2(280f, 56f));
+            ArtSprites.Apply(_hypeChip, ArtSprites.HypeChip, Palette.Gold, Color.white);
+            _hypeChip.preserveAspect = false;
+            _hypeChip.raycastTarget = false;
+            _hypeChip.gameObject.SetActive(false);
+            _hypeCount = UiKit.Label(_hypeChip.transform, "HypeCount", "", 28, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(_hypeCount.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(8f, -1f), new Vector2(-20f, -8f));
             _comboSting = UiKit.Label(root, "ComboSting", "", 28, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_comboSting.rectTransform, new Vector2(0.12f, 0.54f), new Vector2(0.48f, 0.54f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(0, 36));
             _comboBreakStamp = UiKit.Image(root, "ComboBreakStamp", Color.white);
@@ -2761,8 +2768,21 @@ namespace BankruptVtuber
                     _hypeChatGlow.color = new Color(1f, 0.88f, 0.32f, 0.16f + 0.06f * pulse);
                 if (_hypeBanner != null)
                     _hypeBanner.text = $"하이프 {_session.Balance.hypeIncomeMultiplier:0.#}x";
+                if (_hypeChip != null)
+                {
+                    ArtSprites.Apply(_hypeChip, ArtSprites.HypeChip, Palette.Gold, Color.white);
+                    _hypeChip.preserveAspect = false;
+                    _hypeChip.gameObject.SetActive(true);
+                    var hc = _hypeChip.color;
+                    hc.a = 0.92f + 0.08f * pulse;
+                    _hypeChip.color = hc;
+                }
                 if (_hypeCount != null)
-                    _hypeCount.text = $"{_session.HypeLeft:0.0}s";
+                {
+                    int left = Mathf.CeilToInt(Mathf.Max(0f, _session.HypeLeft));
+                    _hypeCount.text = $"하이프 {left}";
+                    _hypeCount.color = Palette.Gold;
+                }
                 if (_comboSting != null)
                     _comboSting.text = "";
                 _avatar?.SetHype(true);
@@ -2787,6 +2807,8 @@ namespace BankruptVtuber
                     _hypeChatGlow.color = new Color(1f, 0.86f, 0.28f, 0f);
                 if (_hypeBanner != null)
                     _hypeBanner.text = "";
+                if (_hypeChip != null)
+                    _hypeChip.gameObject.SetActive(false);
                 if (_hypeCount != null)
                     _hypeCount.text = "";
                 if (_comboSting != null)
