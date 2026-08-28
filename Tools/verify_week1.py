@@ -7905,6 +7905,14 @@ def check_readme_playable() -> None:
         fail("README dropped rival / goods / agency art")
     elif "ranking_board" not in readme or "concert_stage" not in readme:
         fail("README dropped ranking / concert art")
+    elif "headline_clip" not in readme or "오늘 헤드라인" not in readme or "어제:" not in readme or "이어서 하기" not in readme:
+        fail("README dropped headline scrap on settlement / morning / title continue")
+    elif "sfx_letter" not in readme or "sfx_rival_win" not in readme or "sfx_rival_lose" not in readme:
+        fail("README dropped letter / rival SFX")
+    elif "sfx_membership" not in readme or "sfx_clip" not in readme or "sfx_goods" not in readme:
+        fail("README dropped membership / clip / goods SFX")
+    elif "sfx_agency" not in readme or "sfx_sponsor" not in readme or "sfx_ranking" not in readme or "sfx_concert_book" not in readme:
+        fail("README dropped agency / sponsor / ranking / concert-book SFX")
     elif "입력됨" not in readme or "방송 켜기" not in readme or "다음날" not in readme:
         fail("README dropped Korean player-facing copy")
     elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
