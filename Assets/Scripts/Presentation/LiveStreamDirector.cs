@@ -1123,16 +1123,22 @@ namespace BankruptVtuber
             var laneFade = _lane.gameObject.AddComponent<CanvasGroup>();
             laneFade.blocksRaycasts = false;
             laneFade.interactable = false;
+            var noteLane = UiKit.Image(_lane, "NoteLane", Color.white);
+            UiKit.Stretch(noteLane.rectTransform);
+            ArtSprites.Apply(noteLane, ArtSprites.NoteLane, Color.white, new Color(1f, 1f, 1f, 0.96f));
+            noteLane.preserveAspect = false;
+            noteLane.raycastTarget = false;
             var hitRail = UiKit.Image(_lane, "HitRail", Color.white);
             UiKit.Stretch(hitRail.rectTransform);
             ArtSprites.Apply(hitRail, ArtSprites.HitRail, Color.white, new Color(1f, 1f, 1f, 0.94f));
             hitRail.preserveAspect = false;
             hitRail.raycastTarget = false;
-            hitRail.transform.SetAsFirstSibling();
+            noteLane.transform.SetAsFirstSibling();
+            hitRail.transform.SetSiblingIndex(1);
             _hypeChatGlow = UiKit.Image(_lane, "HypeChatGlow", new Color(1f, 0.86f, 0.28f, 0f));
             UiKit.Stretch(_hypeChatGlow.rectTransform);
             _hypeChatGlow.raycastTarget = false;
-            _hypeChatGlow.transform.SetSiblingIndex(1);
+            _hypeChatGlow.transform.SetSiblingIndex(2);
 
             _hit = UiKit.Panel(_lane, "Hit", new Color(1f, 1f, 1f, 0.22f));
             UiKit.Layout(_hit, new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, LaneHit), new Vector2(0, 10));

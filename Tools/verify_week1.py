@@ -262,6 +262,7 @@ def check_project() -> None:
         "chat_troll.png": "트롤 닉 빨간 네임플레이트",
         "chat_super.png": "슈퍼챗 닉 금 네임플레이트",
         "note_chip.png": "노트 칩",
+        "note_lane.png": "노트 레인",
         "superchat_chip.png": "슈퍼챗 봉투",
         "superchat_pip.png": "슈퍼챗 핍",
         "superchat_fly.png": "슈퍼챗 플라이 봉투",
@@ -1510,6 +1511,7 @@ def check_project() -> None:
     check_chat_super()
     check_chat_dock()
     check_note_chip()
+    check_note_lane()
     check_hit_rail()
     check_judge_sfx()
     check_stream_stings()
@@ -6502,6 +6504,75 @@ def check_note_chip() -> None:
         fail("note chip moved Unity off 6000.5.9f1")
     else:
         ok("traveling notes sit on a rhythm chip; pad tint / glow / strike / scoring stay")
+
+
+def check_note_lane() -> None:
+    """Traveling notes sit on a readable note_lane bed; hit_rail strike stays."""
+    import struct
+
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    png = ROOT / "Assets/Resources/Art/note_lane.png"
+    data = png.read_bytes() if png.exists() else b""
+    w = h = color = 0
+    if len(data) >= 26 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = struct.unpack(">II", data[16:24])
+        color = data[25]
+    lane = live_cs.split('_lane = UiKit.Panel', 1)[-1].split("var bottom = UiKit.Panel", 1)[0]
+    make = live_cs.split("RectTransform MakeBubble", 1)[-1].split("static void DimNamedBubble", 1)[0]
+    sync = live_cs.split("void SyncNotes", 1)[-1].split("void RefreshPromoOverlay", 1)[0]
+    live_loop = readme.split("떨어지는 채팅은", 1)[-1].split("하이프 시작 시", 1)[0]
+    lane_inv = next((ln for ln in readme.splitlines() if "Art/note_lane" in ln), "")
+
+    if not png.exists() or png.stat().st_size < 4000:
+        fail("note_lane.png is missing")
+    elif w < 200 or h < 400 or h <= w:
+        fail("note_lane.png is not a readable tall lane bed")
+    elif color != 6:
+        fail("note_lane.png is not RGBA")
+    elif 'NoteLane = "Art/note_lane"' not in art_cs:
+        fail("ArtSprites does not hook Art/note_lane")
+    elif "ArtSprites.NoteLane" not in lane or '"NoteLane"' not in lane:
+        fail("lane does not hang note_lane under the note paths")
+    elif "SetAsFirstSibling" not in lane:
+        fail("note_lane is not drawn under the note paths")
+    elif "ArtSprites.HitRail" not in lane or '"HitRail"' not in lane:
+        fail("note_lane dropped hit_rail strike")
+    elif "SetSiblingIndex(1)" not in lane:
+        fail("hit_rail is not kept above the note_lane bed")
+    elif "ArtSprites.NoteChip" not in make or "ArtSprites.SuperchatChip" not in make:
+        fail("note_lane dropped note_chip / superchat_chip")
+    elif "abs <= 0.15f" not in sync or '"Hot"' not in live_cs:
+        fail("note_lane dropped Perfect window glow")
+    elif "const float LaneHit = -210f" not in live_cs or "const float LaneTop = 260f" not in live_cs:
+        fail("note_lane moved the hit line or lane top")
+    elif "perfectWindow: 0.07" not in balance or "goodWindow: 0.22" not in balance:
+        fail("note_lane retuned QTE windows")
+    elif "approachSeconds: 1.35" not in balance:
+        fail("note_lane retuned travel speed")
+    elif "perfectWindow * " not in rules_cs or "b.goodWindow" not in rules_cs:
+        fail("note_lane retuned Judge scoring")
+    elif "billRent: 8000" not in balance or "startingCash: 45000" not in balance or "hypeSeconds: 12" not in balance:
+        fail("note_lane retuned Week 1 economy / hype")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("note_lane broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising note_lane / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("note_lane dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("note_lane moved Unity off 6000.5.9f1")
+    elif "note_lane" not in live_loop or "hit_rail" not in live_loop:
+        fail("README live loop does not name note_lane under the paths")
+    elif "note_lane" not in lane_inv or "레인" not in lane_inv:
+        fail("README inventory dropped note_lane bed")
+    else:
+        ok("note paths sit on note_lane bed; hit_rail strike / chips / timings stay")
 
 
 def check_hit_rail() -> None:
@@ -12607,6 +12678,8 @@ def check_readme_playable() -> None:
         fail("README dropped chat_dock overlay dock")
     elif "pad_dock" not in readme or "트레이" not in readme:
         fail("README dropped pad_dock stream-deck tray")
+    elif "note_lane" not in readme or "레인" not in readme:
+        fail("README dropped note_lane bed")
     elif "chat_nick" not in readme or "닉" not in readme:
         fail("README dropped chat_nick nameplate")
     elif "chat_troll" not in readme or "트롤" not in readme:
