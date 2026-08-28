@@ -9924,6 +9924,8 @@ def check_readme_playable() -> None:
         fail("README dropped nextday_key settlement keycap")
     elif "스트림덱 키캡" not in readme:
         fail("README does not inventory stream-deck keycaps")
+    elif "카드 / 탭" not in readme:
+        fail("README does not inventory cards / tabs")
     elif "letter_reply" not in readme or "letter_ignore" not in readme or "답장하기" not in readme or "나중에" not in readme:
         fail("README dropped letter_reply / letter_ignore fan-letter keycaps")
     elif "newgame_card" not in readme or "지울까?" not in readme or "지우고 시작" not in readme:
@@ -9934,6 +9936,14 @@ def check_readme_playable() -> None:
         fail("README dropped chat / note / superchat envelope / content icons")
     elif "content_plate" not in readme or "콘텐츠" not in readme:
         fail("README dropped content_plate stream card plate")
+    elif (
+        "content_plate" not in readme
+        or "letter_reply" not in readme
+        or "letter_ignore" not in readme
+        or "newgame_card" not in readme
+        or "day_tab" not in readme
+    ):
+        fail("README card/tab inventory dropped content_plate / letter keys / newgame_card / day_tab")
     elif "rival_nyang" not in readme or "goods_stand" not in readme or "agency_card" not in readme:
         fail("README dropped rival / goods / agency art")
     elif "ranking_board" not in readme or "concert_stage" not in readme:
@@ -10027,7 +10037,7 @@ def check_readme_playable() -> None:
     elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
         fail("README check moved Unity off 6000.5.9f1")
     else:
-        ok("README names keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
+        ok("README names cards/tabs + keycaps + leftover HUD + money stamps/slips + desk paper + Unity/portrait/controls")
 
 
 def check_save_roundtrip() -> None:
