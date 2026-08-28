@@ -917,8 +917,13 @@ namespace BankruptVtuber
             var clipCard = UiKit.Panel(_clipRoot.transform, "ClipCard", Color.white);
             UiKit.Layout(clipCard, new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.52f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(720, 360));
             var clipImg = clipCard.GetComponent<Image>();
-            ArtSprites.Apply(clipImg, ArtSprites.ClipCard, new Color(1f, 0.94f, 0.72f, 0.98f), Color.white);
-            clipImg.preserveAspect = false;
+            ArtSprites.ApplySliced(clipImg, ArtSprites.PanelDark, new Color(1f, 0.94f, 0.72f, 0.98f));
+            var clipPlate = UiKit.Image(clipCard, "ClipCardHud", Color.white);
+            UiKit.Layout(clipPlate.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(680f, 320f));
+            ArtSprites.Apply(clipPlate, ArtSprites.ClipCard, Color.white, Color.white);
+            clipPlate.preserveAspect = true;
+            clipPlate.raycastTarget = false;
+            clipPlate.transform.SetAsFirstSibling();
             SafeFitCard.Bind(clipCard, 720f, 360f);
             var clipTag = UiKit.Label(clipCard, "ClipTag", "클립 업로드", 22, Palette.Gold, TextAnchor.UpperCenter, FontStyle.Bold);
             UiKit.Layout(clipTag.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -20), new Vector2(-40, 28));

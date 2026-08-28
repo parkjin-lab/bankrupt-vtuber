@@ -1547,6 +1547,7 @@ def check_project() -> None:
     check_ranking_board_plate()
     check_agency_card_plate()
     check_membership_card_plate()
+    check_clip_card_plate()
     check_morning_bgm()
     check_settlement_bgm()
     check_result_stings()
@@ -9192,8 +9193,8 @@ def check_membership_card_plate() -> None:
         fail("membership plate retuned unlock gates")
     elif "Audio/sfx_membership" not in settle_cs or "PlayMemberSfx" not in settle_cs:
         fail("membership plate dropped sfx_membership")
-    elif "ArtSprites.ClipCard" not in clip_build or "preserveAspect = false" not in clip_build:
-        fail("membership plate restyled clip_card")
+    elif '"ClipCardHud"' not in clip_build or "ArtSprites.ClipCard" not in clip_build:
+        fail("membership plate dropped clip_card")
     elif "오늘 클립 올릴까" not in clip_build or "올린다" not in clip_build or "패스" not in clip_build:
         fail("membership plate covered clip copy")
     elif '"AgencyCardHud"' not in agency_build or "ArtSprites.AgencyCard" not in found_plate:
@@ -9246,6 +9247,127 @@ def check_membership_card_plate() -> None:
         fail("membership plate moved Unity off 6000.5.9f1")
     else:
         ok("membership unlock hangs membership_card as a desk plate; a non-membership settlement does not")
+
+
+def check_clip_card_plate() -> None:
+    """Week 2 clip upload hangs clip_card as a desk plate; a non-clip settlement does not."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    w2_asset = (ROOT / "Assets/Resources/Balance/Week2Balance.asset").read_text(encoding="utf-8")
+    w2r_cs = (ROOT / "Assets/Scripts/Economy/Week2Rules.cs").read_text(encoding="utf-8")
+    w4_asset = (ROOT / "Assets/Resources/Balance/Week4Balance.asset").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    under = live_build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
+    shelf = live_build.split('"GoodsStandHud"', 1)[-1].split('"HypeFlash"', 1)[0] if '"GoodsStandHud"' in live_build else ""
+    sponsor = live_build.split('"SponsorCardHud"', 1)[-1].split('"GoodsStandHud"', 1)[0] if '"SponsorCardHud"' in live_build else ""
+    rank_plate = build.split('"RankingBoardHud"', 1)[-1].split('"RankBody"', 1)[0] if '"RankingBoardHud"' in build else ""
+    agency_build = build.split('AgencyRoot"', 1)[-1].split('AgencySplashRoot"', 1)[0]
+    junior_build = build.split('JuniorRoot"', 1)[-1].split('ConcertBookRoot"', 1)[0]
+    found_plate = agency_build.split('"AgencyCardHud"', 1)[-1].split('"AgencyTitle"', 1)[0] if '"AgencyCardHud"' in agency_build else ""
+    scout_plate = junior_build.split('"JuniorCardHud"', 1)[-1].split('"JuniorTitle"', 1)[0] if '"JuniorCardHud"' in junior_build else ""
+    member_build = build.split('MemberRoot"', 1)[-1].split('ClipRoot"', 1)[0]
+    member_plate = member_build.split('"MemberCardHud"', 1)[-1].split('"MemberTitle"', 1)[0] if '"MemberCardHud"' in member_build else ""
+    clip_build = build.split('ClipRoot"', 1)[-1].split('GoodsRoot"', 1)[0]
+    clip_plate = clip_build.split('"ClipCardHud"', 1)[-1].split('"ClipTag"', 1)[0] if '"ClipCardHud"' in clip_build else ""
+    clip_show = settle_cs.split("void ShowClipCard", 1)[-1].split("void CloseClipCard", 1)[0]
+    slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
+
+    if 'ClipCard = "Art/clip_card"' not in art_cs:
+        fail("ArtSprites does not hook Art/clip_card")
+    elif '"ClipCardHud"' not in clip_build or "ArtSprites.ClipCard" not in clip_plate:
+        fail("Settlement does not hang clip_card as an upload desk plate")
+    elif "UiKit.Stretch" in clip_plate:
+        fail("clip_card plate is a full-screen backdrop; that is concert_stage's job")
+    elif "ArtSprites.ConcertStage" in clip_plate or "ArtSprites.RankingBoard" in clip_plate:
+        fail("clip plate reused concert / ranking art")
+    elif "ArtSprites.GoodsStand" in clip_plate or "ArtSprites.SponsorCard" in clip_plate:
+        fail("clip plate reused goods / sponsor art")
+    elif "ArtSprites.AgencyCard" in clip_plate or "ArtSprites.MembershipCard" in clip_plate:
+        fail("clip plate reused agency / membership art")
+    elif "SetActive(false)" not in clip_build:
+        fail("clip_card plate is not hidden on a non-clip settlement")
+    elif "SetActive(true)" not in clip_show:
+        fail("clip plate is not shown with the existing upload card")
+    elif "PlayClipSfx();" not in clip_show:
+        fail("clip plate dropped sfx_clip on appear")
+    elif '"ClipCardHud"' in live_cs or '"ClipCardHud"' in title_cs:
+        fail("clip_card leaked onto LiveStream / Title")
+    elif "오늘 클립 올릴까" not in clip_build or "올린다" not in clip_build or "패스" not in clip_build:
+        fail("clip plate covered upload copy")
+    elif "클립 업로드" not in settle_cs or "올리지 않기" not in settle_cs:
+        fail("clip plate dropped existing clip copy")
+    elif "AttemptClip" not in settle_cs or "DeclineClip" not in settle_cs:
+        fail("clip plate unhooked AttemptClip / DeclineClip")
+    elif "CanOfferClip" not in w2r_cs or "AttemptClip" not in w2r_cs:
+        fail("clip plate changed clip routing")
+    elif "clipCash: 30000" not in w2_asset or "clipChance: 30" not in w2_asset or "clipPerfectsRequired: 25" not in w2_asset:
+        fail("clip plate retuned clip numbers")
+    elif "Audio/sfx_clip" not in settle_cs or "PlayClipSfx" not in settle_cs:
+        fail("clip plate dropped sfx_clip")
+    elif '"MemberCardHud"' not in member_build or "ArtSprites.MembershipCard" not in member_plate:
+        fail("clip plate dropped membership unlock desk plate")
+    elif '"AgencyCardHud"' not in agency_build or "ArtSprites.AgencyCard" not in found_plate:
+        fail("clip plate dropped agency found desk plate")
+    elif '"JuniorCardHud"' not in junior_build or "ArtSprites.AgencyCard" not in scout_plate:
+        fail("clip plate dropped agency scout desk plate")
+    elif '"RankingBoardHud"' not in build or "ArtSprites.RankingBoard" not in rank_plate:
+        fail("clip plate dropped ranking settlement plate")
+    elif "SetActive(_sponsorShow)" not in apply or "ArtSprites.SponsorCard" not in sponsor:
+        fail("clip plate dropped sponsor-mention live plate")
+    elif "SetActive(_goodsShow)" not in apply or "ArtSprites.GoodsStand" not in shelf:
+        fail("clip plate dropped goods-promo live goods_stand")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in under:
+        fail("clip plate dropped concert live concert_stage")
+    elif "EnableSponsorLine" not in start or "EnablePromo" not in start:
+        fail("clip plate unhooked sponsor / goods live arming")
+    elif "EnableSponsorLine" not in session_cs or "EnablePromo" not in session_cs:
+        fail("clip plate unhooked EnableSponsorLine / EnablePromo")
+    elif "startingMembers: 8" not in w2_asset or "membershipPassivePerMember: 150" not in w2_asset:
+        fail("clip plate retuned membership numbers")
+    elif "unlockPeakViewers: 40" not in w2_asset or "unlockSuccessfulStreams: 4" not in w2_asset:
+        fail("clip plate retuned membership unlock gates")
+    elif "sponsorLineBonus: 3000" not in w4_asset or "goodsUnlockCash: 60000" not in w3_asset:
+        fail("clip plate retuned sponsor / goods numbers")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset:
+        fail("clip plate retuned concert cost / payout")
+    elif "ArtSprites.JudgePerfect" not in slam or "PlaySfx(_perfect" not in slam:
+        fail("clip plate dropped Day-1 coach Perfect stamp")
+    elif "Audio/sfx_threat" not in live_cs or "PlayThreatSfx" not in live_cs:
+        fail("clip plate dropped live sfx_threat")
+    elif "LastDayBanner" not in week_cs:
+        fail("clip plate dropped morning last-day tab")
+    elif '"ContinueLastDayTab"' not in title_cs or '"SettleLastDayTab"' not in settle_cs:
+        fail("clip plate dropped title / settlement last-day tabs")
+    elif "perfectWindow: 0.07" not in balance or "perfectWindow * " not in rules_cs:
+        fail("clip plate retuned hit windows")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("clip plate retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("clip plate retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("clip plate retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("clip plate broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "클립" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising clip plate / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("clip plate dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("clip plate moved Unity off 6000.5.9f1")
+    else:
+        ok("clip upload hangs clip_card as a desk plate; a non-clip settlement does not")
 
 
 def check_morning_bgm() -> None:
@@ -11758,8 +11880,8 @@ def check_readme_membership_card_plate() -> None:
         fail("README membership plate lost hidden-otherwise gating")
     elif '"MemberCardHud"' in live_cs or '"MemberCardHud"' in title_cs:
         fail("membership_card leaked onto LiveStream / Title")
-    elif "ArtSprites.ClipCard" not in clip_build or "preserveAspect = false" not in clip_build:
-        fail("README membership plate restyled clip_card")
+    elif '"ClipCardHud"' not in clip_build or "ArtSprites.ClipCard" not in clip_build:
+        fail("README membership plate dropped clip_card")
     elif '"AgencyCardHud"' not in agency_build or "ArtSprites.AgencyCard" not in found_plate:
         fail("README membership plate dropped agency found desk plate")
     elif '"JuniorCardHud"' not in junior_build or "ArtSprites.AgencyCard" not in scout_plate:
@@ -15533,8 +15655,6 @@ def check_week2_card_art() -> None:
         fail("MemberCard does not hang Art/membership_card")
     elif "ArtSprites.ClipCard" not in clip_build or '"ClipCard"' not in clip_build:
         fail("ClipCard does not hang Art/clip_card")
-    elif "preserveAspect = false" not in clip_build:
-        fail("clip card still letterboxes the desk item")
     elif "멤버십 해금" not in member_build or "정산으로" not in member_build:
         fail("membership art covered unlock copy")
     elif "오늘 클립 올릴까" not in clip_build or "올린다" not in clip_build or "패스" not in clip_build:
