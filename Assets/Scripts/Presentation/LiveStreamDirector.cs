@@ -163,6 +163,8 @@ namespace BankruptVtuber
         ContentShowLook _look = ContentShowLook.For(StreamContentType.None);
         bool _concertShow;
         Image _concertStage;
+        bool _goodsShow;
+        Image _goodsStand;
         float _bedVolume;
         float _bedDuck;
         bool _threatGear;
@@ -341,7 +343,10 @@ namespace BankruptVtuber
                 _session.EnableRival(gm.Week3);
             }
             if (WeekSchedule.InWeek3(gm.Run) && gm.Run.goodsUnlocked)
+            {
                 _session.EnablePromo(gm.Week3);
+                _goodsShow = true;
+            }
             if (gm.Run.sponsorActive && !WeekSchedule.InWeek5(gm.Run))
                 _session.EnableSponsorLine(gm.Week4);
             if (Week5Rules.ConcertStreamReady(gm.Run))
@@ -911,6 +916,13 @@ namespace BankruptVtuber
             var safe = StreamSafeArea.Attach(canvasRoot);
             var root = safe;
             _fxRoot = root as RectTransform;
+
+            _goodsStand = UiKit.Image(root, "GoodsStandHud", Color.white);
+            UiKit.Layout(_goodsStand.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(16f, 208f), new Vector2(168f, 168f));
+            ArtSprites.Apply(_goodsStand, ArtSprites.GoodsStand, Color.white, Color.white);
+            _goodsStand.preserveAspect = true;
+            _goodsStand.raycastTarget = false;
+            _goodsStand.gameObject.SetActive(false);
 
             _hypeFlash = UiKit.Image(root, "HypeFlash", new Color(1f, 0.82f, 0.25f, 0f));
             UiKit.Stretch(_hypeFlash.rectTransform);
@@ -3099,6 +3111,8 @@ namespace BankruptVtuber
             PaintShowChip(look.Type);
             if (_concertStage != null)
                 _concertStage.gameObject.SetActive(_concertShow);
+            if (_goodsStand != null)
+                _goodsStand.gameObject.SetActive(_goodsShow);
             UiKit.EnsureCamera(look.Wash);
             _avatar?.ApplyShow(look);
             if (_bed != null)

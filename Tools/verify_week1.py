@@ -1542,6 +1542,7 @@ def check_project() -> None:
     check_stream_bgm()
     check_concert_bgm()
     check_concert_live_stage()
+    check_goods_promo_live_stand()
     check_morning_bgm()
     check_settlement_bgm()
     check_result_stings()
@@ -8692,6 +8693,99 @@ def check_concert_live_stage() -> None:
         fail("concert stage moved Unity off 6000.5.9f1")
     else:
         ok("concert live hangs concert_stage under the HUD; a normal live does not")
+
+
+def check_goods_promo_live_stand() -> None:
+    """Week 3 goods-promo live hangs goods_stand as a HUD shelf; a normal live does not."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    under = build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
+    overlay = build.split('"StreamOverlay"', 1)[-1].split("_washVeil", 1)[0]
+    shelf = build.split('"GoodsStandHud"', 1)[-1].split('"HypeFlash"', 1)[0] if '"GoodsStandHud"' in build else ""
+    promo_build = live_cs.split('"PromoCard"', 1)[-1].split('"LineCard"', 1)[0]
+    goods_build = settle_cs.split('GoodsRoot"', 1)[-1].split('AgencyRoot"', 1)[0]
+    slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
+
+    if 'GoodsStand = "Art/goods_stand"' not in art_cs:
+        fail("ArtSprites does not hook Art/goods_stand")
+    elif '"GoodsStandHud"' not in build or "ArtSprites.GoodsStand" not in shelf:
+        fail("LiveStream does not hang goods_stand as a HUD shelf")
+    elif "UiKit.Stretch" in shelf:
+        fail("goods_stand HUD is a full-screen backdrop; that is concert_stage's job")
+    elif "ArtSprites.GoodsStand" in under or "GoodsStandHud" in under:
+        fail("goods_stand stole the concert_stage backdrop slot")
+    elif "SetActive(false)" not in shelf:
+        fail("goods_stand HUD is not hidden on a normal live")
+    elif "SetActive(_goodsShow)" not in apply:
+        fail("goods_stand HUD is not gated on the Week 3 goods-promo live")
+    elif "PromoActive" in apply:
+        fail("goods stand is gated on the promo QTE, not the whole show")
+    elif "EnablePromo" not in start or "_goodsShow = true" not in start:
+        fail("goods stand is not armed for the Week 3 goods-promo live")
+    elif "InWeek3" not in start or "goodsUnlocked" not in start:
+        fail("goods stand changed when the promo live is armed")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in under:
+        fail("goods stand dropped concert live concert_stage")
+    elif "ArtSprites.StreamOverlay" not in overlay or "ArtSprites.ConcertStage" in overlay:
+        fail("goods stand stole stream_overlay / concert_stage chrome")
+    elif "ArtSprites.GoodsStand" not in promo_build or '"PromoStand"' not in promo_build:
+        fail("goods stand dropped the promo-card art")
+    elif "굿즈 홍보 타이밍" not in promo_build or "지금 아크릴 홍보" not in live_cs:
+        fail("goods stand covered promo copy")
+    elif "홍보하기" not in promo_build or "넘어가기" not in promo_build:
+        fail("goods stand dropped promo confirm / skip")
+    elif "ArtSprites.GoodsStand" not in goods_build or '"GoodsStand"' not in goods_build:
+        fail("goods stand dropped unlock-card art")
+    elif "아크릴 스탠드 해금" not in goods_build:
+        fail("goods stand covered unlock copy")
+    elif "EnablePromo" not in session_cs or "public void EnablePromo" not in session_cs:
+        fail("goods stand unhooked EnablePromo")
+    elif "goodsUnlockCash: 60000" not in w3_asset or "goodsProduceCost: 2500" not in w3_asset or "goodsPrice: 7000" not in w3_asset:
+        fail("goods stand retuned unlock / produce / price")
+    elif "goodsPromoMultiplier: 1.5" not in w3_asset or "promoWindowSeconds: 1.2" not in w3_asset:
+        fail("goods stand retuned promo numbers")
+    elif "TryUnlockGoods" not in w3r_cs or "ProduceGoods" not in w3r_cs:
+        fail("goods stand changed unlock / produce routing")
+    elif "ArtSprites.JudgePerfect" not in slam or "PlaySfx(_perfect" not in slam:
+        fail("goods stand dropped Day-1 coach Perfect stamp")
+    elif "Audio/sfx_threat" not in live_cs or "PlayThreatSfx" not in live_cs:
+        fail("goods stand dropped live sfx_threat")
+    elif "LastDayBanner" not in (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8"):
+        fail("goods stand dropped morning last-day tab")
+    elif '"ContinueLastDayTab"' not in title_cs or '"SettleLastDayTab"' not in settle_cs:
+        fail("goods stand dropped title / settlement last-day tabs")
+    elif "perfectWindow: 0.07" not in balance or "perfectWindow * " not in rules_cs:
+        fail("goods stand retuned hit windows")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("goods stand retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("goods stand retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("goods stand retuned week-clear gates")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset:
+        fail("goods stand retuned concert cost / payout")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("goods stand broke pads, 입력됨, or added timeScale")
+    elif "Week3" in title_cs or "아크릴" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising goods stand / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("goods stand dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("goods stand moved Unity off 6000.5.9f1")
+    else:
+        ok("goods-promo live hangs goods_stand in the HUD; a normal live does not")
 
 
 def check_morning_bgm() -> None:
