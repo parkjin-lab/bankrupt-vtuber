@@ -1549,6 +1549,7 @@ def check_project() -> None:
     check_membership_card_plate()
     check_clip_card_plate()
     check_concert_book_plate()
+    check_goods_card_plate()
     check_morning_bgm()
     check_settlement_bgm()
     check_result_stings()
@@ -8759,7 +8760,7 @@ def check_goods_promo_live_stand() -> None:
         fail("goods stand covered promo copy")
     elif "홍보하기" not in promo_build or "넘어가기" not in promo_build:
         fail("goods stand dropped promo confirm / skip")
-    elif "ArtSprites.GoodsStand" not in goods_build or '"GoodsStand"' not in goods_build:
+    elif "ArtSprites.GoodsStand" not in goods_build or '"GoodsCardHud"' not in goods_build:
         fail("goods stand dropped unlock-card art")
     elif "아크릴 스탠드 해금" not in goods_build:
         fail("goods stand covered unlock copy")
@@ -9406,6 +9407,8 @@ def check_concert_book_plate() -> None:
     member_plate = member_build.split('"MemberCardHud"', 1)[-1].split('"MemberTitle"', 1)[0] if '"MemberCardHud"' in member_build else ""
     clip_build = build.split('ClipRoot"', 1)[-1].split('GoodsRoot"', 1)[0]
     clip_plate = clip_build.split('"ClipCardHud"', 1)[-1].split('"ClipTag"', 1)[0] if '"ClipCardHud"' in clip_build else ""
+    goods_build = build.split('GoodsRoot"', 1)[-1].split('AgencyRoot"', 1)[0]
+    goods_plate = goods_build.split('"GoodsCardHud"', 1)[-1].split('"GoodsTitle"', 1)[0] if '"GoodsCardHud"' in goods_build else ""
     book_build = build.split('ConcertBookRoot"', 1)[-1].split('ConcertResultRoot"', 1)[0]
     book_plate = book_build.split('"ConcertBookHud"', 1)[-1].split('"ConcertTitle"', 1)[0] if '"ConcertBookHud"' in book_build else ""
     result_build = build.split('ConcertResultRoot"', 1)[-1]
@@ -9454,6 +9457,8 @@ def check_concert_book_plate() -> None:
         fail("concert booking plate restyled the concert result splash")
     elif '"ClipCardHud"' not in clip_build or "ArtSprites.ClipCard" not in clip_plate:
         fail("concert booking plate dropped clip upload desk plate")
+    elif '"GoodsCardHud"' not in goods_build or "ArtSprites.GoodsStand" not in goods_plate:
+        fail("concert booking plate dropped goods unlock desk plate")
     elif '"MemberCardHud"' not in member_build or "ArtSprites.MembershipCard" not in member_plate:
         fail("concert booking plate dropped membership unlock desk plate")
     elif '"AgencyCardHud"' not in agency_build or "ArtSprites.AgencyCard" not in found_plate:
@@ -9500,6 +9505,159 @@ def check_concert_book_plate() -> None:
         fail("concert booking plate moved Unity off 6000.5.9f1")
     else:
         ok("concert booking hangs concert_stage as a desk plate; a non-booking settlement does not")
+
+
+def check_goods_card_plate() -> None:
+    """Week 3 goods unlock/produce hangs goods_stand as a desk plate; a non-goods settlement does not."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    rules_cs = (ROOT / "Assets/Scripts/Stream/StreamRules.cs").read_text(encoding="utf-8")
+    session_cs = (ROOT / "Assets/Scripts/Stream/StreamSession.cs").read_text(encoding="utf-8")
+    w5_asset = (ROOT / "Assets/Resources/Balance/Week5Balance.asset").read_text(encoding="utf-8")
+    w5r_cs = (ROOT / "Assets/Scripts/Economy/Week5Rules.cs").read_text(encoding="utf-8")
+    w4_asset = (ROOT / "Assets/Resources/Balance/Week4Balance.asset").read_text(encoding="utf-8")
+    w3_asset = (ROOT / "Assets/Resources/Balance/Week3Balance.asset").read_text(encoding="utf-8")
+    w3r_cs = (ROOT / "Assets/Scripts/Economy/Week3Rules.cs").read_text(encoding="utf-8")
+    w2_asset = (ROOT / "Assets/Resources/Balance/Week2Balance.asset").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    start = live_cs.split("void Start()", 1)[-1].split("void Update()", 1)[0]
+    under = live_build.split('"Wash"', 1)[-1].split('"StreamOverlay"', 1)[0]
+    overlay = live_build.split('"StreamOverlay"', 1)[-1].split("_washVeil", 1)[0]
+    shelf = live_build.split('"GoodsStandHud"', 1)[-1].split('"HypeFlash"', 1)[0] if '"GoodsStandHud"' in live_build else ""
+    sponsor = live_build.split('"SponsorCardHud"', 1)[-1].split('"GoodsStandHud"', 1)[0] if '"SponsorCardHud"' in live_build else ""
+    rank_plate = build.split('"RankingBoardHud"', 1)[-1].split('"RankBody"', 1)[0] if '"RankingBoardHud"' in build else ""
+    agency_build = build.split('AgencyRoot"', 1)[-1].split('AgencySplashRoot"', 1)[0]
+    junior_build = build.split('JuniorRoot"', 1)[-1].split('ConcertBookRoot"', 1)[0]
+    found_plate = agency_build.split('"AgencyCardHud"', 1)[-1].split('"AgencyTitle"', 1)[0] if '"AgencyCardHud"' in agency_build else ""
+    scout_plate = junior_build.split('"JuniorCardHud"', 1)[-1].split('"JuniorTitle"', 1)[0] if '"JuniorCardHud"' in junior_build else ""
+    member_build = build.split('MemberRoot"', 1)[-1].split('ClipRoot"', 1)[0]
+    member_plate = member_build.split('"MemberCardHud"', 1)[-1].split('"MemberTitle"', 1)[0] if '"MemberCardHud"' in member_build else ""
+    clip_build = build.split('ClipRoot"', 1)[-1].split('GoodsRoot"', 1)[0]
+    clip_plate = clip_build.split('"ClipCardHud"', 1)[-1].split('"ClipTag"', 1)[0] if '"ClipCardHud"' in clip_build else ""
+    goods_build = build.split('GoodsRoot"', 1)[-1].split('AgencyRoot"', 1)[0]
+    goods_plate = goods_build.split('"GoodsCardHud"', 1)[-1].split('"GoodsTitle"', 1)[0] if '"GoodsCardHud"' in goods_build else ""
+    book_build = build.split('ConcertBookRoot"', 1)[-1].split('ConcertResultRoot"', 1)[0]
+    book_plate = book_build.split('"ConcertBookHud"', 1)[-1].split('"ConcertTitle"', 1)[0] if '"ConcertBookHud"' in book_build else ""
+    result_build = build.split('ConcertResultRoot"', 1)[-1]
+    goods_show = settle_cs.split("void ShowGoodsSplash", 1)[-1].split("void OnGoodsAck", 1)[0]
+    promo_build = live_cs.split('"PromoCard"', 1)[-1].split('"LineCard"', 1)[0]
+    slam = live_cs.split("void SlamCoachStamp", 1)[-1].split("void HideCoachStamp", 1)[0]
+
+    if 'GoodsStand = "Art/goods_stand"' not in art_cs:
+        fail("ArtSprites does not hook Art/goods_stand")
+    elif '"GoodsCardHud"' not in goods_build or "ArtSprites.GoodsStand" not in goods_plate:
+        fail("Settlement does not hang goods_stand as an unlock desk plate")
+    elif "UiKit.Stretch" in goods_plate:
+        fail("goods unlock plate is a full-screen backdrop; that is the live goods_stand job")
+    elif "168f, 168f" in goods_plate or "16f, 208f" in goods_plate:
+        fail("goods unlock plate stole the live goods_stand shelf slot")
+    elif "148, 148" in goods_plate or "0.62f" in goods_plate:
+        fail("goods unlock plate is still a 148 icon, not desk paper")
+    elif "ArtSprites.ConcertStage" in goods_plate or "ArtSprites.ClipCard" in goods_plate:
+        fail("goods unlock plate reused concert / clip art")
+    elif "ArtSprites.RankingBoard" in goods_plate or "ArtSprites.SponsorCard" in goods_plate:
+        fail("goods unlock plate reused ranking / sponsor art")
+    elif "ArtSprites.AgencyCard" in goods_plate or "ArtSprites.MembershipCard" in goods_plate:
+        fail("goods unlock plate reused agency / membership art")
+    elif "SetActive(false)" not in goods_build:
+        fail("goods_stand unlock plate is not hidden on a non-goods settlement")
+    elif "SetActive(true)" not in goods_show:
+        fail("goods unlock plate is not shown with the existing unlock card")
+    elif "PlayGoodsSfx();" not in goods_show:
+        fail("goods unlock plate dropped sfx_goods on appear")
+    elif '"GoodsCardHud"' in live_cs or '"GoodsCardHud"' in title_cs:
+        fail("goods unlock plate leaked onto LiveStream / Title")
+    elif "아크릴 스탠드 해금" not in goods_build or "정산으로" not in goods_build:
+        fail("goods unlock plate covered unlock copy")
+    elif "아크릴 1개 생산" not in settle_cs or "ProduceGoods" not in w3r_cs:
+        fail("goods unlock plate unhooked produce confirm / routing")
+    elif "TryUnlockGoods" not in w3r_cs or "goodsJustUnlocked" not in settle_cs:
+        fail("goods unlock plate unhooked TryUnlockGoods routing")
+    elif "goodsUnlockCash: 60000" not in w3_asset or "goodsProduceCost: 2500" not in w3_asset or "goodsPrice: 7000" not in w3_asset:
+        fail("goods unlock plate retuned unlock / produce / price")
+    elif "goodsPromoMultiplier: 1.5" not in w3_asset or "promoWindowSeconds: 1.2" not in w3_asset:
+        fail("goods unlock plate retuned promo numbers")
+    elif "goodsUnlockStock: 20" not in w3_asset:
+        fail("goods unlock plate retuned unlock stock")
+    elif "Audio/sfx_goods" not in settle_cs or "PlayGoodsSfx" not in settle_cs:
+        fail("goods unlock plate dropped sfx_goods")
+    elif "SetActive(_goodsShow)" not in apply or "ArtSprites.GoodsStand" not in shelf:
+        fail("goods unlock plate dropped goods-promo live goods_stand")
+    elif "UiKit.Stretch" in shelf:
+        fail("goods unlock plate stretched the live goods_stand shelf")
+    elif "168f, 168f" not in shelf or "16f, 208f" not in shelf:
+        fail("goods unlock plate restyled the live goods_stand shelf")
+    elif "SetActive(_concertShow)" not in apply or "ArtSprites.ConcertStage" not in under:
+        fail("goods unlock plate dropped concert live concert_stage")
+    elif "ArtSprites.StreamOverlay" not in overlay or "ArtSprites.ConcertStage" in overlay:
+        fail("goods unlock plate stole the live stream_overlay chrome")
+    elif "_concertShow ? \"Audio/bgm_concert\" : \"Audio/bgm_stream\"" not in apply:
+        fail("goods unlock plate retuned bgm_concert routing")
+    elif "ArtSprites.GoodsStand" not in promo_build or '"PromoStand"' not in promo_build:
+        fail("goods unlock plate dropped the promo-card art")
+    elif "굿즈 홍보 타이밍" not in promo_build or "홍보하기" not in promo_build or "넘어가기" not in promo_build:
+        fail("goods unlock plate covered promo copy / confirm")
+    elif "EnablePromo" not in start or "EnableSponsorLine" not in start:
+        fail("goods unlock plate unhooked goods / sponsor live arming")
+    elif "EnablePromo" not in session_cs or "EnableSponsorLine" not in session_cs:
+        fail("goods unlock plate unhooked EnablePromo / EnableSponsorLine")
+    elif '"ConcertBookHud"' not in book_build or "ArtSprites.ConcertStage" not in book_plate:
+        fail("goods unlock plate dropped concert booking desk plate")
+    elif "preserveAspect = false" not in result_build or "ArtSprites.ConcertStage" not in result_build:
+        fail("goods unlock plate restyled the concert result splash")
+    elif '"ClipCardHud"' not in clip_build or "ArtSprites.ClipCard" not in clip_plate:
+        fail("goods unlock plate dropped clip upload desk plate")
+    elif '"MemberCardHud"' not in member_build or "ArtSprites.MembershipCard" not in member_plate:
+        fail("goods unlock plate dropped membership unlock desk plate")
+    elif '"AgencyCardHud"' not in agency_build or "ArtSprites.AgencyCard" not in found_plate:
+        fail("goods unlock plate dropped agency found desk plate")
+    elif '"JuniorCardHud"' not in junior_build or "ArtSprites.AgencyCard" not in scout_plate:
+        fail("goods unlock plate dropped agency scout desk plate")
+    elif '"RankingBoardHud"' not in build or "ArtSprites.RankingBoard" not in rank_plate:
+        fail("goods unlock plate dropped ranking settlement plate")
+    elif "SetActive(_sponsorShow)" not in apply or "ArtSprites.SponsorCard" not in sponsor:
+        fail("goods unlock plate dropped sponsor-mention live plate")
+    elif "concertCost: 80000" not in w5_asset or "concertBasePayout: 200000" not in w5_asset:
+        fail("goods unlock plate retuned concert cost / payout")
+    elif "CanBookConcert" not in w5r_cs or "BookConcert" not in settle_cs:
+        fail("goods unlock plate unhooked concert booking routing")
+    elif "clipCash: 30000" not in w2_asset or "clipChance: 30" not in w2_asset:
+        fail("goods unlock plate retuned clip numbers")
+    elif "sponsorLineBonus: 3000" not in w4_asset:
+        fail("goods unlock plate retuned sponsor numbers")
+    elif "ArtSprites.JudgePerfect" not in slam or "PlaySfx(_perfect" not in slam:
+        fail("goods unlock plate dropped Day-1 coach Perfect stamp")
+    elif "Audio/sfx_threat" not in live_cs or "PlayThreatSfx" not in live_cs:
+        fail("goods unlock plate dropped live sfx_threat")
+    elif "LastDayBanner" not in week_cs:
+        fail("goods unlock plate dropped morning last-day tab")
+    elif '"ContinueLastDayTab"' not in title_cs or '"SettleLastDayTab"' not in settle_cs:
+        fail("goods unlock plate dropped title / settlement last-day tabs")
+    elif "perfectWindow: 0.07" not in balance or "perfectWindow * " not in rules_cs:
+        fail("goods unlock plate retuned hit windows")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("goods unlock plate retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("goods unlock plate retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("goods unlock plate retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("goods unlock plate broke pads, 입력됨, or added timeScale")
+    elif "Week3" in title_cs or "아크릴" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising goods unlock plate / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("goods unlock plate dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("goods unlock plate moved Unity off 6000.5.9f1")
+    else:
+        ok("goods unlock/produce hangs goods_stand as a desk plate; a non-goods settlement does not")
 
 
 def check_morning_bgm() -> None:
@@ -16607,7 +16765,7 @@ def check_goods_stand() -> None:
         fail("goods_stand.png is not RGBA")
     elif 'GoodsStand = "Art/goods_stand"' not in art_cs:
         fail("ArtSprites does not hook Art/goods_stand")
-    elif "ArtSprites.GoodsStand" not in goods_build or '"GoodsStand"' not in goods_build:
+    elif "ArtSprites.GoodsStand" not in goods_build or '"GoodsCardHud"' not in goods_build:
         fail("GoodsCard does not hang Art/goods_stand")
     elif "ArtSprites.GoodsStand" not in promo_build or '"PromoStand"' not in promo_build:
         fail("PromoCard does not hang Art/goods_stand")
