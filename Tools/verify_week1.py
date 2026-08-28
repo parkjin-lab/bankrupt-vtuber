@@ -1564,6 +1564,7 @@ def check_project() -> None:
     check_title_concert_pin()
     check_title_sponsor_pin()
     check_title_newgame_bill()
+    check_title_newgame_cash()
     check_concert_live_badge()
     check_sponsor_live_badge()
     check_morning_bgm()
@@ -12039,6 +12040,105 @@ def check_title_newgame_bill() -> None:
         fail("new-game bill paper moved Unity off 6000.5.9f1")
     else:
         ok("no-save Title hangs bill_notice on the start card; continue Title hides it")
+
+
+def check_title_newgame_cash() -> None:
+    """No-save Title hangs cash_slip as a desk paper beside NewGameBill; continue Title hides it."""
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    bill = start_hang.split("_startBill = UiKit.Image", 1)[-1] if "_startBill = UiKit.Image" in start_hang else ""
+    if "_startCash = UiKit.Image" in bill:
+        bill = bill.split("_startCash = UiKit.Image", 1)[0]
+    cash = start_hang.split("_startCash = UiKit.Image", 1)[-1] if "_startCash = UiKit.Image" in start_hang else ""
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+    warn = week_cs.split("void RefreshCashShort", 1)[-1].split("static int PeekTodayBills", 1)[0] if "void RefreshCashShort" in week_cs else ""
+
+    if 'CashSlip = "Art/cash_slip"' not in art_cs:
+        fail("ArtSprites does not hook Art/cash_slip")
+    elif '"NewGameCash"' not in start_hang or "ArtSprites.CashSlip" not in cash:
+        fail("new-game Title does not hang Art/cash_slip as a desk paper")
+    elif "_start.transform" not in cash:
+        fail("new-game cash paper is not on the start / new-game card")
+    elif "preserveAspect = true" not in cash:
+        fail("new-game cash paper is not preserveAspect")
+    elif "72f, 48f" in cash:
+        fail("new-game cash paper was hung as a 72×48 pin")
+    elif "200f, 68f" not in cash or "204f, -10f" not in cash:
+        fail("new-game cash paper is not a desk slip beside NewGameBill")
+    elif "16f, -10f" in cash or "176f, 170f" in cash:
+        fail("new-game cash paper covers NewGameBill")
+    elif "SetActive(false)" not in cash:
+        fail("new-game cash paper is not hidden until RefreshContinue")
+    elif "_startCash" not in hide or "SetActive(!_hasSave)" not in hide:
+        fail("new-game cash paper is not shown only when there is no save")
+    elif '"ContinueCashSlip"' not in build or "ArtSprites.CashSlip" not in build:
+        fail("new-game cash paper dropped continue cash on Art/cash_slip")
+    elif "SetActive(_hasSave)" not in hide:
+        fail("continue Title cash / papers are not hidden without a save")
+    elif "_continue.transform" in cash or '"ContinueCashSlip"' in cash:
+        fail("new-game cash paper sat on the continue tile")
+    elif "UiKit.Stretch" in cash or "420f, 78f" in cash:
+        fail("new-game cash paper covers the start button")
+    elif '"NewGameBill"' not in start_hang or "ArtSprites.BillNotice" not in bill:
+        fail("new-game cash paper dropped NewGameBill")
+    elif "16f, -10f" not in bill or "176f, 170f" not in bill or "preserveAspect = true" not in bill:
+        fail("new-game cash paper restyled NewGameBill")
+    elif '"StartChip"' not in start_hang or "ArtSprites.TitleStart" not in start_hang:
+        fail("new-game cash paper dropped the start keycap / 시작 chip")
+    elif "ArtSprites.CashSlip" not in money or '"CashChip"' not in week_cs:
+        fail("new-game cash paper dropped morning 현금")
+    elif "청구보다 부족" not in week_cs or "Palette.MoneyRed" not in warn:
+        fail("new-game cash paper dropped morning 청구보다 부족")
+    elif "ArtSprites.BillNotice" not in money or '"오늘 청구"' not in week_cs:
+        fail("new-game cash paper dropped morning 오늘 청구")
+    elif "_billSlam = 0.25f" not in week_cs or "PeekTodayBills" not in week_cs:
+        fail("new-game cash paper dropped the morning bill slam")
+    elif '"ContinueMemberPin"' not in build or "-8f, 10f" not in build:
+        fail("new-game cash paper dropped the membership continue pin")
+    elif '"ContinueAgencyPin"' not in build or "-86f, 10f" not in build:
+        fail("new-game cash paper dropped the agency continue pin")
+    elif '"ContinueGoodsPin"' not in build or "-164f, 10f" not in build:
+        fail("new-game cash paper dropped the goods continue pin")
+    elif '"ContinueRankingPin"' not in build or "-242f, 10f" not in build:
+        fail("new-game cash paper dropped the ranking continue pin")
+    elif '"ContinueClipPin"' not in build or "-320f, 10f" not in build:
+        fail("new-game cash paper dropped the clip continue pin")
+    elif '"ContinueConcertPin"' not in build or "-398f, 10f" not in build:
+        fail("new-game cash paper dropped the concert continue pin")
+    elif '"ContinueSponsorPin"' not in build or "-476f, 10f" not in build:
+        fail("new-game cash paper dropped the sponsor continue pin")
+    elif "Audio/sfx_threat" not in title_cs or "PlayThreatSfx" not in fill:
+        fail("new-game cash paper dropped continue sfx_threat")
+    elif "Audio/sfx_threat" in cash or "PlayThreatSfx" in cash:
+        fail("new-game cash paper added a title sting")
+    elif "startingCash =" in title_cs or "cash +=" in title_cs or "cash -=" in title_cs:
+        fail("new-game cash paper writes start cash")
+    elif "lastBills =" in week_cs or "billRent =" in title_cs or "TonightBills =" in title_cs:
+        fail("new-game cash paper writes bill amounts")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("new-game cash paper retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("new-game cash paper retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("new-game cash paper retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("new-game cash paper broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising new-game cash paper / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("new-game cash paper dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("new-game cash paper moved Unity off 6000.5.9f1")
+    else:
+        ok("no-save Title hangs cash_slip beside NewGameBill; continue Title hides it")
 
 
 def check_concert_live_badge() -> None:

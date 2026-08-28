@@ -18,6 +18,7 @@ namespace BankruptVtuber
         RectTransform _startRt;
         RectTransform _startChip;
         Image _startBill;
+        Image _startCash;
         Button _continue;
         RectTransform _continueRt;
         RectTransform _continueChip;
@@ -188,6 +189,14 @@ namespace BankruptVtuber
             var startBillT = UiKit.Label(_startBill.transform, "T", "부채", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(startBillT.rectTransform, new Vector2(0.14f, 0.20f), new Vector2(0.86f, 0.80f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _startBill.gameObject.SetActive(false);
+            _startCash = UiKit.Image(_start.transform, "NewGameCash", Color.white);
+            UiKit.Layout(_startCash.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(204f, -10f), new Vector2(200f, 68f));
+            ArtSprites.Apply(_startCash, ArtSprites.CashSlip, new Color(0.98f, 0.94f, 0.86f, 0.98f), Color.white);
+            _startCash.preserveAspect = true;
+            _startCash.raycastTarget = false;
+            var startCashT = UiKit.Label(_startCash.transform, "T", "현금", 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(startCashT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _startCash.gameObject.SetActive(false);
             _continue = UiKit.Button(titleParent, "Continue", "이어서 하기", OnContinue, Palette.Gold, Palette.Ink);
             StyleMenuButton(_continue, new Vector2(56, -154), new Vector2(560, 128), Palette.Gold);
             _continueRt = _continue.GetComponent<RectTransform>();
@@ -511,6 +520,8 @@ namespace BankruptVtuber
                 _continueSponsorPin.gameObject.SetActive(false);
             if (_startBill != null)
                 _startBill.gameObject.SetActive(!_hasSave);
+            if (_startCash != null)
+                _startCash.gameObject.SetActive(!_hasSave);
             if (_continueClip != null)
                 _continueClip.gameObject.SetActive(hasHead);
             if (!_hasSave && _continueWarn != null)
