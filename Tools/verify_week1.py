@@ -1597,6 +1597,7 @@ def check_project() -> None:
     check_live_day1_mental()
     check_live_last_day_mental()
     check_live_week_start_mental()
+    check_live_last_day_warn()
     check_title_day1_tab()
     check_concert_live_badge()
     check_sponsor_live_badge()
@@ -18489,6 +18490,321 @@ def check_live_week_start_mental() -> None:
         fail("live week-start mental paper moved Unity off 6000.5.9f1")
     else:
         ok("week-start live hangs mental_note as HUD 멘탈; other lives hide it; LiveDay1Mental / LiveLastMental / LiveWeekBill / LiveWeekCash / NewGameMental / morning / ending mental stay")
+
+
+def check_live_last_day_warn() -> None:
+    """Last-of-week lives hang event_warn as a tiny HUD 경고 paper; other lives hide it; LiveLastMental / LiveLastBill / LiveLastCash / LiveDay1Mental / LiveWeekMental / EventWarnBox / morning / title / settlement event_warn stay."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
+    build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    paper = build.split('"LiveLastWarn"', 1)[-1].split('"LiveLastBill"', 1)[0] if '"LiveLastWarn"' in build else ""
+    last_mental = build.split('"LiveLastMental"', 1)[-1].split('"LiveLastWarn"', 1)[0] if '"LiveLastWarn"' in build else ""
+    last_cash = build.split('"LiveLastCash"', 1)[-1].split('"LiveLastMental"', 1)[0] if '"LiveLastMental"' in build else ""
+    last_bill = build.split('"LiveLastBill"', 1)[-1].split('"LiveWeekBill"', 1)[0] if '"LiveWeekBill"' in build else ""
+    day1_mental = build.split('"LiveDay1Mental"', 1)[-1].split('"LiveWeekCash"', 1)[0] if '"LiveDay1Mental"' in build else ""
+    week_mental = build.split('"LiveWeekMental"', 1)[-1].split('"LiveLastCash"', 1)[0] if '"LiveWeekMental"' in build else ""
+    last_tab = build.split('"LiveLastDay"', 1)[-1].split("var chatPanel", 1)[0] if '"LiveLastDay"' in build else ""
+    last_head = build.split('"LiveLastHeadline"', 1)[-1].split("if (_avatar != null && _avatar.Root != null)", 1)[0] if '"LiveLastHeadline"' in build else ""
+    event_box = build.split('"EventWarnBox"', 1)[-1].split('"Top"', 1)[0] if '"EventWarnBox"' in build else ""
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    warn_apply = apply.split("if (_lastWarn", 1)[-1].split("UiKit.EnsureCamera", 1)[0] if "if (_lastWarn" in apply else ""
+    last_mental_apply = apply.split("if (_lastMental", 1)[-1].split("if (_lastWarn", 1)[0] if "if (_lastWarn" in apply else ""
+    last_cash_apply = apply.split("if (_lastCash", 1)[-1].split("if (_lastMental", 1)[0] if "if (_lastMental" in apply else ""
+    last_bill_apply = apply.split("if (_lastBill", 1)[-1].split("if (_lastCash", 1)[0] if "if (_lastCash" in apply else ""
+    day1_mental_apply = apply.split("if (_day1Mental", 1)[-1].split("if (_weekHeadline", 1)[0] if "if (_day1Mental" in apply else ""
+    week_mental_apply = apply.split("if (_weekMental", 1)[-1].split("if (_lastHeadline", 1)[0] if "if (_weekMental" in apply else ""
+    last_live_gate = live_cs.split("static bool LiveLastDay", 1)[-1].split("void ApplyThreatShow", 1)[0] if "static bool LiveLastDay" in live_cs else ""
+    week_live_gate = live_cs.split("static bool LiveWeekStartDay", 1)[-1].split("static Color ShowChipAccent", 1)[0] if "static bool LiveWeekStartDay" in live_cs else ""
+    tick = live_cs.split("void TickEventWarn", 1)[-1].split("void TickStrike", 1)[0] if "void TickEventWarn" in live_cs else ""
+    show = build.split('"ShowChip"', 1)[-1].split('"BillChip"', 1)[0] if '"ShowChip"' in build else ""
+    bill = build.split('"BillChip"', 1)[-1].split('"LiveDay1Headline"', 1)[0] if '"LiveDay1Headline"' in build else ""
+    hud = build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in build else ""
+    chat = build.split('"ChatDock"', 1)[-1].split('"Lane"', 1)[0] if '"ChatDock"' in build else ""
+    pads = build.split('"PadRow"', 1)[-1].split('"MissSting"', 1)[0] if '"PadRow"' in build else ""
+    coach = build.split('"CoachCard"', 1)[-1].split('"CoachStamp"', 1)[0] if '"CoachStamp"' in build else ""
+    timer = build.split('"Timer"', 1)[-1].split('"Cash"', 1)[0] if '"Timer"' in build else ""
+    title_warn = title_cs.split('"ContinueWarn"', 1)[-1].split('"ContinueWarnLine"', 1)[0] if '"ContinueWarnLine"' in title_cs else ""
+    extra_warn = settle_cs.split('"ExtraWarn"', 1)[-1].split('"ExtraWarnLine"', 1)[0] if '"ExtraWarnLine"' in settle_cs else ""
+    spawn = week_cs.split("void SpawnIncoming", 1)[-1].split("IEnumerator Slam", 1)[0] if "void SpawnIncoming" in week_cs else ""
+
+    if 'EventWarn = "Art/event_warn"' not in art_cs:
+        fail("ArtSprites does not hook Art/event_warn")
+    elif '"LiveLastWarn"' not in build or "ArtSprites.EventWarn" not in paper:
+        fail("last-day live does not hang Art/event_warn as a HUD 경고 paper")
+    elif "Image _lastWarn" not in live_cs:
+        fail("last-day live warn paper is not LiveLastWarn")
+    elif "preserveAspect = true" not in paper:
+        fail("live last-day warn paper is not preserveAspect")
+    elif "ApplySliced" in paper:
+        fail("live last-day warn paper reused a sliced desk paper")
+    elif "72f, 48f" in paper:
+        fail("live last-day warn paper was hung as a 72×48 pin")
+    elif "104f, 48f" not in paper or "690f, -268f" not in paper:
+        fail("live last-day warn paper is not a tiny HUD scrap just right of LiveLastMental")
+    elif "574f, -268f" in paper or "338f, -268f" in paper or "116f, 56f" in paper:
+        fail("live last-day warn paper covers LiveLastMental / LiveLastBill")
+    elif "456f, -268f" in paper or "110f, 48f" in paper:
+        fail("live last-day warn paper covers LiveLastCash")
+    elif "204f, -86f" in paper or "160f, 110f" in paper:
+        fail("live last-day warn paper sat on Title NewGameMental")
+    elif "204f, -10f" in paper or "200f, 68f" in paper:
+        fail("live last-day warn paper sat on Title NewGameCash")
+    elif "176f, 170f" in paper or "16f, -10f" in paper:
+        fail("live last-day warn paper sat on Title NewGameBill")
+    elif "8f, -220f" in paper or "8f, -148f" in paper or "0.74f, 1f" in paper or "0.80f, 1f" in paper:
+        fail("live last-day warn paper sat on a morning / settlement desk paper")
+    elif '"경고"' not in paper:
+        fail("live last-day warn paper is not Korean 경고 copy")
+    elif "멘탈" in paper or "MentalNote" in paper or "청구서" in paper or "BillNotice" in paper or "CashSlip" in paper or "현금" in paper:
+        fail("live last-day warn paper reused a mental / bill / cash hang")
+    elif "헤드라인" in paper or "HeadlineClip" in paper or "DayTab" in paper:
+        fail("live last-day warn paper reused a headline or calendar hang")
+    elif "1일차" in paper or "마지막 날" in paper or "2주차" in paper or "주차 마지막" in paper:
+        fail("live last-day warn paper reused calendar-tab copy")
+    elif "168f, 68f" in paper or "24f, -272f" in paper:
+        fail("live last-day warn paper covers LiveLastHeadline")
+    elif "132f, 40f" in paper or "200f, -276f" in paper:
+        fail("live last-day warn paper covers LiveLastDay")
+    elif "24, -214" in paper or "168, 44" in paper or '"ShowChip"' in paper:
+        fail("live last-day warn paper covers the show chip")
+    elif "460, -210" in paper or "248, 52" in paper or '"BillChip"' in paper:
+        fail("live last-day warn paper covers the live bill chip")
+    elif "710, -228" in paper or "180, 18" in paper:
+        fail("live last-day warn paper covers the bill fill")
+    elif "ClockPlate" in paper or '"Timer"' in paper or "0.64f, 1f" in paper:
+        fail("live last-day warn paper covers the timer")
+    elif "ChatDock" in paper or "420, -220" in paper or "실시간 채팅" in paper:
+        fail("live last-day warn paper covers chat")
+    elif "PadRow" in paper or "AddColumnPad" in paper or "1–4" in paper:
+        fail("live last-day warn paper covers QTE / pads")
+    elif "CoachCard" in paper or "720, 220" in paper or "-80, 0" in paper:
+        fail("live last-day warn paper covers the day-1 coach")
+    elif "MemberBadgeHud" in paper or "AgencyBadgeHud" in paper or "GoodsBadgeHud" in paper:
+        fail("live last-day warn paper sat on an unlock pin")
+    elif "RankingBadgeHud" in paper or "ClipBadgeHud" in paper or "ConcertBadgeHud" in paper or "SponsorBadgeHud" in paper:
+        fail("live last-day warn paper sat on an unlock pin")
+    elif "-10f, -10f" in paper or "-10f, -322f" in paper:
+        fail("live last-day warn paper covers a webcam unlock pin")
+    elif "360, 70" in paper or '"GoLive"' in paper:
+        fail("live last-day warn paper sat on morning GO LIVE")
+    elif "안티 온다" in paper or "렉 온다" in paper or "오늘의 위협" in paper:
+        fail("live last-day warn paper reused EventWarnBox / morning threat copy")
+    elif "EventWarnBox" in paper or "0.18f" in paper or "0.52f" in paper:
+        fail("live last-day warn paper reused the EventWarnBox stretch layout")
+    elif "ContinueWarn" in paper or "488, -286" in paper or "380, 52" in paper:
+        fail("live last-day warn paper sat on Title ContinueWarn")
+    elif "ExtraWarn" in paper or "420, -10" in paper or "440, 52" in paper:
+        fail("live last-day warn paper sat on settlement ExtraWarn")
+    elif "NewGameMental" in paper or "ContinueMentalNote" in paper or "ClearMentalNote" in paper or "StampMentalNote" in paper:
+        fail("live last-day warn paper sat on Title / ending mental papers")
+    elif "NewGameCash" in paper or "ContinueCashSlip" in paper or "NewGameBill" in paper:
+        fail("live last-day warn paper sat on Title cash / bill papers")
+    elif "오늘 청구" in paper or "_billSlam" in paper:
+        fail("live last-day warn paper sat on the morning bill tile")
+    elif "LiveDay1Headline" in paper or "LiveLastHeadline" in paper or "LiveWeekHeadline" in paper:
+        fail("live last-day warn paper folded a live headline into the same hang")
+    elif '"LiveDay1"' in paper or '"LiveWeekStart"' in paper or '"LiveLastDay"' in paper:
+        fail("live last-day warn paper folded a live calendar into the same hang")
+    elif '"LiveDay1Bill"' in paper or '"LiveLastBill"' in paper or '"LiveWeekBill"' in paper:
+        fail("live last-day warn paper folded a live bill paper into the same hang")
+    elif '"LiveDay1Cash"' in paper or '"LiveLastCash"' in paper or '"LiveWeekCash"' in paper:
+        fail("live last-day warn paper folded a live cash paper into the same hang")
+    elif '"LiveDay1Mental"' in paper or '"LiveLastMental"' in paper or '"LiveWeekMental"' in paper:
+        fail("live last-day warn paper folded a live mental paper into the same hang")
+    elif "멘탈 위험" in paper or "MentalWarnBox" in paper:
+        fail("live last-day warn paper reused the live 멘탈 위험 chip")
+    elif "UiKit.Stretch" in paper:
+        fail("live last-day warn paper was stretched over the HUD")
+    elif "SetActive(false)" not in paper:
+        fail("live last-day warn paper is not hidden until ApplyContentShow")
+    elif "Audio/sfx_threat" in paper or "PlayThreatSfx" in paper or "PlayNewGameBillThreat" in paper:
+        fail("live last-day warn paper added a new sting")
+    elif "sfx_mental" in paper or "PlaySfx(_mentalCue" in paper:
+        fail("live last-day warn paper added a new mental sting")
+    elif "_lastWarn" not in apply or "LiveLastDay" not in warn_apply:
+        fail("live last-day warn paper is not shown on last-day lives")
+    elif "SetActive(LiveLastDay(GameManager.Instance.Run.day))" not in warn_apply:
+        fail("live last-day warn paper is not hidden on other lives")
+    elif "1 == GameManager.Instance.Run.day" in warn_apply:
+        fail("live last-day warn paper reused the day-1 live gate")
+    elif "LastDayOfCurrentWeek" in warn_apply or "LiveWeekStartDay" in warn_apply:
+        fail("live last-day warn paper reused last-day or week-start gate")
+    elif "PlayThreatSfx" in warn_apply or "Audio/sfx_threat" in warn_apply:
+        fail("live last-day warn paper fired sfx_threat on the hang")
+    elif "LastDayOfCurrentWeek" in apply or "6 == " in apply or "run.day == 6" in apply:
+        fail("live last-day warn paper reused last-day or week-start gate in ApplyContentShow")
+    elif "day == 5" not in last_live_gate or "day == 10" not in last_live_gate or "day == 15" not in last_live_gate:
+        fail("live last-day warn paper is not shown on days 5 / 10 / 15")
+    elif "day == 20" not in last_live_gate or "day == 25" not in last_live_gate:
+        fail("live last-day warn paper is not shown on days 20 / 25")
+    elif re.search(r"day == 1\b", last_live_gate) or re.search(r"day == 6\b", last_live_gate) or re.search(r"day == 2\b", last_live_gate) or re.search(r"day == 7\b", last_live_gate) or re.search(r"day == 11\b", last_live_gate):
+        fail("live last-day warn paper also shows on a non-last-day live")
+    elif "_lastMental" not in apply or "SetActive(LiveLastDay(GameManager.Instance.Run.day))" not in last_mental_apply:
+        fail("live last-day warn paper dropped LiveLastMental last-day hide")
+    elif "1 == GameManager.Instance.Run.day" in last_mental_apply:
+        fail("LiveLastMental reused the day-1 live gate")
+    elif "LiveWeekStartDay" in last_mental_apply:
+        fail("LiveLastMental reused the week-start live gate")
+    elif "EventWarn" in last_mental_apply or "경고" in last_mental_apply:
+        fail("LiveLastMental apply folded in the last-day warn paper")
+    elif '"LiveLastMental"' not in build or "ArtSprites.MentalNote" not in last_mental or '"멘탈"' not in last_mental:
+        fail("live last-day warn paper restyled LiveLastMental")
+    elif "104f, 48f" not in last_mental or "574f, -268f" not in last_mental or "preserveAspect = true" not in last_mental:
+        fail("live last-day warn paper moved LiveLastMental")
+    elif "EventWarn" in last_mental or "경고" in last_mental or "LiveLastWarn" in last_mental:
+        fail("LiveLastMental hang folded in the last-day warn paper")
+    elif "_lastCash" not in apply or "SetActive(LiveLastDay(GameManager.Instance.Run.day))" not in last_cash_apply:
+        fail("live last-day warn paper dropped LiveLastCash last-day hide")
+    elif "1 == GameManager.Instance.Run.day" in last_cash_apply:
+        fail("LiveLastCash reused the day-1 live gate")
+    elif "LiveWeekStartDay" in last_cash_apply:
+        fail("LiveLastCash reused the week-start live gate")
+    elif '"LiveLastCash"' not in build or "ArtSprites.CashSlip" not in last_cash or '"현금"' not in last_cash:
+        fail("live last-day warn paper restyled LiveLastCash")
+    elif "110f, 48f" not in last_cash or "456f, -268f" not in last_cash or "preserveAspect = true" not in last_cash:
+        fail("live last-day warn paper moved LiveLastCash")
+    elif "EventWarn" in last_cash or "경고" in last_cash or "LiveLastWarn" in last_cash:
+        fail("LiveLastCash hang folded in the last-day warn paper")
+    elif "_lastBill" not in apply or "SetActive(LiveLastDay(GameManager.Instance.Run.day))" not in last_bill_apply:
+        fail("live last-day warn paper dropped LiveLastBill last-day hide")
+    elif "1 == GameManager.Instance.Run.day" in last_bill_apply:
+        fail("LiveLastBill reused the day-1 live gate")
+    elif '"LiveLastBill"' not in build or "ArtSprites.BillNotice" not in last_bill or '"청구서"' not in last_bill:
+        fail("live last-day warn paper restyled LiveLastBill")
+    elif "116f, 56f" not in last_bill or "338f, -268f" not in last_bill or "preserveAspect = true" not in last_bill:
+        fail("live last-day warn paper moved LiveLastBill")
+    elif "EventWarn" in last_bill or "경고" in last_bill or "LiveLastWarn" in last_bill:
+        fail("LiveLastBill hang folded in the last-day warn paper")
+    elif "_day1Mental" not in apply or "SetActive(1 == GameManager.Instance.Run.day)" not in day1_mental_apply:
+        fail("live last-day warn paper dropped LiveDay1Mental day-1 hide")
+    elif "LiveLastDay" in day1_mental_apply or "LiveWeekStartDay" in day1_mental_apply:
+        fail("LiveDay1Mental reused last-day or week-start gate")
+    elif '"LiveDay1Mental"' not in build or "ArtSprites.MentalNote" not in day1_mental or '"멘탈"' not in day1_mental:
+        fail("live last-day warn paper restyled LiveDay1Mental")
+    elif "104f, 48f" not in day1_mental or "574f, -268f" not in day1_mental or "preserveAspect = true" not in day1_mental:
+        fail("live last-day warn paper moved LiveDay1Mental")
+    elif "EventWarn" in day1_mental or "경고" in day1_mental or "LiveLastWarn" in day1_mental:
+        fail("LiveDay1Mental hang folded in the last-day warn paper")
+    elif "_weekMental" not in apply or "SetActive(LiveWeekStartDay(GameManager.Instance.Run.day))" not in week_mental_apply:
+        fail("live last-day warn paper dropped LiveWeekMental week-start hide")
+    elif "1 == GameManager.Instance.Run.day" in week_mental_apply:
+        fail("LiveWeekMental reused the day-1 live gate")
+    elif "LiveLastDay" in week_mental_apply:
+        fail("LiveWeekMental reused the last-day live gate")
+    elif '"LiveWeekMental"' not in build or "ArtSprites.MentalNote" not in week_mental or '"멘탈"' not in week_mental:
+        fail("live last-day warn paper restyled LiveWeekMental")
+    elif "104f, 48f" not in week_mental or "574f, -268f" not in week_mental or "preserveAspect = true" not in week_mental:
+        fail("live last-day warn paper moved LiveWeekMental")
+    elif "EventWarn" in week_mental or "경고" in week_mental or "LiveLastWarn" in week_mental:
+        fail("LiveWeekMental hang folded in the last-day warn paper")
+    elif "day == 6" not in week_live_gate or "day == 11" not in week_live_gate or "day == 16" not in week_live_gate or "day == 21" not in week_live_gate:
+        fail("live last-day warn paper changed LiveWeekMental days 6 / 11 / 16 / 21")
+    elif '"LiveLastDay"' not in build or "ArtSprites.DayTab" not in last_tab or '"마지막 날"' not in last_tab:
+        fail("live last-day warn paper restyled LiveLastDay")
+    elif "132f, 40f" not in last_tab or "200f, -276f" not in last_tab:
+        fail("live last-day warn paper moved LiveLastDay")
+    elif "경고" in last_tab or "EventWarn" in last_tab or "LiveLastWarn" in last_tab:
+        fail("LiveLastDay hang folded in the last-day warn paper")
+    elif '"LiveLastHeadline"' not in build or "ArtSprites.HeadlineClip" not in last_head or '"헤드라인"' not in last_head:
+        fail("live last-day warn paper restyled LiveLastHeadline")
+    elif "168f, 68f" not in last_head or "24f, -272f" not in last_head:
+        fail("live last-day warn paper moved LiveLastHeadline")
+    elif "경고" in last_head or "EventWarn" in last_head or "LiveLastWarn" in last_head:
+        fail("LiveLastHeadline hang folded in the last-day warn paper")
+    elif "ArtSprites.EventWarn" not in event_box or "preserveAspect = false" not in event_box or '"안티 온다"' not in event_box:
+        fail("live last-day warn paper restyled EventWarnBox")
+    elif "0.18f" not in event_box or "0.52f" not in event_box or "72" not in event_box:
+        fail("live last-day warn paper moved EventWarnBox")
+    elif "LiveLastWarn" in event_box or "690f, -268f" in event_box or '"경고"' in event_box:
+        fail("EventWarnBox hang folded in the last-day warn paper")
+    elif "ArtSprites.EventWarn" not in tick or "WarnCopy" not in tick or "EventWarnBox" not in tick:
+        fail("live last-day warn paper dropped TickEventWarn")
+    elif "PlayThreatSfx" in tick or "Audio/sfx_threat" in tick:
+        fail("live last-day warn paper fired sfx_threat from TickEventWarn")
+    elif "LiveLastWarn" in tick or '"경고"' in tick:
+        fail("TickEventWarn folded in the last-day warn paper")
+    elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
+        fail("live last-day warn paper retuned live 안티 온다 / 렉 온다")
+    elif "ArtSprites.EventWarn" not in spawn or "ApplySliced" not in spawn or '"오늘의 위협"' not in spawn:
+        fail("live last-day warn paper dropped the morning extra-threat event_warn hang")
+    elif "ArtSprites.EventWarn" not in title_warn or "488, -286" not in title_warn or "380, 52" not in title_warn:
+        fail("live last-day warn paper restyled Title ContinueWarn")
+    elif "preserveAspect = false" not in title_warn:
+        fail("live last-day warn paper restyled Title ContinueWarn preserveAspect")
+    elif "ArtSprites.EventWarn" not in extra_warn or "420, -10" not in extra_warn or "440, 52" not in extra_warn:
+        fail("live last-day warn paper restyled settlement ExtraWarn")
+    elif "preserveAspect = false" not in extra_warn:
+        fail("live last-day warn paper restyled settlement ExtraWarn preserveAspect")
+    elif "BindExtraWarn" not in settle_cs:
+        fail("live last-day warn paper dropped settlement ExtraWarn bind")
+    elif "24, -214" not in show or "168, 44" not in show:
+        fail("live last-day warn paper restyled the show chip")
+    elif "460, -210" not in bill or "248, 52" not in bill or "ArtSprites.BillNotice" not in bill:
+        fail("live last-day warn paper restyled the live bill chip")
+    elif "ArtSprites.ClockPlate" not in timer:
+        fail("live last-day warn paper dropped the timer plate")
+    elif "ArtSprites.ChatDock" not in chat:
+        fail("live last-day warn paper dropped chat dock")
+    elif "AddColumnPad" not in pads or "슈퍼챗" not in pads:
+        fail("live last-day warn paper dropped live pads")
+    elif "ArtSprites.CoachCard" not in coach or "720, 220" not in coach:
+        fail("live last-day warn paper dropped the day-1 coach")
+    elif '"MemberBadgeHud"' not in hud or "72f, 48f" not in hud or "-10f, -10f" not in hud:
+        fail("live last-day warn paper restyled the membership pin")
+    elif '"SponsorBadgeHud"' not in hud or "-10f, -322f" not in hud:
+        fail("live last-day warn paper restyled the sponsor pin")
+    elif "SetActive(_memberShow)" not in apply or "SetActive(_sponsorPinShow)" not in apply:
+        fail("live last-day warn paper changed unlock pin hide")
+    elif "Audio/sfx_threat" not in live_cs or "PlayThreatSfx" not in live_cs:
+        fail("live last-day warn paper dropped live GO LIVE / extra-threat sfx_threat")
+    elif "PlayNewGameBillThreat" in live_cs:
+        fail("live last-day warn paper folded Title NewGameBill sting onto live")
+    elif '"NewGameMental"' in live_cs or '"ContinueMentalNote"' in live_cs or '"ClearMentalNote"' in live_cs:
+        fail("live last-day warn paper folded Title / ending mental papers onto live")
+    elif "run.day =" in live_cs or "day += " in live_cs or "day -= " in live_cs:
+        fail("live last-day warn paper writes the day index")
+    elif "startingMental =" in live_cs or "mental +=" in live_cs or "mental -=" in live_cs:
+        fail("live last-day warn paper writes mental")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("live last-day warn paper moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("live last-day warn paper retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("live last-day warn paper retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("live last-day warn paper retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("live last-day warn paper broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising live last-day warn paper / later weeks")
+    elif "def check_live_last_day_mental()" not in verify_src or "def check_live_last_day_bill()" not in verify_src:
+        fail("live last-day warn paper dropped LiveLastMental / LiveLastBill hang locks")
+    elif "def check_live_last_day_cash()" not in verify_src:
+        fail("live last-day warn paper dropped LiveLastCash hang lock")
+    elif "def check_live_day1_mental()" not in verify_src or "def check_live_week_start_mental()" not in verify_src:
+        fail("live last-day warn paper dropped LiveDay1Mental / LiveWeekMental hang locks")
+    elif "def check_event_warn()" not in verify_src or "def check_event_warn_plate()" not in verify_src:
+        fail("live last-day warn paper dropped event_warn / event_warn plate locks")
+    elif "def check_morning_event_warn()" not in verify_src or "def check_title_event_warn()" not in verify_src:
+        fail("live last-day warn paper dropped morning / title event_warn locks")
+    elif "def check_title_newgame_mental()" not in verify_src or "def check_ending_mental_note()" not in verify_src:
+        fail("live last-day warn paper dropped NewGameMental / ending mental locks")
+    elif "def check_mental_note()" not in verify_src:
+        fail("live last-day warn paper dropped the shared mental_note lock")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("live last-day warn paper dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("live last-day warn paper moved Unity off 6000.5.9f1")
+    else:
+        ok("last-day live hangs event_warn as HUD 경고; other lives hide it; LiveLastMental / LiveLastBill / LiveLastCash / LiveDay1Mental / LiveWeekMental / EventWarnBox / morning / title / settlement event_warn stay")
 
 
 def check_title_day1_tab() -> None:
