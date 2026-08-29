@@ -1676,6 +1676,7 @@ def check_project() -> None:
     check_readme_live_mid_bill()
     check_readme_live_mid_cash()
     check_readme_live_mid_mental()
+    check_readme_live_mid_warn()
     check_readme_live_day1_bill()
     check_readme_live_last_day_bill()
     check_readme_live_week_start_bill()
@@ -32708,6 +32709,403 @@ def check_readme_live_mid_mental() -> None:
         fail("README live mid-week mental moved Unity off 6000.5.9f1")
     else:
         ok("README names 라이브 평일 멘탈 vs 라이브 평일 / 라이브 평일 헤드라인 / 라이브 평일 청구서 / 라이브 평일 현금 / 라이브 1일차 멘탈 / 라이브 주차 첫날 멘탈 / 라이브 마지막 날 멘탈, Title / morning / ending mental, live 멘탈 위험, and warn")
+
+
+def check_readme_live_mid_warn() -> None:
+    """README names the LiveStream mid-week warn paper vs LiveMidDay / LiveMidHeadline / LiveMidBill / LiveMidCash / LiveMidMental / LiveDay1Warn / LiveWeekWarn / LiveLastWarn, morning extra-threat, Title ContinueWarn, settlement ExtraWarn, and EventWarnBox."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    event_cs = (ROOT / "Assets/Scripts/Stream/StreamEvent.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
+    title_loop = readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]
+    morning_loop = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    live_loop = readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    desk_paper = readme.split("- **책상 종이**", 1)[-1].split("- **돈 스탬프", 1)[0]
+    card_tabs = readme.split("- **카드 / 탭**", 1)[-1].split("- **책상 종이**", 1)[0]
+    live_mid_warn_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 평일 경고**")), "")
+    live_mid_mental_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 평일 멘탈**")), "")
+    live_mid_cash_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 평일 현금**")), "")
+    live_mid_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 평일 청구서**")), "")
+    live_mid_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 평일 헤드라인**")), "")
+    live_mid_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 평일**") and "헤드라인" not in ln.split("—", 1)[0] and "청구서" not in ln.split("—", 1)[0] and "현금" not in ln.split("—", 1)[0] and "멘탈" not in ln.split("—", 1)[0] and "경고" not in ln.split("—", 1)[0]), "")
+    live_day1_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차**") and "헤드라인" not in ln.split("—", 1)[0] and "청구서" not in ln.split("—", 1)[0] and "현금" not in ln.split("—", 1)[0] and "멘탈" not in ln.split("—", 1)[0] and "경고" not in ln.split("—", 1)[0]), "")
+    live_week_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날**") and "헤드라인" not in ln.split("—", 1)[0] and "청구서" not in ln.split("—", 1)[0] and "현금" not in ln.split("—", 1)[0] and "멘탈" not in ln.split("—", 1)[0] and "경고" not in ln.split("—", 1)[0]), "")
+    live_last_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날**") and "헤드라인" not in ln.split("—", 1)[0] and "청구서" not in ln.split("—", 1)[0] and "현금" not in ln.split("—", 1)[0] and "멘탈" not in ln.split("—", 1)[0] and "경고" not in ln.split("—", 1)[0]), "")
+    live_day1_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 헤드라인**")), "")
+    live_week_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 헤드라인**")), "")
+    live_last_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 헤드라인**")), "")
+    live_day1_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 청구서**")), "")
+    live_week_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 청구서**")), "")
+    live_last_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 청구서**")), "")
+    live_day1_cash_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 현금**")), "")
+    live_week_cash_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 현금**")), "")
+    live_last_cash_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 현금**")), "")
+    live_day1_mental_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 멘탈**")), "")
+    live_week_mental_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 멘탈**")), "")
+    live_last_mental_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 멘탈**")), "")
+    live_day1_warn_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 경고**")), "")
+    live_week_warn_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 경고**")), "")
+    live_last_warn_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 경고**")), "")
+    newgame_mental_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 멘탈**")), "")
+    note_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **멘탈 메모")), "")
+    peak_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **피크 / 사고**")), "")
+    morning_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **아침 1일차**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    settle_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **정산 1일차**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    newgame_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 1일차**")), "")
+    tab_inv = next((ln for ln in card_tabs.splitlines() if "Art/day_tab" in ln), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    sponsor_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **이어하기 스폰서 핀**")), "")
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    paper = live_build.split('"LiveMidWarn"', 1)[-1].split('"LiveMidMental"', 1)[0] if '"LiveMidWarn"' in live_build else ""
+    mid_mental = live_build.split('"LiveMidMental"', 1)[-1].split('"LiveMidCash"', 1)[0] if '"LiveMidMental"' in live_build else ""
+    mid_cash = live_build.split('"LiveMidCash"', 1)[-1].split('"LiveMidBill"', 1)[0] if '"LiveMidCash"' in live_build else ""
+    mid_bill = live_build.split('"LiveMidBill"', 1)[-1].split("UiKit.Layout(chatPanel", 1)[0] if '"LiveMidBill"' in live_build else ""
+    mid_tab = live_build.split('"LiveMidDay"', 1)[-1].split("_chatPanel", 1)[0] if '"LiveMidDay"' in live_build else ""
+    mid_head = live_build.split('"LiveMidHeadline"', 1)[-1].split("_chatRoot", 1)[0] if '"LiveMidHeadline"' in live_build else ""
+    day1_warn = live_build.split('"LiveDay1Warn"', 1)[-1].split('"LiveLastBill"', 1)[0] if '"LiveDay1Warn"' in live_build else ""
+    week_warn = live_build.split('"LiveWeekWarn"', 1)[-1].split('"LiveDay1Warn"', 1)[0] if '"LiveDay1Warn"' in live_build else ""
+    last_warn = live_build.split('"LiveLastWarn"', 1)[-1].split('"LiveWeekWarn"', 1)[0] if '"LiveWeekWarn"' in live_build else ""
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    warn_apply = apply.split("if (_midWarn", 1)[-1].split("if (_midMental", 1)[0] if "if (_midWarn" in apply else ""
+    mental_apply = apply.split("if (_midMental", 1)[-1].split("if (_midCash", 1)[0] if "if (_midMental" in apply else ""
+    cash_apply = apply.split("if (_midCash", 1)[-1].split("if (_midBill", 1)[0] if "if (_midCash" in apply else ""
+    bill_apply = apply.split("if (_midBill", 1)[-1].split("if (_midHeadline", 1)[0] if "if (_midBill" in apply else ""
+    head_apply = apply.split("if (_midHeadline", 1)[-1].split("if (_liveMidDay", 1)[0] if "if (_midHeadline" in apply else ""
+    mid_apply = apply.split("if (_liveMidDay", 1)[-1].split("if (_day1Headline", 1)[0] if "if (_liveMidDay" in apply else ""
+    day1_warn_apply = apply.split("if (_day1Warn", 1)[-1].split("if (_weekHeadline", 1)[0] if "if (_day1Warn" in apply else ""
+    week_warn_apply = apply.split("if (_weekWarn", 1)[-1].split("if (_lastHeadline", 1)[0] if "if (_weekWarn" in apply else ""
+    last_warn_apply = apply.split("if (_lastWarn", 1)[-1].split("UiKit.EnsureCamera", 1)[0] if "if (_lastWarn" in apply else ""
+    mid_gate = live_cs.split("static bool LiveMidWeekDay", 1)[-1].split("static bool LiveLastDay", 1)[0] if "static bool LiveMidWeekDay" in live_cs else ""
+    week_live_gate = live_cs.split("static bool LiveWeekStartDay", 1)[-1].split("static Color ShowChipAccent", 1)[0] if "static bool LiveWeekStartDay" in live_cs else ""
+    last_live_gate = live_cs.split("static bool LiveLastDay", 1)[-1].split("void ApplyThreatShow", 1)[0] if "static bool LiveLastDay" in live_cs else ""
+    tick = live_cs.split("void TickEventWarn", 1)[-1].split("void TickStrike", 1)[0] if "void TickEventWarn" in live_cs else ""
+    event_box = live_build.split('"EventWarnBox"', 1)[-1].split('"Top"', 1)[0] if '"EventWarnBox"' in live_build else ""
+    title_warn = title_cs.split('"ContinueWarn"', 1)[-1].split('"ContinueWarnLine"', 1)[0] if '"ContinueWarnLine"' in title_cs else ""
+    extra_warn = settle_cs.split('"ExtraWarn"', 1)[-1].split('"ExtraWarnLine"', 1)[0] if '"ExtraWarnLine"' in settle_cs else ""
+    spawn = week_cs.split("void SpawnIncoming", 1)[-1].split("IEnumerator Slam", 1)[0] if "void SpawnIncoming" in week_cs else ""
+
+    if "라이브 평일 경고" not in live_loop or "LiveMidWarn" not in live_loop or "event_warn" not in live_loop:
+        fail("README live loop must name 라이브 평일 경고 on Art/event_warn")
+    elif "경고" not in live_loop or "preserveAspect" not in live_loop or "숨김" not in live_loop:
+        fail("README live loop must name the mid-week live warn paper vs hidden")
+    elif "2/3/4/7/8/9/12/13/14/17/18/19/22/23/24" not in live_loop:
+        fail("README live loop must keep 라이브 평일 경고 on mid-week days 2 / 3 / 4 / 7 / 8 / 9 / 12 / 13 / 14 / 17 / 18 / 19 / 22 / 23 / 24")
+    elif "**라이브 1일차 경고**" not in live_loop or "`LiveDay1Warn`" not in live_loop:
+        fail("README live loop must keep 라이브 1일차 경고 on day 1")
+    elif "**라이브 주차 첫날 경고**" not in live_loop:
+        fail("README live loop must keep 라이브 주차 첫날 경고 on 6/11/16/21")
+    elif "**라이브 마지막 날 경고**" not in live_loop:
+        fail("README live loop must keep 라이브 마지막 날 경고 on 5/10/15/20/25")
+    elif "라이브 평일 멘탈" not in live_loop or "LiveMidMental" not in live_loop:
+        fail("README live loop must keep 라이브 평일 멘탈 on its own paper")
+    elif "라이브 평일 현금" not in live_loop or "LiveMidCash" not in live_loop:
+        fail("README live loop must keep 라이브 평일 현금 on its own paper")
+    elif "라이브 평일 청구서" not in live_loop or "LiveMidBill" not in live_loop:
+        fail("README live loop must keep 라이브 평일 청구서 on its own paper")
+    elif "라이브 평일 헤드라인" not in live_loop or "LiveMidHeadline" not in live_loop:
+        fail("README live loop must keep 라이브 평일 헤드라인 on its own paper")
+    elif "**라이브 평일**" not in live_loop or "`LiveMidDay`" not in live_loop or "day_tab" not in live_loop:
+        fail("README live loop must keep 라이브 평일 on Art/day_tab")
+    elif "오늘의 위협" not in live_loop or "ContinueWarn" not in live_loop or "ExtraWarn" not in live_loop or "EventWarnBox" not in live_loop:
+        fail("README live loop must keep 라이브 평일 경고 distinct from morning / title / settlement / EventWarnBox event_warn")
+    elif "멘탈 위험" not in live_loop:
+        fail("README live loop must keep 라이브 평일 경고 distinct from live 멘탈 위험")
+    elif "새 SFX 없음" not in live_loop:
+        fail("README live loop must keep 라이브 평일 경고 without a new sting")
+    elif "라이브 평일 경고" in title_loop or "LiveMidWarn" in title_loop:
+        fail("README hung 라이브 평일 경고 on the Title loop")
+    elif "라이브 평일 경고" in morning_loop or "LiveMidWarn" in morning_loop:
+        fail("README hung 라이브 평일 경고 on the morning loop")
+    elif "라이브 평일 경고" in settle_loop or "LiveMidWarn" in settle_loop:
+        fail("README hung 라이브 평일 경고 on the settlement loop")
+    elif "오늘의 위협" not in morning_loop or "event_warn" not in morning_loop:
+        fail("README 라이브 평일 경고 dropped morning 오늘의 위협")
+    elif "ContinueWarn" not in title_loop and "event_warn" not in title_loop:
+        fail("README 라이브 평일 경고 dropped Title continue event_warn")
+    elif "event_warn" not in settle_loop:
+        fail("README 라이브 평일 경고 dropped settlement ExtraWarn")
+    elif "**2주차**" in title_loop or "**3주차**" in title_loop or "**4주차**" in title_loop or "**5주차**" in title_loop:
+        fail("README live mid-week warn used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "**2주차**" in live_mid_warn_inv or "**3주차**" in live_mid_warn_inv or "**4주차**" in live_mid_warn_inv or "**5주차**" in live_mid_warn_inv:
+        fail("README 라이브 평일 경고 line used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "**2주차**" in live_loop or "**3주차**" in live_loop or "**4주차**" in live_loop or "**5주차**" in live_loop:
+        fail("README live loop used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "라이브 평일 경고" not in live_mid_warn_inv or "LiveMidWarn" not in live_mid_warn_inv or "event_warn" not in live_mid_warn_inv:
+        fail("README must inventory 라이브 평일 경고 on its own line")
+    elif "preserveAspect" not in live_mid_warn_inv or "경고" not in live_mid_warn_inv or "숨김" not in live_mid_warn_inv:
+        fail("README 라이브 평일 경고 line must name the preserveAspect Korean 경고 paper vs hidden")
+    elif "2/3/4/7/8/9/12/13/14/17/18/19/22/23/24" not in live_mid_warn_inv:
+        fail("README 라이브 평일 경고 line must name mid-week days 2 / 3 / 4 / 7 / 8 / 9 / 12 / 13 / 14 / 17 / 18 / 19 / 22 / 23 / 24")
+    elif "경고" not in live_mid_warn_inv.split("—", 1)[0]:
+        fail("README 라이브 평일 경고 line must stay a warn paper, not a calendar / headline / bill / cash / mental paper")
+    elif "day_tab" in live_mid_warn_inv or "headline_clip" in live_mid_warn_inv or "bill_notice" in live_mid_warn_inv or "cash_slip" in live_mid_warn_inv or "mental_note" in live_mid_warn_inv:
+        fail("README 라이브 평일 경고 line must stay an event_warn paper, not a calendar / headline / bill / cash / mental hang")
+    elif "라이브 1일차 경고" not in live_mid_warn_inv or "LiveDay1Warn" not in live_mid_warn_inv:
+        fail("README 라이브 평일 경고 line must stay distinct from 라이브 1일차 경고")
+    elif "라이브 주차 첫날 경고" not in live_mid_warn_inv or "LiveWeekWarn" not in live_mid_warn_inv:
+        fail("README 라이브 평일 경고 line must stay distinct from 라이브 주차 첫날 경고")
+    elif "라이브 마지막 날 경고" not in live_mid_warn_inv or "LiveLastWarn" not in live_mid_warn_inv:
+        fail("README 라이브 평일 경고 line must stay distinct from 라이브 마지막 날 경고")
+    elif "`LiveMidDay`" not in live_mid_warn_inv or "라이브 평일" not in live_mid_warn_inv:
+        fail("README 라이브 평일 경고 line must stay distinct from 라이브 평일")
+    elif "`LiveMidHeadline`" not in live_mid_warn_inv or "라이브 평일 헤드라인" not in live_mid_warn_inv:
+        fail("README 라이브 평일 경고 line must stay distinct from 라이브 평일 헤드라인")
+    elif "`LiveMidBill`" not in live_mid_warn_inv or "라이브 평일 청구서" not in live_mid_warn_inv:
+        fail("README 라이브 평일 경고 line must stay distinct from 라이브 평일 청구서")
+    elif "`LiveMidCash`" not in live_mid_warn_inv or "라이브 평일 현금" not in live_mid_warn_inv:
+        fail("README 라이브 평일 경고 line must stay distinct from 라이브 평일 현금")
+    elif "`LiveMidMental`" not in live_mid_warn_inv or "라이브 평일 멘탈" not in live_mid_warn_inv:
+        fail("README 라이브 평일 경고 line must stay distinct from 라이브 평일 멘탈")
+    elif "오늘의 위협" not in live_mid_warn_inv or "ContinueWarn" not in live_mid_warn_inv or "ExtraWarn" not in live_mid_warn_inv or "EventWarnBox" not in live_mid_warn_inv:
+        fail("README 라이브 평일 경고 line must stay distinct from morning / title / settlement / EventWarnBox event_warn")
+    elif "멘탈 위험" not in live_mid_warn_inv:
+        fail("README 라이브 평일 경고 line must stay distinct from live 멘탈 위험")
+    elif "새 SFX 없음" not in live_mid_warn_inv:
+        fail("README 라이브 평일 경고 line must stay without a new sting")
+    elif live_mid_warn_inv == live_mid_inv or live_mid_warn_inv == live_mid_head_inv or live_mid_warn_inv == live_mid_bill_inv or live_mid_warn_inv == live_mid_cash_inv or live_mid_warn_inv == live_mid_mental_inv:
+        fail("README must keep 라이브 평일 경고 distinct from 라이브 평일 / 헤드라인 / 청구서 / 현금 / 멘탈")
+    elif live_mid_warn_inv == live_day1_warn_inv or live_mid_warn_inv == live_week_warn_inv or live_mid_warn_inv == live_last_warn_inv:
+        fail("README must keep 라이브 평일 경고 distinct from 라이브 1일차 / 주차 첫날 / 마지막 날 경고")
+    elif live_mid_warn_inv == live_day1_mental_inv or live_mid_warn_inv == live_week_mental_inv or live_mid_warn_inv == live_last_mental_inv:
+        fail("README must keep 라이브 평일 경고 distinct from live mental papers")
+    elif live_mid_warn_inv == live_day1_cash_inv or live_mid_warn_inv == live_week_cash_inv or live_mid_warn_inv == live_last_cash_inv:
+        fail("README must keep 라이브 평일 경고 distinct from live cash papers")
+    elif live_mid_warn_inv == live_day1_bill_inv or live_mid_warn_inv == live_week_bill_inv or live_mid_warn_inv == live_last_bill_inv:
+        fail("README must keep 라이브 평일 경고 distinct from live bills")
+    elif live_mid_warn_inv == live_day1_head_inv or live_mid_warn_inv == live_week_head_inv or live_mid_warn_inv == live_last_head_inv:
+        fail("README must keep 라이브 평일 경고 distinct from live headlines")
+    elif live_mid_warn_inv == live_day1_inv or live_mid_warn_inv == live_week_inv or live_mid_warn_inv == live_last_inv or live_mid_warn_inv == tab_inv:
+        fail("README must keep 라이브 평일 경고 distinct from live calendars and the shared day_tab inventory")
+    elif live_mid_warn_inv == morning_inv or live_mid_warn_inv == settle_inv or live_mid_warn_inv == newgame_inv or live_mid_warn_inv == newgame_mental_inv or live_mid_warn_inv == note_inv or live_mid_warn_inv == peak_inv:
+        fail("README must keep 라이브 평일 경고 distinct from 아침 / 정산 / 새 게임 / 멘탈 메모 / 피크 사고 papers")
+    elif readme.index(live_day1_warn_inv) >= readme.index(live_mid_warn_inv):
+        fail("README 라이브 1일차 경고 line must stay before 라이브 평일 경고")
+    elif readme.index(live_week_warn_inv) >= readme.index(live_mid_warn_inv):
+        fail("README 라이브 주차 첫날 경고 line must stay before 라이브 평일 경고")
+    elif readme.index(live_last_warn_inv) >= readme.index(live_mid_warn_inv):
+        fail("README 라이브 마지막 날 경고 line must stay before 라이브 평일 경고")
+    elif readme.index(live_mid_mental_inv) >= readme.index(live_mid_warn_inv):
+        fail("README 라이브 평일 멘탈 line must stay before 라이브 평일 경고")
+    elif readme.index(live_mid_cash_inv) >= readme.index(live_mid_warn_inv):
+        fail("README 라이브 평일 현금 line must stay before 라이브 평일 경고")
+    elif readme.index(live_mid_bill_inv) >= readme.index(live_mid_warn_inv):
+        fail("README 라이브 평일 청구서 line must stay before 라이브 평일 경고")
+    elif readme.index(live_mid_head_inv) >= readme.index(live_mid_warn_inv):
+        fail("README 라이브 평일 헤드라인 line must stay before 라이브 평일 경고")
+    elif "LiveMidWarn" in peak_inv or "라이브 평일 경고" in peak_inv:
+        fail("README folded 라이브 평일 경고 into the 피크 / 사고 inventory")
+    elif "안티 온다" not in peak_inv or "오늘의 위협" not in peak_inv:
+        fail("README 라이브 평일 경고 rewrote the 피크 / 사고 inventory")
+    elif "LiveMidWarn" in note_inv or "라이브 평일 경고" in note_inv:
+        fail("README folded 라이브 평일 경고 into the shared 멘탈 메모 inventory")
+    elif "엔딩 멘탈" not in note_inv or "아침" not in note_inv or "이어서 하기" not in note_inv or "멘탈 위험" not in note_inv:
+        fail("README 라이브 평일 경고 rewrote the shared 멘탈 메모 inventory")
+    elif "`LiveMidDay`" not in live_mid_inv or "day_tab" not in live_mid_inv or "날짜" not in live_mid_inv:
+        fail("README 라이브 평일 경고 rewrote the 라이브 평일 calendar line")
+    elif "LiveMidWarn" in live_mid_inv or "라이브 평일 경고" in live_mid_inv or "event_warn" in live_mid_inv:
+        fail("README folded 라이브 평일 경고 into the 라이브 평일 calendar line")
+    elif "LiveMidHeadline" not in live_mid_head_inv or "headline_clip" not in live_mid_head_inv:
+        fail("README 라이브 평일 경고 rewrote the 라이브 평일 헤드라인 line")
+    elif "LiveMidWarn" in live_mid_head_inv or "라이브 평일 경고" in live_mid_head_inv:
+        fail("README folded 라이브 평일 경고 into the 라이브 평일 헤드라인 line")
+    elif "`LiveMidBill`" not in live_mid_bill_inv or "bill_notice" not in live_mid_bill_inv:
+        fail("README 라이브 평일 경고 rewrote the 라이브 평일 청구서 line")
+    elif "LiveMidWarn" in live_mid_bill_inv or "라이브 평일 경고" in live_mid_bill_inv or "event_warn" in live_mid_bill_inv:
+        fail("README folded 라이브 평일 경고 into the 라이브 평일 청구서 line")
+    elif "`LiveMidCash`" not in live_mid_cash_inv or "cash_slip" not in live_mid_cash_inv:
+        fail("README 라이브 평일 경고 rewrote the 라이브 평일 현금 line")
+    elif "LiveMidWarn" in live_mid_cash_inv or "라이브 평일 경고" in live_mid_cash_inv or "event_warn" in live_mid_cash_inv:
+        fail("README folded 라이브 평일 경고 into the 라이브 평일 현금 line")
+    elif "`LiveMidMental`" not in live_mid_mental_inv or "mental_note" not in live_mid_mental_inv:
+        fail("README 라이브 평일 경고 rewrote the 라이브 평일 멘탈 line")
+    elif "LiveMidWarn" in live_mid_mental_inv or "라이브 평일 경고" in live_mid_mental_inv or "event_warn" in live_mid_mental_inv:
+        fail("README folded 라이브 평일 경고 into the 라이브 평일 멘탈 line")
+    elif "`LiveDay1Warn`" not in live_day1_warn_inv or "event_warn" not in live_day1_warn_inv:
+        fail("README 라이브 평일 경고 rewrote the 라이브 1일차 경고 line")
+    elif "LiveMidWarn" in live_day1_warn_inv or "라이브 평일 경고" in live_day1_warn_inv:
+        fail("README folded 라이브 평일 경고 into the 라이브 1일차 경고 line")
+    elif "`LiveWeekWarn`" not in live_week_warn_inv or "event_warn" not in live_week_warn_inv or "6/11/16/21" not in live_week_warn_inv:
+        fail("README 라이브 평일 경고 rewrote the 라이브 주차 첫날 경고 line")
+    elif "LiveMidWarn" in live_week_warn_inv or "라이브 평일 경고" in live_week_warn_inv:
+        fail("README folded 라이브 평일 경고 into the 라이브 주차 첫날 경고 line")
+    elif "`LiveLastWarn`" not in live_last_warn_inv or "event_warn" not in live_last_warn_inv or "5/10/15/20/25" not in live_last_warn_inv:
+        fail("README 라이브 평일 경고 rewrote the 라이브 마지막 날 경고 line")
+    elif "LiveMidWarn" in live_last_warn_inv or "라이브 평일 경고" in live_last_warn_inv:
+        fail("README folded 라이브 평일 경고 into the 라이브 마지막 날 경고 line")
+    elif "`LiveDay1Mental`" not in live_day1_mental_inv or "mental_note" not in live_day1_mental_inv:
+        fail("README 라이브 평일 경고 rewrote the 라이브 1일차 멘탈 line")
+    elif "LiveMidWarn" in live_day1_mental_inv or "라이브 평일 경고" in live_day1_mental_inv:
+        fail("README folded 라이브 평일 경고 into the 라이브 1일차 멘탈 line")
+    elif "`LiveWeekMental`" not in live_week_mental_inv or "mental_note" not in live_week_mental_inv:
+        fail("README 라이브 평일 경고 rewrote the 라이브 주차 첫날 멘탈 line")
+    elif "LiveMidWarn" in live_week_mental_inv or "라이브 평일 경고" in live_week_mental_inv:
+        fail("README folded 라이브 평일 경고 into the 라이브 주차 첫날 멘탈 line")
+    elif "`LiveLastMental`" not in live_last_mental_inv or "mental_note" not in live_last_mental_inv:
+        fail("README 라이브 평일 경고 rewrote the 라이브 마지막 날 멘탈 line")
+    elif "LiveMidWarn" in live_last_mental_inv or "라이브 평일 경고" in live_last_mental_inv:
+        fail("README folded 라이브 평일 경고 into the 라이브 마지막 날 멘탈 line")
+    elif "MorningDay1" not in morning_inv or "새 게임 1일차" not in morning_inv:
+        fail("README 라이브 평일 경고 rewrote the 아침 1일차 line")
+    elif "LiveMidWarn" in morning_inv or "라이브 평일 경고" in morning_inv:
+        fail("README folded 라이브 평일 경고 into the 아침 1일차 line")
+    elif "SettleDay1" not in settle_inv or "아침 1일차" not in settle_inv:
+        fail("README 라이브 평일 경고 rewrote the 정산 1일차 line")
+    elif "LiveMidWarn" in settle_inv or "라이브 평일 경고" in settle_inv:
+        fail("README folded 라이브 평일 경고 into the 정산 1일차 line")
+    elif "NewGameDay" not in newgame_inv or "ContinueDayTab" not in newgame_inv:
+        fail("README 라이브 평일 경고 rewrote the 새 게임 1일차 line")
+    elif "LiveMidWarn" in newgame_inv or "라이브 평일 경고" in newgame_inv:
+        fail("README folded 라이브 평일 경고 into the 새 게임 1일차 line")
+    elif "여덟 곳" not in tab_inv or "마지막 날" not in tab_inv or "이어서 하기" not in tab_inv:
+        fail("README 라이브 평일 경고 rewrote the shared day_tab inventory")
+    elif "LiveMidWarn" in tab_inv or "라이브 평일 경고" in tab_inv:
+        fail("README folded 라이브 평일 경고 into the shared day_tab inventory")
+    elif "라이브 평일 경고" not in desk_paper or "LiveMidWarn" not in desk_paper:
+        fail("README desk paper dropped 라이브 평일 경고")
+    elif "`LiveMidDay`" not in desk_paper or "LiveMidHeadline" not in desk_paper or "`LiveMidBill`" not in desk_paper or "`LiveMidCash`" not in desk_paper or "`LiveMidMental`" not in desk_paper:
+        fail("README desk paper dropped 라이브 평일 / 헤드라인 / 청구서 / 현금 / 멘탈")
+    elif "`LiveDay1Warn`" not in desk_paper or "`LiveWeekWarn`" not in desk_paper or "`LiveLastWarn`" not in desk_paper:
+        fail("README desk paper dropped 라이브 1일차 / 주차 첫날 / 마지막 날 경고")
+    elif "오늘의 위협" not in sfx_inv or "새 게임 청구서" not in sfx_inv or sfx_inv.count("sfx_threat") < 5:
+        fail("README 라이브 평일 경고 rewrote the five sfx_threat uses")
+    elif "ContinueSponsorPin" not in sponsor_inv or "타일 가득" not in sponsor_inv:
+        fail("README 라이브 평일 경고 rewrote the Title continue sponsor pin")
+    elif "매드라인" in readme or "매드라인" in live_cs:
+        fail("README live mid-week warn used 매드라인 instead of 헤드라인")
+    elif "def check_live_mid_warn()" not in verify_src or "check_live_mid_warn()" not in verify_src:
+        fail("README live mid-week warn dropped the existing check_live_mid_warn hang lock")
+    elif "def check_live_day1_warn()" not in verify_src or "def check_live_week_start_warn()" not in verify_src:
+        fail("README live mid-week warn dropped LiveDay1Warn / LiveWeekWarn hang locks")
+    elif "def check_live_last_day_warn()" not in verify_src or "def check_live_mid_mental()" not in verify_src:
+        fail("README live mid-week warn dropped LiveLastWarn / LiveMidMental hang locks")
+    elif "def check_live_mid_cash()" not in verify_src or "def check_live_mid_bill()" not in verify_src:
+        fail("README live mid-week warn dropped LiveMidCash / LiveMidBill hang locks")
+    elif "def check_live_mid_day()" not in verify_src or "def check_live_mid_headline()" not in verify_src:
+        fail("README live mid-week warn dropped LiveMidDay / LiveMidHeadline hang locks")
+    elif "def check_readme_live_mid_mental()" not in verify_src or "def check_readme_live_mid_cash()" not in verify_src:
+        fail("README live mid-week warn dropped 라이브 평일 멘탈 / 라이브 평일 현금 README locks")
+    elif "def check_readme_live_day1_warn()" not in verify_src or "def check_readme_live_week_start_warn()" not in verify_src:
+        fail("README live mid-week warn dropped 라이브 1일차 / 주차 첫날 경고 README locks")
+    elif "def check_readme_live_last_day_warn()" not in verify_src:
+        fail("README live mid-week warn dropped 라이브 마지막 날 경고 README lock")
+    elif "def check_event_warn()" not in verify_src or "def check_event_warn_plate()" not in verify_src:
+        fail("README live mid-week warn dropped event_warn / event_warn plate locks")
+    elif "def check_morning_event_warn()" not in verify_src or "def check_title_event_warn()" not in verify_src:
+        fail("README live mid-week warn dropped morning / title event_warn locks")
+    elif 'EventWarn = "Art/event_warn"' not in art_cs:
+        fail("ArtSprites does not hook Art/event_warn")
+    elif '"LiveMidWarn"' not in live_build or "ArtSprites.EventWarn" not in paper:
+        fail("README live mid-week warn lost the LiveStream hang")
+    elif "preserveAspect = true" not in paper or "104f, 48f" not in paper or "690f, -268f" not in paper:
+        fail("README live mid-week warn restyled the LiveStream hang")
+    elif '"경고"' not in paper:
+        fail("README live mid-week warn is not Korean 경고 copy")
+    elif "0.58f, 0.08f, 0.16f" not in paper:
+        fail("README live mid-week warn dropped the event-warn grade")
+    elif "_midWarn" not in apply or "LiveMidWeekDay" not in warn_apply:
+        fail("README live mid-week warn is not shown on mid-week lives")
+    elif "SetActive(LiveMidWeekDay(GameManager.Instance.Run.day))" not in warn_apply:
+        fail("README live mid-week warn is not hidden on other lives")
+    elif "day == 2" not in mid_gate or "day == 7" not in mid_gate or "day == 24" not in mid_gate:
+        fail("README live mid-week warn is not shown on mid-week days such as 2 / 7")
+    elif re.search(r"day == 1\b", mid_gate) or re.search(r"day == 5\b", mid_gate) or re.search(r"day == 6\b", mid_gate):
+        fail("README live mid-week warn also shows on day 1 / last-of-week / week-start")
+    elif "_day1Warn" not in apply or "SetActive(1 == GameManager.Instance.Run.day)" not in day1_warn_apply:
+        fail("README live mid-week warn dropped LiveDay1Warn day-1 hide")
+    elif "_weekWarn" not in apply or "LiveWeekStartDay" not in week_warn_apply:
+        fail("README live mid-week warn dropped LiveWeekWarn week-start hide")
+    elif "_lastWarn" not in apply or "LiveLastDay" not in last_warn_apply:
+        fail("README live mid-week warn dropped LiveLastWarn last-day hide")
+    elif "_midMental" not in apply or "LiveMidWeekDay" not in mental_apply:
+        fail("README live mid-week warn dropped LiveMidMental mid-week hide")
+    elif "_midCash" not in apply or "LiveMidWeekDay" not in cash_apply:
+        fail("README live mid-week warn dropped LiveMidCash mid-week hide")
+    elif "_midBill" not in apply or "LiveMidWeekDay" not in bill_apply:
+        fail("README live mid-week warn dropped LiveMidBill mid-week hide")
+    elif "_liveMidDay" not in apply or "LiveMidWeekDay" not in mid_apply:
+        fail("README live mid-week warn dropped LiveMidDay mid-week hide")
+    elif "_midHeadline" not in apply or "LiveMidWeekDay" not in head_apply:
+        fail("README live mid-week warn dropped LiveMidHeadline mid-week hide")
+    elif "day == 6" not in week_live_gate or "day == 21" not in week_live_gate:
+        fail("README live mid-week warn changed LiveWeekWarn days")
+    elif "day == 5" not in last_live_gate or "day == 25" not in last_live_gate:
+        fail("README live mid-week warn changed LiveLastWarn days")
+    elif '"LiveDay1Warn"' not in live_build or "ArtSprites.EventWarn" not in day1_warn or '"경고"' not in day1_warn:
+        fail("README live mid-week warn restyled LiveDay1Warn")
+    elif "LiveMidWarn" in day1_warn:
+        fail("LiveDay1Warn hang folded in the mid-week live warn")
+    elif '"LiveWeekWarn"' not in live_build or "ArtSprites.EventWarn" not in week_warn or '"경고"' not in week_warn:
+        fail("README live mid-week warn restyled LiveWeekWarn")
+    elif "LiveMidWarn" in week_warn:
+        fail("LiveWeekWarn hang folded in the mid-week live warn")
+    elif '"LiveLastWarn"' not in live_build or "ArtSprites.EventWarn" not in last_warn or '"경고"' not in last_warn:
+        fail("README live mid-week warn restyled LiveLastWarn")
+    elif "LiveMidWarn" in last_warn:
+        fail("LiveLastWarn hang folded in the mid-week live warn")
+    elif '"LiveMidMental"' not in live_build or "ArtSprites.MentalNote" not in mid_mental or '"멘탈"' not in mid_mental:
+        fail("README live mid-week warn restyled LiveMidMental")
+    elif "경고" in mid_mental or "EventWarn" in mid_mental or "LiveMidWarn" in mid_mental:
+        fail("LiveMidMental hang folded in the mid-week live warn")
+    elif '"LiveMidCash"' not in live_build or "ArtSprites.CashSlip" not in mid_cash or '"현금"' not in mid_cash:
+        fail("README live mid-week warn restyled LiveMidCash")
+    elif "경고" in mid_cash or "EventWarn" in mid_cash or "LiveMidWarn" in mid_cash:
+        fail("LiveMidCash hang folded in the mid-week live warn")
+    elif '"LiveMidBill"' not in live_build or "ArtSprites.BillNotice" not in mid_bill or '"청구"' not in mid_bill:
+        fail("README live mid-week warn restyled LiveMidBill")
+    elif "경고" in mid_bill or "EventWarn" in mid_bill or "LiveMidWarn" in mid_bill:
+        fail("LiveMidBill hang folded in the mid-week live warn")
+    elif '"LiveMidDay"' not in live_build or "ArtSprites.DayTab" not in mid_tab or '"날짜"' not in mid_tab:
+        fail("README live mid-week warn restyled LiveMidDay")
+    elif "경고" in mid_tab or "EventWarn" in mid_tab or "LiveMidWarn" in mid_tab:
+        fail("LiveMidDay hang folded in the mid-week live warn")
+    elif '"LiveMidHeadline"' not in live_build or "ArtSprites.HeadlineClip" not in mid_head or '"헤드라인"' not in mid_head:
+        fail("README live mid-week warn restyled LiveMidHeadline")
+    elif "경고" in mid_head or "EventWarn" in mid_head or "LiveMidWarn" in mid_head:
+        fail("LiveMidHeadline hang folded in the mid-week live warn")
+    elif "ArtSprites.EventWarn" not in event_box or "preserveAspect = false" not in event_box or '"안티 온다"' not in event_box:
+        fail("README live mid-week warn restyled EventWarnBox")
+    elif "LiveMidWarn" in event_box or "690f, -268f" in event_box or '"경고"' in event_box:
+        fail("EventWarnBox hang folded in the mid-week live warn")
+    elif "ArtSprites.EventWarn" not in tick or "WarnCopy" not in tick or "_eventWarnBox" not in tick:
+        fail("README live mid-week warn dropped TickEventWarn")
+    elif "LiveMidWarn" in tick or '"경고"' in tick:
+        fail("TickEventWarn folded in the mid-week live warn")
+    elif "안티 온다" not in event_cs or "렉 온다" not in event_cs:
+        fail("README live mid-week warn retuned live 안티 온다 / 렉 온다")
+    elif "ArtSprites.EventWarn" not in spawn or "ApplySliced" not in spawn or '"오늘의 위협"' not in spawn:
+        fail("README live mid-week warn dropped the morning extra-threat event_warn hang")
+    elif "ArtSprites.EventWarn" not in title_warn or "488, -286" not in title_warn:
+        fail("README live mid-week warn restyled Title ContinueWarn")
+    elif "ArtSprites.EventWarn" not in extra_warn or "420, -10" not in extra_warn:
+        fail("README live mid-week warn restyled settlement ExtraWarn")
+    elif "BindExtraWarn" not in settle_cs:
+        fail("README live mid-week warn dropped settlement ExtraWarn bind")
+    elif "run.day =" in live_cs or "day += " in live_cs or "day -= " in live_cs:
+        fail("README live mid-week warn writes the day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("README live mid-week warn moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README live mid-week warn retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README live mid-week warn retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README live mid-week warn retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README live mid-week warn broke pads, 입력됨, or added timeScale")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README live mid-week warn dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README live mid-week warn moved Unity off 6000.5.9f1")
+    else:
+        ok("README names 라이브 평일 경고 vs 라이브 평일 / 라이브 평일 헤드라인 / 라이브 평일 청구서 / 라이브 평일 현금 / 라이브 평일 멘탈 / 라이브 1일차 경고 / 라이브 주차 첫날 경고 / 라이브 마지막 날 경고, morning / title / settlement event_warn, and EventWarnBox")
 
 
 def check_readme_live_day1_bill() -> None:
