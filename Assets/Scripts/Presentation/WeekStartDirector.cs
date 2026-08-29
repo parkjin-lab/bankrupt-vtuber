@@ -37,6 +37,7 @@ namespace BankruptVtuber
         Image _weekStartHeadline;
         Text _weekStartLabel;
         Image _midDayTab;
+        Image _midHeadline;
         RectTransform _lastDayRoot;
         Image _lastDayHeadline;
         Text _lastDayWeek;
@@ -234,6 +235,14 @@ namespace BankruptVtuber
             var midDayT = UiKit.Label(_midDayTab.transform, "T", "날짜", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(midDayT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _midDayTab.gameObject.SetActive(false);
+            _midHeadline = UiKit.Image(root, "MorningMidHeadline", Color.white);
+            UiKit.Layout(_midHeadline.rectTransform, new Vector2(0.74f, 1f), new Vector2(0.74f, 1f), new Vector2(0f, 1f), new Vector2(8f, -284f), new Vector2(228f, 92f));
+            ArtSprites.Apply(_midHeadline, ArtSprites.HeadlineClip, new Color(0.93f, 0.88f, 0.74f, 0.98f), Color.white);
+            _midHeadline.preserveAspect = true;
+            _midHeadline.raycastTarget = false;
+            var midHeadT = UiKit.Label(_midHeadline.transform, "T", "헤드라인", 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(midHeadT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _midHeadline.gameObject.SetActive(false);
 
             _weekStartTab = UiKit.Image(root, "MorningWeekStart", Color.white);
             UiKit.Layout(_weekStartTab.rectTransform, new Vector2(0.74f, 1f), new Vector2(0.74f, 1f), new Vector2(0f, 1f), new Vector2(8f, -220f), new Vector2(180f, 56f));
@@ -545,6 +554,8 @@ namespace BankruptVtuber
             if (_midDayTab == null)
                 return;
             _midDayTab.gameObject.SetActive(run != null && MorningMidWeekDay(run.day));
+            if (_midHeadline != null)
+                _midHeadline.gameObject.SetActive(run != null && MorningMidWeekDay(run.day));
         }
 
         static bool MorningMidWeekDay(int day) =>
