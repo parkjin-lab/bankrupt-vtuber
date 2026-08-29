@@ -202,6 +202,7 @@ namespace BankruptVtuber
         Image _weekWarn;
         Image _liveMidDay;
         Image _midHeadline;
+        Image _midBill;
         float _bedVolume;
         float _bedDuck;
         bool _threatGear;
@@ -1408,6 +1409,14 @@ namespace BankruptVtuber
             UiKit.Layout(midHeadT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _midHeadline.gameObject.SetActive(false);
             _chatRoot = chatPanel;
+            _midBill = UiKit.Image(root, "LiveMidBill", Color.white);
+            UiKit.Layout(_midBill.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(338f, -268f), new Vector2(116f, 56f));
+            ArtSprites.Apply(_midBill, ArtSprites.BillNotice, Color.white, Color.white);
+            _midBill.preserveAspect = true;
+            _midBill.raycastTarget = false;
+            var midBillT = UiKit.Label(_midBill.transform, "T", "청구", 16, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(midBillT.rectTransform, new Vector2(0.12f, 0.18f), new Vector2(0.88f, 0.82f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _midBill.gameObject.SetActive(false);
             UiKit.Layout(chatPanel, new Vector2(1, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-18, 0), new Vector2(420, -220));
             _chatDock = UiKit.Image(chatPanel, "ChatDock", Color.white);
             UiKit.Stretch(_chatDock.rectTransform);
@@ -3400,6 +3409,8 @@ namespace BankruptVtuber
                 _concertBadge.gameObject.SetActive(_concertPinShow);
             if (_sponsorBadge != null)
                 _sponsorBadge.gameObject.SetActive(_sponsorPinShow);
+            if (_midBill != null)
+                _midBill.gameObject.SetActive(LiveMidWeekDay(GameManager.Instance.Run.day));
             if (_midHeadline != null)
                 _midHeadline.gameObject.SetActive(LiveMidWeekDay(GameManager.Instance.Run.day));
             if (_liveMidDay != null)
