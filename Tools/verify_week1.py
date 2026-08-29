@@ -1585,6 +1585,7 @@ def check_project() -> None:
     check_live_day1_headline()
     check_live_week_start_headline()
     check_live_last_day_headline()
+    check_live_mid_headline()
     check_live_day1_tab()
     check_live_week_start_tab()
     check_live_last_day_tab()
@@ -15573,6 +15574,209 @@ def check_live_last_day_headline() -> None:
         fail("live last-day headline paper moved Unity off 6000.5.9f1")
     else:
         ok("last-day lives hang headline_clip as HUD week-end news; other lives hide it; LiveDay1Headline / LiveWeekHeadline / Title / morning / settlement headlines and live scraps / pins stay")
+
+
+def check_live_mid_headline() -> None:
+    """Mid-week lives hang headline_clip as a tiny HUD news paper; day 1 / week-start / last-of-week hide it; LiveDay1Headline / LiveWeekHeadline / LiveLastHeadline / LiveMidDay stay gated."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
+    build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    paper = build.split('"LiveMidHeadline"', 1)[-1].split("_chatRoot", 1)[0] if '"LiveMidHeadline"' in build else ""
+    day1_paper = build.split('"LiveDay1Headline"', 1)[-1].split("_avatar = new AvatarView", 1)[0] if '"LiveDay1Headline"' in build else ""
+    week_paper = build.split('"LiveWeekHeadline"', 1)[-1].split("_rivalDuel = new RivalDuelView", 1)[0] if '"LiveWeekHeadline"' in build else ""
+    last_paper = build.split('"LiveLastHeadline"', 1)[-1].split("if (_avatar != null && _avatar.Root != null)", 1)[0] if '"LiveLastHeadline"' in build else ""
+    mid_tab = build.split('"LiveMidDay"', 1)[-1].split("_chatPanel", 1)[0] if '"LiveMidDay"' in build else ""
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    head_apply = apply.split("if (_midHeadline", 1)[-1].split("if (_liveMidDay", 1)[0] if "if (_midHeadline" in apply else ""
+    mid_apply = apply.split("if (_liveMidDay", 1)[-1].split("if (_day1Headline", 1)[0] if "if (_liveMidDay" in apply else ""
+    day1_head_apply = apply.split("if (_day1Headline", 1)[-1].split("if (_liveDay1", 1)[0] if "if (_day1Headline" in apply else ""
+    week_head_apply = apply.split("if (_weekHeadline", 1)[-1].split("if (_liveWeekStart", 1)[0] if "if (_weekHeadline" in apply else ""
+    last_head_apply = apply.split("if (_lastHeadline", 1)[-1].split("if (_liveLastDay", 1)[0] if "if (_lastHeadline" in apply else ""
+    mid_gate = live_cs.split("static bool LiveMidWeekDay", 1)[-1].split("static bool LiveLastDay", 1)[0] if "static bool LiveMidWeekDay" in live_cs else ""
+    week_live_gate = live_cs.split("static bool LiveWeekStartDay", 1)[-1].split("static Color ShowChipAccent", 1)[0] if "static bool LiveWeekStartDay" in live_cs else ""
+    last_live_gate = live_cs.split("static bool LiveLastDay", 1)[-1].split("void ApplyThreatShow", 1)[0] if "static bool LiveLastDay" in live_cs else ""
+    hud = build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in build else ""
+    chat = build.split('"ChatDock"', 1)[-1].split('"Lane"', 1)[0] if '"ChatDock"' in build else ""
+    pads = build.split('"PadRow"', 1)[-1].split('"MissSting"', 1)[0] if '"PadRow"' in build else ""
+    timer = build.split('"Timer"', 1)[-1].split('"Cash"', 1)[0] if '"Timer"' in build else ""
+
+    if 'HeadlineClip = "Art/headline_clip"' not in art_cs:
+        fail("ArtSprites does not hook Art/headline_clip")
+    elif '"LiveMidHeadline"' not in build or "ArtSprites.HeadlineClip" not in paper:
+        fail("mid-week live does not hang Art/headline_clip as a HUD news paper")
+    elif "Image _midHeadline" not in live_cs:
+        fail("mid-week live headline paper is not LiveMidHeadline")
+    elif "preserveAspect = true" not in paper:
+        fail("live mid-week headline paper is not preserveAspect")
+    elif "72f, 48f" in paper:
+        fail("live mid-week headline paper was hung as a 72×48 pin")
+    elif "168f, 68f" not in paper or "24f, -272f" not in paper:
+        fail("live mid-week headline paper is not in the same HUD slot as LiveDay1Headline / LiveWeekHeadline / LiveLastHeadline")
+    elif "0.93f, 0.88f, 0.74f" not in paper:
+        fail("live mid-week headline paper dropped the gold paper grade")
+    elif '"헤드라인"' not in paper:
+        fail("live mid-week headline paper is not Korean news copy")
+    elif "1일차" in paper or "날짜" in paper or "마지막 날" in paper or "주차 마지막" in paper or "2주차" in paper:
+        fail("live mid-week headline paper reused calendar-tab copy")
+    elif "청구서" in paper or "BillNotice" in paper or "현금" in paper or "CashSlip" in paper:
+        fail("live mid-week headline paper reused a live bill / cash hang")
+    elif "멘탈" in paper or "MentalNote" in paper or "경고" in paper or "EventWarn" in paper:
+        fail("live mid-week headline paper reused a live mental / warn hang")
+    elif "DayTab" in paper or "200f, -276f" in paper or "132f, 40f" in paper:
+        fail("live mid-week headline paper covers LiveMidDay")
+    elif "어제:" in paper or "오늘 헤드라인" in paper or "lastHeadline" in paper:
+        fail("live mid-week headline paper reused live / continue / settlement headline copy")
+    elif "NewGameHeadline" in paper or "412f, -78f" in paper or "240f, 88f" in paper:
+        fail("live mid-week headline paper sat on Title NewGameHeadline")
+    elif "ContinueDay1Headline" in paper or "ContinueWeekHeadline" in paper or "ContinueLastHeadline" in paper:
+        fail("live mid-week headline paper sat on a Title continue headline")
+    elif "576f, -76f" in paper or "228f, 92f" in paper:
+        fail("live mid-week headline paper sat on a Title continue headline")
+    elif "MorningHeadline" in paper or "MorningWeekHeadline" in paper or "MorningLastHeadline" in paper:
+        fail("live mid-week headline paper sat on a morning headline")
+    elif "8f, -284f" in paper or "0.74f, 1f" in paper:
+        fail("live mid-week headline paper sat on a morning headline")
+    elif "SettleHeadline" in paper or "SettleWeekHeadline" in paper or "SettleLastHeadline" in paper:
+        fail("live mid-week headline paper sat on a settlement headline")
+    elif "8f, -212f" in paper or "0.80f, 1f" in paper:
+        fail("live mid-week headline paper sat on a settlement headline")
+    elif "LiveDay1Headline" in paper or "LiveWeekHeadline" in paper or "LiveLastHeadline" in paper:
+        fail("live mid-week headline paper folded another live headline into the same hang")
+    elif '"LiveMidDay"' in paper or '"LiveDay1"' in paper or '"LiveWeekStart"' in paper or '"LiveLastDay"' in paper:
+        fail("live mid-week headline paper folded a live calendar into the same hang")
+    elif "36, -66" in paper or '"HeadlineTag"' in paper:
+        fail("live mid-week headline paper sat on the 오늘 헤드라인 scrap")
+    elif "56, -286" in paper or "420, 72" in paper or '"ContinueClip"' in paper:
+        fail("live mid-week headline paper sat on the continue headline scrap")
+    elif "0, -42" in paper or "0, 78" in paper or "YesterdayClip" in paper:
+        fail("live mid-week headline paper sat on YesterdayClip")
+    elif "24, -214" in paper or "168, 44" in paper or '"ShowChip"' in paper:
+        fail("live mid-week headline paper covers the show chip")
+    elif "ClockPlate" in paper or '"Timer"' in paper or "0.64f, 1f" in paper:
+        fail("live mid-week headline paper covers the timer")
+    elif "ChatDock" in paper or "420, -220" in paper or "실시간 채팅" in paper:
+        fail("live mid-week headline paper covers chat")
+    elif "PadRow" in paper or "AddColumnPad" in paper or "1–4" in paper:
+        fail("live mid-week headline paper covers QTE / pads")
+    elif "360, 70" in paper or '"GoLive"' in paper:
+        fail("live mid-week headline paper sat on morning GO LIVE")
+    elif "MemberBadgeHud" in paper or "AgencyBadgeHud" in paper or "GoodsBadgeHud" in paper:
+        fail("live mid-week headline paper sat on an unlock pin")
+    elif "RankingBadgeHud" in paper or "ClipBadgeHud" in paper or "ConcertBadgeHud" in paper or "SponsorBadgeHud" in paper:
+        fail("live mid-week headline paper sat on an unlock pin")
+    elif "-10f, -10f" in paper or "-10f, -322f" in paper:
+        fail("live mid-week headline paper covers a webcam unlock pin")
+    elif "UiKit.Stretch" in paper:
+        fail("live mid-week headline paper was stretched over the HUD")
+    elif "SetActive(false)" not in paper:
+        fail("live mid-week headline paper is not hidden until ApplyContentShow")
+    elif "Audio/sfx_threat" in paper or "PlayThreatSfx" in paper or "PlayNewGameBillThreat" in paper:
+        fail("live mid-week headline paper added a new sting")
+    elif "_midHeadline" not in apply or "LiveMidWeekDay" not in head_apply:
+        fail("live mid-week headline paper is not shown on mid-week lives")
+    elif "SetActive(LiveMidWeekDay(GameManager.Instance.Run.day))" not in head_apply:
+        fail("live mid-week headline paper is not hidden on other lives")
+    elif "1 == GameManager.Instance.Run.day" in head_apply:
+        fail("live mid-week headline paper reused the day-1 live gate")
+    elif "LiveWeekStartDay" in head_apply or "LiveLastDay" in head_apply or "LastDayOfCurrentWeek" in head_apply:
+        fail("live mid-week headline paper reused week-start or last-day gate")
+    elif "6 == " in apply or "run.day == 6" in apply or "LastDayOfCurrentWeek" in apply:
+        fail("live mid-week headline paper reused last-day or week-start gate in ApplyContentShow")
+    elif "day == 2" not in mid_gate or "day == 7" not in mid_gate or "day == 24" not in mid_gate:
+        fail("live mid-week headline paper is not shown on mid-week days such as 2 / 7")
+    elif re.search(r"day == 1\b", mid_gate) or re.search(r"day == 5\b", mid_gate) or re.search(r"day == 6\b", mid_gate):
+        fail("live mid-week headline paper also shows on day 1 / last-of-week / week-start")
+    elif re.search(r"day == 10\b", mid_gate) or re.search(r"day == 11\b", mid_gate) or re.search(r"day == 21\b", mid_gate) or re.search(r"day == 25\b", mid_gate):
+        fail("live mid-week headline paper also shows on a last-of-week or week-start live")
+    elif "_day1Headline" not in apply or "SetActive(1 == GameManager.Instance.Run.day)" not in day1_head_apply:
+        fail("live mid-week headline paper dropped LiveDay1Headline day-1 hide")
+    elif "LiveMidWeekDay" in day1_head_apply or "LiveWeekStartDay" in day1_head_apply or "LiveLastDay" in day1_head_apply:
+        fail("LiveDay1Headline reused a mid-week / week-start / last-day gate")
+    elif "_weekHeadline" not in apply or "LiveWeekStartDay" not in week_head_apply:
+        fail("live mid-week headline paper dropped LiveWeekHeadline week-start hide")
+    elif "LiveMidWeekDay" in week_head_apply or "1 == GameManager.Instance.Run.day" in week_head_apply or "LiveLastDay" in week_head_apply:
+        fail("LiveWeekHeadline reused a mid-week / day-1 / last-day gate")
+    elif "_lastHeadline" not in apply or "LiveLastDay" not in last_head_apply:
+        fail("live mid-week headline paper dropped LiveLastHeadline last-day hide")
+    elif "LiveMidWeekDay" in last_head_apply or "1 == GameManager.Instance.Run.day" in last_head_apply or "LiveWeekStartDay" in last_head_apply:
+        fail("LiveLastHeadline reused a mid-week / day-1 / week-start gate")
+    elif "_liveMidDay" not in apply or "LiveMidWeekDay" not in mid_apply:
+        fail("live mid-week headline paper dropped LiveMidDay mid-week hide")
+    elif "1 == GameManager.Instance.Run.day" in mid_apply or "LiveWeekStartDay" in mid_apply or "LiveLastDay" in mid_apply:
+        fail("LiveMidDay reused a day-1 / week-start / last-day gate")
+    elif "day == 6" not in week_live_gate or "day == 21" not in week_live_gate:
+        fail("live mid-week headline paper changed LiveWeekHeadline days")
+    elif re.search(r"day == 2\b", week_live_gate) or re.search(r"day == 7\b", week_live_gate):
+        fail("LiveWeekHeadline also shows on a mid-week live")
+    elif "day == 5" not in last_live_gate or "day == 25" not in last_live_gate:
+        fail("live mid-week headline paper changed LiveLastHeadline days")
+    elif re.search(r"day == 2\b", last_live_gate) or re.search(r"day == 7\b", last_live_gate):
+        fail("LiveLastHeadline also shows on a mid-week live")
+    elif '"LiveDay1Headline"' not in build or "ArtSprites.HeadlineClip" not in day1_paper or '"헤드라인"' not in day1_paper:
+        fail("live mid-week headline paper restyled LiveDay1Headline")
+    elif "168f, 68f" not in day1_paper or "24f, -272f" not in day1_paper:
+        fail("live mid-week headline paper moved LiveDay1Headline")
+    elif "LiveMidHeadline" in day1_paper:
+        fail("LiveDay1Headline hang folded in the mid-week live headline")
+    elif '"LiveWeekHeadline"' not in build or "ArtSprites.HeadlineClip" not in week_paper or '"헤드라인"' not in week_paper:
+        fail("live mid-week headline paper restyled LiveWeekHeadline")
+    elif "168f, 68f" not in week_paper or "24f, -272f" not in week_paper:
+        fail("live mid-week headline paper moved LiveWeekHeadline")
+    elif "LiveMidHeadline" in week_paper:
+        fail("LiveWeekHeadline hang folded in the mid-week live headline")
+    elif '"LiveLastHeadline"' not in build or "ArtSprites.HeadlineClip" not in last_paper or '"헤드라인"' not in last_paper:
+        fail("live mid-week headline paper restyled LiveLastHeadline")
+    elif "168f, 68f" not in last_paper or "24f, -272f" not in last_paper:
+        fail("live mid-week headline paper moved LiveLastHeadline")
+    elif "LiveMidHeadline" in last_paper:
+        fail("LiveLastHeadline hang folded in the mid-week live headline")
+    elif '"LiveMidDay"' not in build or "ArtSprites.DayTab" not in mid_tab or '"날짜"' not in mid_tab:
+        fail("live mid-week headline paper restyled LiveMidDay")
+    elif "132f, 40f" not in mid_tab or "200f, -276f" not in mid_tab:
+        fail("live mid-week headline paper moved LiveMidDay")
+    elif "헤드라인" in mid_tab or "HeadlineClip" in mid_tab or "LiveMidHeadline" in mid_tab:
+        fail("LiveMidDay hang folded in the mid-week live headline")
+    elif "ArtSprites.ClockPlate" not in timer:
+        fail("live mid-week headline paper dropped the timer plate")
+    elif "ArtSprites.ChatDock" not in chat:
+        fail("live mid-week headline paper dropped chat dock")
+    elif "AddColumnPad" not in pads or "슈퍼챗" not in pads:
+        fail("live mid-week headline paper dropped live pads")
+    elif '"MemberBadgeHud"' not in hud or "72f, 48f" not in hud or "-10f, -10f" not in hud:
+        fail("live mid-week headline paper restyled the membership pin")
+    elif '"SponsorBadgeHud"' not in hud or "-10f, -322f" not in hud:
+        fail("live mid-week headline paper restyled the sponsor pin")
+    elif "SetActive(_memberShow)" not in apply or "SetActive(_sponsorPinShow)" not in apply:
+        fail("live mid-week headline paper changed unlock pin hide")
+    elif "run.day =" in live_cs or "day += " in live_cs or "day -= " in live_cs:
+        fail("live mid-week headline paper writes the day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("live mid-week headline paper moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("live mid-week headline paper retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("live mid-week headline paper retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("live mid-week headline paper retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("live mid-week headline paper broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising live mid-week headline / later weeks")
+    elif "def check_live_day1_headline()" not in verify_src or "def check_live_week_start_headline()" not in verify_src:
+        fail("live mid-week headline paper dropped LiveDay1Headline / LiveWeekHeadline hang locks")
+    elif "def check_live_last_day_headline()" not in verify_src or "def check_live_mid_day()" not in verify_src:
+        fail("live mid-week headline paper dropped LiveLastHeadline / LiveMidDay hang locks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("live mid-week headline paper dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("live mid-week headline paper moved Unity off 6000.5.9f1")
+    else:
+        ok("mid-week lives hang headline_clip as HUD news; day 1 / week-start / last-of-week hide it; LiveDay1Headline / LiveWeekHeadline / LiveLastHeadline / LiveMidDay stay")
 
 
 def check_live_day1_tab() -> None:
