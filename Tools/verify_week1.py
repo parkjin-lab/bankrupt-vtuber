@@ -1666,6 +1666,7 @@ def check_project() -> None:
     check_readme_live_day1_tab()
     check_readme_live_week_start_tab()
     check_readme_live_last_day_tab()
+    check_readme_live_mid_day()
     check_readme_live_day1_bill()
     check_readme_live_last_day_bill()
     check_readme_live_week_start_bill()
@@ -29470,6 +29471,307 @@ def check_readme_live_last_day_tab() -> None:
         fail("README live last-day calendar moved Unity off 6000.5.9f1")
     else:
         ok("README names 라이브 마지막 날 vs 라이브 1일차, 라이브 주차 첫날, 아침 / 정산 / 이어하기 마지막 날 tabs, and 라이브 마지막 날 헤드라인")
+
+
+def check_readme_live_mid_day() -> None:
+    """README names the LiveStream mid-week calendar vs 라이브 1일차 / 라이브 주차 첫날 / 라이브 마지막 날, morning / settlement / continue day tabs, and live headlines / bill / cash / mental / warn papers."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
+    title_loop = readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]
+    morning_loop = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    live_loop = readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    desk_paper = readme.split("- **책상 종이**", 1)[-1].split("- **돈 스탬프", 1)[0]
+    card_tabs = readme.split("- **카드 / 탭**", 1)[-1].split("- **책상 종이**", 1)[0]
+    live_mid_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 평일**")), "")
+    live_day1_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차**") and "헤드라인" not in ln.split("—", 1)[0] and "청구서" not in ln.split("—", 1)[0] and "현금" not in ln.split("—", 1)[0] and "멘탈" not in ln.split("—", 1)[0] and "경고" not in ln.split("—", 1)[0]), "")
+    live_week_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날**") and "헤드라인" not in ln.split("—", 1)[0] and "청구서" not in ln.split("—", 1)[0] and "현금" not in ln.split("—", 1)[0] and "멘탈" not in ln.split("—", 1)[0] and "경고" not in ln.split("—", 1)[0]), "")
+    live_last_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날**") and "헤드라인" not in ln.split("—", 1)[0] and "청구서" not in ln.split("—", 1)[0] and "현금" not in ln.split("—", 1)[0] and "멘탈" not in ln.split("—", 1)[0] and "경고" not in ln.split("—", 1)[0]), "")
+    live_day1_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 헤드라인**")), "")
+    live_week_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 헤드라인**")), "")
+    live_last_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 헤드라인**")), "")
+    live_day1_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 청구서**")), "")
+    live_week_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 청구서**")), "")
+    live_last_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 청구서**")), "")
+    live_day1_cash_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 현금**")), "")
+    live_week_cash_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 현금**")), "")
+    live_last_cash_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 현금**")), "")
+    live_day1_mental_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 멘탈**")), "")
+    live_week_mental_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 멘탈**")), "")
+    live_last_mental_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 멘탈**")), "")
+    live_day1_warn_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 경고**")), "")
+    live_week_warn_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 경고**")), "")
+    live_last_warn_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 경고**")), "")
+    morning_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **아침 1일차**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    settle_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **정산 1일차**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    week_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **아침 주차 첫날**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    settle_week_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **정산 주차 첫날**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    continue_week_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **이어하기 주차 첫날**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    continue_day1_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **이어하기 1일차**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    newgame_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 1일차**")), "")
+    tab_inv = next((ln for ln in card_tabs.splitlines() if "Art/day_tab" in ln), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    sponsor_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **이어하기 스폰서 핀**")), "")
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    tab = live_build.split('"LiveMidDay"', 1)[-1].split("_chatPanel", 1)[0] if '"LiveMidDay"' in live_build else ""
+    day1_tab = live_build.split('"LiveDay1"', 1)[-1].split('"LiveWeekHeadline"', 1)[0] if '"LiveDay1"' in live_build else ""
+    week_tab = live_build.split('"LiveWeekStart"', 1)[-1].split('"LiveLastHeadline"', 1)[0] if '"LiveWeekStart"' in live_build else ""
+    last_tab = live_build.split('"LiveLastDay"', 1)[-1].split("var chatPanel", 1)[0] if '"LiveLastDay"' in live_build else ""
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    mid_apply = apply.split("if (_liveMidDay", 1)[-1].split("if (_day1Headline", 1)[0] if "if (_liveMidDay" in apply else ""
+    mid_gate = live_cs.split("static bool LiveMidWeekDay", 1)[-1].split("static bool LiveLastDay", 1)[0] if "static bool LiveMidWeekDay" in live_cs else ""
+
+    if "**라이브 평일**" not in live_loop or "`LiveMidDay`" not in live_loop or "day_tab" not in live_loop:
+        fail("README live loop must name 라이브 평일 on Art/day_tab")
+    elif "날짜" not in live_loop or "preserveAspect" not in live_loop or "숨김" not in live_loop:
+        fail("README live loop must name the mid-week live calendar vs hidden")
+    elif "2/3/4/7/8/9/12/13/14/17/18/19/22/23/24" not in live_loop:
+        fail("README live loop must keep 라이브 평일 on mid-week days 2 / 3 / 4 / 7 / 8 / 9 / 12 / 13 / 14 / 17 / 18 / 19 / 22 / 23 / 24")
+    elif "**라이브 1일차**" not in live_loop or "`LiveDay1`" not in live_loop:
+        fail("README live loop must keep 라이브 1일차 on day 1")
+    elif "**라이브 주차 첫날**" not in live_loop or "`LiveWeekStart`" not in live_loop:
+        fail("README live loop must keep 라이브 주차 첫날 on 6/11/16/21")
+    elif "**라이브 마지막 날**" not in live_loop or "`LiveLastDay`" not in live_loop:
+        fail("README live loop must keep 라이브 마지막 날 on 5/10/15/20/25")
+    elif "**새 게임 1일차**" not in live_loop or "**이어하기 1일차**" not in live_loop:
+        fail("README live loop must keep 라이브 평일 distinct from Title 1일차 calendars")
+    elif "**아침 1일차**" not in live_loop or "**정산 1일차**" not in live_loop:
+        fail("README live loop must keep 라이브 평일 distinct from 아침 / 정산 1일차")
+    elif "**라이브 평일**" in title_loop or "`LiveMidDay`" in title_loop:
+        fail("README hung 라이브 평일 on the Title loop")
+    elif "**라이브 평일**" in morning_loop or "`LiveMidDay`" in morning_loop:
+        fail("README hung 라이브 평일 on the morning loop")
+    elif "**라이브 평일**" in settle_loop or "`LiveMidDay`" in settle_loop:
+        fail("README hung 라이브 평일 on the settlement loop")
+    elif "**2주차**" in title_loop or "**3주차**" in title_loop or "**4주차**" in title_loop or "**5주차**" in title_loop:
+        fail("README live mid-week calendar used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "**2주차**" in live_mid_inv or "**3주차**" in live_mid_inv or "**4주차**" in live_mid_inv or "**5주차**" in live_mid_inv:
+        fail("README 라이브 평일 line used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "**2주차**" in live_loop or "**3주차**" in live_loop or "**4주차**" in live_loop or "**5주차**" in live_loop:
+        fail("README live loop used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "**라이브 평일**" not in live_mid_inv or "`LiveMidDay`" not in live_mid_inv or "day_tab" not in live_mid_inv:
+        fail("README must inventory 라이브 평일 on its own calendar line")
+    elif "preserveAspect" not in live_mid_inv or "날짜" not in live_mid_inv or "숨김" not in live_mid_inv:
+        fail("README 라이브 평일 line must name the preserveAspect Korean 날짜 calendar vs hidden")
+    elif "2/3/4/7/8/9/12/13/14/17/18/19/22/23/24" not in live_mid_inv:
+        fail("README 라이브 평일 line must name mid-week days 2 / 3 / 4 / 7 / 8 / 9 / 12 / 13 / 14 / 17 / 18 / 19 / 22 / 23 / 24")
+    elif "헤드라인" in live_mid_inv.split("—", 1)[0] or "청구서" in live_mid_inv.split("—", 1)[0] or "현금" in live_mid_inv.split("—", 1)[0] or "멘탈" in live_mid_inv.split("—", 1)[0] or "경고" in live_mid_inv.split("—", 1)[0]:
+        fail("README 라이브 평일 line must stay a calendar, not a headline / bill / cash / mental / warn paper")
+    elif "headline_clip" in live_mid_inv or "bill_notice" in live_mid_inv or "cash_slip" in live_mid_inv or "mental_note" in live_mid_inv or "event_warn" in live_mid_inv:
+        fail("README 라이브 평일 line must stay a day_tab calendar, not a headline / bill / cash / mental / warn hang")
+    elif "라이브 1일차" not in live_mid_inv or "`LiveDay1`" not in live_mid_inv:
+        fail("README 라이브 평일 line must stay distinct from 라이브 1일차")
+    elif "라이브 주차 첫날" not in live_mid_inv or "`LiveWeekStart`" not in live_mid_inv:
+        fail("README 라이브 평일 line must stay distinct from 라이브 주차 첫날")
+    elif "라이브 마지막 날" not in live_mid_inv or "`LiveLastDay`" not in live_mid_inv:
+        fail("README 라이브 평일 line must stay distinct from 라이브 마지막 날")
+    elif "새 게임 1일차" not in live_mid_inv or "이어하기 1일차" not in live_mid_inv:
+        fail("README 라이브 평일 line must stay distinct from Title 1일차 calendars")
+    elif "아침 1일차" not in live_mid_inv or "정산 1일차" not in live_mid_inv:
+        fail("README 라이브 평일 line must stay distinct from 아침 / 정산 1일차")
+    elif "이어하기 주차 첫날" not in live_mid_inv or "아침 주차 첫날" not in live_mid_inv or "정산 주차 첫날" not in live_mid_inv:
+        fail("README 라이브 평일 line must stay distinct from 이어하기 / 아침 / 정산 주차 첫날")
+    elif "`LiveDay1Headline`" not in live_mid_inv or "`LiveWeekHeadline`" not in live_mid_inv or "`LiveLastHeadline`" not in live_mid_inv:
+        fail("README 라이브 평일 line must stay distinct from live headline papers")
+    elif live_mid_inv == live_day1_inv or live_mid_inv == live_week_inv or live_mid_inv == live_last_inv or live_mid_inv == tab_inv:
+        fail("README must keep 라이브 평일 distinct from 라이브 1일차 / 라이브 주차 첫날 / 라이브 마지막 날 and the shared day_tab inventory")
+    elif live_mid_inv == live_day1_head_inv or live_mid_inv == live_week_head_inv or live_mid_inv == live_last_head_inv:
+        fail("README must keep 라이브 평일 distinct from live headline papers")
+    elif live_mid_inv == live_day1_bill_inv or live_mid_inv == live_week_bill_inv or live_mid_inv == live_last_bill_inv:
+        fail("README must keep 라이브 평일 distinct from live bill papers")
+    elif live_mid_inv == live_day1_cash_inv or live_mid_inv == live_week_cash_inv or live_mid_inv == live_last_cash_inv:
+        fail("README must keep 라이브 평일 distinct from live cash papers")
+    elif live_mid_inv == live_day1_mental_inv or live_mid_inv == live_week_mental_inv or live_mid_inv == live_last_mental_inv:
+        fail("README must keep 라이브 평일 distinct from live mental papers")
+    elif live_mid_inv == live_day1_warn_inv or live_mid_inv == live_week_warn_inv or live_mid_inv == live_last_warn_inv:
+        fail("README must keep 라이브 평일 distinct from live warn papers")
+    elif live_mid_inv == morning_inv or live_mid_inv == settle_inv or live_mid_inv == newgame_inv or live_mid_inv == continue_day1_inv:
+        fail("README must keep 라이브 평일 distinct from 아침 / 정산 / 새 게임 / 이어하기 1일차")
+    elif live_mid_inv == week_inv or live_mid_inv == settle_week_inv or live_mid_inv == continue_week_inv:
+        fail("README must keep 라이브 평일 distinct from 아침 / 정산 / 이어하기 주차 첫날")
+    elif readme.index(live_day1_inv) >= readme.index(live_mid_inv):
+        fail("README 라이브 1일차 calendar line must stay before 라이브 평일")
+    elif readme.index(live_week_inv) >= readme.index(live_mid_inv):
+        fail("README 라이브 주차 첫날 calendar line must stay before 라이브 평일")
+    elif readme.index(live_last_inv) >= readme.index(live_mid_inv):
+        fail("README 라이브 마지막 날 calendar line must stay before 라이브 평일")
+    elif "`LiveMidDay`" in tab_inv or "**라이브 평일**" in tab_inv:
+        fail("README folded 라이브 평일 into the shared day_tab inventory")
+    elif "여덟 곳" not in tab_inv or "마지막 날" not in tab_inv or "이어서 하기" not in tab_inv:
+        fail("README 라이브 평일 rewrote the shared day_tab inventory")
+    elif "`LiveDay1`" not in live_day1_inv or "day_tab" not in live_day1_inv or "1일차" not in live_day1_inv:
+        fail("README 라이브 평일 rewrote the 라이브 1일차 calendar line")
+    elif "`LiveMidDay`" in live_day1_inv or "**라이브 평일**" in live_day1_inv:
+        fail("README folded 라이브 평일 into the 라이브 1일차 calendar line")
+    elif "`LiveWeekStart`" not in live_week_inv or "day_tab" not in live_week_inv or "6/11/16/21" not in live_week_inv:
+        fail("README 라이브 평일 rewrote the 라이브 주차 첫날 calendar line")
+    elif "`LiveMidDay`" in live_week_inv or "**라이브 평일**" in live_week_inv:
+        fail("README folded 라이브 평일 into the 라이브 주차 첫날 calendar line")
+    elif "`LiveLastDay`" not in live_last_inv or "day_tab" not in live_last_inv or "5/10/15/20/25" not in live_last_inv:
+        fail("README 라이브 평일 rewrote the 라이브 마지막 날 calendar line")
+    elif "`LiveMidDay`" in live_last_inv or "**라이브 평일**" in live_last_inv:
+        fail("README folded 라이브 평일 into the 라이브 마지막 날 calendar line")
+    elif "LiveDay1Headline" not in live_day1_head_inv or "headline_clip" not in live_day1_head_inv:
+        fail("README 라이브 평일 rewrote the 라이브 1일차 헤드라인 line")
+    elif "`LiveMidDay`" in live_day1_head_inv or "**라이브 평일**" in live_day1_head_inv:
+        fail("README folded 라이브 평일 into the 라이브 1일차 헤드라인 line")
+    elif "LiveWeekHeadline" not in live_week_head_inv or "headline_clip" not in live_week_head_inv:
+        fail("README 라이브 평일 rewrote the 라이브 주차 첫날 헤드라인 line")
+    elif "`LiveMidDay`" in live_week_head_inv or "**라이브 평일**" in live_week_head_inv:
+        fail("README folded 라이브 평일 into the 라이브 주차 첫날 헤드라인 line")
+    elif "LiveLastHeadline" not in live_last_head_inv or "headline_clip" not in live_last_head_inv:
+        fail("README 라이브 평일 rewrote the 라이브 마지막 날 헤드라인 line")
+    elif "`LiveMidDay`" in live_last_head_inv or "**라이브 평일**" in live_last_head_inv:
+        fail("README folded 라이브 평일 into the 라이브 마지막 날 헤드라인 line")
+    elif "`LiveDay1Bill`" not in live_day1_bill_inv or "bill_notice" not in live_day1_bill_inv:
+        fail("README 라이브 평일 rewrote the 라이브 1일차 청구서 line")
+    elif "`LiveMidDay`" in live_day1_bill_inv or "**라이브 평일**" in live_day1_bill_inv:
+        fail("README folded 라이브 평일 into the 라이브 1일차 청구서 line")
+    elif "`LiveWeekBill`" not in live_week_bill_inv or "bill_notice" not in live_week_bill_inv:
+        fail("README 라이브 평일 rewrote the 라이브 주차 첫날 청구서 line")
+    elif "`LiveMidDay`" in live_week_bill_inv or "**라이브 평일**" in live_week_bill_inv:
+        fail("README folded 라이브 평일 into the 라이브 주차 첫날 청구서 line")
+    elif "`LiveLastBill`" not in live_last_bill_inv or "bill_notice" not in live_last_bill_inv:
+        fail("README 라이브 평일 rewrote the 라이브 마지막 날 청구서 line")
+    elif "`LiveMidDay`" in live_last_bill_inv or "**라이브 평일**" in live_last_bill_inv:
+        fail("README folded 라이브 평일 into the 라이브 마지막 날 청구서 line")
+    elif "`LiveDay1Cash`" not in live_day1_cash_inv or "cash_slip" not in live_day1_cash_inv:
+        fail("README 라이브 평일 rewrote the 라이브 1일차 현금 line")
+    elif "`LiveMidDay`" in live_day1_cash_inv or "**라이브 평일**" in live_day1_cash_inv:
+        fail("README folded 라이브 평일 into the 라이브 1일차 현금 line")
+    elif "`LiveWeekCash`" not in live_week_cash_inv or "cash_slip" not in live_week_cash_inv:
+        fail("README 라이브 평일 rewrote the 라이브 주차 첫날 현금 line")
+    elif "`LiveMidDay`" in live_week_cash_inv or "**라이브 평일**" in live_week_cash_inv:
+        fail("README folded 라이브 평일 into the 라이브 주차 첫날 현금 line")
+    elif "`LiveLastCash`" not in live_last_cash_inv or "cash_slip" not in live_last_cash_inv:
+        fail("README 라이브 평일 rewrote the 라이브 마지막 날 현금 line")
+    elif "`LiveMidDay`" in live_last_cash_inv or "**라이브 평일**" in live_last_cash_inv:
+        fail("README folded 라이브 평일 into the 라이브 마지막 날 현금 line")
+    elif "`LiveDay1Mental`" not in live_day1_mental_inv or "mental_note" not in live_day1_mental_inv:
+        fail("README 라이브 평일 rewrote the 라이브 1일차 멘탈 line")
+    elif "`LiveMidDay`" in live_day1_mental_inv or "**라이브 평일**" in live_day1_mental_inv:
+        fail("README folded 라이브 평일 into the 라이브 1일차 멘탈 line")
+    elif "`LiveWeekMental`" not in live_week_mental_inv or "mental_note" not in live_week_mental_inv:
+        fail("README 라이브 평일 rewrote the 라이브 주차 첫날 멘탈 line")
+    elif "`LiveMidDay`" in live_week_mental_inv or "**라이브 평일**" in live_week_mental_inv:
+        fail("README folded 라이브 평일 into the 라이브 주차 첫날 멘탈 line")
+    elif "`LiveLastMental`" not in live_last_mental_inv or "mental_note" not in live_last_mental_inv:
+        fail("README 라이브 평일 rewrote the 라이브 마지막 날 멘탈 line")
+    elif "`LiveMidDay`" in live_last_mental_inv or "**라이브 평일**" in live_last_mental_inv:
+        fail("README folded 라이브 평일 into the 라이브 마지막 날 멘탈 line")
+    elif "`LiveDay1Warn`" not in live_day1_warn_inv or "event_warn" not in live_day1_warn_inv:
+        fail("README 라이브 평일 rewrote the 라이브 1일차 경고 line")
+    elif "`LiveMidDay`" in live_day1_warn_inv or "**라이브 평일**" in live_day1_warn_inv:
+        fail("README folded 라이브 평일 into the 라이브 1일차 경고 line")
+    elif "`LiveWeekWarn`" not in live_week_warn_inv or "event_warn" not in live_week_warn_inv:
+        fail("README 라이브 평일 rewrote the 라이브 주차 첫날 경고 line")
+    elif "`LiveMidDay`" in live_week_warn_inv or "**라이브 평일**" in live_week_warn_inv:
+        fail("README folded 라이브 평일 into the 라이브 주차 첫날 경고 line")
+    elif "`LiveLastWarn`" not in live_last_warn_inv or "event_warn" not in live_last_warn_inv:
+        fail("README 라이브 평일 rewrote the 라이브 마지막 날 경고 line")
+    elif "`LiveMidDay`" in live_last_warn_inv or "**라이브 평일**" in live_last_warn_inv:
+        fail("README folded 라이브 평일 into the 라이브 마지막 날 경고 line")
+    elif "MorningDay1" not in morning_inv or "새 게임 1일차" not in morning_inv:
+        fail("README 라이브 평일 rewrote the 아침 1일차 line")
+    elif "`LiveMidDay`" in morning_inv or "**라이브 평일**" in morning_inv:
+        fail("README folded 라이브 평일 into the 아침 1일차 line")
+    elif "SettleDay1" not in settle_inv or "아침 1일차" not in settle_inv:
+        fail("README 라이브 평일 rewrote the 정산 1일차 line")
+    elif "`LiveMidDay`" in settle_inv or "**라이브 평일**" in settle_inv:
+        fail("README folded 라이브 평일 into the 정산 1일차 line")
+    elif "NewGameDay" not in newgame_inv or "ContinueDayTab" not in newgame_inv:
+        fail("README 라이브 평일 rewrote the 새 게임 1일차 line")
+    elif "`LiveMidDay`" in newgame_inv or "**라이브 평일**" in newgame_inv:
+        fail("README folded 라이브 평일 into the 새 게임 1일차 line")
+    elif "`ContinueDay1`" not in continue_day1_inv or "day_tab" not in continue_day1_inv:
+        fail("README 라이브 평일 rewrote the 이어하기 1일차 calendar line")
+    elif "`LiveMidDay`" in continue_day1_inv or "**라이브 평일**" in continue_day1_inv:
+        fail("README folded 라이브 평일 into the 이어하기 1일차 calendar line")
+    elif "MorningWeekStart" not in week_inv or "6/11/16/21" not in week_inv:
+        fail("README 라이브 평일 rewrote the 아침 주차 첫날 line")
+    elif "`LiveMidDay`" in week_inv or "**라이브 평일**" in week_inv:
+        fail("README folded 라이브 평일 into the 아침 주차 첫날 line")
+    elif "SettleWeekStart" not in settle_week_inv or "6/11/16/21" not in settle_week_inv:
+        fail("README 라이브 평일 rewrote the 정산 주차 첫날 line")
+    elif "`LiveMidDay`" in settle_week_inv or "**라이브 평일**" in settle_week_inv:
+        fail("README folded 라이브 평일 into the 정산 주차 첫날 line")
+    elif "ContinueWeekStart" not in continue_week_inv or "6/11/16/21" not in continue_week_inv:
+        fail("README 라이브 평일 rewrote the 이어하기 주차 첫날 line")
+    elif "`LiveMidDay`" in continue_week_inv or "**라이브 평일**" in continue_week_inv:
+        fail("README folded 라이브 평일 into the 이어하기 주차 첫날 line")
+    elif "**라이브 평일**" not in desk_paper or "`LiveMidDay`" not in desk_paper:
+        fail("README desk paper dropped 라이브 평일")
+    elif "`LiveDay1`" not in desk_paper or "`LiveWeekStart`" not in desk_paper or "`LiveLastDay`" not in desk_paper:
+        fail("README desk paper dropped 라이브 1일차 / 라이브 주차 첫날 / 라이브 마지막 날")
+    elif "오늘의 위협" not in sfx_inv or "새 게임 청구서" not in sfx_inv or sfx_inv.count("sfx_threat") < 5:
+        fail("README 라이브 평일 rewrote the five sfx_threat uses")
+    elif "ContinueSponsorPin" not in sponsor_inv or "타일 가득" not in sponsor_inv:
+        fail("README 라이브 평일 rewrote the Title continue sponsor pin")
+    elif "매드라인" in readme or "매드라인" in live_cs:
+        fail("README live mid-week calendar used 매드라인 instead of 헤드라인")
+    elif "def check_live_mid_day()" not in verify_src or "check_live_mid_day()" not in verify_src:
+        fail("README live mid-week calendar dropped the existing check_live_mid_day hang lock")
+    elif "def check_live_day1_tab()" not in verify_src or "def check_readme_live_day1_tab()" not in verify_src:
+        fail("README live mid-week calendar dropped LiveDay1 hang / README locks")
+    elif "def check_live_week_start_tab()" not in verify_src or "def check_readme_live_week_start_tab()" not in verify_src:
+        fail("README live mid-week calendar dropped LiveWeekStart hang / README locks")
+    elif "def check_live_last_day_tab()" not in verify_src or "def check_readme_live_last_day_tab()" not in verify_src:
+        fail("README live mid-week calendar dropped LiveLastDay hang / README locks")
+    elif 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif '"LiveMidDay"' not in live_build or "ArtSprites.DayTab" not in tab:
+        fail("README live mid-week calendar lost the LiveStream hang")
+    elif "preserveAspect = true" not in tab or "132f, 40f" not in tab or "200f, -276f" not in tab:
+        fail("README live mid-week calendar restyled the LiveStream hang")
+    elif '"날짜"' not in tab:
+        fail("README live mid-week calendar is not Korean 날짜 copy")
+    elif "1일차" in tab or "2주차" in tab or "마지막 날" in tab:
+        fail("README live mid-week calendar reused day-1 / week-start / last-day copy")
+    elif "헤드라인" in tab or "HeadlineClip" in tab or "청구서" in tab or "현금" in tab or "멘탈" in tab or "경고" in tab:
+        fail("README live mid-week calendar reused a headline / bill / cash / mental / warn hang")
+    elif "SetActive(false)" not in tab:
+        fail("README live mid-week calendar is not hidden until ApplyContentShow")
+    elif "_liveMidDay" not in apply or "LiveMidWeekDay" not in mid_apply:
+        fail("README live mid-week calendar is not shown on mid-week lives")
+    elif "day == 2" not in mid_gate or "day == 7" not in mid_gate or "day == 24" not in mid_gate:
+        fail("README live mid-week calendar is not shown on mid-week days such as 2 / 7")
+    elif re.search(r"day == 1\b", mid_gate) or re.search(r"day == 5\b", mid_gate) or re.search(r"day == 6\b", mid_gate):
+        fail("README live mid-week calendar also shows on day 1 / last-of-week / week-start")
+    elif '"LiveDay1"' not in live_build or "ArtSprites.DayTab" not in day1_tab or '"1일차"' not in day1_tab:
+        fail("README live mid-week calendar restyled LiveDay1")
+    elif "날짜" in day1_tab or "LiveMidDay" in day1_tab:
+        fail("LiveDay1 hang folded in the mid-week live calendar")
+    elif '"LiveWeekStart"' not in live_build or "ArtSprites.DayTab" not in week_tab or '"2주차"' not in week_tab:
+        fail("README live mid-week calendar restyled LiveWeekStart")
+    elif "날짜" in week_tab or "LiveMidDay" in week_tab:
+        fail("LiveWeekStart hang folded in the mid-week live calendar")
+    elif '"LiveLastDay"' not in live_build or "ArtSprites.DayTab" not in last_tab or '"마지막 날"' not in last_tab:
+        fail("README live mid-week calendar restyled LiveLastDay")
+    elif "날짜" in last_tab or "LiveMidDay" in last_tab:
+        fail("LiveLastDay hang folded in the mid-week live calendar")
+    elif "run.day =" in live_cs or "day += " in live_cs or "day -= " in live_cs:
+        fail("README live mid-week calendar writes the day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("README live mid-week calendar moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README live mid-week calendar retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README live mid-week calendar retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README live mid-week calendar retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README live mid-week calendar broke pads, 입력됨, or added timeScale")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README live mid-week calendar dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README live mid-week calendar moved Unity off 6000.5.9f1")
+    else:
+        ok("README names 라이브 평일 vs 라이브 1일차 / 라이브 주차 첫날 / 라이브 마지막 날, morning / settlement / continue day tabs, and live headlines / bill / cash / mental / warn")
 
 
 def check_readme_live_day1_bill() -> None:
