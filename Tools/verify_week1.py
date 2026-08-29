@@ -1571,6 +1571,7 @@ def check_project() -> None:
     check_morning_day1_tab()
     check_morning_day1_headline()
     check_morning_week_start_tab()
+    check_morning_mid_day()
     check_morning_week_start_headline()
     check_morning_last_day_headline()
     check_settle_day1_tab()
@@ -13167,6 +13168,223 @@ def check_morning_week_start_tab() -> None:
         fail("morning week-start tab moved Unity off 6000.5.9f1")
     else:
         ok("week-start mornings hang 2–5주차 day_tab; day 1, last-day, and mid-week stay as they were")
+
+
+def check_morning_mid_day() -> None:
+    """Mid-week mornings hang day_tab as a 날짜 calendar; day 1 / week-start / last-of-week hide it; MorningDay1 / MorningWeekStart / last-day tab stay gated."""
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
+    build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
+    tab = build.split('"MorningMidDay"', 1)[-1].split('"MorningWeekStart"', 1)[0] if '"MorningMidDay"' in build else ""
+    week_start = build.split('"MorningWeekStart"', 1)[-1].split('"MorningWeekHeadline"', 1)[0] if '"MorningWeekHeadline"' in build else ""
+    day1 = build.split('"MorningDay1"', 1)[-1].split('"MorningHeadline"', 1)[0] if '"MorningHeadline"' in build else ""
+    banner = week_cs.split('"LastDayBanner"', 1)[-1].split('"MorningLastHeadline"', 1)[0] if '"MorningLastHeadline"' in week_cs else ""
+    week_head = build.split('"MorningWeekHeadline"', 1)[-1].split('"MorningDay1"', 1)[0] if '"MorningWeekHeadline"' in build else ""
+    day1_head = build.split('"MorningHeadline"', 1)[-1].split('"LastDayBanner"', 1)[0] if '"MorningHeadline"' in build else ""
+    last_head = build.split('"MorningLastHeadline"', 1)[-1].split('"WavePanel"', 1)[0] if '"MorningLastHeadline"' in build else ""
+    head = week_cs.split('"DayTab"', 1)[-1].split('"DayLabel"', 1)[0] if '"DayTab"' in week_cs else ""
+    last_refresh = week_cs.split("void RefreshLastDay", 1)[-1].split("static string LastDayClearReminder", 1)[0]
+    day1_refresh = week_cs.split("void RefreshDay1", 1)[-1].split("void RefreshLastDay", 1)[0] if "void RefreshDay1" in week_cs else ""
+    week_refresh = week_cs.split("void RefreshWeekStart", 1)[-1].split("void RefreshDay1", 1)[0] if "void RefreshWeekStart" in week_cs else ""
+    mid_refresh = week_cs.split("void RefreshMidDay", 1)[-1].split("void RefreshYesterday", 1)[0] if "void RefreshMidDay" in week_cs else ""
+    mid_gate = week_cs.split("static bool MorningMidWeekDay", 1)[-1].split("void RefreshYesterday", 1)[0] if "static bool MorningMidWeekDay" in week_cs else ""
+    hud = week_cs.split("void RefreshHud", 1)[-1].split("void RefreshCashShort", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_day = start_hang.split("_startDay = UiKit.Image", 1)[-1] if "_startDay = UiKit.Image" in start_hang else ""
+    title_build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    last_tab = title_build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in title_build else ""
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    settle_day1 = settle_build.split('"SettleDay1"', 1)[-1].split('"Sheet"', 1)[0] if '"SettleDay1"' in settle_build else ""
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    live_mid = live_build.split('"LiveMidDay"', 1)[-1].split("_chatPanel", 1)[0] if '"LiveMidDay"' in live_build else ""
+    live_apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    live_mid_apply = live_apply.split("if (_liveMidDay", 1)[-1].split("if (_day1Headline", 1)[0] if "if (_liveMidDay" in live_apply else ""
+    live_mid_gate = live_cs.split("static bool LiveMidWeekDay", 1)[-1].split("static bool LiveLastDay", 1)[0] if "static bool LiveMidWeekDay" in live_cs else ""
+
+    if 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif '"MorningMidDay"' not in build or "ArtSprites.DayTab" not in tab:
+        fail("mid-week morning does not hang Art/day_tab as a 날짜 calendar")
+    elif "Image _midDayTab" not in week_cs:
+        fail("mid-week morning calendar is not MorningMidDay")
+    elif "preserveAspect = true" not in tab:
+        fail("morning mid-week calendar is not preserveAspect")
+    elif "ApplySliced" in tab:
+        fail("morning mid-week calendar reused a sliced desk paper")
+    elif "72f, 48f" in tab:
+        fail("morning mid-week calendar was hung as a 72×48 pin")
+    elif "180f, 56f" not in tab or "0.74f, 1f" not in tab or "8f, -220f" not in tab:
+        fail("morning mid-week calendar is not in the same desk slot as MorningDay1 / MorningWeekStart")
+    elif "132f, 40f" in tab or "200f, -276f" in tab:
+        fail("morning mid-week calendar sat on LiveMidDay")
+    elif "412f, -10f" in tab or "576f, -8f" in tab:
+        fail("morning mid-week calendar sat on a Title desk calendar")
+    elif "8f, -148f" in tab or "0.80f, 1f" in tab:
+        fail("morning mid-week calendar sat on a settlement calendar")
+    elif '"날짜"' not in tab:
+        fail("morning mid-week calendar is not Korean 날짜 copy")
+    elif "1일차" in tab or "2주차" in tab or "마지막 날" in tab or "주차 마지막" in tab:
+        fail("morning mid-week calendar reused day-1 / week-start / last-day copy")
+    elif "헤드라인" in tab or "HeadlineClip" in tab:
+        fail("morning mid-week calendar reused a morning headline paper")
+    elif "청구서" in tab or "BillNotice" in tab or "현금" in tab or "CashSlip" in tab:
+        fail("morning mid-week calendar reused a morning bill / cash hang")
+    elif "멘탈" in tab or "MentalNote" in tab or "경고" in tab or "EventWarn" in tab:
+        fail("morning mid-week calendar reused a morning mental / warn hang")
+    elif "430, -8" in tab or "300, 72" in tab:
+        fail("morning mid-week calendar covers n일차 DayTab")
+    elif "744, -8" in tab or "312, 108" in tab:
+        fail("morning mid-week calendar covers the last-day tab")
+    elif "360, 70" in tab or "0, 36" in tab or '"GoLive"' in tab:
+        fail("morning mid-week calendar covers GO STREAM")
+    elif '"BillChip"' in tab or '"CashChip"' in tab or '"MentalChip"' in tab:
+        fail("morning mid-week calendar restyled cash / bill / mental papers")
+    elif "8f, -284f" in tab or "228f, 92f" in tab:
+        fail("morning mid-week calendar covers a morning headline")
+    elif "MorningDay1" in tab or "MorningWeekStart" in tab or "LastDayBanner" in tab:
+        fail("morning mid-week calendar folded a special-day morning tab into the same hang")
+    elif "MorningHeadline" in tab or "MorningWeekHeadline" in tab or "MorningLastHeadline" in tab:
+        fail("morning mid-week calendar folded a morning headline into the same hang")
+    elif "LiveMidDay" in tab or "NewGameDay" in tab or "ContinueDayTab" in tab or "SettleDay1" in tab:
+        fail("morning mid-week calendar sat on LiveMidDay / NewGameDay / continue / settlement calendars")
+    elif "UiKit.Stretch" in tab:
+        fail("morning mid-week calendar was stretched over the desk")
+    elif "SetActive(false)" not in tab:
+        fail("morning mid-week calendar is not hidden until RefreshHud")
+    elif "Audio/sfx_threat" in tab or "PlayThreatSfx" in tab or "PlayNewGameBillThreat" in tab:
+        fail("morning mid-week calendar added a new sting")
+    elif "RefreshMidDay" not in hud:
+        fail("morning mid-week calendar is not refreshed")
+    elif "_midDayTab" not in mid_refresh or "MorningMidWeekDay" not in mid_refresh:
+        fail("morning mid-week calendar is not shown on mid-week mornings")
+    elif "SetActive(run != null && MorningMidWeekDay(run.day))" not in mid_refresh:
+        fail("morning mid-week calendar is not hidden on other mornings")
+    elif "run.day == 1" in mid_refresh or "LastDayOfCurrentWeek" in mid_refresh:
+        fail("morning mid-week calendar reused the day-1 or last-day gate")
+    elif "run.day == 6" in mid_refresh or "_weekStartTab" in mid_refresh or "_day1Tab" in mid_refresh:
+        fail("morning mid-week calendar reused week-start or day-1 hide")
+    elif "day == 2" not in mid_gate or "day == 7" not in mid_gate or "day == 24" not in mid_gate:
+        fail("morning mid-week calendar is not shown on mid-week days such as 2 / 7")
+    elif "day == 3" not in mid_gate or "day == 4" not in mid_gate or "day == 8" not in mid_gate or "day == 9" not in mid_gate:
+        fail("morning mid-week calendar dropped a week-1 / week-2 mid-week day")
+    elif "day == 12" not in mid_gate or "day == 13" not in mid_gate or "day == 14" not in mid_gate:
+        fail("morning mid-week calendar dropped a week-3 mid-week day")
+    elif "day == 17" not in mid_gate or "day == 18" not in mid_gate or "day == 19" not in mid_gate:
+        fail("morning mid-week calendar dropped a week-4 mid-week day")
+    elif "day == 22" not in mid_gate or "day == 23" not in mid_gate:
+        fail("morning mid-week calendar dropped a week-5 mid-week day")
+    elif re.search(r"day == 1\b", mid_gate) or re.search(r"day == 5\b", mid_gate) or re.search(r"day == 6\b", mid_gate):
+        fail("morning mid-week calendar also shows on day 1 / last-of-week / week-start")
+    elif re.search(r"day == 10\b", mid_gate) or re.search(r"day == 11\b", mid_gate) or re.search(r"day == 15\b", mid_gate):
+        fail("morning mid-week calendar also shows on a last-of-week or week-start morning")
+    elif re.search(r"day == 16\b", mid_gate) or re.search(r"day == 20\b", mid_gate) or re.search(r"day == 21\b", mid_gate) or re.search(r"day == 25\b", mid_gate):
+        fail("morning mid-week calendar also shows on a last-of-week or week-start morning")
+    elif "RefreshDay1" not in hud or "run.day == 1" not in day1_refresh:
+        fail("morning mid-week calendar dropped MorningDay1 day-1 hide")
+    elif "MorningMidWeekDay" in day1_refresh or "run.day == 6" in day1_refresh or "_midDayTab" in day1_refresh:
+        fail("MorningDay1 reused a mid-week or week-start gate")
+    elif "LastDayOfCurrentWeek" in day1_refresh:
+        fail("morning mid-week calendar changed MorningDay1 gate")
+    elif "RefreshWeekStart" not in hud or "run.day == 6" not in week_refresh or "run.day == 21" not in week_refresh:
+        fail("morning mid-week calendar dropped MorningWeekStart week-start hide")
+    elif "MorningMidWeekDay" in week_refresh or re.search(r"run\.day == 1\b", week_refresh) or "_midDayTab" in week_refresh:
+        fail("MorningWeekStart reused a mid-week or day-1 gate")
+    elif "LastDayOfCurrentWeek" in week_refresh:
+        fail("morning mid-week calendar changed MorningWeekStart gate")
+    elif re.search(r"run\.day == 2\b", week_refresh) or re.search(r"run\.day == 7\b", week_refresh):
+        fail("MorningWeekStart also shows on a mid-week morning")
+    elif "RefreshLastDay" not in hud or "LastDayOfCurrentWeek" not in last_refresh or "SetActive(last)" not in last_refresh:
+        fail("morning mid-week calendar dropped last-day tab hide")
+    elif "MorningMidWeekDay" in last_refresh or "_midDayTab" in last_refresh or "run.day == 6" in last_refresh:
+        fail("last-day morning also shows the mid-week calendar")
+    elif '"MorningDay1"' not in build or '"1일차"' not in day1 or "8f, -220f" not in day1:
+        fail("morning mid-week calendar restyled MorningDay1")
+    elif "날짜" in day1 or "MorningMidDay" in day1:
+        fail("MorningDay1 hang folded in the mid-week morning calendar")
+    elif '"MorningWeekStart"' not in build or '"2주차"' not in week_start or "8f, -220f" not in week_start:
+        fail("morning mid-week calendar restyled MorningWeekStart")
+    elif "날짜" in week_start or "MorningMidDay" in week_start:
+        fail("MorningWeekStart hang folded in the mid-week morning calendar")
+    elif "ArtSprites.DayTab" not in banner or '"마지막 날"' not in banner or "744, -8" not in banner:
+        fail("morning mid-week calendar dropped the last-day tab")
+    elif "날짜" in banner or "MorningMidDay" in banner:
+        fail("last-day tab folded in the mid-week morning calendar")
+    elif '"MorningHeadline"' not in build or "ArtSprites.HeadlineClip" not in day1_head or '"헤드라인"' not in day1_head:
+        fail("morning mid-week calendar restyled MorningHeadline")
+    elif "날짜" in day1_head or "MorningMidDay" in day1_head or "DayTab" in day1_head:
+        fail("MorningHeadline hang folded in the mid-week morning calendar")
+    elif '"MorningWeekHeadline"' not in build or "ArtSprites.HeadlineClip" not in week_head or '"헤드라인"' not in week_head:
+        fail("morning mid-week calendar restyled MorningWeekHeadline")
+    elif "날짜" in week_head or "MorningMidDay" in week_head or "DayTab" in week_head:
+        fail("MorningWeekHeadline hang folded in the mid-week morning calendar")
+    elif '"MorningLastHeadline"' not in build or "ArtSprites.HeadlineClip" not in last_head or '"헤드라인"' not in last_head:
+        fail("morning mid-week calendar restyled MorningLastHeadline")
+    elif "날짜" in last_head or "MorningMidDay" in last_head or "DayTab" in last_head:
+        fail("MorningLastHeadline hang folded in the mid-week morning calendar")
+    elif "ArtSprites.DayTab" not in head or "DayHead" not in head or "300, 72" not in head:
+        fail("morning mid-week calendar rewrote n일차 DayTab")
+    elif "ArtSprites.BillNotice" not in money or '"오늘 청구"' not in week_cs:
+        fail("morning mid-week calendar dropped the 오늘 청구 paper")
+    elif "ArtSprites.CashSlip" not in money or '"CashChip"' not in week_cs:
+        fail("morning mid-week calendar dropped the morning 현금 paper")
+    elif "ArtSprites.MentalNote" not in money or '"MentalChip"' not in week_cs:
+        fail("morning mid-week calendar dropped the morning 멘탈 paper")
+    elif '"GoLive"' not in build or "360, 70" not in build:
+        fail("morning mid-week calendar dropped GO STREAM")
+    elif '"NewGameDay"' not in start_hang or "412f, -10f" not in title_day or '"1일차"' not in title_day:
+        fail("morning mid-week calendar restyled Title NewGameDay")
+    elif "MorningMidDay" in title_cs or "날짜" in title_day:
+        fail("morning mid-week calendar sat on Title NewGameDay")
+    elif '"ContinueLastDayTab"' not in title_build or "166f, -6f" not in last_tab:
+        fail("morning mid-week calendar moved the continue last-day tab")
+    elif '"SettleDay1"' not in settle_build or "8f, -148f" not in settle_day1:
+        fail("morning mid-week calendar restyled SettleDay1")
+    elif '"LiveMidDay"' not in live_build or "ArtSprites.DayTab" not in live_mid or '"날짜"' not in live_mid:
+        fail("morning mid-week calendar restyled LiveMidDay")
+    elif "132f, 40f" not in live_mid or "200f, -276f" not in live_mid:
+        fail("morning mid-week calendar moved LiveMidDay")
+    elif "MorningMidDay" in live_cs or "8f, -220f" in live_mid:
+        fail("LiveMidDay hang folded in the mid-week morning calendar")
+    elif "_liveMidDay" not in live_apply or "LiveMidWeekDay" not in live_mid_apply:
+        fail("morning mid-week calendar dropped LiveMidDay mid-week hide")
+    elif "day == 2" not in live_mid_gate or "day == 7" not in live_mid_gate or "day == 24" not in live_mid_gate:
+        fail("morning mid-week calendar changed LiveMidDay days")
+    elif "day += " in week_cs or "day -= " in week_cs:
+        fail("morning mid-week calendar writes the day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("morning mid-week calendar moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("morning mid-week calendar retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("morning mid-week calendar retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("morning mid-week calendar retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("morning mid-week calendar broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising morning mid-week calendar / later weeks")
+    elif "def check_morning_day1_tab()" not in verify_src or "def check_morning_week_start_tab()" not in verify_src:
+        fail("morning mid-week calendar dropped MorningDay1 / MorningWeekStart hang locks")
+    elif "def check_last_day_tab()" not in verify_src or "def check_last_day_banner()" not in verify_src:
+        fail("morning mid-week calendar dropped last-day tab / banner hang locks")
+    elif "def check_live_mid_day()" not in verify_src or "check_live_mid_day()" not in verify_src:
+        fail("morning mid-week calendar dropped the existing check_live_mid_day hang lock")
+    elif "def check_title_newgame_day()" not in verify_src:
+        fail("morning mid-week calendar dropped NewGameDay hang lock")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("morning mid-week calendar dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("morning mid-week calendar moved Unity off 6000.5.9f1")
+    else:
+        ok("mid-week mornings hang 날짜 day_tab; day 1 / week-start / last-of-week hide it; MorningDay1 / MorningWeekStart / last-day tab stay")
 
 
 def check_morning_week_start_headline() -> None:

@@ -36,6 +36,7 @@ namespace BankruptVtuber
         Image _weekStartTab;
         Image _weekStartHeadline;
         Text _weekStartLabel;
+        Image _midDayTab;
         RectTransform _lastDayRoot;
         Image _lastDayHeadline;
         Text _lastDayWeek;
@@ -224,6 +225,15 @@ namespace BankruptVtuber
             }
             _debt = MoneyChip(moneyBar, "DebtChip", "부채", Palette.MoneyRed, 0.52f, 0.76f);
             _mental = MoneyChip(moneyBar, "MentalChip", "멘탈", Palette.Pink, 0.76f, 1f);
+
+            _midDayTab = UiKit.Image(root, "MorningMidDay", Color.white);
+            UiKit.Layout(_midDayTab.rectTransform, new Vector2(0.74f, 1f), new Vector2(0.74f, 1f), new Vector2(0f, 1f), new Vector2(8f, -220f), new Vector2(180f, 56f));
+            ArtSprites.Apply(_midDayTab, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _midDayTab.preserveAspect = true;
+            _midDayTab.raycastTarget = false;
+            var midDayT = UiKit.Label(_midDayTab.transform, "T", "날짜", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(midDayT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _midDayTab.gameObject.SetActive(false);
 
             _weekStartTab = UiKit.Image(root, "MorningWeekStart", Color.white);
             UiKit.Layout(_weekStartTab.rectTransform, new Vector2(0.74f, 1f), new Vector2(0.74f, 1f), new Vector2(0f, 1f), new Vector2(8f, -220f), new Vector2(180f, 56f));
@@ -462,6 +472,7 @@ namespace BankruptVtuber
             RefreshWeekStart(run);
             RefreshDay1(run);
             RefreshLastDay(run);
+            RefreshMidDay(run);
             RefreshCashShort();
         }
 
@@ -528,6 +539,20 @@ namespace BankruptVtuber
             return WeekSchedule.TotalFixedBills(run, gm.Balance, gm.Week2, gm.Week3, gm.Week4, gm.Week5)
                 + extra + surcharge + auto;
         }
+
+        void RefreshMidDay(GameRunState run)
+        {
+            if (_midDayTab == null)
+                return;
+            _midDayTab.gameObject.SetActive(run != null && MorningMidWeekDay(run.day));
+        }
+
+        static bool MorningMidWeekDay(int day) =>
+            day == 2 || day == 3 || day == 4
+            || day == 7 || day == 8 || day == 9
+            || day == 12 || day == 13 || day == 14
+            || day == 17 || day == 18 || day == 19
+            || day == 22 || day == 23 || day == 24;
 
         void RefreshYesterday(GameRunState run)
         {
