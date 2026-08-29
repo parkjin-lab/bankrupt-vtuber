@@ -1588,6 +1588,7 @@ def check_project() -> None:
     check_live_day1_tab()
     check_live_week_start_tab()
     check_live_last_day_tab()
+    check_live_mid_day()
     check_live_day1_bill()
     check_live_last_day_bill()
     check_live_week_start_bill()
@@ -16343,6 +16344,206 @@ def check_live_last_day_tab() -> None:
         fail("live last-day calendar moved Unity off 6000.5.9f1")
     else:
         ok("last-day lives hang 마지막 날 day_tab as HUD calendar; other lives hide it; LiveDay1 / LiveWeekStart / LiveLastHeadline / Title / morning / settlement calendars stay")
+
+
+def check_live_mid_day() -> None:
+    """Mid-week lives hang day_tab as a tiny HUD 날짜 calendar; day 1 / week-start / last-of-week hide it; LiveDay1 / LiveWeekStart / LiveLastDay stay gated."""
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
+    build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    tab = build.split('"LiveMidDay"', 1)[-1].split("_chatPanel", 1)[0] if '"LiveMidDay"' in build else ""
+    day1_tab = build.split('"LiveDay1"', 1)[-1].split('"LiveWeekHeadline"', 1)[0] if '"LiveDay1"' in build else ""
+    week_tab = build.split('"LiveWeekStart"', 1)[-1].split('"LiveLastHeadline"', 1)[0] if '"LiveWeekStart"' in build else ""
+    last_tab = build.split('"LiveLastDay"', 1)[-1].split("var chatPanel", 1)[0] if '"LiveLastDay"' in build else ""
+    day1_head = build.split('"LiveDay1Headline"', 1)[-1].split("_avatar = new AvatarView", 1)[0] if '"LiveDay1Headline"' in build else ""
+    week_head = build.split('"LiveWeekHeadline"', 1)[-1].split("_rivalDuel = new RivalDuelView", 1)[0] if '"LiveWeekHeadline"' in build else ""
+    last_head = build.split('"LiveLastHeadline"', 1)[-1].split("if (_avatar != null && _avatar.Root != null)", 1)[0] if '"LiveLastHeadline"' in build else ""
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    mid_apply = apply.split("if (_liveMidDay", 1)[-1].split("if (_day1Headline", 1)[0] if "if (_liveMidDay" in apply else ""
+    day1_apply = apply.split("if (_liveDay1", 1)[-1].split("if (_weekHeadline", 1)[0] if "if (_liveDay1" in apply else ""
+    week_apply = apply.split("if (_liveWeekStart", 1)[-1].split("if (_lastHeadline", 1)[0] if "if (_liveWeekStart" in apply else ""
+    last_apply = apply.split("if (_liveLastDay", 1)[-1].split("UiKit.EnsureCamera", 1)[0] if "if (_liveLastDay" in apply else ""
+    mid_gate = live_cs.split("static bool LiveMidWeekDay", 1)[-1].split("static bool LiveLastDay", 1)[0] if "static bool LiveMidWeekDay" in live_cs else ""
+    week_live_gate = live_cs.split("static bool LiveWeekStartDay", 1)[-1].split("static Color ShowChipAccent", 1)[0] if "static bool LiveWeekStartDay" in live_cs else ""
+    last_live_gate = live_cs.split("static bool LiveLastDay", 1)[-1].split("void ApplyThreatShow", 1)[0] if "static bool LiveLastDay" in live_cs else ""
+    hud = build.split('"HudOnAir"', 1)[-1].split("var chatPanel", 1)[0] if '"HudOnAir"' in build else ""
+    chat = build.split('"ChatDock"', 1)[-1].split('"Lane"', 1)[0] if '"ChatDock"' in build else ""
+    pads = build.split('"PadRow"', 1)[-1].split('"MissSting"', 1)[0] if '"PadRow"' in build else ""
+    timer = build.split('"Timer"', 1)[-1].split('"Cash"', 1)[0] if '"Timer"' in build else ""
+
+    if 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif '"LiveMidDay"' not in build or "ArtSprites.DayTab" not in tab:
+        fail("mid-week live does not hang Art/day_tab as a HUD 날짜 calendar")
+    elif "Image _liveMidDay" not in live_cs:
+        fail("mid-week live calendar is not LiveMidDay")
+    elif "preserveAspect = true" not in tab:
+        fail("live mid-week calendar is not preserveAspect")
+    elif "72f, 48f" in tab:
+        fail("live mid-week calendar was hung as a 72×48 pin")
+    elif "132f, 40f" not in tab or "200f, -276f" not in tab:
+        fail("live mid-week calendar is not in the same HUD slot as LiveDay1 / LiveWeekStart / LiveLastDay")
+    elif "180f, 56f" in tab or "576f, -8f" in tab or "412f, -10f" in tab:
+        fail("live mid-week calendar sat on a Title desk calendar")
+    elif "8f, -220f" in tab or "8f, -148f" in tab or "0.74f, 1f" in tab or "0.80f, 1f" in tab:
+        fail("live mid-week calendar sat on a morning / settlement calendar")
+    elif '"날짜"' not in tab:
+        fail("live mid-week calendar is not Korean 날짜 copy")
+    elif "1일차" in tab or "2주차" in tab or "마지막 날" in tab or "주차 마지막" in tab:
+        fail("live mid-week calendar reused day-1 / week-start / last-day copy")
+    elif "헤드라인" in tab or "HeadlineClip" in tab:
+        fail("live mid-week calendar reused a live headline paper")
+    elif "청구서" in tab or "BillNotice" in tab or "현금" in tab or "CashSlip" in tab:
+        fail("live mid-week calendar reused a live bill / cash hang")
+    elif "멘탈" in tab or "MentalNote" in tab or "경고" in tab or "EventWarn" in tab:
+        fail("live mid-week calendar reused a live mental / warn hang")
+    elif "168f, 68f" in tab or "24f, -272f" in tab:
+        fail("live mid-week calendar covers a live headline")
+    elif "338f, -268f" in tab or "456f, -268f" in tab or "574f, -268f" in tab or "690f, -268f" in tab:
+        fail("live mid-week calendar covers a live bill / cash / mental / warn paper")
+    elif "24, -214" in tab or "168, 44" in tab or '"ShowChip"' in tab:
+        fail("live mid-week calendar covers the show chip")
+    elif "ClockPlate" in tab or '"Timer"' in tab or "0.64f, 1f" in tab:
+        fail("live mid-week calendar covers the timer")
+    elif "ChatDock" in tab or "420, -220" in tab or "실시간 채팅" in tab:
+        fail("live mid-week calendar covers chat")
+    elif "PadRow" in tab or "AddColumnPad" in tab or "1–4" in tab:
+        fail("live mid-week calendar covers QTE / pads")
+    elif "360, 70" in tab or '"GoLive"' in tab:
+        fail("live mid-week calendar sat on morning GO LIVE")
+    elif "MemberBadgeHud" in tab or "AgencyBadgeHud" in tab or "GoodsBadgeHud" in tab:
+        fail("live mid-week calendar sat on an unlock pin")
+    elif "RankingBadgeHud" in tab or "ClipBadgeHud" in tab or "ConcertBadgeHud" in tab or "SponsorBadgeHud" in tab:
+        fail("live mid-week calendar sat on an unlock pin")
+    elif "-10f, -10f" in tab or "-10f, -322f" in tab:
+        fail("live mid-week calendar covers a webcam unlock pin")
+    elif "LiveDay1Headline" in tab or "LiveWeekHeadline" in tab or "LiveLastHeadline" in tab:
+        fail("live mid-week calendar folded a live headline into the same hang")
+    elif '"LiveDay1"' in tab or '"LiveWeekStart"' in tab or '"LiveLastDay"' in tab:
+        fail("live mid-week calendar folded LiveDay1 / LiveWeekStart / LiveLastDay into the same hang")
+    elif "UiKit.Stretch" in tab:
+        fail("live mid-week calendar was stretched over the HUD")
+    elif "SetActive(false)" not in tab:
+        fail("live mid-week calendar is not hidden until ApplyContentShow")
+    elif "Audio/sfx_threat" in tab or "PlayThreatSfx" in tab or "PlayNewGameBillThreat" in tab:
+        fail("live mid-week calendar added a new sting")
+    elif "_liveMidDay" not in apply or "LiveMidWeekDay" not in mid_apply:
+        fail("live mid-week calendar is not shown on mid-week lives")
+    elif "SetActive(LiveMidWeekDay(GameManager.Instance.Run.day))" not in mid_apply:
+        fail("live mid-week calendar is not hidden on other lives")
+    elif "1 == GameManager.Instance.Run.day" in mid_apply:
+        fail("live mid-week calendar reused the day-1 live gate")
+    elif "LiveWeekStartDay" in mid_apply or "LiveLastDay" in mid_apply or "LastDayOfCurrentWeek" in mid_apply:
+        fail("live mid-week calendar reused week-start or last-day gate")
+    elif "6 == " in apply or "run.day == 6" in apply or "LastDayOfCurrentWeek" in apply:
+        fail("live mid-week calendar reused last-day or week-start gate in ApplyContentShow")
+    elif "day == 2" not in mid_gate or "day == 7" not in mid_gate or "day == 24" not in mid_gate:
+        fail("live mid-week calendar is not shown on mid-week days such as 2 / 7")
+    elif "day == 3" not in mid_gate or "day == 4" not in mid_gate or "day == 8" not in mid_gate or "day == 9" not in mid_gate:
+        fail("live mid-week calendar dropped a week-1 / week-2 mid-week day")
+    elif "day == 12" not in mid_gate or "day == 13" not in mid_gate or "day == 14" not in mid_gate:
+        fail("live mid-week calendar dropped a week-3 mid-week day")
+    elif "day == 17" not in mid_gate or "day == 18" not in mid_gate or "day == 19" not in mid_gate:
+        fail("live mid-week calendar dropped a week-4 mid-week day")
+    elif "day == 22" not in mid_gate or "day == 23" not in mid_gate:
+        fail("live mid-week calendar dropped a week-5 mid-week day")
+    elif re.search(r"day == 1\b", mid_gate) or re.search(r"day == 5\b", mid_gate) or re.search(r"day == 6\b", mid_gate):
+        fail("live mid-week calendar also shows on day 1 / last-of-week / week-start")
+    elif re.search(r"day == 10\b", mid_gate) or re.search(r"day == 11\b", mid_gate) or re.search(r"day == 15\b", mid_gate):
+        fail("live mid-week calendar also shows on a last-of-week or week-start live")
+    elif re.search(r"day == 16\b", mid_gate) or re.search(r"day == 20\b", mid_gate) or re.search(r"day == 21\b", mid_gate) or re.search(r"day == 25\b", mid_gate):
+        fail("live mid-week calendar also shows on a last-of-week or week-start live")
+    elif "SetActive(1 == GameManager.Instance.Run.day)" not in day1_apply or "_liveDay1" not in apply:
+        fail("live mid-week calendar dropped LiveDay1 day-1 hide")
+    elif "LiveWeekStartDay" in day1_apply or "LiveLastDay" in day1_apply or "LiveMidWeekDay" in day1_apply:
+        fail("LiveDay1 reused a week-start / last-day / mid-week gate")
+    elif "_liveWeekStart" not in apply or "LiveWeekStartDay" not in week_apply:
+        fail("live mid-week calendar dropped LiveWeekStart week-start hide")
+    elif "1 == GameManager.Instance.Run.day" in week_apply or "LiveLastDay" in week_apply or "LiveMidWeekDay" in week_apply:
+        fail("LiveWeekStart reused a day-1 / last-day / mid-week gate")
+    elif "_liveLastDay" not in apply or "LiveLastDay" not in last_apply:
+        fail("live mid-week calendar dropped LiveLastDay last-day hide")
+    elif "1 == GameManager.Instance.Run.day" in last_apply or "LiveWeekStartDay" in last_apply or "LiveMidWeekDay" in last_apply:
+        fail("LiveLastDay reused a day-1 / week-start / mid-week gate")
+    elif "day == 6" not in week_live_gate or "day == 11" not in week_live_gate or "day == 16" not in week_live_gate or "day == 21" not in week_live_gate:
+        fail("live mid-week calendar changed LiveWeekStart days")
+    elif re.search(r"day == 2\b", week_live_gate) or re.search(r"day == 7\b", week_live_gate):
+        fail("LiveWeekStart also shows on a mid-week live")
+    elif "day == 5" not in last_live_gate or "day == 25" not in last_live_gate:
+        fail("live mid-week calendar changed LiveLastDay days")
+    elif re.search(r"day == 2\b", last_live_gate) or re.search(r"day == 7\b", last_live_gate):
+        fail("LiveLastDay also shows on a mid-week live")
+    elif '"LiveDay1"' not in build or "ArtSprites.DayTab" not in day1_tab or '"1일차"' not in day1_tab:
+        fail("live mid-week calendar restyled LiveDay1")
+    elif "132f, 40f" not in day1_tab or "200f, -276f" not in day1_tab:
+        fail("live mid-week calendar moved LiveDay1")
+    elif "날짜" in day1_tab or "LiveMidDay" in day1_tab:
+        fail("LiveDay1 hang folded in the mid-week live calendar")
+    elif '"LiveWeekStart"' not in build or "ArtSprites.DayTab" not in week_tab or '"2주차"' not in week_tab:
+        fail("live mid-week calendar restyled LiveWeekStart")
+    elif "132f, 40f" not in week_tab or "200f, -276f" not in week_tab:
+        fail("live mid-week calendar moved LiveWeekStart")
+    elif "날짜" in week_tab or "LiveMidDay" in week_tab:
+        fail("LiveWeekStart hang folded in the mid-week live calendar")
+    elif '"LiveLastDay"' not in build or "ArtSprites.DayTab" not in last_tab or '"마지막 날"' not in last_tab:
+        fail("live mid-week calendar restyled LiveLastDay")
+    elif "132f, 40f" not in last_tab or "200f, -276f" not in last_tab:
+        fail("live mid-week calendar moved LiveLastDay")
+    elif "날짜" in last_tab or "LiveMidDay" in last_tab:
+        fail("LiveLastDay hang folded in the mid-week live calendar")
+    elif '"LiveDay1Headline"' not in build or "ArtSprites.HeadlineClip" not in day1_head or '"헤드라인"' not in day1_head:
+        fail("live mid-week calendar restyled LiveDay1Headline")
+    elif "날짜" in day1_head or "LiveMidDay" in day1_head or "DayTab" in day1_head:
+        fail("LiveDay1Headline hang folded in the mid-week live calendar")
+    elif '"LiveWeekHeadline"' not in build or "ArtSprites.HeadlineClip" not in week_head or '"헤드라인"' not in week_head:
+        fail("live mid-week calendar restyled LiveWeekHeadline")
+    elif "날짜" in week_head or "LiveMidDay" in week_head or "DayTab" in week_head:
+        fail("LiveWeekHeadline hang folded in the mid-week live calendar")
+    elif '"LiveLastHeadline"' not in build or "ArtSprites.HeadlineClip" not in last_head or '"헤드라인"' not in last_head:
+        fail("live mid-week calendar restyled LiveLastHeadline")
+    elif "날짜" in last_head or "LiveMidDay" in last_head or "DayTab" in last_head:
+        fail("LiveLastHeadline hang folded in the mid-week live calendar")
+    elif "ArtSprites.ClockPlate" not in timer:
+        fail("live mid-week calendar dropped the timer plate")
+    elif "ArtSprites.ChatDock" not in chat:
+        fail("live mid-week calendar dropped chat dock")
+    elif "AddColumnPad" not in pads or "슈퍼챗" not in pads:
+        fail("live mid-week calendar dropped live pads")
+    elif '"MemberBadgeHud"' not in hud or "72f, 48f" not in hud or "-10f, -10f" not in hud:
+        fail("live mid-week calendar restyled the membership pin")
+    elif '"SponsorBadgeHud"' not in hud or "-10f, -322f" not in hud:
+        fail("live mid-week calendar restyled the sponsor pin")
+    elif "SetActive(_memberShow)" not in apply or "SetActive(_sponsorPinShow)" not in apply:
+        fail("live mid-week calendar changed unlock pin hide")
+    elif "run.day =" in live_cs or "day += " in live_cs or "day -= " in live_cs:
+        fail("live mid-week calendar writes the day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("live mid-week calendar moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("live mid-week calendar retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("live mid-week calendar retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("live mid-week calendar retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("live mid-week calendar broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising live mid-week calendar / later weeks")
+    elif "def check_live_day1_tab()" not in verify_src or "def check_live_week_start_tab()" not in verify_src:
+        fail("live mid-week calendar dropped LiveDay1 / LiveWeekStart hang locks")
+    elif "def check_live_last_day_tab()" not in verify_src:
+        fail("live mid-week calendar dropped LiveLastDay hang lock")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("live mid-week calendar dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("live mid-week calendar moved Unity off 6000.5.9f1")
+    else:
+        ok("mid-week lives hang 날짜 day_tab as HUD calendar; day 1 / week-start / last-of-week hide it; LiveDay1 / LiveWeekStart / LiveLastDay stay")
 
 
 def check_live_day1_bill() -> None:

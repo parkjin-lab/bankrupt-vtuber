@@ -200,6 +200,7 @@ namespace BankruptVtuber
         Image _weekCash;
         Image _weekMental;
         Image _weekWarn;
+        Image _liveMidDay;
         float _bedVolume;
         float _bedDuck;
         bool _threatGear;
@@ -1388,6 +1389,14 @@ namespace BankruptVtuber
             _liveLastDay.gameObject.SetActive(false);
 
             var chatPanel = UiKit.Panel(root, "Chat", new Color(0.07f, 0.05f, 0.1f, 0.0f));
+            _liveMidDay = UiKit.Image(root, "LiveMidDay", Color.white);
+            UiKit.Layout(_liveMidDay.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(200f, -276f), new Vector2(132f, 40f));
+            ArtSprites.Apply(_liveMidDay, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _liveMidDay.preserveAspect = true;
+            _liveMidDay.raycastTarget = false;
+            var liveMidDayT = UiKit.Label(_liveMidDay.transform, "T", "날짜", 16, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(liveMidDayT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _liveMidDay.gameObject.SetActive(false);
             _chatPanel = chatPanel.GetComponent<Image>();
             _chatRoot = chatPanel;
             UiKit.Layout(chatPanel, new Vector2(1, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-18, 0), new Vector2(420, -220));
@@ -3382,6 +3391,8 @@ namespace BankruptVtuber
                 _concertBadge.gameObject.SetActive(_concertPinShow);
             if (_sponsorBadge != null)
                 _sponsorBadge.gameObject.SetActive(_sponsorPinShow);
+            if (_liveMidDay != null)
+                _liveMidDay.gameObject.SetActive(LiveMidWeekDay(GameManager.Instance.Run.day));
             if (_day1Headline != null)
                 _day1Headline.gameObject.SetActive(1 == GameManager.Instance.Run.day);
             if (_liveDay1 != null)
@@ -3479,6 +3490,13 @@ namespace BankruptVtuber
             StreamContentType.Reaction => Palette.PastelDim,
             _ => Palette.Muted
         };
+
+        static bool LiveMidWeekDay(int day) =>
+            day == 2 || day == 3 || day == 4
+            || day == 7 || day == 8 || day == 9
+            || day == 12 || day == 13 || day == 14
+            || day == 17 || day == 18 || day == 19
+            || day == 22 || day == 23 || day == 24;
 
         static bool LiveLastDay(int day) =>
             day == 5 || day == 10 || day == 15 || day == 20 || day == 25;
