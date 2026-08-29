@@ -1670,6 +1670,7 @@ def check_project() -> None:
     check_readme_live_week_start_cash()
     check_readme_live_day1_mental()
     check_readme_live_last_day_mental()
+    check_readme_live_week_start_mental()
     check_readme_morning_day1()
     check_readme_settle_day1()
     check_readme_morning_week_start()
@@ -30262,6 +30263,351 @@ def check_readme_live_last_day_mental() -> None:
         fail("README live last-day mental moved Unity off 6000.5.9f1")
     else:
         ok("README names 라이브 마지막 날 멘탈 vs 새 게임 멘탈, morning / ending mental, live 멘탈 위험, 라이브 1일차 멘탈, 라이브 마지막 날 청구서, 라이브 마지막 날 현금, and 라이브 마지막 날 calendar / headline")
+
+
+def check_readme_live_week_start_mental() -> None:
+    """README names the LiveStream week-start mental paper vs Title 새 게임 멘탈, morning / ending mental, live 멘탈 위험, 라이브 1일차 멘탈, 라이브 마지막 날 멘탈, 라이브 주차 첫날 청구서, 라이브 주차 첫날 현금, and 라이브 주차 첫날 calendar / headline."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
+    title_loop = readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]
+    morning_loop = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    live_loop = readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    desk_paper = readme.split("- **책상 종이**", 1)[-1].split("- **돈 스탬프", 1)[0]
+    live_week_mental_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 멘탈**")), "")
+    live_last_mental_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 멘탈**")), "")
+    live_mental_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 멘탈**")), "")
+    live_week_cash_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 현금**")), "")
+    live_cash_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 현금**")), "")
+    live_last_cash_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 현금**")), "")
+    live_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 청구서**")), "")
+    live_last_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 청구서**")), "")
+    live_week_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 청구서**")), "")
+    live_week_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날**") and "헤드라인" not in ln.split("—", 1)[0] and "청구서" not in ln.split("—", 1)[0] and "현금" not in ln.split("—", 1)[0] and "멘탈" not in ln.split("—", 1)[0]), "")
+    live_week_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 헤드라인**")), "")
+    live_last_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날**") and "헤드라인" not in ln.split("—", 1)[0] and "청구서" not in ln.split("—", 1)[0] and "현금" not in ln.split("—", 1)[0] and "멘탈" not in ln.split("—", 1)[0]), "")
+    live_last_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 헤드라인**")), "")
+    live_day1_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차**") and "헤드라인" not in ln.split("—", 1)[0] and "청구서" not in ln.split("—", 1)[0] and "현금" not in ln.split("—", 1)[0] and "멘탈" not in ln.split("—", 1)[0]), "")
+    live_day1_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 헤드라인**")), "")
+    newgame_mental_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 멘탈**")), "")
+    newgame_cash_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 현금**")), "")
+    newgame_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 청구서**")), "")
+    note_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **멘탈 메모")), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    sponsor_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **이어하기 스폰서 핀**")), "")
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_mental = start_hang.split("_startMental = UiKit.Image", 1)[-1] if "_startMental = UiKit.Image" in start_hang else ""
+    if "_startDay = UiKit.Image" in title_mental:
+        title_mental = title_mental.split("_startDay = UiKit.Image", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    clear_build = settle_build.split('ClearRoot"', 1)[-1].split('StampRoot"', 1)[0]
+    stamp_build = settle_build.split('StampRoot"', 1)[-1].split('LetterRoot"', 1)[0]
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    paper = live_build.split('"LiveWeekMental"', 1)[-1].split('"LiveLastCash"', 1)[0] if '"LiveWeekMental"' in live_build else ""
+    week_cash = live_build.split('"LiveWeekCash"', 1)[-1].split('"LiveWeekMental"', 1)[0] if '"LiveWeekMental"' in live_build else ""
+    week_bill = live_build.split('"LiveWeekBill"', 1)[-1].split('"LiveLastDay"', 1)[0] if '"LiveWeekBill"' in live_build else ""
+    last_mental = live_build.split('"LiveLastMental"', 1)[-1].split('"LiveLastBill"', 1)[0] if '"LiveLastMental"' in live_build else ""
+    day1_mental = live_build.split('"LiveDay1Mental"', 1)[-1].split('"LiveWeekCash"', 1)[0] if '"LiveDay1Mental"' in live_build else ""
+    apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    mental_apply = apply.split("if (_weekMental", 1)[-1].split("if (_lastHeadline", 1)[0] if "if (_weekMental" in apply else ""
+    week_cash_apply = apply.split("if (_weekCash", 1)[-1].split("if (_weekMental", 1)[0] if "if (_weekMental" in apply else ""
+    week_bill_apply = apply.split("if (_weekBill", 1)[-1].split("if (_weekCash", 1)[0] if "if (_weekCash" in apply else ""
+    last_mental_apply = apply.split("if (_lastMental", 1)[-1].split("UiKit.EnsureCamera", 1)[0] if "if (_lastMental" in apply else ""
+    day1_mental_apply = apply.split("if (_day1Mental", 1)[-1].split("if (_weekHeadline", 1)[0] if "if (_day1Mental" in apply else ""
+    week_live_gate = live_cs.split("static bool LiveWeekStartDay", 1)[-1].split("static Color ShowChipAccent", 1)[0] if "static bool LiveWeekStartDay" in live_cs else ""
+    last_live_gate = live_cs.split("static bool LiveLastDay", 1)[-1].split("void ApplyThreatShow", 1)[0] if "static bool LiveLastDay" in live_cs else ""
+    warn = live_cs.split('var warn = UiKit.Panel', 1)[-1].split("_eventWarnBox", 1)[0]
+
+    if "**라이브 주차 첫날 멘탈**" not in live_loop or "`LiveWeekMental`" not in live_loop or "mental_note" not in live_loop:
+        fail("README live loop must name 라이브 주차 첫날 멘탈 on Art/mental_note")
+    elif "멘탈" not in live_loop or "preserveAspect" not in live_loop or "숨김" not in live_loop:
+        fail("README live loop must name the week-start live mental paper vs hidden")
+    elif "6/11/16/21" not in live_week_mental_inv:
+        fail("README must keep 라이브 주차 첫날 멘탈 on days 6 / 11 / 16 / 21")
+    elif "**라이브 1일차 멘탈**" not in live_loop or "`LiveDay1Mental`" not in live_loop:
+        fail("README live loop must keep 라이브 1일차 멘탈 on its own mental paper")
+    elif "**라이브 마지막 날 멘탈**" not in live_loop or "`LiveLastMental`" not in live_loop:
+        fail("README live loop must keep 라이브 마지막 날 멘탈 on its own mental paper")
+    elif "**라이브 주차 첫날 현금**" not in live_loop or "`LiveWeekCash`" not in live_loop:
+        fail("README live loop must keep 라이브 주차 첫날 현금 on its own cash paper")
+    elif "**라이브 주차 첫날 청구서**" not in desk_paper or "`LiveWeekBill`" not in desk_paper:
+        fail("README must keep 라이브 주차 첫날 청구서 on its own bill paper")
+    elif "**라이브 주차 첫날**" not in live_loop or "`LiveWeekStart`" not in live_loop:
+        fail("README live loop must keep 라이브 주차 첫날 on its own calendar")
+    elif "라이브 주차 첫날 헤드라인" not in live_loop or "LiveWeekHeadline" not in live_loop:
+        fail("README live loop must keep 라이브 주차 첫날 헤드라인 on its own paper")
+    elif "새 게임 멘탈" not in live_loop or "ContinueMentalNote" not in live_loop:
+        fail("README live loop must keep 라이브 주차 첫날 멘탈 distinct from Title / continue mental")
+    elif "엔딩 멘탈" not in live_loop or "멘탈 위험" not in live_loop:
+        fail("README live loop must keep 라이브 주차 첫날 멘탈 distinct from ending mental / live 멘탈 위험")
+    elif "새 SFX 없음" not in live_loop:
+        fail("README live loop must keep 라이브 주차 첫날 멘탈 without a new sting")
+    elif "**라이브 주차 첫날 멘탈**" in title_loop or "`LiveWeekMental`" in title_loop:
+        fail("README hung 라이브 주차 첫날 멘탈 on the Title loop")
+    elif "**라이브 주차 첫날 멘탈**" in morning_loop or "`LiveWeekMental`" in morning_loop:
+        fail("README hung 라이브 주차 첫날 멘탈 on the morning loop")
+    elif "**라이브 주차 첫날 멘탈**" in settle_loop or "`LiveWeekMental`" in settle_loop:
+        fail("README hung 라이브 주차 첫날 멘탈 on the settlement loop")
+    elif "새 게임 멘탈" not in title_loop or "NewGameMental" not in title_loop:
+        fail("README 라이브 주차 첫날 멘탈 dropped Title 새 게임 멘탈")
+    elif "mental_note" not in morning_loop or "**멘탈**" not in morning_loop:
+        fail("README 라이브 주차 첫날 멘탈 dropped morning 멘탈")
+    elif "ContinueMentalNote" not in title_loop:
+        fail("README 라이브 주차 첫날 멘탈 dropped Title continue mental")
+    elif "엔딩 멘탈" not in settle_loop or "mental_note" not in settle_loop:
+        fail("README 라이브 주차 첫날 멘탈 dropped the ending mental sticky")
+    elif "**2주차**" in title_loop or "**3주차**" in title_loop or "**4주차**" in title_loop or "**5주차**" in title_loop:
+        fail("README live week-start mental used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "**2주차**" in live_week_mental_inv or "**3주차**" in live_week_mental_inv or "**4주차**" in live_week_mental_inv or "**5주차**" in live_week_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 line used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "**2주차**" in live_loop or "**3주차**" in live_loop or "**4주차**" in live_loop or "**5주차**" in live_loop:
+        fail("README live loop used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "**라이브 주차 첫날 멘탈**" not in live_week_mental_inv or "`LiveWeekMental`" not in live_week_mental_inv or "mental_note" not in live_week_mental_inv:
+        fail("README must inventory 라이브 주차 첫날 멘탈 on its own mental line")
+    elif "preserveAspect" not in live_week_mental_inv or "멘탈" not in live_week_mental_inv or "숨김" not in live_week_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 line must name the preserveAspect Korean 멘탈 paper vs hidden")
+    elif "헤드라인" in live_week_mental_inv.split("—", 1)[0] or "청구서" in live_week_mental_inv.split("—", 1)[0] or "현금" in live_week_mental_inv.split("—", 1)[0]:
+        fail("README 라이브 주차 첫날 멘탈 line must stay a mental paper, not the bill / cash / headline")
+    elif "headline_clip" in live_week_mental_inv or "day_tab" in live_week_mental_inv or "bill_notice" in live_week_mental_inv or "cash_slip" in live_week_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 line must stay a mental_note paper, not a headline, calendar, bill, or cash")
+    elif "sfx_threat" in live_week_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 line must not add a new threat sting")
+    elif "새 SFX 없음" not in live_week_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 line must keep 라이브 주차 첫날 멘탈 without a new sting")
+    elif "새 게임 멘탈" not in live_week_mental_inv or "아침 **멘탈**" not in live_week_mental_inv or "ContinueMentalNote" not in live_week_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 line must stay distinct from Title / morning / continue mental")
+    elif "엔딩 멘탈" not in live_week_mental_inv or "멘탈 위험" not in live_week_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 line must stay distinct from ending mental / live 멘탈 위험")
+    elif "라이브 1일차 멘탈" not in live_week_mental_inv or "`LiveDay1Mental`" not in live_week_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 line must stay distinct from 라이브 1일차 멘탈")
+    elif "라이브 마지막 날 멘탈" not in live_week_mental_inv or "`LiveLastMental`" not in live_week_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 line must stay distinct from 라이브 마지막 날 멘탈")
+    elif "라이브 주차 첫날 청구서" not in live_week_mental_inv or "`LiveWeekBill`" not in live_week_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 line must stay distinct from 라이브 주차 첫날 청구서")
+    elif "라이브 주차 첫날 현금" not in live_week_mental_inv or "`LiveWeekCash`" not in live_week_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 line must stay distinct from 라이브 주차 첫날 현금")
+    elif "라이브 주차 첫날" not in live_week_mental_inv or "`LiveWeekStart`" not in live_week_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 line must stay distinct from 라이브 주차 첫날")
+    elif "라이브 주차 첫날 헤드라인" not in live_week_mental_inv or "LiveWeekHeadline" not in live_week_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 line must stay distinct from 라이브 주차 첫날 헤드라인")
+    elif "`NewGameMental`" not in live_week_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 line must stay distinct from NewGameMental")
+    elif live_week_mental_inv == live_mental_inv or live_week_mental_inv == live_last_mental_inv or live_week_mental_inv == newgame_mental_inv or live_week_mental_inv == note_inv:
+        fail("README must keep 라이브 주차 첫날 멘탈 distinct from 라이브 1일차 멘탈, 라이브 마지막 날 멘탈, 새 게임 멘탈, and shared 멘탈 메모")
+    elif live_week_mental_inv == live_week_cash_inv or live_week_mental_inv == live_week_bill_inv or live_week_mental_inv == live_week_inv or live_week_mental_inv == live_week_head_inv:
+        fail("README must keep 라이브 주차 첫날 멘탈 distinct from 라이브 주차 첫날 현금, 청구서, calendar, and headline")
+    elif live_week_mental_inv == live_cash_inv or live_week_mental_inv == live_last_cash_inv or live_week_mental_inv == live_bill_inv or live_week_mental_inv == live_last_bill_inv:
+        fail("README must keep 라이브 주차 첫날 멘탈 distinct from day-1 / last-day cash / bill")
+    elif live_week_mental_inv == live_day1_inv or live_week_mental_inv == live_day1_head_inv or live_week_mental_inv == live_last_inv or live_week_mental_inv == live_last_head_inv:
+        fail("README must keep 라이브 주차 첫날 멘탈 distinct from day-1 / last-day calendar / headline")
+    elif live_week_mental_inv == newgame_cash_inv or live_week_mental_inv == newgame_bill_inv:
+        fail("README must keep 라이브 주차 첫날 멘탈 distinct from Title 새 게임 현금 / 청구서")
+    elif readme.index(live_last_mental_inv) >= readme.index(live_week_mental_inv):
+        fail("README 라이브 마지막 날 멘탈 line must stay before 라이브 주차 첫날 멘탈")
+    elif readme.index(live_week_cash_inv) >= readme.index(live_week_mental_inv):
+        fail("README 라이브 주차 첫날 현금 line must stay before 라이브 주차 첫날 멘탈")
+    elif readme.index(live_week_bill_inv) >= readme.index(live_week_mental_inv):
+        fail("README 라이브 주차 첫날 청구서 line must stay before 라이브 주차 첫날 멘탈")
+    elif "`LiveWeekMental`" in note_inv or "**라이브 주차 첫날 멘탈**" in note_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the shared 멘탈 메모 inventory")
+    elif "엔딩 멘탈" not in note_inv or "아침" not in note_inv or "이어서 하기" not in note_inv or "멘탈 위험" not in note_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the shared 멘탈 메모 inventory")
+    elif "`LiveWeekMental`" in newgame_mental_inv or "**라이브 주차 첫날 멘탈**" in newgame_mental_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 새 게임 멘탈 line")
+    elif "NewGameMental" not in newgame_mental_inv or "mental_note" not in newgame_mental_inv or "ContinueMentalNote" not in newgame_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 새 게임 멘탈 line")
+    elif "`LiveDay1Mental`" not in live_mental_inv or "mental_note" not in live_mental_inv or "멘탈" not in live_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 라이브 1일차 멘탈 line")
+    elif "`LiveWeekMental`" in live_mental_inv or "**라이브 주차 첫날 멘탈**" in live_mental_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 라이브 1일차 멘탈 line")
+    elif "`LiveLastMental`" not in live_last_mental_inv or "mental_note" not in live_last_mental_inv or "5/10/15/20/25" not in live_last_mental_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 라이브 마지막 날 멘탈 line")
+    elif "`LiveWeekMental`" in live_last_mental_inv or "**라이브 주차 첫날 멘탈**" in live_last_mental_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 라이브 마지막 날 멘탈 line")
+    elif "`LiveWeekCash`" not in live_week_cash_inv or "cash_slip" not in live_week_cash_inv or "6/11/16/21" not in live_week_cash_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 라이브 주차 첫날 현금 line")
+    elif "`LiveWeekMental`" in live_week_cash_inv or "**라이브 주차 첫날 멘탈**" in live_week_cash_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 라이브 주차 첫날 현금 line")
+    elif "`LiveWeekBill`" not in live_week_bill_inv or "bill_notice" not in live_week_bill_inv or "6/11/16/21" not in live_week_bill_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 라이브 주차 첫날 청구서 line")
+    elif "`LiveWeekMental`" in live_week_bill_inv or "**라이브 주차 첫날 멘탈**" in live_week_bill_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 라이브 주차 첫날 청구서 line")
+    elif "`LiveLastCash`" not in live_last_cash_inv or "cash_slip" not in live_last_cash_inv or "5/10/15/20/25" not in live_last_cash_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 라이브 마지막 날 현금 line")
+    elif "`LiveWeekMental`" in live_last_cash_inv or "**라이브 주차 첫날 멘탈**" in live_last_cash_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 라이브 마지막 날 현금 line")
+    elif "`LiveLastBill`" not in live_last_bill_inv or "bill_notice" not in live_last_bill_inv or "5/10/15/20/25" not in live_last_bill_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 라이브 마지막 날 청구서 line")
+    elif "`LiveWeekMental`" in live_last_bill_inv or "**라이브 주차 첫날 멘탈**" in live_last_bill_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 라이브 마지막 날 청구서 line")
+    elif "`LiveDay1Cash`" not in live_cash_inv or "cash_slip" not in live_cash_inv or "현금" not in live_cash_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 라이브 1일차 현금 line")
+    elif "`LiveWeekMental`" in live_cash_inv or "**라이브 주차 첫날 멘탈**" in live_cash_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 라이브 1일차 현금 line")
+    elif "`LiveDay1Bill`" not in live_bill_inv or "bill_notice" not in live_bill_inv or "청구서" not in live_bill_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 라이브 1일차 청구서 line")
+    elif "`LiveWeekMental`" in live_bill_inv or "**라이브 주차 첫날 멘탈**" in live_bill_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 라이브 1일차 청구서 line")
+    elif "`LiveWeekStart`" not in live_week_inv or "day_tab" not in live_week_inv or "6/11/16/21" not in live_week_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 라이브 주차 첫날 calendar line")
+    elif "`LiveWeekMental`" in live_week_inv or "**라이브 주차 첫날 멘탈**" in live_week_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 라이브 주차 첫날 calendar line")
+    elif "LiveWeekHeadline" not in live_week_head_inv or "headline_clip" not in live_week_head_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 라이브 주차 첫날 헤드라인 line")
+    elif "`LiveWeekMental`" in live_week_head_inv or "**라이브 주차 첫날 멘탈**" in live_week_head_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 라이브 주차 첫날 헤드라인 line")
+    elif "`LiveLastDay`" not in live_last_inv or "day_tab" not in live_last_inv or "5/10/15/20/25" not in live_last_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 라이브 마지막 날 calendar line")
+    elif "`LiveWeekMental`" in live_last_inv or "**라이브 주차 첫날 멘탈**" in live_last_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 라이브 마지막 날 calendar line")
+    elif "LiveLastHeadline" not in live_last_head_inv or "headline_clip" not in live_last_head_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 라이브 마지막 날 헤드라인 line")
+    elif "`LiveWeekMental`" in live_last_head_inv or "**라이브 주차 첫날 멘탈**" in live_last_head_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 라이브 마지막 날 헤드라인 line")
+    elif "`LiveDay1`" not in live_day1_inv or "day_tab" not in live_day1_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 라이브 1일차 calendar line")
+    elif "`LiveWeekMental`" in live_day1_inv or "**라이브 주차 첫날 멘탈**" in live_day1_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 라이브 1일차 calendar line")
+    elif "LiveDay1Headline" not in live_day1_head_inv or "headline_clip" not in live_day1_head_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 라이브 1일차 헤드라인 line")
+    elif "`LiveWeekMental`" in live_day1_head_inv or "**라이브 주차 첫날 멘탈**" in live_day1_head_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 라이브 1일차 헤드라인 line")
+    elif "NewGameCash" not in newgame_cash_inv or "cash_slip" not in newgame_cash_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 새 게임 현금 line")
+    elif "`LiveWeekMental`" in newgame_cash_inv or "**라이브 주차 첫날 멘탈**" in newgame_cash_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 새 게임 현금 line")
+    elif "NewGameBill" not in newgame_bill_inv or "bill_notice" not in newgame_bill_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the 새 게임 청구서 line")
+    elif "`LiveWeekMental`" in newgame_bill_inv or "**라이브 주차 첫날 멘탈**" in newgame_bill_inv:
+        fail("README folded 라이브 주차 첫날 멘탈 into the 새 게임 청구서 line")
+    elif "**라이브 주차 첫날 멘탈**" not in desk_paper or "`LiveWeekMental`" not in desk_paper:
+        fail("README desk paper dropped 라이브 주차 첫날 멘탈")
+    elif "`LiveDay1Mental`" not in desk_paper or "`LiveLastMental`" not in desk_paper or "`LiveWeekCash`" not in desk_paper or "`LiveWeekBill`" not in desk_paper or "NewGameMental" not in desk_paper:
+        fail("README desk paper dropped 라이브 1일차 멘탈 / 라이브 마지막 날 멘탈 / 라이브 주차 첫날 현금 / 청구서 / 새 게임 멘탈")
+    elif "오늘의 위협" not in sfx_inv or "새 게임 청구서" not in sfx_inv or sfx_inv.count("sfx_threat") < 5:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the five sfx_threat uses")
+    elif "ContinueSponsorPin" not in sponsor_inv or "타일 가득" not in sponsor_inv:
+        fail("README 라이브 주차 첫날 멘탈 rewrote the Title continue sponsor pin")
+    elif "매드라인" in readme or "매드라인" in live_cs:
+        fail("README live week-start mental used 매드라인 instead of 헤드라인")
+    elif "check_live_week_start_mental()" not in verify_src or "def check_live_week_start_mental()" not in verify_src:
+        fail("README live week-start mental dropped the existing check_live_week_start_mental hang lock")
+    elif "def check_live_day1_mental()" not in verify_src or "def check_readme_live_day1_mental()" not in verify_src:
+        fail("README live week-start mental dropped LiveDay1Mental hang / README locks")
+    elif "def check_live_last_day_mental()" not in verify_src or "def check_readme_live_last_day_mental()" not in verify_src:
+        fail("README live week-start mental dropped LiveLastMental hang / README locks")
+    elif "def check_live_week_start_bill()" not in verify_src or "def check_readme_live_week_start_bill()" not in verify_src:
+        fail("README live week-start mental dropped LiveWeekBill hang / README locks")
+    elif "def check_live_week_start_cash()" not in verify_src or "def check_readme_live_week_start_cash()" not in verify_src:
+        fail("README live week-start mental dropped LiveWeekCash hang / README locks")
+    elif "def check_title_newgame_mental()" not in verify_src or "def check_readme_title_newgame_mental()" not in verify_src:
+        fail("README live week-start mental dropped NewGameMental hang / README locks")
+    elif "def check_ending_mental_note()" not in verify_src or "def check_mental_note()" not in verify_src:
+        fail("README live week-start mental dropped ending / shared mental_note locks")
+    elif 'MentalNote = "Art/mental_note"' not in art_cs:
+        fail("ArtSprites does not hook Art/mental_note")
+    elif '"LiveWeekMental"' not in live_build or "ArtSprites.MentalNote" not in paper:
+        fail("README live week-start mental lost the LiveStream hang")
+    elif "preserveAspect = true" not in paper or "104f, 48f" not in paper or "574f, -268f" not in paper:
+        fail("README live week-start mental restyled the LiveStream hang")
+    elif '"멘탈"' not in paper:
+        fail("README live week-start mental is not Korean 멘탈 copy")
+    elif "청구서" in paper or "BillNotice" in paper or "CashSlip" in paper:
+        fail("README live week-start mental reused a bill or cash hang")
+    elif "헤드라인" in paper or "HeadlineClip" in paper or "DayTab" in paper:
+        fail("README live week-start mental reused a headline or calendar hang")
+    elif "338f, -268f" in paper or "116f, 56f" in paper:
+        fail("README live week-start mental covers LiveWeekBill")
+    elif "456f, -268f" in paper or "110f, 48f" in paper:
+        fail("README live week-start mental covers LiveWeekCash")
+    elif "SetActive(false)" not in paper:
+        fail("README live week-start mental is not hidden until ApplyContentShow")
+    elif "Audio/sfx_threat" in paper or "PlayThreatSfx" in paper:
+        fail("README live week-start mental added a new threat sting")
+    elif "_weekMental" not in apply or "SetActive(LiveWeekStartDay(GameManager.Instance.Run.day))" not in mental_apply:
+        fail("README live week-start mental is not shown on week-start lives only")
+    elif "1 == GameManager.Instance.Run.day" in mental_apply:
+        fail("README live week-start mental reused the day-1 live gate")
+    elif "LiveLastDay" in mental_apply or "LastDayOfCurrentWeek" in mental_apply:
+        fail("README live week-start mental reused last-day gate")
+    elif "day == 6" not in week_live_gate or "day == 21" not in week_live_gate:
+        fail("README live week-start mental dropped week-start days 6 / 21")
+    elif '"LiveWeekCash"' not in live_build or "ArtSprites.CashSlip" not in week_cash or '"현금"' not in week_cash:
+        fail("README live week-start mental restyled LiveWeekCash")
+    elif "110f, 48f" not in week_cash or "456f, -268f" not in week_cash:
+        fail("README live week-start mental moved LiveWeekCash")
+    elif "SetActive(LiveWeekStartDay(GameManager.Instance.Run.day))" not in week_cash_apply:
+        fail("README live week-start mental dropped LiveWeekCash week-start hide")
+    elif "멘탈" in week_cash_apply or "MentalNote" in week_cash_apply:
+        fail("README live week-start mental folded into the LiveWeekCash apply")
+    elif '"LiveWeekBill"' not in live_build or "ArtSprites.BillNotice" not in week_bill or '"청구서"' not in week_bill:
+        fail("README live week-start mental restyled LiveWeekBill")
+    elif "116f, 56f" not in week_bill or "338f, -268f" not in week_bill:
+        fail("README live week-start mental moved LiveWeekBill")
+    elif "SetActive(LiveWeekStartDay(GameManager.Instance.Run.day))" not in week_bill_apply:
+        fail("README live week-start mental dropped LiveWeekBill week-start hide")
+    elif '"LiveLastMental"' not in live_build or "ArtSprites.MentalNote" not in last_mental or '"멘탈"' not in last_mental:
+        fail("README live week-start mental restyled LiveLastMental")
+    elif "104f, 48f" not in last_mental or "574f, -268f" not in last_mental:
+        fail("README live week-start mental moved LiveLastMental")
+    elif "SetActive(LiveLastDay(GameManager.Instance.Run.day))" not in last_mental_apply:
+        fail("README live week-start mental dropped LiveLastMental last-day hide")
+    elif "LiveWeekStartDay" in last_mental_apply:
+        fail("README live week-start mental reused LiveWeekStartDay on LiveLastMental")
+    elif '"LiveDay1Mental"' not in live_build or "ArtSprites.MentalNote" not in day1_mental or '"멘탈"' not in day1_mental:
+        fail("README live week-start mental restyled LiveDay1Mental")
+    elif "104f, 48f" not in day1_mental or "574f, -268f" not in day1_mental:
+        fail("README live week-start mental moved LiveDay1Mental")
+    elif "SetActive(1 == GameManager.Instance.Run.day)" not in day1_mental_apply:
+        fail("README live week-start mental dropped LiveDay1Mental day-1 hide")
+    elif "LiveWeekStartDay" in day1_mental_apply or "LiveLastDay" in day1_mental_apply:
+        fail("README live week-start mental reused week-start / last-day gate on LiveDay1Mental")
+    elif '"NewGameMental"' not in start_hang or "ArtSprites.MentalNote" not in title_mental:
+        fail("README live week-start mental restyled NewGameMental")
+    elif "204f, -86f" not in title_mental or "160f, 110f" not in title_mental or '"멘탈"' not in title_mental:
+        fail("README live week-start mental restyled the NewGameMental desk paper")
+    elif "SetActive(!_hasSave)" not in hide:
+        fail("README live week-start mental changed Title NewGameMental hide")
+    elif '"ContinueMentalNote"' not in title_cs or "ArtSprites.MentalNote" not in title_cs:
+        fail("README live week-start mental dropped Title continue mental")
+    elif "ArtSprites.MentalNote" not in money or '"MentalChip"' not in week_cs or '"멘탈"' not in week_cs:
+        fail("README live week-start mental dropped morning 멘탈")
+    elif "ArtSprites.MentalNote" not in clear_build or '"ClearMentalNote"' not in clear_build:
+        fail("README live week-start mental dropped the week-clear mental sticky")
+    elif "ArtSprites.MentalNote" not in stamp_build or '"StampMentalNote"' not in stamp_build:
+        fail("README live week-start mental dropped the bankrupt mental sticky")
+    elif "ArtSprites.MentalNote" not in warn or "MentalWarnBox" not in warn or "멘탈 위험" not in warn:
+        fail("README live week-start mental dropped live 멘탈 위험")
+    elif "run.day =" in live_cs or "day += " in live_cs or "day -= " in live_cs:
+        fail("README live week-start mental writes the day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("README live week-start mental moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README live week-start mental retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README live week-start mental retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README live week-start mental retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README live week-start mental broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising README live week-start mental / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README live week-start mental dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README live week-start mental moved Unity off 6000.5.9f1")
+    else:
+        ok("README names 라이브 주차 첫날 멘탈 vs 새 게임 멘탈, morning / ending mental, live 멘탈 위험, 라이브 1일차 멘탈, 라이브 마지막 날 멘탈, 라이브 주차 첫날 청구서, 라이브 주차 첫날 현금, and 라이브 주차 첫날 calendar / headline")
 
 
 def check_readme_morning_day1() -> None:
