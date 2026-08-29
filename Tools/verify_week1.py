@@ -18725,7 +18725,7 @@ def check_live_last_day_warn() -> None:
         fail("live last-day warn paper moved EventWarnBox")
     elif "LiveLastWarn" in event_box or "690f, -268f" in event_box or '"경고"' in event_box:
         fail("EventWarnBox hang folded in the last-day warn paper")
-    elif "ArtSprites.EventWarn" not in tick or "WarnCopy" not in tick or "EventWarnBox" not in tick:
+    elif "ArtSprites.EventWarn" not in tick or "WarnCopy" not in tick or "_eventWarnBox" not in tick:
         fail("live last-day warn paper dropped TickEventWarn")
     elif "PlayThreatSfx" in tick or "Audio/sfx_threat" in tick:
         fail("live last-day warn paper fired sfx_threat from TickEventWarn")
