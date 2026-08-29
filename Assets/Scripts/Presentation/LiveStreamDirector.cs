@@ -205,6 +205,7 @@ namespace BankruptVtuber
         Image _midBill;
         Image _midCash;
         Image _midMental;
+        Image _midWarn;
         float _bedVolume;
         float _bedDuck;
         bool _threatGear;
@@ -1411,6 +1412,14 @@ namespace BankruptVtuber
             UiKit.Layout(midHeadT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _midHeadline.gameObject.SetActive(false);
             _chatRoot = chatPanel;
+            _midWarn = UiKit.Image(root, "LiveMidWarn", Color.white);
+            UiKit.Layout(_midWarn.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(690f, -268f), new Vector2(104f, 48f));
+            ArtSprites.Apply(_midWarn, ArtSprites.EventWarn, new Color(0.58f, 0.08f, 0.16f, 0.94f), Color.white);
+            _midWarn.preserveAspect = true;
+            _midWarn.raycastTarget = false;
+            var midWarnT = UiKit.Label(_midWarn.transform, "T", "경고", 16, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(midWarnT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _midWarn.gameObject.SetActive(false);
             _midMental = UiKit.Image(root, "LiveMidMental", Color.white);
             UiKit.Layout(_midMental.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(574f, -268f), new Vector2(104f, 48f));
             ArtSprites.Apply(_midMental, ArtSprites.MentalNote, new Color(1f, 0.95f, 0.72f, 0.98f), Color.white);
@@ -3427,6 +3436,8 @@ namespace BankruptVtuber
                 _concertBadge.gameObject.SetActive(_concertPinShow);
             if (_sponsorBadge != null)
                 _sponsorBadge.gameObject.SetActive(_sponsorPinShow);
+            if (_midWarn != null)
+                _midWarn.gameObject.SetActive(LiveMidWeekDay(GameManager.Instance.Run.day));
             if (_midMental != null)
                 _midMental.gameObject.SetActive(LiveMidWeekDay(GameManager.Instance.Run.day));
             if (_midCash != null)
