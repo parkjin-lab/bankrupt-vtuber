@@ -1573,6 +1573,7 @@ def check_project() -> None:
     check_morning_week_start_tab()
     check_morning_mid_day()
     check_morning_mid_headline()
+    check_morning_mid_bill()
     check_morning_week_start_headline()
     check_morning_last_day_headline()
     check_settle_day1_tab()
@@ -13403,7 +13404,7 @@ def check_morning_mid_headline() -> None:
     player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
     verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
     build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
-    paper = build.split('"MorningMidHeadline"', 1)[-1].split('"MorningWeekStart"', 1)[0] if '"MorningMidHeadline"' in build else ""
+    paper = build.split('"MorningMidHeadline"', 1)[-1].split('"MorningMidBill"', 1)[0] if '"MorningMidBill"' in build else ""
     tab = build.split('"MorningMidDay"', 1)[-1].split('"MorningMidHeadline"', 1)[0] if '"MorningMidHeadline"' in build else ""
     week_head = build.split('"MorningWeekHeadline"', 1)[-1].split('"MorningDay1"', 1)[0] if '"MorningWeekHeadline"' in build else ""
     day1_head = build.split('"MorningHeadline"', 1)[-1].split('"LastDayBanner"', 1)[0] if '"MorningHeadline"' in build else ""
@@ -13679,6 +13680,324 @@ def check_morning_mid_headline() -> None:
         fail("morning mid-week headline paper moved Unity off 6000.5.9f1")
     else:
         ok("mid-week mornings hang headline_clip as 헤드라인 news; day 1 / week-start / last-of-week hide it; MorningHeadline / MorningWeekHeadline / MorningLastHeadline / MorningMidDay stay")
+
+
+def check_morning_mid_bill() -> None:
+    """Mid-week mornings hang bill_notice as a 청구 desk paper; day 1 / week-start / last-of-week hide it; MorningMidDay / MorningMidHeadline / special-day morning papers / LiveMidBill stay gated."""
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    head_cs = (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
+    build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
+    paper = build.split('"MorningMidBill"', 1)[-1].split('"MorningWeekStart"', 1)[0] if '"MorningMidBill"' in build else ""
+    mid_head = build.split('"MorningMidHeadline"', 1)[-1].split('"MorningMidBill"', 1)[0] if '"MorningMidBill"' in build else ""
+    tab = build.split('"MorningMidDay"', 1)[-1].split('"MorningMidHeadline"', 1)[0] if '"MorningMidHeadline"' in build else ""
+    week_head = build.split('"MorningWeekHeadline"', 1)[-1].split('"MorningDay1"', 1)[0] if '"MorningWeekHeadline"' in build else ""
+    day1_head = build.split('"MorningHeadline"', 1)[-1].split('"LastDayBanner"', 1)[0] if '"MorningHeadline"' in build else ""
+    last_head = build.split('"MorningLastHeadline"', 1)[-1].split('"WavePanel"', 1)[0] if '"MorningLastHeadline"' in build else ""
+    week_start = build.split('"MorningWeekStart"', 1)[-1].split('"MorningWeekHeadline"', 1)[0] if '"MorningWeekHeadline"' in build else ""
+    day1 = build.split('"MorningDay1"', 1)[-1].split('"MorningHeadline"', 1)[0] if '"MorningHeadline"' in build else ""
+    banner = week_cs.split('"LastDayBanner"', 1)[-1].split('"MorningLastHeadline"', 1)[0] if '"MorningLastHeadline"' in week_cs else ""
+    morning_clip = week_cs.split('"YesterdayClip"', 1)[-1].split('"Yesterday"', 1)[0] if '"YesterdayClip"' in week_cs else ""
+    last_refresh = week_cs.split("void RefreshLastDay", 1)[-1].split("static string LastDayClearReminder", 1)[0]
+    day1_refresh = week_cs.split("void RefreshDay1", 1)[-1].split("void RefreshLastDay", 1)[0] if "void RefreshDay1" in week_cs else ""
+    week_refresh = week_cs.split("void RefreshWeekStart", 1)[-1].split("void RefreshDay1", 1)[0] if "void RefreshWeekStart" in week_cs else ""
+    mid_refresh = week_cs.split("void RefreshMidDay", 1)[-1].split("void RefreshYesterday", 1)[0] if "void RefreshMidDay" in week_cs else ""
+    mid_gate = week_cs.split("static bool MorningMidWeekDay", 1)[-1].split("void RefreshYesterday", 1)[0] if "static bool MorningMidWeekDay" in week_cs else ""
+    yest = week_cs.split("void RefreshYesterday", 1)[-1].split("void RefreshWeekStart", 1)[0]
+    hud = week_cs.split("void RefreshHud", 1)[-1].split("void RefreshCashShort", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_bill = start_hang.split("_startBill = UiKit.Image", 1)[-1] if "_startBill = UiKit.Image" in start_hang else ""
+    if "_startCash = UiKit.Image" in title_bill:
+        title_bill = title_bill.split("_startCash = UiKit.Image", 1)[0]
+    title_paper = start_hang.split("_startHeadline = UiKit.Image", 1)[-1] if "_startHeadline = UiKit.Image" in start_hang else ""
+    title_build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    continue_clip = title_build.split('"ContinueClip"', 1)[-1].split('"ContinueGoodsPin"', 1)[0] if '"ContinueClip"' in title_build else ""
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    settle_build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    settle_paper = settle_build.split('"SettleHeadline"', 1)[-1].split('"Sheet"', 1)[0] if '"SettleHeadline"' in settle_build else ""
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    live_bill = live_build.split('"LiveMidBill"', 1)[-1].split("UiKit.Layout(chatPanel", 1)[0] if '"LiveMidBill"' in live_build else ""
+    live_head = live_build.split('"LiveMidHeadline"', 1)[-1].split("_chatRoot", 1)[0] if '"LiveMidHeadline"' in live_build else ""
+    live_mid = live_build.split('"LiveMidDay"', 1)[-1].split("_chatPanel", 1)[0] if '"LiveMidDay"' in live_build else ""
+    live_day1_bill = live_build.split('"LiveDay1Bill"', 1)[-1].split('"LiveLastBill"', 1)[0] if '"LiveLastBill"' in live_build else ""
+    live_week_bill = live_build.split('"LiveWeekBill"', 1)[-1].split('"LiveLastDay"', 1)[0] if '"LiveWeekBill"' in live_build else ""
+    live_last_bill = live_build.split('"LiveLastBill"', 1)[-1].split('"LiveWeekBill"', 1)[0] if '"LiveWeekBill"' in live_build else ""
+    live_apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    live_bill_apply = live_apply.split("if (_midBill", 1)[-1].split("if (_midHeadline", 1)[0] if "if (_midBill" in live_apply else ""
+    live_head_apply = live_apply.split("if (_midHeadline", 1)[-1].split("if (_liveMidDay", 1)[0] if "if (_midHeadline" in live_apply else ""
+    live_mid_apply = live_apply.split("if (_liveMidDay", 1)[-1].split("if (_day1Headline", 1)[0] if "if (_liveMidDay" in live_apply else ""
+    live_mid_gate = live_cs.split("static bool LiveMidWeekDay", 1)[-1].split("static bool LiveLastDay", 1)[0] if "static bool LiveMidWeekDay" in live_cs else ""
+
+    if 'BillNotice = "Art/bill_notice"' not in art_cs:
+        fail("ArtSprites does not hook Art/bill_notice")
+    elif '"MorningMidBill"' not in build or "ArtSprites.BillNotice" not in paper:
+        fail("mid-week morning does not hang Art/bill_notice as a 청구 desk paper")
+    elif "Image _midBill" not in week_cs:
+        fail("mid-week morning bill paper is not MorningMidBill")
+    elif "preserveAspect = true" not in paper:
+        fail("morning mid-week bill paper is not preserveAspect")
+    elif "ApplySliced" in paper:
+        fail("morning mid-week bill paper reused a sliced desk paper")
+    elif "72f, 48f" in paper:
+        fail("morning mid-week bill paper was hung as a 72×48 pin")
+    elif "116f, 56f" not in paper or "8f, -384f" not in paper or "0.74f, 1f" not in paper:
+        fail("morning mid-week bill paper is not in the dedicated morning bill-paper slot next to the mid-week cluster")
+    elif "8f, -220f" in paper or "180f, 56f" in paper:
+        fail("morning mid-week bill paper covers MorningMidDay / MorningDay1 / MorningWeekStart")
+    elif "8f, -284f" in paper or "228f, 92f" in paper:
+        fail("morning mid-week bill paper covers MorningHeadline / MorningWeekHeadline / MorningLastHeadline / MorningMidHeadline")
+    elif "338f, -268f" in paper:
+        fail("morning mid-week bill paper sat on LiveMidBill")
+    elif "168f, 68f" in paper or "24f, -272f" in paper:
+        fail("morning mid-week bill paper sat on LiveMidHeadline")
+    elif "132f, 40f" in paper or "200f, -276f" in paper:
+        fail("morning mid-week bill paper sat on LiveMidDay")
+    elif "412f, -78f" in paper or "240f, 88f" in paper or "176f, 170f" in paper or "16f, -10f" in paper:
+        fail("morning mid-week bill paper sat on a Title bill / headline")
+    elif "8f, -212f" in paper or "0.80f, 1f" in paper or "8f, -148f" in paper:
+        fail("morning mid-week bill paper sat on a settlement paper")
+    elif '"청구"' not in paper:
+        fail("morning mid-week bill paper is not Korean 청구 copy")
+    elif '"청구서"' in paper:
+        fail("morning mid-week bill paper reused special-day 청구서 copy")
+    elif "헤드라인" in paper or "HeadlineClip" in paper or "DayTab" in paper:
+        fail("morning mid-week bill paper reused a headline or calendar hang")
+    elif "1일차" in paper or "날짜" in paper or "2주차" in paper or "마지막 날" in paper or "주차 마지막" in paper:
+        fail("morning mid-week bill paper reused calendar-tab copy")
+    elif "어제:" in paper or "오늘 헤드라인" in paper or "lastHeadline" in paper:
+        fail("morning mid-week bill paper reused live / continue / settlement headline copy")
+    elif "현금" in paper or "CashSlip" in paper:
+        fail("morning mid-week bill paper reused a morning cash hang")
+    elif "멘탈" in paper or "MentalNote" in paper or "경고" in paper or "EventWarn" in paper:
+        fail("morning mid-week bill paper reused a morning mental / warn hang")
+    elif '"BillChip"' in paper or '"CashChip"' in paper or '"MentalChip"' in paper or "24, -220" in paper:
+        fail("morning mid-week bill paper covers cash / bill / mental chips")
+    elif "360, 70" in paper or "0, 36" in paper or '"GoLive"' in paper:
+        fail("morning mid-week bill paper covers GO STREAM")
+    elif "430, -8" in paper or "300, 72" in paper:
+        fail("morning mid-week bill paper covers n일차 DayTab")
+    elif "744, -8" in paper or "312, 108" in paper:
+        fail("morning mid-week bill paper covers the last-day tab")
+    elif "0, -42" in paper or "0, 78" in paper or "YesterdayClip" in paper:
+        fail("morning mid-week bill paper sat on YesterdayClip")
+    elif "MorningMidDay" in paper or "MorningDay1" in paper or "MorningWeekStart" in paper:
+        fail("morning mid-week bill paper folded a morning calendar into the same hang")
+    elif "MorningMidHeadline" in paper or "MorningHeadline" in paper or "MorningWeekHeadline" in paper or "MorningLastHeadline" in paper:
+        fail("morning mid-week bill paper folded a morning headline into the same hang")
+    elif "LiveMidBill" in paper or "LiveDay1Bill" in paper or "LiveWeekBill" in paper or "LiveLastBill" in paper:
+        fail("morning mid-week bill paper sat on a live bill")
+    elif "NewGameBill" in paper or "NewGameHeadline" in paper or "SettleHeadline" in paper:
+        fail("morning mid-week bill paper sat on Title / settlement papers")
+    elif "LastDayBanner" in paper:
+        fail("morning mid-week bill paper folded LastDayBanner into the same hang")
+    elif "UiKit.Stretch" in paper:
+        fail("morning mid-week bill paper was stretched over the desk")
+    elif "SetActive(false)" not in paper:
+        fail("morning mid-week bill paper is not hidden until RefreshHud")
+    elif "Audio/sfx_threat" in paper or "PlayThreatSfx" in paper or "PlayNewGameBillThreat" in paper:
+        fail("morning mid-week bill paper added a new sting")
+    elif "RefreshMidDay" not in hud:
+        fail("morning mid-week bill paper is not refreshed")
+    elif "_midBill" not in mid_refresh or "MorningMidWeekDay" not in mid_refresh:
+        fail("morning mid-week bill paper is not shown on mid-week mornings")
+    elif "SetActive(run != null && MorningMidWeekDay(run.day))" not in mid_refresh:
+        fail("morning mid-week bill paper is not hidden on other mornings")
+    elif "_midDayTab" not in mid_refresh or "_midHeadline" not in mid_refresh:
+        fail("morning mid-week bill paper dropped MorningMidDay / MorningMidHeadline mid-week hide")
+    elif "run.day == 1" in mid_refresh or "LastDayOfCurrentWeek" in mid_refresh:
+        fail("morning mid-week bill paper reused the day-1 or last-day gate")
+    elif "run.day == 6" in mid_refresh or "_weekStartTab" in mid_refresh or "_day1Tab" in mid_refresh:
+        fail("morning mid-week bill paper reused week-start or day-1 hide")
+    elif "_weekStartHeadline" in mid_refresh or "_day1Headline" in mid_refresh or "_lastDayHeadline" in mid_refresh:
+        fail("morning mid-week bill paper folded a special-day headline into RefreshMidDay")
+    elif "day == 2" not in mid_gate or "day == 7" not in mid_gate or "day == 24" not in mid_gate:
+        fail("morning mid-week bill paper is not shown on mid-week days such as 2 / 7")
+    elif "day == 3" not in mid_gate or "day == 4" not in mid_gate or "day == 8" not in mid_gate or "day == 9" not in mid_gate:
+        fail("morning mid-week bill paper dropped a week-1 / week-2 mid-week day")
+    elif "day == 12" not in mid_gate or "day == 13" not in mid_gate or "day == 14" not in mid_gate:
+        fail("morning mid-week bill paper dropped a week-3 mid-week day")
+    elif "day == 17" not in mid_gate or "day == 18" not in mid_gate or "day == 19" not in mid_gate:
+        fail("morning mid-week bill paper dropped a week-4 mid-week day")
+    elif "day == 22" not in mid_gate or "day == 23" not in mid_gate:
+        fail("morning mid-week bill paper dropped a week-5 mid-week day")
+    elif re.search(r"day == 1\b", mid_gate) or re.search(r"day == 5\b", mid_gate) or re.search(r"day == 6\b", mid_gate):
+        fail("morning mid-week bill paper also shows on day 1 / last-of-week / week-start")
+    elif re.search(r"day == 10\b", mid_gate) or re.search(r"day == 11\b", mid_gate) or re.search(r"day == 15\b", mid_gate):
+        fail("morning mid-week bill paper also shows on a last-of-week or week-start morning")
+    elif re.search(r"day == 16\b", mid_gate) or re.search(r"day == 20\b", mid_gate) or re.search(r"day == 21\b", mid_gate) or re.search(r"day == 25\b", mid_gate):
+        fail("morning mid-week bill paper also shows on a last-of-week or week-start morning")
+    elif "RefreshDay1" not in hud or "run.day == 1" not in day1_refresh:
+        fail("morning mid-week bill paper dropped MorningHeadline day-1 hide")
+    elif "_day1Headline" not in day1_refresh or "SetActive(day1)" not in day1_refresh:
+        fail("morning mid-week bill paper changed MorningHeadline hide")
+    elif "MorningMidWeekDay" in day1_refresh or "_midBill" in day1_refresh or "_midHeadline" in day1_refresh or "_midDayTab" in day1_refresh:
+        fail("MorningHeadline reused a mid-week gate")
+    elif "RefreshWeekStart" not in hud or "run.day == 6" not in week_refresh or "run.day == 21" not in week_refresh:
+        fail("morning mid-week bill paper dropped MorningWeekHeadline week-start hide")
+    elif "_weekStartHeadline" not in week_refresh or "SetActive(on)" not in week_refresh:
+        fail("morning mid-week bill paper changed MorningWeekHeadline hide")
+    elif "MorningMidWeekDay" in week_refresh or "_midBill" in week_refresh or "_midHeadline" in week_refresh or "_midDayTab" in week_refresh:
+        fail("MorningWeekHeadline reused a mid-week gate")
+    elif "RefreshLastDay" not in hud or "LastDayOfCurrentWeek" not in last_refresh or "SetActive(last)" not in last_refresh:
+        fail("morning mid-week bill paper dropped last-day headline hide")
+    elif "_lastDayHeadline" not in last_refresh:
+        fail("morning mid-week bill paper dropped MorningLastHeadline last-day hide")
+    elif "MorningMidWeekDay" in last_refresh or "_midBill" in last_refresh or "_midHeadline" in last_refresh or "_midDayTab" in last_refresh:
+        fail("last-day morning also shows the mid-week bill")
+    elif '"MorningMidDay"' not in build or '"날짜"' not in tab or "8f, -220f" not in tab or "180f, 56f" not in tab:
+        fail("morning mid-week bill paper restyled MorningMidDay")
+    elif "청구" in tab or "BillNotice" in tab or "MorningMidBill" in tab:
+        fail("MorningMidDay hang folded in the mid-week morning bill")
+    elif '"MorningMidHeadline"' not in build or "ArtSprites.HeadlineClip" not in mid_head or '"헤드라인"' not in mid_head:
+        fail("morning mid-week bill paper restyled MorningMidHeadline")
+    elif "8f, -284f" not in mid_head or "228f, 92f" not in mid_head:
+        fail("morning mid-week bill paper moved MorningMidHeadline")
+    elif "청구" in mid_head or "BillNotice" in mid_head or "MorningMidBill" in mid_head:
+        fail("MorningMidHeadline hang folded in the mid-week morning bill")
+    elif '"MorningHeadline"' not in build or "ArtSprites.HeadlineClip" not in day1_head or '"헤드라인"' not in day1_head:
+        fail("morning mid-week bill paper restyled MorningHeadline")
+    elif "8f, -284f" not in day1_head or "228f, 92f" not in day1_head:
+        fail("morning mid-week bill paper moved MorningHeadline")
+    elif "MorningMidBill" in day1_head or "BillNotice" in day1_head or "청구" in day1_head:
+        fail("MorningHeadline hang folded in the mid-week morning bill")
+    elif '"MorningWeekHeadline"' not in build or "ArtSprites.HeadlineClip" not in week_head or '"헤드라인"' not in week_head:
+        fail("morning mid-week bill paper restyled MorningWeekHeadline")
+    elif "8f, -284f" not in week_head or "228f, 92f" not in week_head:
+        fail("morning mid-week bill paper moved MorningWeekHeadline")
+    elif "MorningMidBill" in week_head or "BillNotice" in week_head or "청구" in week_head:
+        fail("MorningWeekHeadline hang folded in the mid-week morning bill")
+    elif '"MorningLastHeadline"' not in build or "ArtSprites.HeadlineClip" not in last_head or '"헤드라인"' not in last_head:
+        fail("morning mid-week bill paper restyled MorningLastHeadline")
+    elif "8f, -284f" not in last_head or "228f, 92f" not in last_head:
+        fail("morning mid-week bill paper moved MorningLastHeadline")
+    elif "MorningMidBill" in last_head or "BillNotice" in last_head or "청구" in last_head:
+        fail("MorningLastHeadline hang folded in the mid-week morning bill")
+    elif '"MorningDay1"' not in build or '"1일차"' not in day1 or "8f, -220f" not in day1:
+        fail("morning mid-week bill paper restyled MorningDay1")
+    elif "청구" in day1 or "MorningMidBill" in day1 or "BillNotice" in day1:
+        fail("MorningDay1 hang folded in the mid-week morning bill")
+    elif '"MorningWeekStart"' not in build or '"2주차"' not in week_start or "8f, -220f" not in week_start:
+        fail("morning mid-week bill paper restyled MorningWeekStart")
+    elif "청구" in week_start or "MorningMidBill" in week_start or "BillNotice" in week_start:
+        fail("MorningWeekStart hang folded in the mid-week morning bill")
+    elif "ArtSprites.DayTab" not in banner or '"마지막 날"' not in banner or "744, -8" not in banner:
+        fail("morning mid-week bill paper dropped the last-day tab")
+    elif "청구" in banner or "MorningMidBill" in banner:
+        fail("last-day tab folded in the mid-week morning bill")
+    elif "ArtSprites.BillNotice" not in money or '"오늘 청구"' not in week_cs:
+        fail("morning mid-week bill paper dropped the 오늘 청구 paper")
+    elif "ArtSprites.CashSlip" not in money or '"CashChip"' not in week_cs:
+        fail("morning mid-week bill paper dropped the morning 현금 paper")
+    elif "ArtSprites.MentalNote" not in money or '"MentalChip"' not in week_cs:
+        fail("morning mid-week bill paper dropped the morning 멘탈 paper")
+    elif '"GoLive"' not in build or "360, 70" not in build:
+        fail("morning mid-week bill paper dropped GO STREAM")
+    elif "0, -42" not in morning_clip or "0, 78" not in morning_clip:
+        fail("morning mid-week bill paper restyled YesterdayClip")
+    elif "YesterdayLine" not in yest or "SetActive(on)" not in yest:
+        fail("morning mid-week bill paper changed scrolling headline chips")
+    elif "day <= 1" not in head_cs or '"어제: "' not in head_cs:
+        fail("morning mid-week bill paper changed 어제 copy or day math")
+    elif '"NewGameBill"' not in start_hang or "176f, 170f" not in title_bill or "16f, -10f" not in title_bill:
+        fail("morning mid-week bill paper restyled Title NewGameBill")
+    elif '"부채"' not in title_bill:
+        fail("morning mid-week bill paper changed Title NewGameBill copy")
+    elif "MorningMidBill" in title_cs or "8f, -384f" in title_bill:
+        fail("morning mid-week bill paper sat on Title NewGameBill")
+    elif '"NewGameHeadline"' not in start_hang or "412f, -78f" not in title_paper or "240f, 88f" not in title_paper:
+        fail("morning mid-week bill paper restyled Title NewGameHeadline")
+    elif "SetActive(!_hasSave)" not in hide:
+        fail("morning mid-week bill paper changed Title NewGameBill hide")
+    elif '"ContinueClip"' not in title_build or "56, -286" not in continue_clip:
+        fail("morning mid-week bill paper restyled continue headline scrap")
+    elif '"SettleHeadline"' not in settle_build or "8f, -212f" not in settle_paper or '"헤드라인"' not in settle_paper:
+        fail("morning mid-week bill paper restyled SettleHeadline")
+    elif "MorningMidBill" in settle_cs or "8f, -384f" in settle_paper:
+        fail("morning mid-week bill paper sat on a settlement headline")
+    elif '"LiveMidBill"' not in live_build or "ArtSprites.BillNotice" not in live_bill or '"청구"' not in live_bill:
+        fail("morning mid-week bill paper restyled LiveMidBill")
+    elif "116f, 56f" not in live_bill or "338f, -268f" not in live_bill:
+        fail("morning mid-week bill paper moved LiveMidBill")
+    elif "MorningMidBill" in live_cs or "8f, -384f" in live_bill:
+        fail("LiveMidBill hang folded in the mid-week morning bill")
+    elif "_midBill" not in live_apply or "LiveMidWeekDay" not in live_bill_apply:
+        fail("morning mid-week bill paper dropped LiveMidBill mid-week hide")
+    elif '"LiveDay1Bill"' not in live_build or "ArtSprites.BillNotice" not in live_day1_bill or '"청구서"' not in live_day1_bill:
+        fail("morning mid-week bill paper restyled LiveDay1Bill")
+    elif "116f, 56f" not in live_day1_bill or "338f, -268f" not in live_day1_bill:
+        fail("morning mid-week bill paper moved LiveDay1Bill")
+    elif "MorningMidBill" in live_day1_bill:
+        fail("LiveDay1Bill hang folded in the mid-week morning bill")
+    elif '"LiveWeekBill"' not in live_build or "ArtSprites.BillNotice" not in live_week_bill or '"청구서"' not in live_week_bill:
+        fail("morning mid-week bill paper restyled LiveWeekBill")
+    elif "116f, 56f" not in live_week_bill or "338f, -268f" not in live_week_bill:
+        fail("morning mid-week bill paper moved LiveWeekBill")
+    elif "MorningMidBill" in live_week_bill:
+        fail("LiveWeekBill hang folded in the mid-week morning bill")
+    elif '"LiveLastBill"' not in live_build or "ArtSprites.BillNotice" not in live_last_bill or '"청구서"' not in live_last_bill:
+        fail("morning mid-week bill paper restyled LiveLastBill")
+    elif "116f, 56f" not in live_last_bill or "338f, -268f" not in live_last_bill:
+        fail("morning mid-week bill paper moved LiveLastBill")
+    elif "MorningMidBill" in live_last_bill:
+        fail("LiveLastBill hang folded in the mid-week morning bill")
+    elif '"LiveMidHeadline"' not in live_build or "168f, 68f" not in live_head or "24f, -272f" not in live_head:
+        fail("morning mid-week bill paper restyled LiveMidHeadline")
+    elif "_midHeadline" not in live_apply or "LiveMidWeekDay" not in live_head_apply:
+        fail("morning mid-week bill paper dropped LiveMidHeadline mid-week hide")
+    elif '"LiveMidDay"' not in live_build or "ArtSprites.DayTab" not in live_mid or '"날짜"' not in live_mid:
+        fail("morning mid-week bill paper restyled LiveMidDay")
+    elif "132f, 40f" not in live_mid or "200f, -276f" not in live_mid:
+        fail("morning mid-week bill paper moved LiveMidDay")
+    elif "_liveMidDay" not in live_apply or "LiveMidWeekDay" not in live_mid_apply:
+        fail("morning mid-week bill paper dropped LiveMidDay mid-week hide")
+    elif "day == 2" not in live_mid_gate or "day == 7" not in live_mid_gate or "day == 24" not in live_mid_gate:
+        fail("morning mid-week bill paper changed LiveMidBill days")
+    elif re.search(r"run\.day\s*=(?!=)", week_cs) or "day += " in week_cs or "day -= " in week_cs:
+        fail("morning mid-week bill paper writes the day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("morning mid-week bill paper moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("morning mid-week bill paper retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("morning mid-week bill paper retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("morning mid-week bill paper retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("morning mid-week bill paper broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising morning mid-week bill / later weeks")
+    elif "매드라인" in week_cs:
+        fail("morning mid-week bill paper used 매드라인 instead of 헤드라인")
+    elif "def check_morning_mid_day()" not in verify_src or "check_morning_mid_day()" not in verify_src:
+        fail("morning mid-week bill paper dropped the existing check_morning_mid_day hang lock")
+    elif "def check_morning_mid_headline()" not in verify_src or "check_morning_mid_headline()" not in verify_src:
+        fail("morning mid-week bill paper dropped the existing check_morning_mid_headline hang lock")
+    elif "def check_morning_day1_headline()" not in verify_src or "def check_morning_week_start_headline()" not in verify_src:
+        fail("morning mid-week bill paper dropped MorningHeadline / MorningWeekHeadline hang locks")
+    elif "def check_morning_last_day_headline()" not in verify_src or "def check_live_mid_bill()" not in verify_src:
+        fail("morning mid-week bill paper dropped MorningLastHeadline / LiveMidBill hang locks")
+    elif "def check_morning_day1_tab()" not in verify_src or "def check_morning_week_start_tab()" not in verify_src:
+        fail("morning mid-week bill paper dropped MorningDay1 / MorningWeekStart hang locks")
+    elif "def check_last_day_tab()" not in verify_src or "def check_last_day_banner()" not in verify_src:
+        fail("morning mid-week bill paper dropped last-day tab / banner hang locks")
+    elif "def check_live_day1_bill()" not in verify_src or "def check_live_week_start_bill()" not in verify_src:
+        fail("morning mid-week bill paper dropped LiveDay1Bill / LiveWeekBill hang locks")
+    elif "def check_live_last_day_bill()" not in verify_src:
+        fail("morning mid-week bill paper dropped LiveLastBill hang lock")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("morning mid-week bill paper dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("morning mid-week bill paper moved Unity off 6000.5.9f1")
+    else:
+        ok("mid-week mornings hang bill_notice as 청구 desk paper; day 1 / week-start / last-of-week hide it; MorningMidDay / MorningMidHeadline / special-day morning papers / LiveMidBill stay")
 
 
 def check_morning_week_start_headline() -> None:
@@ -37845,7 +38164,7 @@ def check_readme_morning_mid_headline() -> None:
     sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
     sponsor_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **이어하기 스폰서 핀**")), "")
     build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
-    paper = build.split('"MorningMidHeadline"', 1)[-1].split('"MorningWeekStart"', 1)[0] if '"MorningMidHeadline"' in build else ""
+    paper = build.split('"MorningMidHeadline"', 1)[-1].split('"MorningMidBill"', 1)[0] if '"MorningMidBill"' in build else ""
     tab = build.split('"MorningMidDay"', 1)[-1].split('"MorningMidHeadline"', 1)[0] if '"MorningMidHeadline"' in build else ""
     week_head = build.split('"MorningWeekHeadline"', 1)[-1].split('"MorningDay1"', 1)[0] if '"MorningWeekHeadline"' in build else ""
     day1_head = build.split('"MorningHeadline"', 1)[-1].split('"LastDayBanner"', 1)[0] if '"MorningHeadline"' in build else ""
