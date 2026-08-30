@@ -39,6 +39,7 @@ namespace BankruptVtuber
         Image _midDayTab;
         Image _midHeadline;
         Image _midBill;
+        Image _midCash;
         RectTransform _lastDayRoot;
         Image _lastDayHeadline;
         Text _lastDayWeek;
@@ -252,6 +253,14 @@ namespace BankruptVtuber
             var midBillT = UiKit.Label(_midBill.transform, "T", "청구", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(midBillT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _midBill.gameObject.SetActive(false);
+            _midCash = UiKit.Image(root, "MorningMidCash", Color.white);
+            UiKit.Layout(_midCash.rectTransform, new Vector2(0.74f, 1f), new Vector2(0.74f, 1f), new Vector2(0f, 1f), new Vector2(126f, -384f), new Vector2(110f, 48f));
+            ArtSprites.Apply(_midCash, ArtSprites.CashSlip, new Color(0.98f, 0.94f, 0.86f, 0.98f), Color.white);
+            _midCash.preserveAspect = true;
+            _midCash.raycastTarget = false;
+            var midCashT = UiKit.Label(_midCash.transform, "T", "현금", 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(midCashT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _midCash.gameObject.SetActive(false);
 
             _weekStartTab = UiKit.Image(root, "MorningWeekStart", Color.white);
             UiKit.Layout(_weekStartTab.rectTransform, new Vector2(0.74f, 1f), new Vector2(0.74f, 1f), new Vector2(0f, 1f), new Vector2(8f, -220f), new Vector2(180f, 56f));
@@ -567,6 +576,8 @@ namespace BankruptVtuber
                 _midHeadline.gameObject.SetActive(run != null && MorningMidWeekDay(run.day));
             if (_midBill != null)
                 _midBill.gameObject.SetActive(run != null && MorningMidWeekDay(run.day));
+            if (_midCash != null)
+                _midCash.gameObject.SetActive(run != null && MorningMidWeekDay(run.day));
         }
 
         static bool MorningMidWeekDay(int day) =>
