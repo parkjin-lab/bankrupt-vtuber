@@ -43,6 +43,7 @@ namespace BankruptVtuber
         Image _weekStartTab;
         Text _weekStartLabel;
         Image _weekStartHeadline;
+        Image _midDayTab;
         Image _lastDayHeadline;
         Text _lastDayWeek;
         Text _showLine;
@@ -516,6 +517,15 @@ namespace BankruptVtuber
             UiKit.Layout(_leftCashShort.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -1f), new Vector2(-10f, -6f));
             _leftCashShort.gameObject.SetActive(false);
             _leftCashSlip.gameObject.SetActive(false);
+
+            _midDayTab = UiKit.Image(root, "SettleMidDay", Color.white);
+            UiKit.Layout(_midDayTab.rectTransform, new Vector2(0.80f, 1f), new Vector2(0.80f, 1f), new Vector2(0f, 1f), new Vector2(8f, -148f), new Vector2(180f, 56f));
+            ArtSprites.Apply(_midDayTab, ArtSprites.DayTab, new Color(1f, 0.92f, 0.55f, 0.98f), Color.white);
+            _midDayTab.preserveAspect = true;
+            _midDayTab.raycastTarget = false;
+            var midDayT = UiKit.Label(_midDayTab.transform, "T", "날짜", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(midDayT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _midDayTab.gameObject.SetActive(false);
 
             _weekStartTab = UiKit.Image(root, "SettleWeekStart", Color.white);
             UiKit.Layout(_weekStartTab.rectTransform, new Vector2(0.80f, 1f), new Vector2(0.80f, 1f), new Vector2(0f, 1f), new Vector2(8f, -148f), new Vector2(180f, 56f));
@@ -1378,6 +1388,8 @@ namespace BankruptVtuber
                 _lastDayHeadline.gameObject.SetActive(last);
             if (last && _lastDayWeek != null)
                 _lastDayWeek.text = WeekSchedule.WeekNumber(run) + "주차 마지막";
+            if (_midDayTab != null)
+                _midDayTab.gameObject.SetActive(SettleMidWeekDay(run.day));
             var b = gm.Balance;
             var w2 = gm.Week2;
             var w3 = gm.Week3;
@@ -2399,6 +2411,13 @@ namespace BankruptVtuber
             gm.Run.lastOutcome = WeekOutcome.Ending;
             Render();
         }
+
+        static bool SettleMidWeekDay(int day) =>
+            day == 2 || day == 3 || day == 4
+            || day == 7 || day == 8 || day == 9
+            || day == 12 || day == 13 || day == 14
+            || day == 17 || day == 18 || day == 19
+            || day == 22 || day == 23 || day == 24;
 
         static bool IsBankruptResult(GameRunState run) =>
             run != null &&

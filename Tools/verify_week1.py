@@ -1584,6 +1584,7 @@ def check_project() -> None:
     check_settle_week_start_headline()
     check_settle_last_day_headline()
     check_settle_week_start_tab()
+    check_settle_mid_day()
     check_title_week_start_tab()
     check_title_week_start_headline()
     check_title_last_day_headline()
@@ -16307,6 +16308,270 @@ def check_settle_week_start_tab() -> None:
         fail("settlement week-start tab moved Unity off 6000.5.9f1")
     else:
         ok("week-start settlements hang 2–5주차 day_tab; day 1, last-day, mid-week, and MorningWeekStart stay")
+
+
+def check_settle_mid_day() -> None:
+    """Mid-week settlements hang day_tab as a 날짜 calendar; day 1 / week-start / last-of-week hide it; SettleDay1 / SettleWeekStart / last-day tab stay gated."""
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    tab = build.split('"SettleMidDay"', 1)[-1].split('"SettleWeekStart"', 1)[0] if '"SettleWeekStart"' in build else ""
+    week_start = build.split('"SettleWeekStart"', 1)[-1].split('"SettleWeekHeadline"', 1)[0] if '"SettleWeekHeadline"' in build else ""
+    day1 = build.split('"SettleDay1"', 1)[-1].split('"SettleHeadline"', 1)[0] if '"SettleHeadline"' in build else ""
+    week_head = build.split('"SettleWeekHeadline"', 1)[-1].split('"SettleDay1"', 1)[0] if '"SettleWeekHeadline"' in build else ""
+    day1_head = build.split('"SettleHeadline"', 1)[-1].split('"SettleLastHeadline"', 1)[0] if '"SettleLastHeadline"' in build else ""
+    last_head = build.split('"SettleLastHeadline"', 1)[-1].split('"Sheet"', 1)[0] if '"SettleLastHeadline"' in build else ""
+    last_tab = build.split('"SettleLastDayTab"', 1)[-1].split('"Recap"', 1)[0] if '"SettleLastDayTab"' in build else ""
+    n일차 = build.split('"SettleDayTab"', 1)[-1].split('"HeadlineClip"', 1)[0] if '"SettleDayTab"' in build else ""
+    recap = build.split('"Recap"', 1)[-1].split('"SettleMidDay"', 1)[0] if '"SettleMidDay"' in build else ""
+    extra = build.split('"ExtraWarn"', 1)[-1].split('"SettleLastDayTab"', 1)[0] if '"ExtraWarn"' in build else ""
+    settle_clip = build.split('"HeadlineClip"', 1)[-1].split('"HeadlineTag"', 1)[0] if '"HeadlineClip"' in build else ""
+    render = settle_cs.split("void Render()", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+    week_gate = render.split("if (_weekStartTab", 1)[-1].split("if (_day1Tab", 1)[0] if "if (_weekStartTab" in render else ""
+    day1_gate = render.split("if (_day1Tab", 1)[-1].split("bool last", 1)[0]
+    last_gate = render.split("bool last", 1)[-1].split("if (_midDayTab", 1)[0] if "if (_midDayTab" in render else ""
+    mid_apply = render.split("if (_midDayTab", 1)[-1].split("var b = gm.Balance", 1)[0] if "if (_midDayTab" in render else ""
+    mid_gate = settle_cs.split("static bool SettleMidWeekDay", 1)[-1].split("static bool IsBankruptResult", 1)[0] if "static bool SettleMidWeekDay" in settle_cs else ""
+    morning_build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
+    morning_tab = morning_build.split('"MorningMidDay"', 1)[-1].split('"MorningMidHeadline"', 1)[0] if '"MorningMidHeadline"' in morning_build else ""
+    morning_week = morning_build.split('"MorningWeekStart"', 1)[-1].split('"MorningWeekHeadline"', 1)[0] if '"MorningWeekHeadline"' in morning_build else ""
+    morning_day1 = morning_build.split('"MorningDay1"', 1)[-1].split('"MorningHeadline"', 1)[0] if '"MorningHeadline"' in morning_build else ""
+    banner = week_cs.split('"LastDayBanner"', 1)[-1].split('"MorningLastHeadline"', 1)[0] if '"MorningLastHeadline"' in week_cs else ""
+    morning_refresh = week_cs.split("void RefreshDay1", 1)[-1].split("void RefreshLastDay", 1)[0] if "void RefreshDay1" in week_cs else ""
+    morning_week_refresh = week_cs.split("void RefreshWeekStart", 1)[-1].split("void RefreshDay1", 1)[0] if "void RefreshWeekStart" in week_cs else ""
+    last_refresh = week_cs.split("void RefreshLastDay", 1)[-1].split("static string LastDayClearReminder", 1)[0]
+    mid_refresh = week_cs.split("void RefreshMidDay", 1)[-1].split("void RefreshYesterday", 1)[0] if "void RefreshMidDay" in week_cs else ""
+    morning_mid_gate = week_cs.split("static bool MorningMidWeekDay", 1)[-1].split("void RefreshYesterday", 1)[0] if "static bool MorningMidWeekDay" in week_cs else ""
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_day = start_hang.split("_startDay = UiKit.Image", 1)[-1] if "_startDay = UiKit.Image" in start_hang else ""
+    if "_startHeadline = UiKit.Image" in title_day:
+        title_day = title_day.split("_startHeadline = UiKit.Image", 1)[0]
+    title_build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    continue_day = title_build.split('"ContinueDayTab"', 1)[-1].split('"ContinueLastDayTab"', 1)[0] if '"ContinueDayTab"' in title_build else ""
+    continue_last = title_build.split('"ContinueLastDayTab"', 1)[-1].split('"ContinueChip"', 1)[0] if '"ContinueLastDayTab"' in title_build else ""
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    live_mid = live_build.split('"LiveMidDay"', 1)[-1].split("_chatPanel", 1)[0] if '"LiveMidDay"' in live_build else ""
+    live_apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    live_mid_apply = live_apply.split("if (_liveMidDay", 1)[-1].split("if (_day1Headline", 1)[0] if "if (_liveMidDay" in live_apply else ""
+    live_mid_gate = live_cs.split("static bool LiveMidWeekDay", 1)[-1].split("static bool LiveLastDay", 1)[0] if "static bool LiveMidWeekDay" in live_cs else ""
+
+    if 'DayTab = "Art/day_tab"' not in art_cs:
+        fail("ArtSprites does not hook Art/day_tab")
+    elif '"SettleMidDay"' not in build or "ArtSprites.DayTab" not in tab:
+        fail("mid-week settlement does not hang Art/day_tab as a 날짜 calendar")
+    elif "Image _midDayTab" not in settle_cs:
+        fail("mid-week settlement calendar is not SettleMidDay")
+    elif "preserveAspect = true" not in tab:
+        fail("settlement mid-week calendar is not preserveAspect")
+    elif "ApplySliced" in tab:
+        fail("settlement mid-week calendar reused a sliced desk paper")
+    elif "72f, 48f" in tab:
+        fail("settlement mid-week calendar was hung as a 72×48 pin")
+    elif "180f, 56f" not in tab or "0.80f, 1f" not in tab or "8f, -148f" not in tab:
+        fail("settlement mid-week calendar is not in the same desk slot as SettleDay1 / SettleWeekStart")
+    elif "8f, -220f" in tab or "0.74f, 1f" in tab:
+        fail("settlement mid-week calendar sat on a morning calendar")
+    elif "132f, 40f" in tab or "200f, -276f" in tab:
+        fail("settlement mid-week calendar sat on LiveMidDay")
+    elif "412f, -10f" in tab or "576f, -8f" in tab:
+        fail("settlement mid-week calendar sat on a Title desk calendar")
+    elif '"날짜"' not in tab:
+        fail("settlement mid-week calendar is not Korean 날짜 copy")
+    elif "사진" in tab:
+        fail("settlement mid-week calendar used 사진 instead of 날짜")
+    elif "1일차" in tab or "2주차" in tab or "마지막 날" in tab or "주차 마지막" in tab:
+        fail("settlement mid-week calendar reused day-1 / week-start / last-day copy")
+    elif "헤드라인" in tab or "HeadlineClip" in tab:
+        fail("settlement mid-week calendar reused a settlement headline paper")
+    elif "청구서" in tab or "BillNotice" in tab or "현금" in tab or "CashSlip" in tab:
+        fail("settlement mid-week calendar reused a settlement bill / cash hang")
+    elif "멘탈" in tab or "MentalNote" in tab or "경고" in tab or "EventWarn" in tab:
+        fail("settlement mid-week calendar reused a settlement mental / warn hang")
+    elif "220, -12" in tab or "188, 48" in tab:
+        fail("settlement mid-week calendar covers n일차 SettleDayTab")
+    elif "416, -12" in tab or "176, 48" in tab:
+        fail("settlement mid-week calendar covers the last-day tab")
+    elif "420, -10" in tab or "440, 52" in tab or '"ExtraWarn"' in tab:
+        fail("settlement mid-week calendar covers ExtraWarn")
+    elif "360, 60" in tab or '"Next"' in tab:
+        fail("settlement mid-week calendar covers the next button")
+    elif "0, 168" in tab or '"Result"' in tab:
+        fail("settlement mid-week calendar covers the result line")
+    elif "20, -148" in tab or '"Income"' in tab or '"Bills"' in tab:
+        fail("settlement mid-week calendar covers recap papers")
+    elif "8f, -212f" in tab or "228f, 92f" in tab:
+        fail("settlement mid-week calendar covers a settlement headline")
+    elif "36, -66" in tab or "오늘 헤드라인" in tab:
+        fail("settlement mid-week calendar sat on the 오늘 헤드라인 scrap")
+    elif "SettleDay1" in tab or "SettleWeekStart" in tab or "SettleLastDayTab" in tab:
+        fail("settlement mid-week calendar folded a special-day settlement tab into the same hang")
+    elif "SettleHeadline" in tab or "SettleWeekHeadline" in tab or "SettleLastHeadline" in tab:
+        fail("settlement mid-week calendar folded a settlement headline into the same hang")
+    elif "MorningMidDay" in tab or "LiveMidDay" in tab or "NewGameDay" in tab or "ContinueDayTab" in tab:
+        fail("settlement mid-week calendar sat on morning / live / Title calendars")
+    elif "UiKit.Stretch" in tab:
+        fail("settlement mid-week calendar was stretched over the desk")
+    elif "SetActive(false)" not in tab:
+        fail("settlement mid-week calendar is not hidden until Render")
+    elif "Audio/sfx_threat" in tab or "PlayThreatSfx" in tab or "PlayNewGameBillThreat" in tab:
+        fail("settlement mid-week calendar added a new sting")
+    elif "_midDayTab" not in render or "SettleMidWeekDay" not in mid_apply:
+        fail("settlement mid-week calendar is not shown on mid-week settlements")
+    elif "SetActive(SettleMidWeekDay(run.day))" not in mid_apply:
+        fail("settlement mid-week calendar is not hidden on other settlements")
+    elif re.search(r"(?<!\d)1 == run\.day", mid_apply):
+        fail("settlement mid-week calendar reused the day-1 gate")
+    elif "6 == run.day" in mid_apply or "LastDayOfCurrentWeek" in mid_apply:
+        fail("settlement mid-week calendar reused week-start or last-day gate")
+    elif "_weekStartTab" in mid_apply or "_day1Tab" in mid_apply or "_lastDayTab" in mid_apply:
+        fail("settlement mid-week calendar reused week-start / day-1 / last-day hide")
+    elif "day == 2" not in mid_gate or "day == 7" not in mid_gate or "day == 24" not in mid_gate:
+        fail("settlement mid-week calendar is not shown on mid-week days such as 2 / 7")
+    elif "day == 3" not in mid_gate or "day == 4" not in mid_gate or "day == 8" not in mid_gate or "day == 9" not in mid_gate:
+        fail("settlement mid-week calendar dropped a week-1 / week-2 mid-week day")
+    elif "day == 12" not in mid_gate or "day == 13" not in mid_gate or "day == 14" not in mid_gate:
+        fail("settlement mid-week calendar dropped a week-3 mid-week day")
+    elif "day == 17" not in mid_gate or "day == 18" not in mid_gate or "day == 19" not in mid_gate:
+        fail("settlement mid-week calendar dropped a week-4 mid-week day")
+    elif "day == 22" not in mid_gate or "day == 23" not in mid_gate:
+        fail("settlement mid-week calendar dropped a week-5 mid-week day")
+    elif re.search(r"day == 1\b", mid_gate) or re.search(r"day == 5\b", mid_gate) or re.search(r"day == 6\b", mid_gate):
+        fail("settlement mid-week calendar also shows on day 1 / last-of-week / week-start")
+    elif re.search(r"day == 10\b", mid_gate) or re.search(r"day == 11\b", mid_gate) or re.search(r"day == 15\b", mid_gate):
+        fail("settlement mid-week calendar also shows on a last-of-week or week-start settlement")
+    elif re.search(r"day == 16\b", mid_gate) or re.search(r"day == 20\b", mid_gate) or re.search(r"day == 21\b", mid_gate) or re.search(r"day == 25\b", mid_gate):
+        fail("settlement mid-week calendar also shows on a last-of-week or week-start settlement")
+    elif "1 == run.day" not in day1_gate or "_day1Tab" not in day1_gate:
+        fail("settlement mid-week calendar dropped SettleDay1 day-1 hide")
+    elif "SettleMidWeekDay" in day1_gate or "6 == run.day" in day1_gate or "_midDayTab" in day1_gate:
+        fail("SettleDay1 reused a mid-week or week-start gate")
+    elif "LastDayOfCurrentWeek" in day1_gate:
+        fail("settlement mid-week calendar changed SettleDay1 gate")
+    elif "6 == run.day" not in week_gate or "11 == run.day" not in week_gate or "16 == run.day" not in week_gate or "21 == run.day" not in week_gate:
+        fail("settlement mid-week calendar dropped SettleWeekStart week-start hide")
+    elif "SettleMidWeekDay" in week_gate or re.search(r"(?<!\d)1 == run\.day", week_gate) or "_midDayTab" in week_gate:
+        fail("SettleWeekStart reused a mid-week or day-1 gate")
+    elif "LastDayOfCurrentWeek" in week_gate:
+        fail("settlement mid-week calendar changed SettleWeekStart gate")
+    elif "2 == run.day" in week_gate or "7 == run.day" in week_gate:
+        fail("SettleWeekStart also shows on a mid-week settlement")
+    elif "LastDayOfCurrentWeek" not in last_gate or "SetActive(last)" not in last_gate:
+        fail("settlement mid-week calendar dropped last-day tab hide")
+    elif "SettleMidWeekDay" in last_gate or "_midDayTab" in last_gate or "6 == run.day" in last_gate:
+        fail("last-day settlement also shows the mid-week calendar")
+    elif '"SettleDay1"' not in build or '"1일차"' not in day1 or "8f, -148f" not in day1:
+        fail("settlement mid-week calendar restyled SettleDay1")
+    elif "날짜" in day1 or "SettleMidDay" in day1:
+        fail("SettleDay1 hang folded in the mid-week settlement calendar")
+    elif '"SettleWeekStart"' not in build or '"2주차"' not in week_start or "8f, -148f" not in week_start:
+        fail("settlement mid-week calendar restyled SettleWeekStart")
+    elif "날짜" in week_start or "SettleMidDay" in week_start:
+        fail("SettleWeekStart hang folded in the mid-week settlement calendar")
+    elif "ArtSprites.DayTab" not in last_tab or '"마지막 날"' not in last_tab or "416, -12" not in last_tab:
+        fail("settlement mid-week calendar dropped the last-day tab")
+    elif "날짜" in last_tab or "SettleMidDay" in last_tab:
+        fail("last-day tab folded in the mid-week settlement calendar")
+    elif "ArtSprites.DayTab" not in n일차 or "SettleDayHead" not in n일차 or "220, -12" not in n일차:
+        fail("settlement mid-week calendar rewrote n일차 SettleDayTab")
+    elif '"SettleHeadline"' not in build or "ArtSprites.HeadlineClip" not in day1_head or '"헤드라인"' not in day1_head:
+        fail("settlement mid-week calendar restyled SettleHeadline")
+    elif "날짜" in day1_head or "SettleMidDay" in day1_head or "DayTab" in day1_head:
+        fail("SettleHeadline hang folded in the mid-week settlement calendar")
+    elif '"SettleWeekHeadline"' not in build or "ArtSprites.HeadlineClip" not in week_head or '"헤드라인"' not in week_head:
+        fail("settlement mid-week calendar restyled SettleWeekHeadline")
+    elif "날짜" in week_head or "SettleMidDay" in week_head or "DayTab" in week_head:
+        fail("SettleWeekHeadline hang folded in the mid-week settlement calendar")
+    elif '"SettleLastHeadline"' not in build or "ArtSprites.HeadlineClip" not in last_head or '"헤드라인"' not in last_head:
+        fail("settlement mid-week calendar restyled SettleLastHeadline")
+    elif "날짜" in last_head or "SettleMidDay" in last_head or "DayTab" in last_head:
+        fail("SettleLastHeadline hang folded in the mid-week settlement calendar")
+    elif "ArtSprites.CashSlip" not in recap or "ArtSprites.BillNotice" not in recap or "ArtSprites.MentalNote" not in recap:
+        fail("settlement mid-week calendar dropped recap papers")
+    elif "ArtSprites.EventWarn" not in extra or "420, -10" not in extra:
+        fail("settlement mid-week calendar dropped ExtraWarn")
+    elif "ArtSprites.HeadlineClip" not in settle_clip or "36, -66" not in settle_clip:
+        fail("settlement mid-week calendar restyled the 오늘 헤드라인 scrap")
+    elif "오늘 헤드라인" not in settle_cs:
+        fail("settlement mid-week calendar dropped 오늘 헤드라인 copy")
+    elif '"Next"' not in build or "360, 60" not in build:
+        fail("settlement mid-week calendar dropped the next button")
+    elif '"MorningMidDay"' not in morning_build or "ArtSprites.DayTab" not in morning_tab or '"날짜"' not in morning_tab:
+        fail("settlement mid-week calendar restyled MorningMidDay")
+    elif "8f, -220f" not in morning_tab or "180f, 56f" not in morning_tab:
+        fail("settlement mid-week calendar moved MorningMidDay")
+    elif "SettleMidDay" in week_cs or "8f, -148f" in morning_tab:
+        fail("MorningMidDay hang folded in the mid-week settlement calendar")
+    elif "_midDayTab" not in mid_refresh or "MorningMidWeekDay" not in mid_refresh:
+        fail("settlement mid-week calendar dropped MorningMidDay mid-week hide")
+    elif "day == 2" not in morning_mid_gate or "day == 7" not in morning_mid_gate or "day == 24" not in morning_mid_gate:
+        fail("settlement mid-week calendar changed MorningMidDay days")
+    elif '"MorningDay1"' not in morning_build or "8f, -220f" not in morning_day1 or '"1일차"' not in morning_day1:
+        fail("settlement mid-week calendar restyled MorningDay1")
+    elif "run.day == 1" not in morning_refresh or "LastDayOfCurrentWeek" in morning_refresh:
+        fail("settlement mid-week calendar changed MorningDay1 gate")
+    elif '"MorningWeekStart"' not in morning_build or "8f, -220f" not in morning_week or '"2주차"' not in morning_week:
+        fail("settlement mid-week calendar restyled MorningWeekStart")
+    elif "run.day == 6" not in morning_week_refresh or "run.day == 21" not in morning_week_refresh:
+        fail("settlement mid-week calendar changed MorningWeekStart gate")
+    elif "ArtSprites.DayTab" not in banner or '"마지막 날"' not in banner or "744, -8" not in banner:
+        fail("settlement mid-week calendar dropped the morning last-day tab")
+    elif "LastDayOfCurrentWeek" not in last_refresh or "SetActive(last)" not in last_refresh:
+        fail("settlement mid-week calendar changed morning last-day logic")
+    elif '"LiveMidDay"' not in live_build or "ArtSprites.DayTab" not in live_mid or '"날짜"' not in live_mid:
+        fail("settlement mid-week calendar restyled LiveMidDay")
+    elif "132f, 40f" not in live_mid or "200f, -276f" not in live_mid:
+        fail("settlement mid-week calendar moved LiveMidDay")
+    elif "SettleMidDay" in live_cs or "8f, -148f" in live_mid:
+        fail("LiveMidDay hang folded in the mid-week settlement calendar")
+    elif "_liveMidDay" not in live_apply or "LiveMidWeekDay" not in live_mid_apply:
+        fail("settlement mid-week calendar dropped LiveMidDay mid-week hide")
+    elif "day == 2" not in live_mid_gate or "day == 7" not in live_mid_gate or "day == 24" not in live_mid_gate:
+        fail("settlement mid-week calendar changed LiveMidDay days")
+    elif '"NewGameDay"' not in start_hang or "412f, -10f" not in title_day or '"1일차"' not in title_day:
+        fail("settlement mid-week calendar restyled Title NewGameDay")
+    elif "SettleMidDay" in title_cs or "날짜" in title_day:
+        fail("settlement mid-week calendar sat on Title NewGameDay")
+    elif "ArtSprites.DayTab" not in continue_day or "ContinueDayHead" not in continue_day:
+        fail("settlement mid-week calendar rewrote continue n일차")
+    elif "날짜" in continue_day or "SettleMidDay" in continue_day:
+        fail("continue n일차 folded in the mid-week settlement calendar")
+    elif '"ContinueLastDayTab"' not in title_build or "166f, -6f" not in continue_last:
+        fail("settlement mid-week calendar moved the continue last-day tab")
+    elif re.search(r"run\.day\s*=(?!=)", settle_cs) or "day += " in settle_cs or "day -= " in settle_cs:
+        fail("settlement mid-week calendar writes the day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("settlement mid-week calendar moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("settlement mid-week calendar retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("settlement mid-week calendar retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("settlement mid-week calendar retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("settlement mid-week calendar broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising settlement mid-week calendar / later weeks")
+    elif "def check_settle_day1_tab()" not in verify_src or "def check_settle_week_start_tab()" not in verify_src:
+        fail("settlement mid-week calendar dropped SettleDay1 / SettleWeekStart hang locks")
+    elif "def check_morning_mid_day()" not in verify_src or "check_morning_mid_day()" not in verify_src:
+        fail("settlement mid-week calendar dropped the existing check_morning_mid_day hang lock")
+    elif "def check_live_mid_day()" not in verify_src or "check_live_mid_day()" not in verify_src:
+        fail("settlement mid-week calendar dropped the existing check_live_mid_day hang lock")
+    elif "def check_title_newgame_day()" not in verify_src:
+        fail("settlement mid-week calendar dropped NewGameDay hang lock")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("settlement mid-week calendar dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("settlement mid-week calendar moved Unity off 6000.5.9f1")
+    else:
+        ok("mid-week settlements hang 날짜 day_tab; day 1 / week-start / last-of-week hide it; SettleDay1 / SettleWeekStart / last-day tab stay")
 
 
 def check_title_week_start_tab() -> None:
