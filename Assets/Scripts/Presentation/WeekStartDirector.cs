@@ -41,6 +41,7 @@ namespace BankruptVtuber
         Image _midBill;
         Image _midCash;
         Image _midMental;
+        Image _midWarn;
         RectTransform _lastDayRoot;
         Image _lastDayHeadline;
         Text _lastDayWeek;
@@ -270,6 +271,14 @@ namespace BankruptVtuber
             var midMentalT = UiKit.Label(_midMental.transform, "T", "멘탈", 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(midMentalT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _midMental.gameObject.SetActive(false);
+            _midWarn = UiKit.Image(root, "MorningMidWarn", Color.white);
+            UiKit.Layout(_midWarn.rectTransform, new Vector2(0.74f, 1f), new Vector2(0.74f, 1f), new Vector2(0f, 1f), new Vector2(360f, -384f), new Vector2(104f, 48f));
+            ArtSprites.Apply(_midWarn, ArtSprites.EventWarn, new Color(0.58f, 0.08f, 0.16f, 0.94f), Color.white);
+            _midWarn.preserveAspect = true;
+            _midWarn.raycastTarget = false;
+            var midWarnT = UiKit.Label(_midWarn.transform, "T", "경고", 18, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(midWarnT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _midWarn.gameObject.SetActive(false);
 
             _weekStartTab = UiKit.Image(root, "MorningWeekStart", Color.white);
             UiKit.Layout(_weekStartTab.rectTransform, new Vector2(0.74f, 1f), new Vector2(0.74f, 1f), new Vector2(0f, 1f), new Vector2(8f, -220f), new Vector2(180f, 56f));
@@ -589,6 +598,8 @@ namespace BankruptVtuber
                 _midCash.gameObject.SetActive(run != null && MorningMidWeekDay(run.day));
             if (_midMental != null)
                 _midMental.gameObject.SetActive(run != null && MorningMidWeekDay(run.day));
+            if (_midWarn != null)
+                _midWarn.gameObject.SetActive(run != null && MorningMidWeekDay(run.day));
         }
 
         static bool MorningMidWeekDay(int day) =>
