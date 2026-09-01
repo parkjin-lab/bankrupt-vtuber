@@ -661,9 +661,9 @@ namespace BankruptVtuber
             _judge.color = jc;
             if (_judgeStamp != null && _judgeStamp.gameObject.activeSelf)
             {
-                var sc = _judgeStamp.color;
-                sc.a = _judgeFlash;
-                _judgeStamp.color = sc;
+                var judgeSc = _judgeStamp.color;
+                judgeSc.a = _judgeFlash;
+                _judgeStamp.color = judgeSc;
             }
             if (_judgePop > 0f)
             {
@@ -701,9 +701,9 @@ namespace BankruptVtuber
                 _viewerPopChip.gameObject.SetActive(show);
                 if (show)
                 {
-                    var sc = _viewerPopChip.color;
-                    sc.a = _viewerPopFlash;
-                    _viewerPopChip.color = sc;
+                    var viewerSc = _viewerPopChip.color;
+                    viewerSc.a = _viewerPopFlash;
+                    _viewerPopChip.color = viewerSc;
                     _viewerPopChip.rectTransform.anchoredPosition = new Vector2(8f, 6f + 22f * (1f - _viewerPopFlash));
                     _viewerPopChip.rectTransform.localScale = Vector3.one * (1f + 0.16f * _viewerPopFlash);
                 }
@@ -720,9 +720,9 @@ namespace BankruptVtuber
                 _incomePopSlip.gameObject.SetActive(show);
                 if (show)
                 {
-                    var sc = _incomePopSlip.color;
-                    sc.a = _incomePopFlash;
-                    _incomePopSlip.color = sc;
+                    var incomeSc = _incomePopSlip.color;
+                    incomeSc.a = _incomePopFlash;
+                    _incomePopSlip.color = incomeSc;
                     _incomePopSlip.rectTransform.anchoredPosition = new Vector2(8f, 6f + 22f * (1f - _incomePopFlash));
                     _incomePopSlip.rectTransform.localScale = Vector3.one * (1f + 0.16f * _incomePopFlash);
                 }
@@ -785,9 +785,9 @@ namespace BankruptVtuber
                     _coverSlamStamp.gameObject.SetActive(show);
                     if (show)
                     {
-                        var sc = _coverSlamStamp.color;
-                        sc.a = _coverSlamFlash;
-                        _coverSlamStamp.color = sc;
+                        var coverSc = _coverSlamStamp.color;
+                        coverSc.a = _coverSlamFlash;
+                        _coverSlamStamp.color = coverSc;
                         _coverSlamStamp.rectTransform.localScale = coverScale;
                     }
                 }
@@ -2264,8 +2264,12 @@ namespace BankruptVtuber
         {
             if (_eventWarnBox == null)
                 return;
-            StreamEventKind kind = default;
-            bool on = _session != null && _session.TryPeekEventWarn(out kind);
+            if (_session == null)
+            {
+                _eventWarnBox.gameObject.SetActive(false);
+                return;
+            }
+            bool on = _session.TryPeekEventWarn(out StreamEventKind kind);
             _eventWarnBox.gameObject.SetActive(on);
             if (!on)
                 return;
