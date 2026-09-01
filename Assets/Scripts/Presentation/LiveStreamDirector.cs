@@ -792,9 +792,9 @@ namespace BankruptVtuber
                     }
                 }
             }
-            var sc = _stub.color;
-            sc.a = Mathf.MoveTowards(sc.a, 0f, dt * 0.7f);
-            _stub.color = sc;
+            var stubC = _stub.color;
+            stubC.a = Mathf.MoveTowards(stubC.a, 0f, dt * 0.7f);
+            _stub.color = stubC;
 
             _comboStingFlash = Mathf.MoveTowards(_comboStingFlash, 0f, dt * 1.7f);
             _comboBreakLeft = Mathf.MoveTowards(_comboBreakLeft, 0f, dt);
@@ -2264,7 +2264,8 @@ namespace BankruptVtuber
         {
             if (_eventWarnBox == null)
                 return;
-            bool on = _session != null && _session.TryPeekEventWarn(out var kind);
+            StreamEventKind kind = default;
+            bool on = _session != null && _session.TryPeekEventWarn(out kind);
             _eventWarnBox.gameObject.SetActive(on);
             if (!on)
                 return;

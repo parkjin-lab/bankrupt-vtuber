@@ -219,7 +219,7 @@ namespace BankruptVtuber
 
         public static void EnsureEventSystem()
         {
-            var es = UnityEngine.Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>();
+            var es = UnityEngine.Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>();
             if (es == null)
             {
                 var go = new GameObject("EventSystem");
@@ -246,7 +246,7 @@ namespace BankruptVtuber
         {
             var es = UnityEngine.EventSystems.EventSystem.current;
             if (es == null)
-                es = UnityEngine.Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>();
+                es = UnityEngine.Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>();
             if (es == null)
                 return;
             var module = es.GetComponent<UnityEngine.EventSystems.StandaloneInputModule>();
@@ -283,7 +283,7 @@ namespace BankruptVtuber
             if (es == null)
                 es = UnityEngine.EventSystems.EventSystem.current;
             if (es == null)
-                es = UnityEngine.Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>();
+                es = UnityEngine.Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>();
             var module = _lockedModule;
             if (module == null && es != null)
                 module = es.GetComponent<UnityEngine.EventSystems.StandaloneInputModule>();
