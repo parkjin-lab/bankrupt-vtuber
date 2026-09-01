@@ -14,7 +14,7 @@ namespace BankruptVtuber
         public static System.Action OnLanePadPress;
 
         /// <summary>
-        /// Arrows are the documented map. A/S/D/F and WASD are aliases.
+        /// Spec map is A/S/D/F (긍정/공감/웃음/감사). Arrows and WASD are aliases.
         /// Space/Enter superchat commits once on release (hold-to-charge).
         /// </summary>
         public static bool TryConsumeKind(out ChatKind kind, out bool hold)
@@ -178,6 +178,38 @@ namespace BankruptVtuber
             _queuedHold = false;
             _padCharging = false;
         }
+
+#if UNITY_EDITOR
+        static int _gameViewFocusTick;
+
+        /// <summary>
+        /// Legacy Input.GetKey only reports keys while the Editor Game view is focused.
+        /// Unity 6 did not switch this project to the Input System (activeInputHandler = Input Manager).
+        /// Re-focus so A/S/D/F / Space / 1-4 work without a prior Game-view click.
+        /// </summary>
+        public static void KeepEditorGameViewFocus()
+        {
+            if (++_gameViewFocusTick % 10 != 0)
+                return;
+            var gameViewType = System.Type.GetType("UnityEditor.GameView,UnityEditor");
+            var editorWindowType = System.Type.GetType("UnityEditor.EditorWindow,UnityEditor");
+            if (gameViewType == null || editorWindowType == null)
+                return;
+            var focusedProp = editorWindowType.GetProperty(
+                "focusedWindow",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            var focused = focusedProp != null ? focusedProp.GetValue(null) : null;
+            if (focused != null && gameViewType.IsInstanceOfType(focused))
+                return;
+            var getWindow = editorWindowType.GetMethod("GetWindow", new[] { typeof(System.Type), typeof(bool) });
+            if (getWindow == null)
+                return;
+            var win = getWindow.Invoke(null, new object[] { gameViewType, false });
+            if (win == null)
+                return;
+            editorWindowType.GetMethod("Focus", System.Type.EmptyTypes)?.Invoke(win, null);
+        }
+#endif
 
         static bool PositiveDown() =>
             UnityEngine.Input.GetKeyDown(KeyCode.LeftArrow)

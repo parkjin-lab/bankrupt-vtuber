@@ -436,12 +436,13 @@ namespace BankruptVtuber
             UiKit.Layout(heading.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -20), new Vector2(0, 44));
 
             const string body =
-                "←     긍정\n" +
-                "↓     공감\n" +
-                "→     웃음\n" +
-                "↑     감사\n" +
+                "A     긍정\n" +
+                "S     공감\n" +
+                "D     웃음\n" +
+                "F     감사\n" +
                 "Space / Enter  슈퍼챗 (떼면 한 번 판정)\n" +
                 "1–4    방송 중 이벤트\n" +
+                "←     긍정  ·  ↓ 공감  ·  → 웃음  ·  ↑ 감사  별칭\n" +
                 "A/S/D/F · WASD  같은 판정\n" +
                 "화면 버튼   긍정/공감/웃음/감사";
             var keysView = UiKit.Panel(panel, "KeysView", new Color(0, 0, 0, 0));

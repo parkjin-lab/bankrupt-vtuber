@@ -16,6 +16,23 @@ namespace BankruptVtuber.Editor
         static PlayFromWeekStart()
         {
             EditorApplication.delayCall += Apply;
+            EditorApplication.playModeStateChanged += OnPlayModeChanged;
+        }
+
+        static void OnPlayModeChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.EnteredPlayMode)
+                EditorApplication.delayCall += FocusGameView;
+        }
+
+        static void FocusGameView()
+        {
+            var t = typeof(EditorWindow).Assembly.GetType("UnityEditor.GameView");
+            if (t == null)
+                return;
+            var w = EditorWindow.GetWindow(t, false);
+            if (w != null)
+                w.Focus();
         }
 
         static void Apply()

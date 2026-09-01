@@ -440,6 +440,9 @@ namespace BankruptVtuber
 
         void Update()
         {
+#if UNITY_EDITOR
+            StreamBindings.KeepEditorGameViewFocus();
+#endif
             if (_session == null || _ending)
                 return;
 
@@ -1524,14 +1527,14 @@ namespace BankruptVtuber
             var tlab = UiKit.Label(bottom, "TensionL", "텐션 (미스 스트릭)", 12, Palette.Muted, TextAnchor.LowerLeft);
             UiKit.Layout(tlab.rectTransform, new Vector2(0, 0.54f), new Vector2(0.40f, 0.62f), new Vector2(0, 0), new Vector2(12, 0), Vector2.zero);
 
-            var keys = UiKit.Label(bottom, "Keys", "←↓→↑  ·  A/S/D/F  ·  WASD  ·  Space 슈퍼챗  ·  1–4 이벤트", 14, Palette.PastelDim, TextAnchor.MiddleLeft);
-            UiKit.Layout(keys.rectTransform, new Vector2(0.42f, 0.70f), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-12, -4), new Vector2(0, 36));
+            var keys = UiKit.Label(bottom, "Keys", "A 긍정 · S 공감 · D 웃음 · F 감사 · Space 슈퍼챗 · 1–4 이벤트\n별칭 ← 긍정 · ↓ 공감 · → 웃음 · ↑ 감사 · 슈퍼챗 Space · WASD", 13, Palette.PastelDim, TextAnchor.MiddleLeft);
+            UiKit.Layout(keys.rectTransform, new Vector2(0.42f, 0.68f), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-12, -4), new Vector2(0, 40));
 
             _echo = UiKit.Label(bottom, "Echo", "", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(_echo.rectTransform, new Vector2(0, 0.54f), new Vector2(1, 0.70f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
 
             var padRow = UiKit.Panel(bottom, "PadRow", new Color(0, 0, 0, 0));
-            UiKit.Layout(padRow, new Vector2(0, 0), new Vector2(1, 0.54f), new Vector2(0.5f, 0), Vector2.zero, Vector2.zero);
+            UiKit.Layout(padRow, new Vector2(0.02f, 0.06f), new Vector2(0.98f, 0.54f), new Vector2(0.5f, 0), Vector2.zero, Vector2.zero);
             var padRowImg = padRow.GetComponent<Image>();
             if (padRowImg != null)
                 padRowImg.raycastTarget = false;
@@ -1541,11 +1544,11 @@ namespace BankruptVtuber
             padDock.preserveAspect = false;
             padDock.raycastTarget = false;
             padDock.transform.SetAsFirstSibling();
-            _lanePads[0] = AddColumnPad(padRow, 0, 5, "긍정", Palette.ForKind(ChatKind.Positive), StreamPadButton.Mode.Kind, ChatKind.Positive);
-            _lanePads[1] = AddColumnPad(padRow, 1, 5, "공감", Palette.ForKind(ChatKind.Empathy), StreamPadButton.Mode.Kind, ChatKind.Empathy);
-            _lanePads[2] = AddColumnPad(padRow, 2, 5, "웃음", Palette.ForKind(ChatKind.Laugh), StreamPadButton.Mode.Kind, ChatKind.Laugh);
-            _lanePads[3] = AddColumnPad(padRow, 3, 5, "감사", Palette.ForKind(ChatKind.Thanks), StreamPadButton.Mode.Kind, ChatKind.Thanks);
-            _lanePads[4] = AddColumnPad(padRow, 4, 5, "슈퍼챗", Palette.Gold, StreamPadButton.Mode.Superchat);
+            _lanePads[0] = AddColumnPad(padRow, 0, 5, "A 긍정", Palette.ForKind(ChatKind.Positive), StreamPadButton.Mode.Kind, ChatKind.Positive);
+            _lanePads[1] = AddColumnPad(padRow, 1, 5, "S 공감", Palette.ForKind(ChatKind.Empathy), StreamPadButton.Mode.Kind, ChatKind.Empathy);
+            _lanePads[2] = AddColumnPad(padRow, 2, 5, "D 웃음", Palette.ForKind(ChatKind.Laugh), StreamPadButton.Mode.Kind, ChatKind.Laugh);
+            _lanePads[3] = AddColumnPad(padRow, 3, 5, "F 감사", Palette.ForKind(ChatKind.Thanks), StreamPadButton.Mode.Kind, ChatKind.Thanks);
+            _lanePads[4] = AddColumnPad(padRow, 4, 5, "Space 슈퍼챗", Palette.Gold, StreamPadButton.Mode.Superchat);
             BuildSuperchatPip(_lanePads[4]);
 
             _sting = UiKit.Label(root, "MissSting", "", 40, Palette.MoneyRed, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -1777,7 +1780,7 @@ namespace BankruptVtuber
             string keycap = KeycapFor(mode, kind);
             if (keycap != null)
                 ArtSprites.ApplySliced(img, keycap, new Color(0.86f, 0.86f, 0.86f, 1f), new Vector4(36f, 36f, 36f, 36f));
-            var cap = UiKit.Label(img.transform, "L", label, count >= 5 ? 22 : 28, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            var cap = UiKit.Label(img.transform, "L", label, count >= 5 ? 16 : 28, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
             if (keycap != null)
                 UiKit.Layout(cap.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0.48f), new Vector2(0.5f, 0f), Vector2.zero, Vector2.zero);
             else
@@ -1819,12 +1822,13 @@ namespace BankruptVtuber
             padDock.transform.SetAsFirstSibling();
             var tips = new (string art, string bind)[]
             {
-                (ArtSprites.PadLeft, "←"),
-                (ArtSprites.PadDown, "↓"),
-                (ArtSprites.PadRight, "→"),
-                (ArtSprites.PadUp, "↑"),
+                (ArtSprites.PadLeft, "A"),
+                (ArtSprites.PadDown, "S"),
+                (ArtSprites.PadRight, "D"),
+                (ArtSprites.PadUp, "F"),
                 (ArtSprites.PadSuperchat, "Space"),
             };
+            // Extra alias glyphs stay in this method: "←" "↓" "→" "↑"
             for (int i = 0; i < tips.Length; i++)
             {
                 float a = i / (float)tips.Length;
@@ -1955,10 +1959,10 @@ namespace BankruptVtuber
                 return presented >= 3 ? "눌러서 차지 후 떼기" : "슈퍼챗 Space";
             return note.Kind switch
             {
-                ChatKind.Positive => "← 긍정",
-                ChatKind.Empathy => "↓ 공감",
-                ChatKind.Laugh => "→ 웃음",
-                _ => "↑ 감사"
+                ChatKind.Positive => "A 긍정",
+                ChatKind.Empathy => "S 공감",
+                ChatKind.Laugh => "D 웃음",
+                _ => "F 감사"
             };
         }
 
