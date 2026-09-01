@@ -16589,7 +16589,7 @@ def check_settle_mid_headline() -> None:
     player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
     verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
     build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
-    paper = build.split('"SettleMidHeadline"', 1)[-1].split('"SettleMidDay"', 1)[0] if '"SettleMidDay"' in build else ""
+    paper = build.split('"SettleMidHeadline"', 1)[-1].split("_midDayTab", 1)[0] if "_midDayTab" in build else ""
     tab = build.split('"SettleMidDay"', 1)[-1].split('"SettleWeekStart"', 1)[0] if '"SettleWeekStart"' in build else ""
     week_start = build.split('"SettleWeekStart"', 1)[-1].split('"SettleWeekHeadline"', 1)[0] if '"SettleWeekHeadline"' in build else ""
     day1 = build.split('"SettleDay1"', 1)[-1].split('"SettleHeadline"', 1)[0] if '"SettleHeadline"' in build else ""
