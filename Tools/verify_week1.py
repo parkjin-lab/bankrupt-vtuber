@@ -1709,6 +1709,7 @@ def check_project() -> None:
     check_readme_settle_week_start()
     check_readme_settle_mid_day()
     check_readme_settle_mid_headline()
+    check_readme_settle_mid_bill()
     check_readme_title_week_start()
     check_readme_title_day1_tab()
     check_readme_concert_live_badge()
@@ -43189,6 +43190,408 @@ def check_readme_settle_mid_headline() -> None:
         fail("README settlement mid-week headline moved Unity off 6000.5.9f1")
     else:
         ok("README names 정산 평일 헤드라인 vs 정산 평일 / 정산 1일차 헤드라인 / 정산 주차 첫날 헤드라인 / 정산 마지막 날 헤드라인, MorningMidHeadline, LiveMidHeadline, NewGameHeadline, continue headlines, and the 오늘 헤드라인 scrap")
+
+
+def check_readme_settle_mid_bill() -> None:
+    """README names the Settlement mid-week bill paper vs 정산 평일 / 정산 평일 헤드라인, MorningMidBill, LiveMidBill, NewGameBill, continue / recap bills, and headline / calendar papers."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    head_cs = (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
+    title_loop = readme.split("**Title**은", 1)[-1].split("**Title** → **WeekStart**", 1)[0]
+    morning_loop = readme.split("**Title** → **WeekStart**", 1)[-1].split("웹캠 파산냥", 1)[0]
+    live_loop = readme.split("라이브는 `Art/onair_led`", 1)[-1].split("라이브 HUD 스택", 1)[0]
+    settle_loop = readme.split("정산:", 1)[-1].split("## 지금 보이는", 1)[0]
+    desk_paper = readme.split("- **책상 종이**", 1)[-1].split("- **돈 스탬프", 1)[0]
+    card_tabs = readme.split("- **카드 / 탭**", 1)[-1].split("- **책상 종이**", 1)[0]
+    mid_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **정산 평일 청구서**")), "")
+    mid_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **정산 평일 헤드라인**")), "")
+    mid_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **정산 평일**") and "헤드라인" not in ln.split("—", 1)[0] and "청구서" not in ln.split("—", 1)[0] and "현금" not in ln.split("—", 1)[0] and "멘탈" not in ln.split("—", 1)[0] and "경고" not in ln.split("—", 1)[0]), "")
+    settle_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **정산 1일차**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    settle_week_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **정산 주차 첫날**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    settle_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **정산 1일차 헤드라인**")), "")
+    settle_week_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **정산 주차 첫날 헤드라인**")), "")
+    settle_last_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **정산 마지막 날 헤드라인**")), "")
+    morning_mid_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **아침 평일**") and "헤드라인" not in ln.split("—", 1)[0] and "청구서" not in ln.split("—", 1)[0] and "현금" not in ln.split("—", 1)[0] and "멘탈" not in ln.split("—", 1)[0] and "경고" not in ln.split("—", 1)[0]), "")
+    morning_mid_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **아침 평일 헤드라인**")), "")
+    morning_mid_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **아침 평일 청구서**")), "")
+    live_mid_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 평일**") and "헤드라인" not in ln.split("—", 1)[0] and "청구서" not in ln.split("—", 1)[0] and "현금" not in ln.split("—", 1)[0] and "멘탈" not in ln.split("—", 1)[0] and "경고" not in ln.split("—", 1)[0]), "")
+    live_mid_head_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 평일 헤드라인**")), "")
+    live_mid_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 평일 청구서**")), "")
+    live_day1_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 1일차 청구서**")), "")
+    live_week_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 주차 첫날 청구서**")), "")
+    live_last_bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **라이브 마지막 날 청구서**")), "")
+    shared_bill = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **고지서")), "")
+    shared_head = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **헤드라인 `Art/headline_clip`**")), "")
+    morning_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **아침 1일차**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    week_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **아침 주차 첫날**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    continue_week_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **이어하기 주차 첫날**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    continue_day1_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **이어하기 1일차**") and "헤드라인" not in ln.split("—", 1)[0]), "")
+    newgame_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 1일차**")), "")
+    tab_inv = next((ln for ln in card_tabs.splitlines() if "Art/day_tab" in ln), "")
+    mental_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 멘탈**")), "")
+    cash_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 현금**")), "")
+    bill_inv = next((ln for ln in readme.splitlines() if ln.lstrip().startswith("- **새 게임 청구서**")), "")
+    sfx_inv = next((ln for ln in readme.splitlines() if "**SFX**" in ln and "sfx_threat" in ln), "")
+    sponsor_inv = next((ln for ln in readme.splitlines() if ln.startswith("- **이어하기 스폰서 핀**")), "")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    paper = build.split('"SettleMidBill"', 1)[-1].split('"SettleMidHeadline"', 1)[0] if '"SettleMidHeadline"' in build else ""
+    head = build.split('"SettleMidHeadline"', 1)[-1].split("_midDayTab", 1)[0] if "_midDayTab" in build else ""
+    tab = build.split('"SettleMidDay"', 1)[-1].split('"SettleWeekStart"', 1)[0] if '"SettleWeekStart"' in build else ""
+    bills = settle_cs.split('_billsTile = recap.Find("Bills")', 1)[-1].split("var shortHost", 1)[0] if '_billsTile = recap.Find("Bills")' in settle_cs else ""
+    tick = settle_cs.split("void TickShortfall", 1)[-1].split("void Render", 1)[0]
+    render = settle_cs.split("void Render()", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+    week_gate = render.split("if (_weekStartTab", 1)[-1].split("if (_day1Tab", 1)[0] if "if (_weekStartTab" in render else ""
+    day1_gate = render.split("if (_day1Tab", 1)[-1].split("bool last", 1)[0]
+    last_gate = render.split("bool last", 1)[-1].split("if (_midDayTab", 1)[0] if "if (_midDayTab" in render else ""
+    mid_apply = render.split("if (_midDayTab", 1)[-1].split("var b = gm.Balance", 1)[0] if "if (_midDayTab" in render else ""
+    mid_gate = settle_cs.split("static bool SettleMidWeekDay", 1)[-1].split("static bool IsBankruptResult", 1)[0] if "static bool SettleMidWeekDay" in settle_cs else ""
+    morning_build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
+    morning_paper = morning_build.split('"MorningMidBill"', 1)[-1].split('"MorningMidCash"', 1)[0] if '"MorningMidCash"' in morning_build else ""
+    morning_head = morning_build.split('"MorningMidHeadline"', 1)[-1].split('"MorningMidBill"', 1)[0] if '"MorningMidBill"' in morning_build else ""
+    morning_tab = morning_build.split('"MorningMidDay"', 1)[-1].split('"MorningMidHeadline"', 1)[0] if '"MorningMidHeadline"' in morning_build else ""
+    mid_refresh = week_cs.split("void RefreshMidDay", 1)[-1].split("void RefreshYesterday", 1)[0] if "void RefreshMidDay" in week_cs else ""
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_bill = start_hang.split("_startBill = UiKit.Image", 1)[-1] if "_startBill = UiKit.Image" in start_hang else ""
+    if "_startCash = UiKit.Image" in title_bill:
+        title_bill = title_bill.split("_startCash = UiKit.Image", 1)[0]
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    live_bill = live_build.split('"LiveMidBill"', 1)[-1].split("UiKit.Layout(chatPanel", 1)[0] if '"LiveMidBill"' in live_build else ""
+    live_apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    live_bill_apply = live_apply.split("if (_midBill", 1)[-1].split("if (_midHeadline", 1)[0] if "if (_midBill" in live_apply else ""
+
+    if "정산 평일 청구서" not in settle_loop or "SettleMidBill" not in settle_loop or "bill_notice" not in settle_loop:
+        fail("README settlement loop must name 정산 평일 청구서 on Art/bill_notice")
+    elif "청구" not in settle_loop or "preserveAspect" not in settle_loop or "숨김" not in settle_loop:
+        fail("README settlement loop must name the mid-week settlement bill paper vs hidden")
+    elif "2/3/4/7/8/9/12/13/14/17/18/19/22/23/24" not in settle_loop:
+        fail("README settlement loop must keep 정산 평일 청구서 on mid-week days 2 / 3 / 4 / 7 / 8 / 9 / 12 / 13 / 14 / 17 / 18 / 19 / 22 / 23 / 24")
+    elif "새 SFX 없음" not in settle_loop:
+        fail("README settlement loop must keep 정산 평일 청구서 without a new sting")
+    elif "정산 **청구**" not in settle_loop:
+        fail("README settlement loop must keep 정산 평일 청구서 distinct from the recap 청구 chip")
+    elif "**정산 평일**" not in settle_loop or "`SettleMidDay`" not in settle_loop:
+        fail("README settlement loop must keep 정산 평일 on Art/day_tab")
+    elif "정산 평일 헤드라인" not in settle_loop or "SettleMidHeadline" not in settle_loop:
+        fail("README settlement loop must keep 정산 평일 헤드라인 on its own paper")
+    elif "정산 1일차 헤드라인" not in settle_loop or "SettleHeadline" not in settle_loop:
+        fail("README settlement loop must keep 정산 1일차 헤드라인 on day 1")
+    elif "정산 주차 첫날 헤드라인" not in settle_loop or "SettleWeekHeadline" not in settle_loop:
+        fail("README settlement loop must keep 정산 주차 첫날 헤드라인 on 6/11/16/21")
+    elif "정산 마지막 날 헤드라인" not in settle_loop or "SettleLastHeadline" not in settle_loop:
+        fail("README settlement loop must keep 정산 마지막 날 헤드라인 on last-of-week settlements")
+    elif "정산 1일차" not in settle_loop or "SettleDay1" not in settle_loop:
+        fail("README settlement loop must keep 정산 1일차 on day 1")
+    elif "ContinueClip" not in settle_loop or "어제:" not in settle_loop or "오늘 헤드라인" not in settle_loop:
+        fail("README settlement loop must keep 정산 평일 청구서 distinct from yesterday / continue / today scraps")
+    elif "새 게임 헤드라인" in settle_loop or "NewGameHeadline" in settle_loop:
+        fail("README hung Title 새 게임 헤드라인 on the settlement mid-week bill")
+    elif "새 게임 청구서" in settle_loop or "NewGameBill" in settle_loop:
+        fail("README hung Title 새 게임 청구서 on the settlement mid-week bill")
+    elif "새 게임 1일차" in settle_loop or "NewGameDay" in settle_loop:
+        fail("README hung Title 새 게임 1일차 on the settlement mid-week bill")
+    elif "아침 1일차 헤드라인" in settle_loop or "MorningHeadline" in settle_loop:
+        fail("README hung 아침 1일차 헤드라인 on the settlement mid-week bill")
+    elif "아침 주차 첫날 헤드라인" in settle_loop or "MorningWeekHeadline" in settle_loop:
+        fail("README hung 아침 주차 첫날 헤드라인 on the settlement mid-week bill")
+    elif "아침 마지막 날 헤드라인" in settle_loop or "MorningLastHeadline" in settle_loop:
+        fail("README hung 아침 마지막 날 헤드라인 on the settlement mid-week bill")
+    elif "아침 평일 헤드라인" in settle_loop or "MorningMidHeadline" in settle_loop:
+        fail("README hung 아침 평일 헤드라인 on the settlement mid-week bill")
+    elif "라이브 평일 헤드라인" in settle_loop or "LiveMidHeadline" in settle_loop:
+        fail("README hung 라이브 평일 헤드라인 on the settlement mid-week bill")
+    elif "아침 평일 청구서" in settle_loop or "MorningMidBill" in settle_loop:
+        fail("README hung 아침 평일 청구서 on the settlement mid-week bill")
+    elif "라이브 평일 청구서" in settle_loop or "LiveMidBill" in settle_loop:
+        fail("README hung 라이브 평일 청구서 on the settlement mid-week bill")
+    elif "이어하기 주차 첫날" in settle_loop or "ContinueWeekStart" in settle_loop or "ContinueWeekHeadline" in settle_loop:
+        fail("README hung 이어하기 주차 첫날 on the settlement mid-week bill")
+    elif "아침 1일차" in settle_loop or "MorningDay1" in settle_loop:
+        fail("README hung 아침 1일차 on the settlement mid-week bill")
+    elif "**아침 평일**" in settle_loop or "`MorningMidDay`" in settle_loop:
+        fail("README hung 아침 평일 on the settlement mid-week bill")
+    elif "**라이브 평일**" in settle_loop or "`LiveMidDay`" in settle_loop:
+        fail("README hung 라이브 평일 on the settlement mid-week bill")
+    elif "정산 평일 청구서" in title_loop or "SettleMidBill" in title_loop:
+        fail("README hung 정산 평일 청구서 on the Title loop")
+    elif "정산 평일 청구서" in morning_loop or "SettleMidBill" in morning_loop:
+        fail("README hung 정산 평일 청구서 on the morning loop")
+    elif "정산 평일 청구서" in live_loop or "SettleMidBill" in live_loop:
+        fail("README hung 정산 평일 청구서 on the live loop")
+    elif "**2주차**" in settle_loop or "**3주차**" in settle_loop or "**4주차**" in settle_loop or "**5주차**" in settle_loop:
+        fail("README settlement mid-week bill used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "**2주차**" in mid_bill_inv or "**3주차**" in mid_bill_inv or "**4주차**" in mid_bill_inv or "**5주차**" in mid_bill_inv:
+        fail("README 정산 평일 청구서 line used isolated **n주차** tokens that steal Week 2–5 splits")
+    elif "정산 평일 청구서" not in mid_bill_inv or "SettleMidBill" not in mid_bill_inv or "bill_notice" not in mid_bill_inv:
+        fail("README must inventory 정산 평일 청구서 on its own line")
+    elif "preserveAspect" not in mid_bill_inv or "청구" not in mid_bill_inv or "숨김" not in mid_bill_inv:
+        fail("README 정산 평일 청구서 line must name the preserveAspect Korean 청구 paper vs hidden")
+    elif "2/3/4/7/8/9/12/13/14/17/18/19/22/23/24" not in mid_bill_inv:
+        fail("README 정산 평일 청구서 line must name mid-week days 2 / 3 / 4 / 7 / 8 / 9 / 12 / 13 / 14 / 17 / 18 / 19 / 22 / 23 / 24")
+    elif "새 SFX 없음" not in mid_bill_inv:
+        fail("README 정산 평일 청구서 line must stay without a new sting")
+    elif "청구서" not in mid_bill_inv.split("—", 1)[0]:
+        fail("README 정산 평일 청구서 line must stay a bill, not a calendar / headline / cash / mental / warn paper")
+    elif "헤드라인" in mid_bill_inv.split("—", 1)[0] or "현금" in mid_bill_inv.split("—", 1)[0] or "멘탈" in mid_bill_inv.split("—", 1)[0] or "경고" in mid_bill_inv.split("—", 1)[0]:
+        fail("README 정산 평일 청구서 line must stay a bill paper, not a headline / cash / mental / warn paper")
+    elif "day_tab" in mid_bill_inv or "headline_clip" in mid_bill_inv or "cash_slip" in mid_bill_inv or "mental_note" in mid_bill_inv or "event_warn" in mid_bill_inv:
+        fail("README 정산 평일 청구서 line must stay a bill_notice paper, not a calendar / headline / cash / mental / warn hang")
+    elif "**정산 평일**" not in mid_bill_inv or "`SettleMidDay`" not in mid_bill_inv:
+        fail("README 정산 평일 청구서 line must stay distinct from 정산 평일")
+    elif "정산 평일 헤드라인" not in mid_bill_inv or "`SettleMidHeadline`" not in mid_bill_inv:
+        fail("README 정산 평일 청구서 line must stay distinct from 정산 평일 헤드라인")
+    elif "아침 평일 청구서" not in mid_bill_inv or "`MorningMidBill`" not in mid_bill_inv:
+        fail("README 정산 평일 청구서 line must stay distinct from 아침 평일 청구서")
+    elif "라이브 평일 청구서" not in mid_bill_inv or "`LiveMidBill`" not in mid_bill_inv:
+        fail("README 정산 평일 청구서 line must stay distinct from 라이브 평일 청구서")
+    elif "라이브 1일차 청구서" not in mid_bill_inv or "`LiveDay1Bill`" not in mid_bill_inv:
+        fail("README 정산 평일 청구서 line must stay distinct from 라이브 1일차 청구서")
+    elif "라이브 주차 첫날 청구서" not in mid_bill_inv or "`LiveWeekBill`" not in mid_bill_inv:
+        fail("README 정산 평일 청구서 line must stay distinct from 라이브 주차 첫날 청구서")
+    elif "라이브 마지막 날 청구서" not in mid_bill_inv or "`LiveLastBill`" not in mid_bill_inv:
+        fail("README 정산 평일 청구서 line must stay distinct from 라이브 마지막 날 청구서")
+    elif "새 게임 청구서" not in mid_bill_inv or "`NewGameBill`" not in mid_bill_inv:
+        fail("README 정산 평일 청구서 line must stay distinct from 새 게임 청구서")
+    elif "오늘 청구" not in mid_bill_inv or "정산 **청구**" not in mid_bill_inv:
+        fail("README 정산 평일 청구서 line must stay distinct from 아침 / 정산 bills")
+    elif "ContinueDebtNotice" not in mid_bill_inv or "정산 **부채**" not in mid_bill_inv:
+        fail("README 정산 평일 청구서 line must stay distinct from continue / settle debt papers")
+    elif mid_bill_inv == mid_inv or mid_bill_inv == mid_head_inv:
+        fail("README must keep 정산 평일 청구서 distinct from 정산 평일 / 정산 평일 헤드라인")
+    elif mid_bill_inv == settle_inv or mid_bill_inv == settle_week_inv or mid_bill_inv == settle_head_inv or mid_bill_inv == settle_week_head_inv or mid_bill_inv == settle_last_head_inv:
+        fail("README must keep 정산 평일 청구서 distinct from settlement calendar / headline papers")
+    elif mid_bill_inv == morning_mid_inv or mid_bill_inv == morning_mid_head_inv or mid_bill_inv == morning_mid_bill_inv:
+        fail("README must keep 정산 평일 청구서 distinct from 아침 평일 / 아침 평일 헤드라인 / 아침 평일 청구서")
+    elif mid_bill_inv == live_mid_inv or mid_bill_inv == live_mid_head_inv or mid_bill_inv == live_mid_bill_inv:
+        fail("README must keep 정산 평일 청구서 distinct from LiveMidDay / LiveMidHeadline / LiveMidBill")
+    elif mid_bill_inv == live_day1_bill_inv or mid_bill_inv == live_week_bill_inv or mid_bill_inv == live_last_bill_inv:
+        fail("README must keep 정산 평일 청구서 distinct from live special-day bills")
+    elif mid_bill_inv == bill_inv or mid_bill_inv == cash_inv or mid_bill_inv == mental_inv or mid_bill_inv == shared_bill:
+        fail("README must keep 정산 평일 청구서 distinct from Title new-game papers and the shared 고지서 inventory")
+    elif mid_bill_inv == morning_inv or mid_bill_inv == newgame_inv or mid_bill_inv == continue_day1_inv or mid_bill_inv == tab_inv:
+        fail("README must keep 정산 평일 청구서 distinct from 아침 / 새 게임 / 이어하기 1일차 and the shared day_tab inventory")
+    elif mid_bill_inv == shared_head:
+        fail("README must keep 정산 평일 청구서 distinct from the shared headline_clip inventory")
+    elif readme.index(mid_inv) >= readme.index(mid_bill_inv):
+        fail("README 정산 평일 calendar line must stay before 정산 평일 청구서")
+    elif readme.index(mid_head_inv) >= readme.index(mid_bill_inv):
+        fail("README 정산 평일 헤드라인 line must stay before 정산 평일 청구서")
+    elif readme.index(bill_inv) >= readme.index(mid_bill_inv):
+        fail("README 새 게임 청구서 line must stay before 정산 평일 청구서")
+    elif "SettleMidBill" in shared_bill or "정산 평일 청구서" in shared_bill:
+        fail("README folded 정산 평일 청구서 into the shared 고지서 inventory")
+    elif "오늘 헤드라인" not in shared_head or "어제:" not in shared_head or "이어서 하기" not in shared_head or "엔딩 클립" not in shared_head:
+        fail("README 정산 평일 청구서 rewrote the shared headline_clip inventory")
+    elif "SettleMidBill" in shared_head or "정산 평일 청구서" in shared_head:
+        fail("README folded 정산 평일 청구서 into the shared headline_clip inventory")
+    elif "`SettleMidDay`" not in mid_inv or "day_tab" not in mid_inv or "날짜" not in mid_inv:
+        fail("README 정산 평일 청구서 rewrote the 정산 평일 calendar line")
+    elif "SettleMidBill" in mid_inv or "정산 평일 청구서" in mid_inv or "bill_notice" in mid_inv:
+        fail("README folded 정산 평일 청구서 into the 정산 평일 calendar line")
+    elif "SettleMidHeadline" not in mid_head_inv or "headline_clip" not in mid_head_inv:
+        fail("README 정산 평일 청구서 rewrote the 정산 평일 헤드라인 line")
+    elif "SettleMidBill" in mid_head_inv or "정산 평일 청구서" in mid_head_inv or "bill_notice" in mid_head_inv:
+        fail("README folded 정산 평일 청구서 into the 정산 평일 헤드라인 line")
+    elif "SettleHeadline" not in settle_head_inv or "headline_clip" not in settle_head_inv:
+        fail("README 정산 평일 청구서 rewrote the 정산 1일차 헤드라인 line")
+    elif "SettleMidBill" in settle_head_inv or "정산 평일 청구서" in settle_head_inv:
+        fail("README folded 정산 평일 청구서 into the 정산 1일차 헤드라인 line")
+    elif "SettleWeekHeadline" not in settle_week_head_inv or "headline_clip" not in settle_week_head_inv:
+        fail("README 정산 평일 청구서 rewrote the 정산 주차 첫날 헤드라인 line")
+    elif "SettleMidBill" in settle_week_head_inv or "정산 평일 청구서" in settle_week_head_inv:
+        fail("README folded 정산 평일 청구서 into the 정산 주차 첫날 헤드라인 line")
+    elif "SettleLastHeadline" not in settle_last_head_inv or "headline_clip" not in settle_last_head_inv:
+        fail("README 정산 평일 청구서 rewrote the 정산 마지막 날 헤드라인 line")
+    elif "SettleMidBill" in settle_last_head_inv or "정산 평일 청구서" in settle_last_head_inv:
+        fail("README folded 정산 평일 청구서 into the 정산 마지막 날 헤드라인 line")
+    elif "SettleDay1" not in settle_inv or "새 게임 1일차" not in settle_inv:
+        fail("README 정산 평일 청구서 rewrote the 정산 1일차 line")
+    elif "SettleMidBill" in settle_inv or "정산 평일 청구서" in settle_inv:
+        fail("README folded 정산 평일 청구서 into the 정산 1일차 line")
+    elif "SettleWeekStart" not in settle_week_inv or "6/11/16/21" not in settle_week_inv:
+        fail("README 정산 평일 청구서 rewrote the 정산 주차 첫날 line")
+    elif "SettleMidBill" in settle_week_inv or "정산 평일 청구서" in settle_week_inv:
+        fail("README folded 정산 평일 청구서 into the 정산 주차 첫날 line")
+    elif "`MorningMidDay`" not in morning_mid_inv or "day_tab" not in morning_mid_inv or "날짜" not in morning_mid_inv:
+        fail("README 정산 평일 청구서 rewrote the 아침 평일 calendar line")
+    elif "SettleMidBill" in morning_mid_inv or "정산 평일 청구서" in morning_mid_inv:
+        fail("README folded 정산 평일 청구서 into the 아침 평일 calendar line")
+    elif "MorningMidHeadline" not in morning_mid_head_inv or "headline_clip" not in morning_mid_head_inv:
+        fail("README 정산 평일 청구서 rewrote the 아침 평일 헤드라인 line")
+    elif "SettleMidBill" in morning_mid_head_inv or "정산 평일 청구서" in morning_mid_head_inv:
+        fail("README folded 정산 평일 청구서 into the 아침 평일 헤드라인 line")
+    elif "`MorningMidBill`" not in morning_mid_bill_inv or "bill_notice" not in morning_mid_bill_inv:
+        fail("README 정산 평일 청구서 rewrote the 아침 평일 청구서 line")
+    elif "SettleMidBill" in morning_mid_bill_inv or "정산 평일 청구서" in morning_mid_bill_inv:
+        fail("README folded 정산 평일 청구서 into the 아침 평일 청구서 line")
+    elif "`LiveMidDay`" not in live_mid_inv or "day_tab" not in live_mid_inv or "날짜" not in live_mid_inv:
+        fail("README 정산 평일 청구서 rewrote the 라이브 평일 calendar line")
+    elif "SettleMidBill" in live_mid_inv or "정산 평일 청구서" in live_mid_inv:
+        fail("README folded 정산 평일 청구서 into the 라이브 평일 calendar line")
+    elif "LiveMidHeadline" not in live_mid_head_inv or "headline_clip" not in live_mid_head_inv:
+        fail("README 정산 평일 청구서 rewrote the 라이브 평일 헤드라인 line")
+    elif "SettleMidBill" in live_mid_head_inv or "정산 평일 청구서" in live_mid_head_inv:
+        fail("README folded 정산 평일 청구서 into the 라이브 평일 헤드라인 line")
+    elif "`LiveMidBill`" not in live_mid_bill_inv or "bill_notice" not in live_mid_bill_inv:
+        fail("README 정산 평일 청구서 rewrote the 라이브 평일 청구서 line")
+    elif "SettleMidBill" in live_mid_bill_inv or "정산 평일 청구서" in live_mid_bill_inv:
+        fail("README folded 정산 평일 청구서 into the 라이브 평일 청구서 line")
+    elif "`LiveDay1Bill`" not in live_day1_bill_inv or "bill_notice" not in live_day1_bill_inv:
+        fail("README 정산 평일 청구서 rewrote the 라이브 1일차 청구서 line")
+    elif "SettleMidBill" in live_day1_bill_inv or "정산 평일 청구서" in live_day1_bill_inv:
+        fail("README folded 정산 평일 청구서 into the 라이브 1일차 청구서 line")
+    elif "`LiveWeekBill`" not in live_week_bill_inv or "bill_notice" not in live_week_bill_inv:
+        fail("README 정산 평일 청구서 rewrote the 라이브 주차 첫날 청구서 line")
+    elif "SettleMidBill" in live_week_bill_inv or "정산 평일 청구서" in live_week_bill_inv:
+        fail("README folded 정산 평일 청구서 into the 라이브 주차 첫날 청구서 line")
+    elif "`LiveLastBill`" not in live_last_bill_inv or "bill_notice" not in live_last_bill_inv:
+        fail("README 정산 평일 청구서 rewrote the 라이브 마지막 날 청구서 line")
+    elif "SettleMidBill" in live_last_bill_inv or "정산 평일 청구서" in live_last_bill_inv:
+        fail("README folded 정산 평일 청구서 into the 라이브 마지막 날 청구서 line")
+    elif "MorningDay1" not in morning_inv or "새 게임 1일차" not in morning_inv:
+        fail("README 정산 평일 청구서 rewrote the 아침 1일차 line")
+    elif "MorningWeekStart" not in week_inv or "6/11/16/21" not in week_inv:
+        fail("README 정산 평일 청구서 rewrote the 아침 주차 첫날 line")
+    elif "NewGameDay" not in newgame_inv or "ContinueDayTab" not in newgame_inv:
+        fail("README 정산 평일 청구서 rewrote the 새 게임 1일차 line")
+    elif "`ContinueDay1`" not in continue_day1_inv or "day_tab" not in continue_day1_inv:
+        fail("README 정산 평일 청구서 rewrote the 이어하기 1일차 calendar line")
+    elif "ContinueWeekStart" not in continue_week_inv or "6/11/16/21" not in continue_week_inv:
+        fail("README 정산 평일 청구서 rewrote the 이어하기 주차 첫날 line")
+    elif "NewGameMental" not in mental_inv or "ContinueMentalNote" not in mental_inv:
+        fail("README 정산 평일 청구서 rewrote the 새 게임 멘탈 line")
+    elif "NewGameCash" not in cash_inv or "ContinueCashSlip" not in cash_inv:
+        fail("README 정산 평일 청구서 rewrote the 새 게임 현금 line")
+    elif "NewGameBill" not in bill_inv or "ContinueDebtNotice" not in bill_inv:
+        fail("README 정산 평일 청구서 rewrote the 새 게임 청구서 line")
+    elif "여덟 곳" not in tab_inv or "마지막 날" not in tab_inv or "이어서 하기" not in tab_inv:
+        fail("README 정산 평일 청구서 rewrote the shared day_tab inventory")
+    elif "SettleMidBill" in tab_inv or "정산 평일 청구서" in tab_inv:
+        fail("README folded 정산 평일 청구서 into the shared day_tab inventory")
+    elif "정산 평일 청구서" not in desk_paper or "SettleMidBill" not in desk_paper:
+        fail("README desk paper dropped 정산 평일 청구서")
+    elif "**정산 평일**" not in desk_paper or "`SettleMidDay`" not in desk_paper:
+        fail("README desk paper dropped 정산 평일")
+    elif "정산 평일 헤드라인" not in desk_paper or "SettleMidHeadline" not in desk_paper:
+        fail("README desk paper dropped 정산 평일 헤드라인")
+    elif "MorningMidBill" not in desk_paper or "LiveMidBill" not in desk_paper:
+        fail("README desk paper dropped 아침 평일 청구서 / 라이브 평일 청구서")
+    elif "여섯 곳" not in shared_bill or "오늘 청구" not in shared_bill:
+        fail("README 정산 평일 청구서 rewrote the shared 고지서 inventory")
+    elif "오늘의 위협" not in sfx_inv or "새 게임 청구서" not in sfx_inv or sfx_inv.count("sfx_threat") < 5:
+        fail("README 정산 평일 청구서 rewrote the five sfx_threat uses")
+    elif "ContinueSponsorPin" not in sponsor_inv or "타일 가득" not in sponsor_inv:
+        fail("README 정산 평일 청구서 rewrote the Title continue sponsor pin")
+    elif "매드라인" in readme or "매드라인" in settle_cs:
+        fail("README settlement mid-week bill used 매드라인 instead of 헤드라인")
+    elif "def check_settle_mid_bill()" not in verify_src or "check_settle_mid_bill()" not in verify_src:
+        fail("README settlement mid-week bill dropped the existing check_settle_mid_bill hang lock")
+    elif "def check_settle_mid_headline()" not in verify_src or "check_settle_mid_headline()" not in verify_src:
+        fail("README settlement mid-week bill dropped the existing check_settle_mid_headline hang lock")
+    elif "def check_settle_mid_day()" not in verify_src or "check_settle_mid_day()" not in verify_src:
+        fail("README settlement mid-week bill dropped the existing check_settle_mid_day hang lock")
+    elif "def check_readme_settle_mid_headline()" not in verify_src or "check_readme_settle_mid_headline()" not in verify_src:
+        fail("README settlement mid-week bill dropped the 정산 평일 헤드라인 README lock")
+    elif "def check_readme_settle_mid_day()" not in verify_src or "check_readme_settle_mid_day()" not in verify_src:
+        fail("README settlement mid-week bill dropped the 정산 평일 README lock")
+    elif "def check_readme_morning_mid_bill()" not in verify_src or "def check_readme_live_mid_bill()" not in verify_src:
+        fail("README settlement mid-week bill dropped 아침 평일 / 라이브 평일 청구서 README locks")
+    elif "def check_settle_bill_notice()" not in verify_src or "check_settle_bill_notice()" not in verify_src:
+        fail("README settlement mid-week bill dropped the recap bill_notice chip lock")
+    elif 'BillNotice = "Art/bill_notice"' not in art_cs:
+        fail("ArtSprites does not hook Art/bill_notice")
+    elif '"SettleMidBill"' not in build or "ArtSprites.BillNotice" not in paper:
+        fail("README settlement mid-week bill lost the Settlement hang")
+    elif "preserveAspect = true" not in paper or "116f, 56f" not in paper or "8f, -312f" not in paper:
+        fail("README settlement mid-week bill restyled the Settlement hang")
+    elif "0.80f, 1f" not in paper or '"청구"' not in paper:
+        fail("README settlement mid-week bill is not Korean 청구 copy")
+    elif "8f, -384f" in paper or "0.74f, 1f" in paper:
+        fail("README settlement mid-week bill sat on MorningMidBill")
+    elif "338f, -268f" in paper:
+        fail("README settlement mid-week bill sat on LiveMidBill")
+    elif "8f, -212f" in paper or "228f, 92f" in paper:
+        fail("README settlement mid-week bill covers SettleMidHeadline")
+    elif "8f, -148f" in paper or "180f, 56f" in paper:
+        fail("README settlement mid-week bill covers SettleMidDay")
+    elif "SetActive(false)" not in paper:
+        fail("README settlement mid-week bill is not hidden until Render")
+    elif "_midBill" not in render or "SettleMidWeekDay" not in mid_apply:
+        fail("README settlement mid-week bill is not shown on mid-week settlements")
+    elif "SetActive(SettleMidWeekDay(run.day))" not in mid_apply:
+        fail("README settlement mid-week bill is not hidden on other settlements")
+    elif "_midDayTab" not in mid_apply or "_midHeadline" not in mid_apply:
+        fail("README settlement mid-week bill dropped SettleMidDay / SettleMidHeadline mid-week hide")
+    elif "day == 2" not in mid_gate or "day == 7" not in mid_gate or "day == 24" not in mid_gate:
+        fail("README settlement mid-week bill is not shown on mid-week days such as 2 / 7")
+    elif re.search(r"day == 1\b", mid_gate) or re.search(r"day == 5\b", mid_gate) or re.search(r"day == 6\b", mid_gate):
+        fail("README settlement mid-week bill also shows on day 1 / last-of-week / week-start")
+    elif "1 == run.day" not in day1_gate or "_day1Headline" not in day1_gate or "SetActive(1 == run.day)" not in day1_gate:
+        fail("README settlement mid-week bill changed SettleHeadline hide")
+    elif "6 == run.day" not in week_gate or "21 == run.day" not in week_gate or "_weekStartHeadline" not in week_gate:
+        fail("README settlement mid-week bill changed SettleWeekHeadline hide")
+    elif "LastDayOfCurrentWeek" not in last_gate or "_lastDayHeadline" not in last_gate or "SetActive(last)" not in last_gate:
+        fail("README settlement mid-week bill changed SettleLastHeadline hide")
+    elif '"SettleMidDay"' not in build or '"날짜"' not in tab or "8f, -148f" not in tab or "180f, 56f" not in tab:
+        fail("README settlement mid-week bill restyled SettleMidDay")
+    elif "청구" in tab or "BillNotice" in tab or "SettleMidBill" in tab:
+        fail("SettleMidDay hang folded in the mid-week settlement bill")
+    elif '"SettleMidHeadline"' not in build or "ArtSprites.HeadlineClip" not in head or '"헤드라인"' not in head:
+        fail("README settlement mid-week bill restyled SettleMidHeadline")
+    elif "8f, -212f" not in head or "228f, 92f" not in head:
+        fail("README settlement mid-week bill moved SettleMidHeadline")
+    elif "청구" in head or "BillNotice" in head or "SettleMidBill" in head:
+        fail("SettleMidHeadline hang folded in the mid-week settlement bill")
+    elif "ArtSprites.BillNotice" not in bills or "ApplySliced" not in bills or "_billsTile" not in settle_cs:
+        fail("README settlement mid-week bill dropped the recap bill_notice chip")
+    elif "ArtSprites.BillNotice" not in tick or "ApplySliced" not in tick:
+        fail("README settlement mid-week bill changed TickShortfall bill_notice on the recap chip")
+    elif '"MorningMidBill"' not in morning_build or "8f, -384f" not in morning_paper or '"청구"' not in morning_paper:
+        fail("README settlement mid-week bill restyled MorningMidBill")
+    elif "_midBill" not in mid_refresh or "MorningMidWeekDay" not in mid_refresh:
+        fail("README settlement mid-week bill dropped MorningMidBill mid-week hide")
+    elif '"MorningMidHeadline"' not in morning_build or "8f, -284f" not in morning_head or '"헤드라인"' not in morning_head:
+        fail("README settlement mid-week bill restyled MorningMidHeadline")
+    elif '"MorningMidDay"' not in morning_build or "8f, -220f" not in morning_tab or '"날짜"' not in morning_tab:
+        fail("README settlement mid-week bill restyled MorningMidDay")
+    elif '"NewGameBill"' not in start_hang or "176f, 170f" not in title_bill or "16f, -10f" not in title_bill:
+        fail("README settlement mid-week bill restyled Title NewGameBill")
+    elif "SetActive(!_hasSave)" not in hide:
+        fail("README settlement mid-week bill changed Title NewGameBill hide")
+    elif '"LiveMidBill"' not in live_build or "116f, 56f" not in live_bill or "338f, -268f" not in live_bill:
+        fail("README settlement mid-week bill restyled LiveMidBill")
+    elif "_midBill" not in live_apply or "LiveMidWeekDay" not in live_bill_apply:
+        fail("README settlement mid-week bill dropped LiveMidBill mid-week hide")
+    elif "day <= 1" not in head_cs or '"어제: "' not in head_cs:
+        fail("README settlement mid-week bill changed 어제 copy or day math")
+    elif re.search(r"run\.day\s*=(?!=)", settle_cs) or "day += " in settle_cs or "day -= " in settle_cs:
+        fail("README settlement mid-week bill writes the day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("README settlement mid-week bill moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("README settlement mid-week bill retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("README settlement mid-week bill retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("README settlement mid-week bill retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("README settlement mid-week bill broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising README settlement mid-week bill / later weeks")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("README settlement mid-week bill dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("README settlement mid-week bill moved Unity off 6000.5.9f1")
+    else:
+        ok("README names 정산 평일 청구서 vs 정산 평일 / 정산 평일 헤드라인, MorningMidBill, LiveMidBill, NewGameBill, continue / recap bills, and headline / calendar papers")
 
 
 def check_readme_title_week_start() -> None:
