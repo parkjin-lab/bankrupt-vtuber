@@ -45,6 +45,7 @@ namespace BankruptVtuber
         Image _weekStartHeadline;
         Image _midDayTab;
         Image _midHeadline;
+        Image _midBill;
         Image _lastDayHeadline;
         Text _lastDayWeek;
         Text _showLine;
@@ -518,6 +519,15 @@ namespace BankruptVtuber
             UiKit.Layout(_leftCashShort.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -1f), new Vector2(-10f, -6f));
             _leftCashShort.gameObject.SetActive(false);
             _leftCashSlip.gameObject.SetActive(false);
+
+            _midBill = UiKit.Image(root, "SettleMidBill", Color.white);
+            UiKit.Layout(_midBill.rectTransform, new Vector2(0.80f, 1f), new Vector2(0.80f, 1f), new Vector2(0f, 1f), new Vector2(8f, -312f), new Vector2(116f, 56f));
+            ArtSprites.Apply(_midBill, ArtSprites.BillNotice, Color.white, Color.white);
+            _midBill.preserveAspect = true;
+            _midBill.raycastTarget = false;
+            var midBillT = UiKit.Label(_midBill.transform, "T", "청구", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(midBillT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _midBill.gameObject.SetActive(false);
 
             _midHeadline = UiKit.Image(root, "SettleMidHeadline", Color.white);
             UiKit.Layout(_midHeadline.rectTransform, new Vector2(0.80f, 1f), new Vector2(0.80f, 1f), new Vector2(0f, 1f), new Vector2(8f, -212f), new Vector2(228f, 92f));
@@ -1402,6 +1412,8 @@ namespace BankruptVtuber
                 _midDayTab.gameObject.SetActive(SettleMidWeekDay(run.day));
             if (_midHeadline != null)
                 _midHeadline.gameObject.SetActive(SettleMidWeekDay(run.day));
+            if (_midBill != null)
+                _midBill.gameObject.SetActive(SettleMidWeekDay(run.day));
             var b = gm.Balance;
             var w2 = gm.Week2;
             var w3 = gm.Week3;
