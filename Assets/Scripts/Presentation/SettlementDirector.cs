@@ -46,6 +46,7 @@ namespace BankruptVtuber
         Image _midDayTab;
         Image _midHeadline;
         Image _midBill;
+        Image _midCash;
         Image _lastDayHeadline;
         Text _lastDayWeek;
         Text _showLine;
@@ -546,6 +547,15 @@ namespace BankruptVtuber
             var midDayT = UiKit.Label(_midDayTab.transform, "T", "날짜", 18, Palette.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(midDayT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _midDayTab.gameObject.SetActive(false);
+
+            _midCash = UiKit.Image(root, "SettleMidCash", Color.white);
+            UiKit.Layout(_midCash.rectTransform, new Vector2(0.80f, 1f), new Vector2(0.80f, 1f), new Vector2(0f, 1f), new Vector2(126f, -312f), new Vector2(110f, 48f));
+            ArtSprites.Apply(_midCash, ArtSprites.CashSlip, new Color(0.98f, 0.94f, 0.86f, 0.98f), Color.white);
+            _midCash.preserveAspect = true;
+            _midCash.raycastTarget = false;
+            var midCashT = UiKit.Label(_midCash.transform, "T", "현금", 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(midCashT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _midCash.gameObject.SetActive(false);
 
             _weekStartTab = UiKit.Image(root, "SettleWeekStart", Color.white);
             UiKit.Layout(_weekStartTab.rectTransform, new Vector2(0.80f, 1f), new Vector2(0.80f, 1f), new Vector2(0f, 1f), new Vector2(8f, -148f), new Vector2(180f, 56f));
@@ -1414,6 +1424,8 @@ namespace BankruptVtuber
                 _midHeadline.gameObject.SetActive(SettleMidWeekDay(run.day));
             if (_midBill != null)
                 _midBill.gameObject.SetActive(SettleMidWeekDay(run.day));
+            if (_midCash != null)
+                _midCash.gameObject.SetActive(SettleMidWeekDay(run.day));
             var b = gm.Balance;
             var w2 = gm.Week2;
             var w3 = gm.Week3;

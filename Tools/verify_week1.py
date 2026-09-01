@@ -1587,6 +1587,7 @@ def check_project() -> None:
     check_settle_mid_day()
     check_settle_mid_headline()
     check_settle_mid_bill()
+    check_settle_mid_cash()
     check_title_week_start_tab()
     check_title_week_start_headline()
     check_title_last_day_headline()
@@ -16327,7 +16328,7 @@ def check_settle_mid_day() -> None:
     player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
     verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
     build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
-    tab = build.split('"SettleMidDay"', 1)[-1].split('"SettleWeekStart"', 1)[0] if '"SettleWeekStart"' in build else ""
+    tab = build.split('"SettleMidDay"', 1)[-1].split('"SettleMidCash"', 1)[0] if '"SettleMidCash"' in build else build.split('"SettleMidDay"', 1)[-1].split('"SettleWeekStart"', 1)[0]
     week_start = build.split('"SettleWeekStart"', 1)[-1].split('"SettleWeekHeadline"', 1)[0] if '"SettleWeekHeadline"' in build else ""
     day1 = build.split('"SettleDay1"', 1)[-1].split('"SettleHeadline"', 1)[0] if '"SettleHeadline"' in build else ""
     week_head = build.split('"SettleWeekHeadline"', 1)[-1].split('"SettleDay1"', 1)[0] if '"SettleWeekHeadline"' in build else ""
@@ -17302,6 +17303,458 @@ def check_settle_mid_bill() -> None:
         fail("settlement mid-week bill paper moved Unity off 6000.5.9f1")
     else:
         ok("mid-week settlements hang bill_notice as 청구 desk paper; day 1 / week-start / last-of-week hide it; SettleMidDay / SettleMidHeadline / recap bill_notice chip stay")
+
+
+
+def check_settle_mid_cash() -> None:
+    """Mid-week settlements hang cash_slip as a 현금 desk paper; day 1 / week-start / last-of-week hide it; SettleMidDay / SettleMidHeadline / SettleMidBill / recap cash tiles / MorningMidCash / LiveMidCash stay gated."""
+    settle_cs = (ROOT / "Assets/Scripts/Presentation/SettlementDirector.cs").read_text(encoding="utf-8")
+    week_cs = (ROOT / "Assets/Scripts/Presentation/WeekStartDirector.cs").read_text(encoding="utf-8")
+    title_cs = (ROOT / "Assets/Scripts/Presentation/TitleDirector.cs").read_text(encoding="utf-8")
+    live_cs = (ROOT / "Assets/Scripts/Presentation/LiveStreamDirector.cs").read_text(encoding="utf-8")
+    art_cs = (ROOT / "Assets/Scripts/Presentation/ArtSprites.cs").read_text(encoding="utf-8")
+    head_cs = (ROOT / "Assets/Scripts/Presentation/DayHeadline.cs").read_text(encoding="utf-8")
+    sched_cs = (ROOT / "Assets/Scripts/Economy/WeekSchedule.cs").read_text(encoding="utf-8")
+    balance = (ROOT / "Assets/Resources/Balance/Week1Balance.asset").read_text(encoding="utf-8")
+    player = (ROOT / "ProjectSettings/ProjectSettings.asset").read_text(encoding="utf-8")
+    verify_src = (ROOT / "Tools/verify_week1.py").read_text(encoding="utf-8")
+    build = settle_cs.split("void Build()", 1)[-1].split("void TickDebtCount", 1)[0]
+    paper = build.split('"SettleMidCash"', 1)[-1].split('"SettleWeekStart"', 1)[0] if '"SettleWeekStart"' in build else ""
+    bill = build.split('"SettleMidBill"', 1)[-1].split('"SettleMidHeadline"', 1)[0] if '"SettleMidHeadline"' in build else ""
+    head = build.split('"SettleMidHeadline"', 1)[-1].split("_midDayTab", 1)[0] if "_midDayTab" in build else ""
+    tab = build.split('"SettleMidDay"', 1)[-1].split('"SettleMidCash"', 1)[0] if '"SettleMidCash"' in build else ""
+    week_start = build.split('"SettleWeekStart"', 1)[-1].split('"SettleWeekHeadline"', 1)[0] if '"SettleWeekHeadline"' in build else ""
+    day1 = build.split('"SettleDay1"', 1)[-1].split('"SettleHeadline"', 1)[0] if '"SettleHeadline"' in build else ""
+    week_head = build.split('"SettleWeekHeadline"', 1)[-1].split('"SettleDay1"', 1)[0] if '"SettleWeekHeadline"' in build else ""
+    day1_head = build.split('"SettleHeadline"', 1)[-1].split('"SettleLastHeadline"', 1)[0] if '"SettleLastHeadline"' in build else ""
+    last_head = build.split('"SettleLastHeadline"', 1)[-1].split('"Sheet"', 1)[0] if '"SettleLastHeadline"' in build else ""
+    last_tab = build.split('"SettleLastDayTab"', 1)[-1].split('"Recap"', 1)[0] if '"SettleLastDayTab"' in build else ""
+    n일차 = build.split('"SettleDayTab"', 1)[-1].split('"HeadlineClip"', 1)[0] if '"HeadlineClip"' in build else ""
+    recap = build.split('"Recap"', 1)[-1].split('"SettleMidBill"', 1)[0] if '"SettleMidBill"' in build else ""
+    left = build.split('"LeftCashSlip"', 1)[-1].split('"SettleMidBill"', 1)[0] if '"SettleMidBill"' in build else ""
+    bills = settle_cs.split('_billsTile = recap.Find("Bills")', 1)[-1].split("var shortHost", 1)[0] if '_billsTile = recap.Find("Bills")' in settle_cs else ""
+    extra = build.split('"ExtraWarn"', 1)[-1].split('"SettleLastDayTab"', 1)[0] if '"SettleLastDayTab"' in build else ""
+    settle_clip = build.split('"HeadlineClip"', 1)[-1].split('"HeadlineTag"', 1)[0] if '"HeadlineTag"' in build else ""
+    tick = settle_cs.split("void TickShortfall", 1)[-1].split("void Render", 1)[0]
+    render = settle_cs.split("void Render()", 1)[-1].split("void PlaceTripleButtons", 1)[0]
+    week_gate = render.split("if (_weekStartTab", 1)[-1].split("if (_day1Tab", 1)[0] if "if (_weekStartTab" in render else ""
+    day1_gate = render.split("if (_day1Tab", 1)[-1].split("bool last", 1)[0]
+    last_gate = render.split("bool last", 1)[-1].split("if (_midDayTab", 1)[0] if "if (_midDayTab" in render else ""
+    mid_apply = render.split("if (_midDayTab", 1)[-1].split("var b = gm.Balance", 1)[0] if "if (_midDayTab" in render else ""
+    mid_gate = settle_cs.split("static bool SettleMidWeekDay", 1)[-1].split("static bool IsBankruptResult", 1)[0] if "static bool SettleMidWeekDay" in settle_cs else ""
+    morning_build = week_cs.split("void Build()", 1)[-1].split("void RefreshHud", 1)[0]
+    morning_cash = morning_build.split('"MorningMidCash"', 1)[-1].split('"MorningMidMental"', 1)[0] if '"MorningMidMental"' in morning_build else ""
+    morning_paper = morning_build.split('"MorningMidBill"', 1)[-1].split('"MorningMidCash"', 1)[0] if '"MorningMidCash"' in morning_build else ""
+    morning_head = morning_build.split('"MorningMidHeadline"', 1)[-1].split('"MorningMidBill"', 1)[0] if '"MorningMidBill"' in morning_build else ""
+    morning_tab = morning_build.split('"MorningMidDay"', 1)[-1].split('"MorningMidHeadline"', 1)[0] if '"MorningMidHeadline"' in morning_build else ""
+    morning_week_paper = morning_build.split('"MorningWeekHeadline"', 1)[-1].split('"MorningDay1"', 1)[0] if '"MorningWeekHeadline"' in morning_build else ""
+    morning_day1_paper = morning_build.split('"MorningHeadline"', 1)[-1].split('"LastDayBanner"', 1)[0] if '"LastDayBanner"' in morning_build else ""
+    morning_last_paper = morning_build.split('"MorningLastHeadline"', 1)[-1].split('"WavePanel"', 1)[0] if '"WavePanel"' in morning_build else ""
+    morning_week = morning_build.split('"MorningWeekStart"', 1)[-1].split('"MorningWeekHeadline"', 1)[0] if '"MorningWeekHeadline"' in morning_build else ""
+    morning_day1 = morning_build.split('"MorningDay1"', 1)[-1].split('"MorningHeadline"', 1)[0] if '"MorningHeadline"' in morning_build else ""
+    banner = week_cs.split('"LastDayBanner"', 1)[-1].split('"MorningLastHeadline"', 1)[0] if '"MorningLastHeadline"' in week_cs else ""
+    morning_clip = week_cs.split('"YesterdayClip"', 1)[-1].split('"Yesterday"', 1)[0] if '"Yesterday"' in week_cs else ""
+    morning_refresh = week_cs.split("void RefreshDay1", 1)[-1].split("void RefreshLastDay", 1)[0] if "void RefreshDay1" in week_cs else ""
+    morning_week_refresh = week_cs.split("void RefreshWeekStart", 1)[-1].split("void RefreshDay1", 1)[0] if "void RefreshWeekStart" in week_cs else ""
+    last_refresh = week_cs.split("void RefreshLastDay", 1)[-1].split("static string LastDayClearReminder", 1)[0]
+    mid_refresh = week_cs.split("void RefreshMidDay", 1)[-1].split("void RefreshYesterday", 1)[0] if "void RefreshMidDay" in week_cs else ""
+    morning_mid_gate = week_cs.split("static bool MorningMidWeekDay", 1)[-1].split("void RefreshYesterday", 1)[0] if "static bool MorningMidWeekDay" in week_cs else ""
+    yest = week_cs.split("void RefreshYesterday", 1)[-1].split("void RefreshWeekStart", 1)[0]
+    money = week_cs.split("Text MoneyChip", 1)[-1].split("void RefreshHud", 1)[0]
+    warn = week_cs.split("void RefreshCashShort", 1)[-1].split("static int PeekTodayBills", 1)[0] if "void RefreshCashShort" in week_cs else ""
+    start_hang = title_cs.split("_start = UiKit.Button", 1)[-1].split("_continue = UiKit.Button", 1)[0]
+    title_cash = start_hang.split("_startCash = UiKit.Image", 1)[-1] if "_startCash = UiKit.Image" in start_hang else ""
+    if "_startMental = UiKit.Image" in title_cash:
+        title_cash = title_cash.split("_startMental = UiKit.Image", 1)[0]
+    title_bill = start_hang.split("_startBill = UiKit.Image", 1)[-1] if "_startBill = UiKit.Image" in start_hang else ""
+    if "_startCash = UiKit.Image" in title_bill:
+        title_bill = title_bill.split("_startCash = UiKit.Image", 1)[0]
+    title_paper = start_hang.split("_startHeadline = UiKit.Image", 1)[-1] if "_startHeadline = UiKit.Image" in start_hang else ""
+    title_build = title_cs.split("_continue = UiKit.Button", 1)[-1].split("_how = UiKit.Button", 1)[0]
+    continue_clip = title_build.split('"ContinueClip"', 1)[-1].split('"ContinueGoodsPin"', 1)[0] if '"ContinueGoodsPin"' in title_build else ""
+    hide = title_cs.split("void RefreshContinue", 1)[-1].split("void FillContinue", 1)[0]
+    fill = title_cs.split("void FillContinue", 1)[-1].split("void OpenWipe", 1)[0]
+    live_build = live_cs.split("void Build()", 1)[-1].split("void TickOnAir", 1)[0]
+    live_cash = live_build.split('"LiveMidCash"', 1)[-1].split('"LiveMidBill"', 1)[0] if '"LiveMidCash"' in live_build else ""
+    live_bill = live_build.split('"LiveMidBill"', 1)[-1].split("UiKit.Layout(chatPanel", 1)[0] if '"LiveMidBill"' in live_build else ""
+    live_head = live_build.split('"LiveMidHeadline"', 1)[-1].split("_chatRoot", 1)[0] if '"LiveMidHeadline"' in live_build else ""
+    live_mid = live_build.split('"LiveMidDay"', 1)[-1].split("_chatPanel", 1)[0] if '"LiveMidDay"' in live_build else ""
+    live_day1_cash = live_build.split('"LiveDay1Cash"', 1)[-1].split('"LiveWeekCash"', 1)[0] if '"LiveWeekCash"' in live_build else ""
+    live_week_cash = live_build.split('"LiveWeekCash"', 1)[-1].split('"LiveLastCash"', 1)[0] if '"LiveWeekCash"' in live_build else ""
+    live_last_cash = live_build.split('"LiveLastCash"', 1)[-1].split('"LiveLastBill"', 1)[0] if '"LiveLastCash"' in live_build else ""
+    live_apply = live_cs.split("void ApplyContentShow", 1)[-1].split("void PaintShowChip", 1)[0]
+    live_cash_apply = live_apply.split("if (_midCash", 1)[-1].split("if (_midBill", 1)[0] if "if (_midCash" in live_apply else ""
+    live_bill_apply = live_apply.split("if (_midBill", 1)[-1].split("if (_midHeadline", 1)[0] if "if (_midBill" in live_apply else ""
+    live_head_apply = live_apply.split("if (_midHeadline", 1)[-1].split("if (_liveMidDay", 1)[0] if "if (_liveMidDay" in live_apply else ""
+    live_mid_apply = live_apply.split("if (_liveMidDay", 1)[-1].split("if (_day1Headline", 1)[0] if "if (_day1Headline" in live_apply else ""
+    live_mid_gate = live_cs.split("static bool LiveMidWeekDay", 1)[-1].split("static bool LiveLastDay", 1)[0] if "static bool LiveMidWeekDay" in live_cs else ""
+
+    if 'CashSlip = "Art/cash_slip"' not in art_cs:
+        fail("ArtSprites does not hook Art/cash_slip")
+    elif '"SettleMidCash"' not in build or "ArtSprites.CashSlip" not in paper:
+        fail("mid-week settlement does not hang Art/cash_slip as a 현금 desk paper")
+    elif "Image _midCash" not in settle_cs:
+        fail("mid-week settlement cash paper is not SettleMidCash")
+    elif "preserveAspect = true" not in paper:
+        fail("settlement mid-week cash paper is not preserveAspect")
+    elif "ApplySliced" in paper:
+        fail("settlement mid-week cash paper reused a sliced recap cash chip")
+    elif "72f, 48f" in paper:
+        fail("settlement mid-week cash paper was hung as a 72×48 pin")
+    elif "110f, 48f" not in paper or "126f, -312f" not in paper or "0.80f, 1f" not in paper:
+        fail("settlement mid-week cash paper is not a small desk paper next to SettleMidBill")
+    elif "8f, -384f" in paper or "0.74f, 1f" in paper or "126f, -384f" in paper:
+        fail("settlement mid-week cash paper sat on MorningMidCash")
+    elif "456f, -268f" in paper:
+        fail("settlement mid-week cash paper sat on LiveMidCash")
+    elif "338f, -268f" in paper:
+        fail("settlement mid-week cash paper sat on LiveMidBill")
+    elif "168f, 68f" in paper or "24f, -272f" in paper:
+        fail("settlement mid-week cash paper sat on LiveMidHeadline")
+    elif "132f, 40f" in paper or "200f, -276f" in paper:
+        fail("settlement mid-week cash paper sat on LiveMidDay")
+    elif "204f, -10f" in paper or "200f, 68f" in paper or "176f, 170f" in paper or "16f, -10f" in paper:
+        fail("settlement mid-week cash paper sat on a Title cash / bill")
+    elif "8f, -312f" in paper or "116f, 56f" in paper:
+        fail("settlement mid-week cash paper covers SettleMidBill")
+    elif "8f, -212f" in paper or "228f, 92f" in paper:
+        fail("settlement mid-week cash paper covers SettleMidHeadline / SettleHeadline / SettleWeekHeadline / SettleLastHeadline")
+    elif "8f, -148f" in paper or "180f, 56f" in paper:
+        fail("settlement mid-week cash paper covers SettleMidDay / SettleDay1 / SettleWeekStart")
+    elif '"현금"' not in paper:
+        fail("settlement mid-week cash paper is not Korean 현금 copy")
+    elif '"청구"' in paper or '"청구서"' in paper or "BillNotice" in paper:
+        fail("settlement mid-week cash paper reused a settlement bill hang")
+    elif "헤드라인" in paper or "HeadlineClip" in paper or "DayTab" in paper:
+        fail("settlement mid-week cash paper reused a headline or calendar hang")
+    elif "1일차" in paper or "날짜" in paper or "2주차" in paper or "마지막 날" in paper or "주차 마지막" in paper:
+        fail("settlement mid-week cash paper reused calendar-tab copy")
+    elif "어제:" in paper or "오늘 헤드라인" in paper or "lastHeadline" in paper:
+        fail("settlement mid-week cash paper reused live / continue / settlement headline copy")
+    elif "오늘 수입" in paper or "남은 현금" in paper or "LeftCashSlip" in paper:
+        fail("settlement mid-week cash paper reused a recap cash tile")
+    elif "멘탈" in paper or "MentalNote" in paper or "경고" in paper or "EventWarn" in paper:
+        fail("settlement mid-week cash paper reused a settlement mental / warn hang")
+    elif "0.98f, 0.94f, 0.86f" not in paper:
+        fail("settlement mid-week cash paper dropped the cash-slip grade")
+    elif "Palette.Ink" not in paper or "FontStyle.Bold" not in paper:
+        fail("settlement mid-week cash paper dropped MorningMidCash type")
+    elif "220, -12" in paper or "188, 48" in paper:
+        fail("settlement mid-week cash paper covers n일차 SettleDayTab")
+    elif "416, -12" in paper or "176, 48" in paper:
+        fail("settlement mid-week cash paper covers the last-day tab")
+    elif "420, -10" in paper or "440, 52" in paper or '"ExtraWarn"' in paper:
+        fail("settlement mid-week cash paper covers ExtraWarn")
+    elif "360, 60" in paper or '"Next"' in paper:
+        fail("settlement mid-week cash paper covers the next button")
+    elif "0, 168" in paper or '"Result"' in paper:
+        fail("settlement mid-week cash paper covers the result line")
+    elif "20, -148" in paper or '"Income"' in paper or '"Bills"' in paper:
+        fail("settlement mid-week cash paper covers recap papers")
+    elif "36f, -338f" in paper or "36, -66" in paper:
+        fail("settlement mid-week cash paper sat on LeftCashSlip / 오늘 헤드라인 scrap")
+    elif "SettleMidBill" in paper or "SettleMidDay" in paper or "SettleDay1" in paper or "SettleWeekStart" in paper or "SettleLastDayTab" in paper:
+        fail("settlement mid-week cash paper folded a settlement calendar / bill into the same hang")
+    elif "SettleMidHeadline" in paper or "SettleHeadline" in paper or "SettleWeekHeadline" in paper or "SettleLastHeadline" in paper:
+        fail("settlement mid-week cash paper folded a settlement headline into the same hang")
+    elif "MorningMidCash" in paper or "LiveMidCash" in paper or "NewGameCash" in paper:
+        fail("settlement mid-week cash paper sat on MorningMidCash / LiveMidCash / NewGameCash")
+    elif "_billsTile" in paper or "recap.Find" in paper or "ApplySliced" in paper:
+        fail("settlement mid-week cash paper replaced a recap cash / bill chip")
+    elif "UiKit.Stretch" in paper:
+        fail("settlement mid-week cash paper was stretched over the desk")
+    elif "SetActive(false)" not in paper:
+        fail("settlement mid-week cash paper is not hidden until Render")
+    elif "Audio/sfx_threat" in paper or "PlayThreatSfx" in paper or "PlayNewGameBillThreat" in paper:
+        fail("settlement mid-week cash paper added a new sting")
+    elif "_midCash" not in render or "SettleMidWeekDay" not in mid_apply:
+        fail("settlement mid-week cash paper is not shown on mid-week settlements")
+    elif "SetActive(SettleMidWeekDay(run.day))" not in mid_apply:
+        fail("settlement mid-week cash paper is not hidden on other settlements")
+    elif "_midDayTab" not in mid_apply or "_midHeadline" not in mid_apply or "_midBill" not in mid_apply:
+        fail("settlement mid-week cash paper dropped SettleMidDay / SettleMidHeadline / SettleMidBill mid-week hide")
+    elif re.search(r"(?<!\d)1 == run\.day", mid_apply):
+        fail("settlement mid-week cash paper reused the day-1 gate")
+    elif "6 == run.day" in mid_apply or "LastDayOfCurrentWeek" in mid_apply:
+        fail("settlement mid-week cash paper reused week-start or last-day gate")
+    elif "_weekStartTab" in mid_apply or "_day1Tab" in mid_apply or "_lastDayTab" in mid_apply:
+        fail("settlement mid-week cash paper reused week-start / day-1 / last-day hide")
+    elif "_weekStartHeadline" in mid_apply or "_day1Headline" in mid_apply or "_lastDayHeadline" in mid_apply:
+        fail("settlement mid-week cash paper folded a special-day headline into the mid-week gate")
+    elif "day == 2" not in mid_gate or "day == 7" not in mid_gate or "day == 24" not in mid_gate:
+        fail("settlement mid-week cash paper is not shown on mid-week days such as 2 / 7")
+    elif "day == 3" not in mid_gate or "day == 4" not in mid_gate or "day == 8" not in mid_gate or "day == 9" not in mid_gate:
+        fail("settlement mid-week cash paper dropped a week-1 / week-2 mid-week day")
+    elif "day == 12" not in mid_gate or "day == 13" not in mid_gate or "day == 14" not in mid_gate:
+        fail("settlement mid-week cash paper dropped a week-3 mid-week day")
+    elif "day == 17" not in mid_gate or "day == 18" not in mid_gate or "day == 19" not in mid_gate:
+        fail("settlement mid-week cash paper dropped a week-4 mid-week day")
+    elif "day == 22" not in mid_gate or "day == 23" not in mid_gate:
+        fail("settlement mid-week cash paper dropped a week-5 mid-week day")
+    elif re.search(r"day == 1\b", mid_gate) or re.search(r"day == 5\b", mid_gate) or re.search(r"day == 6\b", mid_gate):
+        fail("settlement mid-week cash paper also shows on day 1 / last-of-week / week-start")
+    elif re.search(r"day == 10\b", mid_gate) or re.search(r"day == 11\b", mid_gate) or re.search(r"day == 15\b", mid_gate):
+        fail("settlement mid-week cash paper also shows on a last-of-week or week-start settlement")
+    elif re.search(r"day == 16\b", mid_gate) or re.search(r"day == 20\b", mid_gate) or re.search(r"day == 21\b", mid_gate) or re.search(r"day == 25\b", mid_gate):
+        fail("settlement mid-week cash paper also shows on a last-of-week or week-start settlement")
+    elif "1 == run.day" not in day1_gate or "_day1Headline" not in day1_gate or "SetActive(1 == run.day)" not in day1_gate:
+        fail("settlement mid-week cash paper dropped SettleHeadline day-1 hide")
+    elif "SettleMidWeekDay" in day1_gate or "6 == run.day" in day1_gate or "_midCash" in day1_gate or "_midBill" in day1_gate or "_midHeadline" in day1_gate or "_midDayTab" in day1_gate:
+        fail("SettleHeadline reused a mid-week or week-start gate")
+    elif "LastDayOfCurrentWeek" in day1_gate:
+        fail("settlement mid-week cash paper changed SettleHeadline hide")
+    elif "6 == run.day" not in week_gate or "11 == run.day" not in week_gate or "16 == run.day" not in week_gate or "21 == run.day" not in week_gate:
+        fail("settlement mid-week cash paper dropped SettleWeekHeadline week-start hide")
+    elif "_weekStartHeadline" not in week_gate or "SetActive(weekStart)" not in week_gate:
+        fail("settlement mid-week cash paper changed SettleWeekHeadline hide")
+    elif "SettleMidWeekDay" in week_gate or re.search(r"(?<!\d)1 == run\.day", week_gate) or "_midCash" in week_gate or "_midBill" in week_gate or "_midHeadline" in week_gate or "_midDayTab" in week_gate:
+        fail("SettleWeekHeadline reused a mid-week or day-1 gate")
+    elif "LastDayOfCurrentWeek" in week_gate:
+        fail("settlement mid-week cash paper changed SettleWeekStart gate")
+    elif "2 == run.day" in week_gate or "7 == run.day" in week_gate:
+        fail("SettleWeekHeadline also shows on a mid-week settlement")
+    elif "LastDayOfCurrentWeek" not in last_gate or "SetActive(last)" not in last_gate:
+        fail("settlement mid-week cash paper dropped last-day headline hide")
+    elif "_lastDayHeadline" not in last_gate:
+        fail("settlement mid-week cash paper dropped SettleLastHeadline last-day hide")
+    elif "SettleMidWeekDay" in last_gate or "_midCash" in last_gate or "_midBill" in last_gate or "_midHeadline" in last_gate or "_midDayTab" in last_gate or "6 == run.day" in last_gate:
+        fail("last-day settlement also shows the mid-week cash")
+    elif '"SettleMidBill"' not in build or "ArtSprites.BillNotice" not in bill or '"청구"' not in bill:
+        fail("settlement mid-week cash paper restyled SettleMidBill")
+    elif "8f, -312f" not in bill or "116f, 56f" not in bill or "0.80f, 1f" not in bill:
+        fail("settlement mid-week cash paper moved SettleMidBill")
+    elif "현금" in bill or "CashSlip" in bill or "SettleMidCash" in bill:
+        fail("SettleMidBill hang folded in the mid-week settlement cash")
+    elif '"SettleMidDay"' not in build or '"날짜"' not in tab or "8f, -148f" not in tab:
+        fail("settlement mid-week cash paper restyled SettleMidDay")
+    elif "ArtSprites.DayTab" not in tab or "180f, 56f" not in tab or "preserveAspect = true" not in tab:
+        fail("settlement mid-week cash paper restyled the mid-week calendar")
+    elif "현금" in tab or "CashSlip" in tab or "SettleMidCash" in tab:
+        fail("SettleMidDay hang folded in the mid-week settlement cash")
+    elif '"SettleMidHeadline"' not in build or "ArtSprites.HeadlineClip" not in head or '"헤드라인"' not in head:
+        fail("settlement mid-week cash paper restyled SettleMidHeadline")
+    elif "8f, -212f" not in head or "228f, 92f" not in head or "0.80f, 1f" not in head:
+        fail("settlement mid-week cash paper moved SettleMidHeadline")
+    elif "현금" in head or "CashSlip" in head or "SettleMidCash" in head:
+        fail("SettleMidHeadline hang folded in the mid-week settlement cash")
+    elif '"SettleHeadline"' not in build or "ArtSprites.HeadlineClip" not in day1_head or '"헤드라인"' not in day1_head:
+        fail("settlement mid-week cash paper restyled SettleHeadline")
+    elif "8f, -212f" not in day1_head or "228f, 92f" not in day1_head:
+        fail("settlement mid-week cash paper moved SettleHeadline")
+    elif "SettleMidCash" in day1_head or "CashSlip" in day1_head or "현금" in day1_head:
+        fail("SettleHeadline hang folded in the mid-week settlement cash")
+    elif '"SettleWeekHeadline"' not in build or "ArtSprites.HeadlineClip" not in week_head or '"헤드라인"' not in week_head:
+        fail("settlement mid-week cash paper restyled SettleWeekHeadline")
+    elif "8f, -212f" not in week_head or "228f, 92f" not in week_head:
+        fail("settlement mid-week cash paper moved SettleWeekHeadline")
+    elif "SettleMidCash" in week_head or "CashSlip" in week_head or "현금" in week_head:
+        fail("SettleWeekHeadline hang folded in the mid-week settlement cash")
+    elif '"SettleLastHeadline"' not in build or "ArtSprites.HeadlineClip" not in last_head or '"헤드라인"' not in last_head:
+        fail("settlement mid-week cash paper restyled SettleLastHeadline")
+    elif "8f, -212f" not in last_head or "228f, 92f" not in last_head:
+        fail("settlement mid-week cash paper moved SettleLastHeadline")
+    elif "SettleMidCash" in last_head or "CashSlip" in last_head or "현금" in last_head:
+        fail("SettleLastHeadline hang folded in the mid-week settlement cash")
+    elif '"SettleDay1"' not in build or '"1일차"' not in day1 or "8f, -148f" not in day1:
+        fail("settlement mid-week cash paper restyled SettleDay1")
+    elif "현금" in day1 or "SettleMidCash" in day1 or "CashSlip" in day1:
+        fail("SettleDay1 hang folded in the mid-week settlement cash")
+    elif '"SettleWeekStart"' not in build or '"2주차"' not in week_start or "8f, -148f" not in week_start:
+        fail("settlement mid-week cash paper restyled SettleWeekStart")
+    elif "현금" in week_start or "SettleMidCash" in week_start or "CashSlip" in week_start:
+        fail("SettleWeekStart hang folded in the mid-week settlement cash")
+    elif "ArtSprites.DayTab" not in last_tab or '"마지막 날"' not in last_tab or "416, -12" not in last_tab:
+        fail("settlement mid-week cash paper dropped the last-day tab")
+    elif "현금" in last_tab or "SettleMidCash" in last_tab:
+        fail("last-day tab folded in the mid-week settlement cash")
+    elif "ArtSprites.DayTab" not in n일차 or "SettleDayHead" not in n일차 or "220, -12" not in n일차:
+        fail("settlement mid-week cash paper rewrote n일차 SettleDayTab")
+    elif "ArtSprites.CashSlip" not in recap or "ArtSprites.BillNotice" not in recap or "ArtSprites.MentalNote" not in recap:
+        fail("settlement mid-week cash paper dropped recap papers")
+    elif '"오늘 수입"' not in recap or '"Income"' not in recap or '"Cash"' not in recap:
+        fail("settlement mid-week cash paper dropped recap 오늘 수입 / 현금 tiles")
+    elif "LeftCashSlip" not in left or "ArtSprites.CashSlip" not in left or "남은 현금" not in left:
+        fail("settlement mid-week cash paper dropped leftover 남은 현금")
+    elif "36f, -338f" not in left or "SettleMidCash" in left or "126f, -312f" in left:
+        fail("settlement mid-week cash paper restyled LeftCashSlip")
+    elif "ArtSprites.BillNotice" not in bills or "ApplySliced" not in bills or "_billsTile" not in settle_cs:
+        fail("settlement mid-week cash paper dropped the recap bill_notice chip")
+    elif "ArtSprites.BillNotice" not in tick or "ApplySliced" not in tick:
+        fail("settlement mid-week cash paper changed TickShortfall bill_notice on the recap chip")
+    elif "ArtSprites.BillShort" not in settle_cs or "청구 미달" not in settle_cs or "청구보다 부족" not in settle_cs:
+        fail("settlement mid-week cash paper dropped the recap shortfall stamp")
+    elif "TickIncomeCount" not in settle_cs or "TickLeftCash" not in settle_cs or "ShowShortfall" not in settle_cs:
+        fail("settlement mid-week cash paper dropped recap income / leftover counts")
+    elif "ArtSprites.EventWarn" not in extra or "420, -10" not in extra:
+        fail("settlement mid-week cash paper dropped ExtraWarn")
+    elif "ArtSprites.HeadlineClip" not in settle_clip or "36, -66" not in settle_clip:
+        fail("settlement mid-week cash paper restyled the 오늘 헤드라인 scrap")
+    elif "오늘 헤드라인" not in settle_cs:
+        fail("settlement mid-week cash paper dropped 오늘 헤드라인 copy")
+    elif '"ClearHeadlineClip"' not in settle_cs or '"StampHeadlineClip"' not in settle_cs:
+        fail("settlement mid-week cash paper dropped ending headline scraps")
+    elif '"Next"' not in build or "360, 60" not in build:
+        fail("settlement mid-week cash paper dropped the next button")
+    elif '"MorningMidCash"' not in morning_build or "ArtSprites.CashSlip" not in morning_cash or '"현금"' not in morning_cash:
+        fail("settlement mid-week cash paper restyled MorningMidCash")
+    elif "126f, -384f" not in morning_cash or "110f, 48f" not in morning_cash or "0.74f, 1f" not in morning_cash:
+        fail("settlement mid-week cash paper moved MorningMidCash")
+    elif "SettleMidCash" in week_cs or "126f, -312f" in morning_cash:
+        fail("MorningMidCash hang folded in the mid-week settlement cash")
+    elif "_midCash" not in mid_refresh or "MorningMidWeekDay" not in mid_refresh:
+        fail("settlement mid-week cash paper dropped MorningMidCash mid-week hide")
+    elif "SetActive(run != null && MorningMidWeekDay(run.day))" not in mid_refresh:
+        fail("settlement mid-week cash paper changed MorningMidCash hide")
+    elif "day == 2" not in morning_mid_gate or "day == 7" not in morning_mid_gate or "day == 24" not in morning_mid_gate:
+        fail("settlement mid-week cash paper changed MorningMidCash days")
+    elif '"MorningMidBill"' not in morning_build or "ArtSprites.BillNotice" not in morning_paper or '"청구"' not in morning_paper:
+        fail("settlement mid-week cash paper restyled MorningMidBill")
+    elif "8f, -384f" not in morning_paper or "116f, 56f" not in morning_paper or "0.74f, 1f" not in morning_paper:
+        fail("settlement mid-week cash paper moved MorningMidBill")
+    elif "현금" in morning_paper or "SettleMidCash" in morning_paper:
+        fail("MorningMidBill hang folded in the mid-week settlement cash")
+    elif '"MorningMidHeadline"' not in morning_build or "ArtSprites.HeadlineClip" not in morning_head or '"헤드라인"' not in morning_head:
+        fail("settlement mid-week cash paper restyled MorningMidHeadline")
+    elif "8f, -284f" not in morning_head or "228f, 92f" not in morning_head:
+        fail("settlement mid-week cash paper moved MorningMidHeadline")
+    elif "현금" in morning_head or "SettleMidCash" in morning_head:
+        fail("MorningMidHeadline hang folded in the mid-week settlement cash")
+    elif '"MorningMidDay"' not in morning_build or "ArtSprites.DayTab" not in morning_tab or '"날짜"' not in morning_tab:
+        fail("settlement mid-week cash paper restyled MorningMidDay")
+    elif "8f, -220f" not in morning_tab or "180f, 56f" not in morning_tab:
+        fail("settlement mid-week cash paper moved MorningMidDay")
+    elif '"MorningHeadline"' not in morning_build or "8f, -284f" not in morning_day1_paper or '"헤드라인"' not in morning_day1_paper:
+        fail("settlement mid-week cash paper restyled MorningHeadline")
+    elif "run.day == 1" not in morning_refresh or "_day1Headline" not in morning_refresh or "SetActive(day1)" not in morning_refresh:
+        fail("settlement mid-week cash paper changed MorningHeadline hide")
+    elif '"MorningDay1"' not in morning_build or "8f, -220f" not in morning_day1 or '"1일차"' not in morning_day1:
+        fail("settlement mid-week cash paper restyled MorningDay1")
+    elif '"MorningWeekHeadline"' not in morning_build or "8f, -284f" not in morning_week_paper or '"헤드라인"' not in morning_week_paper:
+        fail("settlement mid-week cash paper restyled MorningWeekHeadline")
+    elif "run.day == 6" not in morning_week_refresh or "run.day == 21" not in morning_week_refresh:
+        fail("settlement mid-week cash paper changed MorningWeekHeadline hide")
+    elif '"MorningWeekStart"' not in morning_build or "8f, -220f" not in morning_week or '"2주차"' not in morning_week:
+        fail("settlement mid-week cash paper restyled MorningWeekStart")
+    elif '"MorningLastHeadline"' not in morning_build or "8f, -284f" not in morning_last_paper or '"헤드라인"' not in morning_last_paper:
+        fail("settlement mid-week cash paper restyled MorningLastHeadline")
+    elif "LastDayOfCurrentWeek" not in last_refresh or "_lastDayHeadline" not in last_refresh or "SetActive(last)" not in last_refresh:
+        fail("settlement mid-week cash paper changed MorningLastHeadline hide")
+    elif "ArtSprites.DayTab" not in banner or '"마지막 날"' not in banner or "744, -8" not in banner:
+        fail("settlement mid-week cash paper dropped the morning last-day tab")
+    elif "ArtSprites.CashSlip" not in money or '"CashChip"' not in week_cs:
+        fail("settlement mid-week cash paper dropped the morning 현금 paper")
+    elif "청구보다 부족" not in week_cs or "Palette.MoneyRed" not in warn:
+        fail("settlement mid-week cash paper dropped morning 청구보다 부족")
+    elif "0, -42" not in morning_clip or "0, 78" not in morning_clip:
+        fail("settlement mid-week cash paper restyled YesterdayClip")
+    elif "YesterdayLine" not in yest or "SetActive(on)" not in yest:
+        fail("settlement mid-week cash paper changed scrolling headline chips")
+    elif "day <= 1" not in head_cs or '"어제: "' not in head_cs:
+        fail("settlement mid-week cash paper changed 어제 copy or day math")
+    elif '"LiveMidCash"' not in live_build or "ArtSprites.CashSlip" not in live_cash or '"현금"' not in live_cash:
+        fail("settlement mid-week cash paper restyled LiveMidCash")
+    elif "110f, 48f" not in live_cash or "456f, -268f" not in live_cash:
+        fail("settlement mid-week cash paper moved LiveMidCash")
+    elif "SettleMidCash" in live_cs or "126f, -312f" in live_cash:
+        fail("LiveMidCash hang folded in the mid-week settlement cash")
+    elif "_midCash" not in live_apply or "LiveMidWeekDay" not in live_cash_apply:
+        fail("settlement mid-week cash paper dropped LiveMidCash mid-week hide")
+    elif '"LiveDay1Cash"' not in live_build or "ArtSprites.CashSlip" not in live_day1_cash or '"현금"' not in live_day1_cash:
+        fail("settlement mid-week cash paper restyled LiveDay1Cash")
+    elif "110f, 48f" not in live_day1_cash or "456f, -268f" not in live_day1_cash:
+        fail("settlement mid-week cash paper moved LiveDay1Cash")
+    elif "SettleMidCash" in live_day1_cash:
+        fail("LiveDay1Cash hang folded in the mid-week settlement cash")
+    elif '"LiveWeekCash"' not in live_build or "ArtSprites.CashSlip" not in live_week_cash or '"현금"' not in live_week_cash:
+        fail("settlement mid-week cash paper restyled LiveWeekCash")
+    elif "110f, 48f" not in live_week_cash or "456f, -268f" not in live_week_cash:
+        fail("settlement mid-week cash paper moved LiveWeekCash")
+    elif "SettleMidCash" in live_week_cash:
+        fail("LiveWeekCash hang folded in the mid-week settlement cash")
+    elif '"LiveLastCash"' not in live_build or "ArtSprites.CashSlip" not in live_last_cash or '"현금"' not in live_last_cash:
+        fail("settlement mid-week cash paper restyled LiveLastCash")
+    elif "110f, 48f" not in live_last_cash or "456f, -268f" not in live_last_cash:
+        fail("settlement mid-week cash paper moved LiveLastCash")
+    elif "SettleMidCash" in live_last_cash:
+        fail("LiveLastCash hang folded in the mid-week settlement cash")
+    elif '"LiveMidBill"' not in live_build or "ArtSprites.BillNotice" not in live_bill or '"청구"' not in live_bill:
+        fail("settlement mid-week cash paper restyled LiveMidBill")
+    elif "116f, 56f" not in live_bill or "338f, -268f" not in live_bill:
+        fail("settlement mid-week cash paper moved LiveMidBill")
+    elif "_midBill" not in live_apply or "LiveMidWeekDay" not in live_bill_apply:
+        fail("settlement mid-week cash paper dropped LiveMidBill mid-week hide")
+    elif '"LiveMidHeadline"' not in live_build or "168f, 68f" not in live_head or "24f, -272f" not in live_head:
+        fail("settlement mid-week cash paper restyled LiveMidHeadline")
+    elif "_midHeadline" not in live_apply or "LiveMidWeekDay" not in live_head_apply:
+        fail("settlement mid-week cash paper dropped LiveMidHeadline mid-week hide")
+    elif '"LiveMidDay"' not in live_build or "ArtSprites.DayTab" not in live_mid or '"날짜"' not in live_mid:
+        fail("settlement mid-week cash paper restyled LiveMidDay")
+    elif "132f, 40f" not in live_mid or "200f, -276f" not in live_mid:
+        fail("settlement mid-week cash paper moved LiveMidDay")
+    elif "_liveMidDay" not in live_apply or "LiveMidWeekDay" not in live_mid_apply:
+        fail("settlement mid-week cash paper dropped LiveMidDay mid-week hide")
+    elif "day == 2" not in live_mid_gate or "day == 7" not in live_mid_gate or "day == 24" not in live_mid_gate:
+        fail("settlement mid-week cash paper changed LiveMidCash days")
+    elif '"NewGameCash"' not in start_hang or "ArtSprites.CashSlip" not in title_cash:
+        fail("settlement mid-week cash paper restyled Title NewGameCash")
+    elif "204f, -10f" not in title_cash or "200f, 68f" not in title_cash or '"현금"' not in title_cash:
+        fail("settlement mid-week cash paper restyled the NewGameCash desk paper")
+    elif "SettleMidCash" in title_cs or "126f, -312f" in title_cash:
+        fail("settlement mid-week cash paper sat on Title NewGameCash")
+    elif '"NewGameBill"' not in start_hang or "176f, 170f" not in title_bill or "16f, -10f" not in title_bill:
+        fail("settlement mid-week cash paper restyled Title NewGameBill")
+    elif '"부채"' not in title_bill:
+        fail("settlement mid-week cash paper changed Title NewGameBill copy")
+    elif "SetActive(!_hasSave)" not in hide:
+        fail("settlement mid-week cash paper changed Title NewGameCash hide")
+    elif '"ContinueCashSlip"' not in title_build or "ArtSprites.CashSlip" not in title_build:
+        fail("settlement mid-week cash paper dropped Title continue cash")
+    elif "SetActive(_hasSave)" not in hide:
+        fail("settlement mid-week cash paper changed Title continue cash hide")
+    elif '"ContinueClip"' not in title_build or "56, -286" not in continue_clip or "420, 72" not in continue_clip:
+        fail("settlement mid-week cash paper restyled continue headline scrap")
+    elif '"어제: "' not in fill or "lastHeadline" not in fill:
+        fail("settlement mid-week cash paper dropped continue 어제: + lastHeadline")
+    elif "매드라인" in settle_cs:
+        fail("settlement mid-week cash paper used 매드라인 instead of 헤드라인")
+    elif re.search(r"run\.day\s*=(?!=)", settle_cs) or "day += " in settle_cs or "day -= " in settle_cs:
+        fail("settlement mid-week cash paper writes the day index")
+    elif "Week1LastDay = 5" not in sched_cs or "Week5LastDay = 25" not in sched_cs:
+        fail("settlement mid-week cash paper moved last-day week gates")
+    elif "startingCash: 45000" not in balance or "startingDebt: 50000" not in balance or "startingMental: 100" not in balance:
+        fail("settlement mid-week cash paper retuned start cash / debt / mental")
+    elif "billRent: 8000" not in balance or "streamSeconds: 90" not in balance or "bankruptDebt: 180000" not in balance:
+        fail("settlement mid-week cash paper retuned bills / stream / bankrupt")
+    elif "winDebtMax: 30000" not in balance or "winCashMin: 70000" not in balance:
+        fail("settlement mid-week cash paper retuned week-clear gates")
+    elif "AddColumnPad" not in live_cs or "입력됨" not in live_cs or "timeScale" in live_cs:
+        fail("settlement mid-week cash paper broke pads, 입력됨, or added timeScale")
+    elif "Week2" in title_cs or "Fandom" in title_cs or "민준" in title_cs or "토크" in title_cs:
+        fail("Title started advertising settlement mid-week cash / later weeks")
+    elif "def check_settle_mid_bill()" not in verify_src or "check_settle_mid_bill()" not in verify_src:
+        fail("settlement mid-week cash paper dropped the existing check_settle_mid_bill hang lock")
+    elif "def check_settle_mid_headline()" not in verify_src or "check_settle_mid_headline()" not in verify_src:
+        fail("settlement mid-week cash paper dropped the existing check_settle_mid_headline hang lock")
+    elif "def check_settle_mid_day()" not in verify_src or "check_settle_mid_day()" not in verify_src:
+        fail("settlement mid-week cash paper dropped the existing check_settle_mid_day hang lock")
+    elif "def check_morning_mid_cash()" not in verify_src or "check_morning_mid_cash()" not in verify_src:
+        fail("settlement mid-week cash paper dropped the existing check_morning_mid_cash hang lock")
+    elif "def check_live_mid_cash()" not in verify_src or "check_live_mid_cash()" not in verify_src:
+        fail("settlement mid-week cash paper dropped the existing check_live_mid_cash hang lock")
+    elif "def check_settle_bill_notice()" not in verify_src or "check_settle_bill_notice()" not in verify_src:
+        fail("settlement mid-week cash paper dropped the recap bill_notice chip lock")
+    elif "def check_morning_mid_bill()" not in verify_src or "check_morning_mid_bill()" not in verify_src:
+        fail("settlement mid-week cash paper dropped the existing check_morning_mid_bill hang lock")
+    elif "def check_settle_day1_headline()" not in verify_src or "def check_settle_week_start_headline()" not in verify_src:
+        fail("settlement mid-week cash paper dropped SettleHeadline / SettleWeekHeadline hang locks")
+    elif "def check_settle_last_day_headline()" not in verify_src:
+        fail("settlement mid-week cash paper dropped SettleLastHeadline hang lock")
+    elif "defaultScreenOrientation: 0" not in player:
+        fail("settlement mid-week cash paper dropped the Android Portrait lock")
+    elif "6000.5.9f1" not in (ROOT / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8"):
+        fail("settlement mid-week cash paper moved Unity off 6000.5.9f1")
+    else:
+        ok("mid-week settlements hang cash_slip as 현금 desk paper; day 1 / week-start / last-of-week hide it; SettleMidDay / SettleMidHeadline / SettleMidBill / recap cash tiles / MorningMidCash / LiveMidCash stay")
 
 
 def check_title_week_start_tab() -> None:
