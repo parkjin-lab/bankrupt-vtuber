@@ -17573,7 +17573,7 @@ def check_settle_mid_cash() -> None:
         fail("settlement mid-week cash paper dropped recap papers")
     elif '"오늘 수입"' not in recap or '"Income"' not in recap or '"Cash"' not in recap:
         fail("settlement mid-week cash paper dropped recap 오늘 수입 / 현금 tiles")
-    elif "LeftCashSlip" not in left or "ArtSprites.CashSlip" not in left or "남은 현금" not in left:
+    elif '"LeftCashSlip"' not in build or "ArtSprites.CashSlip" not in left or "남은 현금" not in left:
         fail("settlement mid-week cash paper dropped leftover 남은 현금")
     elif "36f, -338f" not in left or "SettleMidCash" in left or "126f, -312f" in left:
         fail("settlement mid-week cash paper restyled LeftCashSlip")
