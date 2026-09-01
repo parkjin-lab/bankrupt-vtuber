@@ -272,7 +272,7 @@ namespace BankruptVtuber
         int _lastCombo;
         int _tonightBills;
         int _bankruptAt;
-        int _lastMental;
+        int _prevMental;
         float _lastViewers;
         bool _ending;
         bool _eventWasActive;
@@ -411,7 +411,7 @@ namespace BankruptVtuber
             _incomeMarked = _session.LiveIncome;
             _incomeMarkedAt = _session.Elapsed;
             _lastViewers = _session.Viewers;
-            _lastMental = _session.Mental;
+            _prevMental = _session.Mental;
             _hudMental = _session.Mental;
             _lastCombo = _session.Combo;
             _tonightBills = EconomyRules.TonightBills(gm.Run);
@@ -565,7 +565,7 @@ namespace BankruptVtuber
                 if (j == Judgement.Miss)
                 {
                     float dv = _session.Viewers - _lastViewers;
-                    int dm = _session.Mental - _lastMental;
+                    int dm = _session.Mental - _prevMental;
                     ShowMissSting(dv, dm);
                     if (comboWas >= 2)
                     {
@@ -652,7 +652,7 @@ namespace BankruptVtuber
             }
             _viewerJudged = false;
             _lastViewers = _session.Viewers;
-            _lastMental = _session.Mental;
+            _prevMental = _session.Mental;
             _avatar.Tick(dt);
 
             _judgeFlash = Mathf.MoveTowards(_judgeFlash, 0f, dt * 2.2f);
