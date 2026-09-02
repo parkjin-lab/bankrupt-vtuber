@@ -47,6 +47,7 @@ namespace BankruptVtuber
         Image _midHeadline;
         Image _midBill;
         Image _midCash;
+        Image _midMental;
         Image _lastDayHeadline;
         Text _lastDayWeek;
         Text _showLine;
@@ -556,6 +557,15 @@ namespace BankruptVtuber
             var midCashT = UiKit.Label(_midCash.transform, "T", "현금", 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
             UiKit.Layout(midCashT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _midCash.gameObject.SetActive(false);
+
+            _midMental = UiKit.Image(root, "SettleMidMental", Color.white);
+            UiKit.Layout(_midMental.rectTransform, new Vector2(0.80f, 1f), new Vector2(0.80f, 1f), new Vector2(0f, 1f), new Vector2(244f, -312f), new Vector2(104f, 48f));
+            ArtSprites.Apply(_midMental, ArtSprites.MentalNote, new Color(1f, 0.95f, 0.72f, 0.98f), Color.white);
+            _midMental.preserveAspect = true;
+            _midMental.raycastTarget = false;
+            var midMentalT = UiKit.Label(_midMental.transform, "T", "멘탈", 18, Palette.Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UiKit.Layout(midMentalT.rectTransform, new Vector2(0.10f, 0.16f), new Vector2(0.90f, 0.84f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _midMental.gameObject.SetActive(false);
 
             _weekStartTab = UiKit.Image(root, "SettleWeekStart", Color.white);
             UiKit.Layout(_weekStartTab.rectTransform, new Vector2(0.80f, 1f), new Vector2(0.80f, 1f), new Vector2(0f, 1f), new Vector2(8f, -148f), new Vector2(180f, 56f));
@@ -1426,6 +1436,8 @@ namespace BankruptVtuber
                 _midBill.gameObject.SetActive(SettleMidWeekDay(run.day));
             if (_midCash != null)
                 _midCash.gameObject.SetActive(SettleMidWeekDay(run.day));
+            if (_midMental != null)
+                _midMental.gameObject.SetActive(SettleMidWeekDay(run.day));
             var b = gm.Balance;
             var w2 = gm.Week2;
             var w3 = gm.Week3;
