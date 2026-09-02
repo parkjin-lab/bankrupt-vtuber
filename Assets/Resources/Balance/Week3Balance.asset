@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b854ede9c9a5f8c54fe5925d8a90a6f8, type: 3}
+  m_Name: Week3Balance
+  m_EditorClassIdentifier: BankruptVtuber.Week3Balance
+  firstDay: 11
+  lastDay: 15
+  bankruptDebt: 260000
+  winDebtMax: 15000
+  winCashMin: 140000
+  billRent: 12000
+  billElectricNet: 6000
+  billAvatarLicense: 6000
+  billFood: 7000
+  billGear: 3000
+  extraThreatMaxPerDay: 2
+  rivalDay: 12
+  rivalPeakViewers: 55
+  rivalStartViewers: 25
+  rivalViewersPerSec: 0.9
+  rivalPerfectSteal: 0.6
+  rivalMissSteal: 0.8
+  rivalWinCash: 20000
+  rivalWinViewerBonus: 6
+  rivalLoseViewerPenalty: 5
+  rivalLoseMental: 12
+  goodsUnlockCash: 60000
+  goodsUnlockStock: 20
+  goodsProduceCost: 2500
+  goodsPrice: 7000
+  goodsSoldMembersFactor: 0.4
+  goodsSoldPeakFactor: 0.08
+  goodsSoldMin: 1
+  goodsPromoMultiplier: 1.5
+  promoWindowSeconds: 1.2
+  promoFallbackSeconds: 55
+  extraThreats:
+  - id: gear_break
+    displayName: 장비 고장
+    minWon: 6000
+    maxWon: 15000
+    chancePercent: 25
+    artPath: Art/bill_gear
+    tintHex: FF6A6A
+  - id: petty_bill
+    displayName: 소액 추가
+    minWon: 4000
+    maxWon: 10000
+    chancePercent: 25
+    artPath: Art/bill_food
+    tintHex: FFB020
+  - id: platform_fee
+    displayName: 플랫폼 수수료
+    minWon: 4000
+    maxWon: 4000
+    chancePercent: 20
+    artPath: Art/badge_superchat
+    tintHex: FFB020

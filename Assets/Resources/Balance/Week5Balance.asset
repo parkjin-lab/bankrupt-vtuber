@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a33b463a302d013803a66eeed572e63, type: 3}
+  m_Name: Week5Balance
+  m_EditorClassIdentifier: BankruptVtuber.Week5Balance
+  firstDay: 21
+  lastDay: 25
+  bankruptDebt: 350000
+  billRent: 15000
+  billElectricNet: 8000
+  billAvatarLicense: 8000
+  billFood: 8000
+  billGear: 6000
+  agencyDailyCost: 15000
+  extraThreatMaxPerDay: 2
+  rankingDay: 22
+  rankingPeakViewers: 100
+  rankingPeakFactor: 3
+  rankingMembersFactor: 8
+  rankingGoodsFactor: 4
+  rankingPerfectsFactor: 2
+  rankingDailyFirstCash: 10000
+  npcBase0: 420
+  npcBase1: 360
+  npcBase2: 300
+  npcVarianceLo: -70
+  npcVarianceHi: 90
+  concertUnlockCash: 150000
+  concertUnlockPeak: 90
+  concertUnlockDay: 22
+  concertCost: 80000
+  concertBasePayout: 200000
+  concertRankBonus: 500
+  concertSuccessMultiplier: 1.3
+  concertFailMisses: 12
+  concertFailMental: 25
+  concertFailViewers: 10
+  concertLowMental: 24
+  concertWindowSeconds: 1.2
+  concertFallbackSeconds: 55
+  endingSoloMental: 40
+  endingEmpireCash: 250000
+  burnoutZeroMentalDays: 2
+  extraThreats:
+  - id: gear_break
+    displayName: 고장
+    minWon: 10000
+    maxWon: 20000
+    chancePercent: 30
+    artPath: Art/bill_gear
+    tintHex: FF6A6A
+  - id: petty_bill
+    displayName: 소액
+    minWon: 6000
+    maxWon: 15000
+    chancePercent: 25
+    artPath: Art/bill_food
+    tintHex: FFB020
+  - id: platform_fee
+    displayName: 수수료
+    minWon: 6000
+    maxWon: 6000
+    chancePercent: 20
+    artPath: Art/badge_superchat
+    tintHex: FFB020
